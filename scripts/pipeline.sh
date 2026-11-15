@@ -11,7 +11,7 @@ set -euo pipefail
 REPO="${PIPELINE_REPO:-cyrilleulmi/StvBeroPlatform}"
 API="repos/$REPO"
 SPERRE="agent:aktiv"
-SPERRE_MAX_STUNDEN=3
+SPERRE_MAX_STUNDEN="${PIPELINE_SPERRE_STUNDEN:-3}"
 
 enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$1"; }
 
@@ -41,9 +41,129 @@ Befehle:
   beanspruchen <issue>           Setzt Sperre und Anspruchs-Kommentar, wartet 20 s. Exit 0 nur, wenn dieser Lauf
                                  den ältesten Anspruch hat (verhindert, dass zwei Läufe dasselbe Feature bauen)
   anstossen <issue>              status:bereit entfernen und neu setzen: startet die Entwicklungs-Aufgabe
+  label-alter <nr> <label>       Minuten, seit das Label zuletzt gesetzt wurde (leer, wenn nie)
+  waechter [--trocken]           Erkennt hängende Schritte (abgebrochene Läufe, verlorene Ereignisse) und stösst
+                                 sie neu an. --trocken: nur melden, nichts ändern
   mergebar <nr>                  Exit 0, wenn der PR offen, konfliktfrei und alle Checks grün sind; sonst Grund auf stderr
   mergen <nr> <erwarteter-sha>   Squash-Merge nach main, nur wenn mergebar und Head = erwarteter SHA. Gibt Merge-SHA aus
 EOF
+}
+
+# Minuten seit dem letzten «labeled»-Ereignis für ein Label (leer, wenn nie gesetzt)
+label_alter() {
+  local seit
+  seit=$(gh api "$API/issues/$1/events?per_page=100" --paginate \
+    --jq "[.[] | select(.event==\"labeled\" and .label.name==\"$2\")] | last | .created_at // empty" | tail -1)
+  [ -z "$seit" ] && return 0
+  python3 -c 'import sys,datetime as d;t=d.datetime.fromisoformat(sys.argv[1].replace("Z","+00:00"));print(int((d.datetime.now(d.timezone.utc)-t).total_seconds()//60))' "$seit"
+}
+
+# Exit 0, wenn es in den letzten AKTIV_MIN Minuten Aktivität gab: Push auf einen claude/-Branch
+# oder Änderung am Issue/PR. Lange Läufe pushen regelmässig Zwischenstände und gelten so als lebendig.
+kuerzlich_aktiv() {
+  local nr="$1" grenze
+  grenze=$(python3 -c 'import sys,datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(minutes=int(sys.argv[1]))).strftime("%Y-%m-%dT%H:%M:%SZ"))' "${AKTIV_MIN:-60}")
+  local upd; upd=$(gh api "$API/issues/$nr" --jq .updated_at)
+  [[ "$upd" > "$grenze" ]] && return 0
+  local b d
+  for b in $(gh api "$API/branches?per_page=100" --jq '.[].name | select(startswith("claude/"))'); do
+    d=$(gh api "$API/commits/$(enc "$b")" --jq .commit.committer.date)
+    [[ "$d" > "$grenze" ]] && return 0
+  done
+  return 1
+}
+
+# Anzahl Wächter-Anstösse auf einem Eintrag in den letzten 24 Stunden
+waechter_anstoesse_24h() {
+  local seit
+  seit=$(python3 -c 'import datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))')
+  gh api "$API/issues/$1/comments?since=$seit&per_page=100" \
+    --jq '[.[] | select(.body | startswith("<!-- pipeline:waechter -->"))] | length'
+}
+
+# Wächter: findet hängende Schritte und stösst sie neu an.
+#  - Sperre agent:aktiv älter als SPERRE_MAX_STUNDEN und seit AKTIV_MIN keine Aktivität (Push auf claude/-Branch,
+#    Änderung am Eintrag): Lauf gilt als abgebrochen, Sperre weg, Schritt neu anstossen
+#  - PR mit pipeline:review/test/nacharbeit ohne Sperre, Label älter als WARTE_MIN: Ereignis verloren, neu anstossen
+#  - Warteschlange: nichts läuft, aber ein Feature ist bereit und seit WARTE_MIN nicht beansprucht: anstossen
+#  - Mehr als MAX_ANSTOESSE pro Eintrag in 24 h: pipeline:blockiert statt endlos neu anstossen
+waechter() {
+  local trocken="$1" WARTE_MIN="${WAECHTER_WARTE_MIN:-45}" MAX_ANSTOESSE=3 aktionen=0
+  tun() { if [ "$trocken" = "--trocken" ]; then echo "  (trocken) $*"; else "$@"; fi; }
+  notiz() { # nr text
+    local tmp; tmp=$(mktemp)
+    printf '<!-- pipeline:waechter -->\n🛟 **Wächter:** %s\n' "$2" > "$tmp"
+    tun gh api -X POST "$API/issues/$1/comments" -F "body=@$tmp" --silent; rm -f "$tmp"
+  }
+  anstoss() { # nr label grund
+    local n; n=$(waechter_anstoesse_24h "$1")
+    if [ "$n" -ge "$MAX_ANSTOESSE" ]; then
+      echo "#$1: schon $n Mal in 24 h angestossen → pipeline:blockiert"
+      notiz "$1" "Schritt \`$2\` hängt weiterhin ($3). Nach $n Anstössen in 24 Stunden gebe ich auf. Bitte prüfen, dann \`pipeline:blockiert\` entfernen und \`$2\` neu setzen."
+      tun "$0" label-setzen "$1" "pipeline:blockiert"
+    else
+      echo "#$1: $3 → $2 neu angestossen"
+      notiz "$1" "$3. Ich stosse \`$2\` neu an."
+      tun "$0" label-entfernen "$1" "$2"; [ "$trocken" = "--trocken" ] || sleep 2
+      tun "$0" label-setzen "$1" "$2"
+    fi
+    aktionen=$((aktionen+1))
+  }
+
+  # 1. PRs in der Pipeline
+  local nr l alter sperre
+  for l in pipeline:review pipeline:test pipeline:nacharbeit; do
+    gh api "$API/issues?state=open&labels=$(enc "$l")&per_page=100" --jq '.[] | select(.pull_request) | .number' |
+    while read -r nr; do
+      if hat_label "$nr" "pipeline:blockiert"; then continue; fi
+      if hat_label "$nr" "$SPERRE"; then
+        sperre=$(label_alter "$nr" "$SPERRE")
+        if [ -n "$sperre" ] && [ "$sperre" -ge $((SPERRE_MAX_STUNDEN*60)) ] && ! kuerzlich_aktiv "$nr"; then
+          tun "$0" entsperren "$nr"
+          anstoss "$nr" "$l" "Lauf seit ${sperre} Minuten gesperrt, gilt als abgebrochen"
+        else
+          echo "#$nr: $l, Agent arbeitet (Sperre seit ${sperre:-?} min)"
+        fi
+      else
+        alter=$(label_alter "$nr" "$l")
+        if [ -n "$alter" ] && [ "$alter" -ge "$WARTE_MIN" ]; then
+          anstoss "$nr" "$l" "Label \`$l\` seit ${alter} Minuten ohne Agent"
+        else
+          echo "#$nr: $l seit ${alter:-?} min, noch im Zeitfenster"
+        fi
+      fi
+    done
+  done
+
+  # 2. Issues mit abgelaufener Sperre (Entwicklung vor dem PR abgebrochen)
+  gh api "$API/issues?state=open&labels=$(enc "$SPERRE")&per_page=100" --jq '.[] | select(.pull_request == null) | .number' |
+  while read -r nr; do
+    sperre=$(label_alter "$nr" "$SPERRE")
+    if [ -n "$sperre" ] && [ "$sperre" -ge $((SPERRE_MAX_STUNDEN*60)) ] && ! kuerzlich_aktiv "$nr"; then
+      echo "#$nr: Sperre seit ${sperre} min und seit ${AKTIV_MIN:-60} min keine Aktivität, Entwicklung gilt als abgebrochen → Sperre entfernt"
+      notiz "$nr" "Die Entwicklung war seit ${sperre} Minuten gesperrt und gilt als abgebrochen. Sperre entfernt."
+      tun "$0" entsperren "$nr"
+    else
+      echo "#$nr: Entwicklung läuft (Sperre seit ${sperre:-?} min)"
+    fi
+  done
+
+  # 3. Warteschlange
+  if [ -z "$("$0" laufend)" ]; then
+    local naechst; naechst=$("$0" naechstes-feature | cut -f1)
+    if [ -n "$naechst" ]; then
+      alter=$(label_alter "$naechst" "status:bereit")
+      if [ -n "$alter" ] && [ "$alter" -ge "$WARTE_MIN" ]; then
+        anstoss "$naechst" "status:bereit" "Feature wartet seit ${alter} Minuten, aber keine Entwicklung läuft"
+      else
+        echo "#$naechst: als nächstes dran, seit ${alter:-?} min bereit"
+      fi
+    else
+      echo "Warteschlange leer oder Voraussetzungen offen."
+    fi
+  else
+    echo "Pipeline belegt:"; "$0" laufend | sed 's/^/  /'
+  fi
 }
 
 # Prüft, ob ein PR gemergt werden darf. Gründe gehen auf stderr.
@@ -168,6 +288,8 @@ case "$cmd" in
     if [ "$erster" = "$token" ]; then echo "beansprucht"; else echo "Anderer Lauf war schneller ($erster)" >&2; exit 1; fi ;;
   anstossen)
     "$0" label-entfernen "$1" "status:bereit"; sleep 2; "$0" label-setzen "$1" "status:bereit" ;;
+  label-alter) label_alter "$1" "$2" ;;
+  waechter) waechter "${1:-}" ;;
   mergebar) mergebar "$1" >/dev/null ;;
   mergen)
     nr="$1"; erwartet="${2:-}"

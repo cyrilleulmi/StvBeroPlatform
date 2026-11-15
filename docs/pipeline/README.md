@@ -92,6 +92,7 @@ Stand 15.11.2026: erledigt.
 | StvBero Pipeline · Nacharbeit | `pipeline-entwicklung` | Pull request: Labeled | Labels is one of `pipeline:nacharbeit` |
 | StvBero Pipeline · Review | `pipeline-review` | Pull request: Labeled | Labels is one of `pipeline:review` |
 | StvBero Pipeline · Test | `pipeline-test` | Pull request: Labeled | Labels is one of `pipeline:test` |
+| StvBero Pipeline · Wächter | `pipeline-waechter` | Zeitplan: alle 2 Stunden | – |
 
 Was man beim Einrichten wissen muss:
 
@@ -122,6 +123,21 @@ Du kannst beliebig viele Features gleichzeitig auf `status:bereit` setzen. Die P
 5. Steht etwas auf `pipeline:blockiert`, hält die Warteschlange an, bis Cyrille entschieden hat. Danach geht es mit dem blockierten Eintrag weiter.
 
 Die Reihenfolge und Abhängigkeiten stehen im [Backlog](backlog.md).
+
+## Wächter: Abbrüche und verlorene Ereignisse
+
+Läuft das Usage-Kontingent aus, werden neue Läufe abgelehnt und laufende abgebrochen. GitHub-Ereignisse aus dieser Zeit gehen verloren. Ohne Hilfe bliebe die Pipeline dann stehen.
+
+Die Aufgabe «StvBero Pipeline · Wächter» läuft alle 2 Stunden und führt `scripts/pipeline.sh waechter` aus ([Skill](../../.claude/skills/pipeline-waechter/SKILL.md)). Sie erkennt:
+
+- **Abgebrochene Läufe:** Sperre älter als 3 Stunden und seit einer Stunde kein Push und keine Änderung. Sperre weg, Schritt neu anstossen. Damit lange Läufe nicht fälschlich als tot gelten, pusht die Entwicklung mindestens alle 30 Minuten einen Zwischenstand.
+- **Verlorene Ereignisse:** Ein PR steht seit 45 Minuten auf `pipeline:review`, `pipeline:test` oder `pipeline:nacharbeit`, aber kein Agent hat ihn gesperrt. Label neu setzen.
+- **Stehende Warteschlange:** Nichts läuft, ein Feature ist seit 45 Minuten bereit. Anstossen.
+- **Endlosschleifen:** Mehr als 3 Anstösse auf denselben Eintrag in 24 Stunden führen zu `pipeline:blockiert`.
+
+Selbst prüfen, ohne etwas zu ändern: `scripts/pipeline.sh waechter --trocken`.
+
+Nach einem Usage-Reset dauert es also höchstens gut 2 Stunden, bis die Pipeline von selbst weiterläuft. Schneller geht es, wenn du die Wächter-Aufgabe mit «Run now» startest.
 
 ## Grenzen und Kosten
 

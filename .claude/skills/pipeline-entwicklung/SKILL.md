@@ -27,7 +27,8 @@ Nichts gefunden: notieren und beenden.
 1. Die Sperre ist durch `beanspruchen` schon gesetzt.
 2. **Verstehen.** Issue, die genannten Anforderungen in `docs/anforderungen/`, [fachmodell.md](../../../docs/fachmodell.md), [testbarkeit.md](../../../docs/testbarkeit.md), [navigation.md](../../../docs/oberflaeche/navigation.md), [testdaten.md](../../../docs/testdaten.md), [zustaende.md](../../../docs/zustaende.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-grundlagen.md](../../../docs/design-grundlagen.md).
 3. **Unklarheiten:** Sinnvolle Annahme treffen und im PR unter «Annahmen» aufführen. Nicht nachfragen. Nur bei einem Widerspruch zu einer Anforderung mit Status «Entschieden»: `pipeline:blockiert` auf das Issue, Frage stellen, beenden.
-4. **Branch** von aktuellem `main`: `claude/f<nr>-<kurzname>`, z.B. `claude/f04-anmeldung`.
+4. **Branch** von aktuellem `main`: `claude/f<nr>-<kurzname>`, z.B. `claude/f04-anmeldung`. Gibt es schon einen `claude/f<nr>-…`-Branch von einem abgebrochenen Lauf, dort weitermachen statt neu anfangen.
+   **Zwischenstände pushen:** Mindestens alle 30 Minuten committen und auf den Branch pushen. Der [Wächter](../pipeline-waechter/SKILL.md) erkennt daran, dass der Lauf noch lebt. Ein Lauf ohne Push über eine Stunde gilt nach 3 Stunden Sperre als abgebrochen und wird neu gestartet.
 5. **Reihenfolge der Umsetzung:**
    1. API-Vertrag: `openapi.yaml` anpassen, falls nötig. `npx -y @redocly/cli lint docs/api/openapi.yaml` ohne Fehler und Warnungen.
    2. Backend: Migration, Domäne mit Regeln und Unit-Tests, REST-Ressourcen, Rechteprüfung mit 403-Tests, Seed-Daten gemäss testdaten.md.
