@@ -124,6 +124,8 @@ Die Seite `/dev-login` listet alle Seed-Personen mit Funktion und Team. Ein Klic
 Konventionen für E2E-Tests:
 
 - Locators in der Reihenfolge `getByRole` → `getByLabel` → `getByText` → `getByTestId`. Keine CSS- oder XPath-Selektoren.
+- **Einzige Ausnahme:** Dokument-Elemente ohne Rolle, die nicht im Accessibility-Tree erscheinen (`<html>`, z.B. für `data-theme`, und `<link>` im Kopf, z.B. das Manifest). Für sie gibt es in `e2e/tests/hilfen.ts` die Hilfen `dokumentWurzel(page)` und `kopfLink(page, rel)`; nur dort steht der CSS-Selektor. Tests verwenden diese Hilfen und schreiben selbst keinen. Braucht es ein weiteres solches Element, kommt dort eine Hilfe dazu.
+- `e2e/tests/nb17-keine-css-selektoren.spec.ts` prüft das statisch: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` sowie `css=`/`xpath=` ausserhalb von `hilfen.ts` lassen den Test fehlschlagen.
 - Kein `waitForTimeout`. Auf Zustände warten (`expect(...).toBeVisible()` usw.).
 - Jeder Test beginnt mit `POST /api/test/reset` und meldet sich über `POST /api/test/anmelden` an.
 - Jeder Test läuft in zwei Projekten: `mobil` (375×812, Touch) und `desktop` (1280×800).

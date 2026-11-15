@@ -1,4 +1,4 @@
-import { anmelden, barrierefrei, expect, reset, test } from './hilfen';
+import { anmelden, barrierefrei, dokumentWurzel, expect, kopfLink, reset, test } from './hilfen';
 
 /** F-00 · Grundgerüst (NF-01–NF-24, RR-05). Akzeptanzkriterien aus docs/pipeline/backlog.md. */
 
@@ -174,13 +174,13 @@ test.describe('Design', () => {
     expect(await hintergrund(page)).toBe(HELL);
 
     await umschalter.getByRole('radio', { name: 'Dunkel' }).check();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
     await barrierefrei(page);
 
     await page.reload();
     await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Dunkel' })).toBeChecked();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
 
     await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Hell' }).check();
@@ -188,7 +188,7 @@ test.describe('Design', () => {
     expect(await hintergrund(page)).toBe(HELL);
 
     await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' }).check();
-    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/);
+    await expect(dokumentWurzel(page)).not.toHaveAttribute('data-theme', /.*/);
     expect(await hintergrund(page)).toBe(DUNKEL);
     await page.reload();
     await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' })).toBeChecked();
@@ -210,7 +210,7 @@ test.describe('PWA', () => {
     await anmelden(page, 'anna');
     await page.goto('/');
 
-    const href = await page.locator('link[rel="manifest"]').getAttribute('href');
+    const href = await kopfLink(page, 'manifest').getAttribute('href');
     expect(href).toBe('manifest.webmanifest');
     const manifest = await (await page.request.get('/manifest.webmanifest')).json();
     expect(manifest).toMatchObject({ name: 'STV Bero', start_url: '/', display: 'standalone', lang: 'de-CH' });
