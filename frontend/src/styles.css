@@ -187,3 +187,198 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- F-01: Formulare, Listen, Chips, Meldungen (gemeinsam für alle Screens) ---- */
+
+.meldung-erfolg {
+  background: var(--primary-soft);
+  color: var(--text);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-icon);
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.meldung-hinweis {
+  background: var(--mustard-soft);
+  color: var(--text);
+  border: 1px solid var(--mustard);
+  border-radius: var(--radius-icon);
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.formular {
+  display: grid;
+  gap: 14px;
+}
+
+.feld {
+  display: grid;
+  gap: 6px;
+}
+
+.feld label,
+.feld .label {
+  font-weight: 700;
+}
+
+.feld input:not([type='checkbox']),
+.feld select {
+  min-height: var(--touch);
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-icon);
+  background: var(--surface);
+  color: var(--text);
+  font: 400 16px/1.2 var(--font);
+  width: 100%;
+}
+
+.feld input[aria-invalid='true'],
+.feld select[aria-invalid='true'] {
+  border-color: var(--coral);
+}
+
+.feldfehler {
+  color: var(--coral);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--primary);
+  flex: none;
+}
+
+.feldreihe {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .feldreihe {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.button-klein {
+  min-height: var(--touch);
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.liste > li + li {
+  border-top: 1px solid var(--border);
+}
+
+.zeile {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-height: 56px;
+  padding: 8px 0;
+}
+
+.zeile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.zeile-link .zeile-titel,
+.zeile .zeile-titel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.zeile-link app-icon {
+  color: var(--muted);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip[data-art='coach'],
+.chip[data-art='admin'] {
+  background: var(--blue-soft);
+}
+
+.chip[data-art='archiv'],
+.chip[data-art='geplant'] {
+  background: var(--mustard-soft);
+}
+
+.kopf {
+  display: grid;
+  gap: 6px;
+}
+
+/* Auf dem Seitenhintergrund in `text`: `primary` auf `bg` erreicht im Lightmode kein 4.5:1. */
+.zurueck {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-weight: 700;
+  justify-self: start;
+  color: var(--text);
+}
+
+.zurueck::before {
+  content: '‹';
+  margin-right: 6px;
+  font-size: 18px;
+}
+
+.abschnitt-titel {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.anzahl {
+  color: var(--muted);
+  font-weight: 600;
+}

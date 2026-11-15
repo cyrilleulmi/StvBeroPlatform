@@ -1,0 +1,98 @@
+<div class="kopf">
+  <a class="zurueck" routerLink="/verwaltung">{{ texte.verwaltung.zurVerwaltung }}</a>
+  <h1>{{ texte.saisons.titel }}</h1>
+</div>
+
+@if (!anmeldung.istAdmin()) {
+  <p class="meldung-fehler" role="alert">{{ texte.allgemein.keineBerechtigung }}</p>
+} @else {
+  @if (erfolg(); as meldung) {
+    <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+  }
+  @if (fehler(); as meldung) {
+    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  }
+
+  <section class="karte" aria-labelledby="saisons-liste" [attr.aria-busy]="laedt() ? 'true' : null">
+    <h2 id="saisons-liste" class="visuell-versteckt">{{ texte.saisons.liste }}</h2>
+    @if (laedt() && saisons().length === 0) {
+      <p class="leer">{{ texte.allgemein.laden }}</p>
+    } @else {
+      <ul class="liste" [attr.aria-label]="texte.saisons.liste">
+        @for (s of saisons(); track s.id) {
+          <li class="saison" [attr.aria-label]="s.name" [attr.data-testid]="'saison-' + s.id">
+            <div class="saison-kopf">
+              <span class="zeile-titel">{{ s.name }}</span>
+              <span
+                class="chip"
+                data-testid="saison-status"
+                [attr.data-art]="s.aktuell ? null : s.archiv ? 'archiv' : 'geplant'"
+                >{{ status(s) }}</span
+              >
+            </div>
+            <span class="nebentext">{{ texte.saisons.zeitraum(datum(s.von), datum(s.bis)) }}</span>
+            <div class="aktionen">
+              <a routerLink="/verwaltung/teams" [queryParams]="{ saison: s.id }">{{
+                texte.saisons.teamsAnsehen
+              }}</a>
+              @if (!s.aktuell) {
+                <button
+                  type="button"
+                  class="button button-sekundaer button-klein"
+                  [disabled]="speichert()"
+                  (click)="aktivieren(s)"
+                >
+                  {{ texte.saisons.aktivieren }}
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <form
+    class="karte formular"
+    (submit)="anlegen($event)"
+    novalidate
+    aria-labelledby="saison-neu-titel"
+  >
+    <h2 id="saison-neu-titel">{{ texte.saisons.neu }}</h2>
+    @for (f of felder; track f.feld) {
+      <div class="feld">
+        <label [for]="'saison-' + f.feld">{{ f.label }}</label>
+        <input
+          [id]="'saison-' + f.feld"
+          [type]="f.typ"
+          autocomplete="off"
+          [attr.maxlength]="f.typ === 'text' ? 20 : null"
+          [value]="neu()[f.feld]"
+          (input)="setzen(f.feld, $any($event.target).value)"
+          [attr.aria-invalid]="feldFehler()[f.feld] ? 'true' : null"
+          [attr.aria-describedby]="feldFehler()[f.feld] ? 'saison-' + f.feld + '-fehler' : null"
+        />
+        @if (feldFehler()[f.feld]; as m) {
+          <p class="feldfehler" [id]="'saison-' + f.feld + '-fehler'">{{ m }}</p>
+        }
+      </div>
+    }
+    <div class="feld">
+      <label for="saison-uebernehmen">{{ texte.saisons.uebernehmen }}</label>
+      <select
+        id="saison-uebernehmen"
+        (change)="setzen('uebernehmenAus', $any($event.target).value)"
+      >
+        <option value="" [selected]="neu().uebernehmenAus === ''">
+          {{ texte.saisons.nichtsUebernehmen }}
+        </option>
+        @for (s of saisons(); track s.id) {
+          <option [value]="s.id" [selected]="neu().uebernehmenAus === s.id">{{ s.name }}</option>
+        }
+      </select>
+    </div>
+    <button type="submit" class="button button-primaer" [disabled]="speichert()">
+      {{ texte.saisons.anlegen }}
+    </button>
+  </form>
+}

@@ -43,14 +43,19 @@ export const routes: Routes = [
         loadComponent: () => import('./seiten/teams/teams').then((m) => m.Teams),
       },
       {
+        path: 'teams/:teamId',
+        title: titel('Team'),
+        loadComponent: () => import('./seiten/teams/team').then((m) => m.Team),
+      },
+      {
         path: 'profil',
         title: titel('Profil'),
         loadComponent: () => import('./seiten/profil/profil').then((m) => m.Profil),
       },
       {
         path: 'verwaltung',
-        title: titel('Verwaltung'),
-        loadComponent: () => import('./seiten/verwaltung/verwaltung').then((m) => m.Verwaltung),
+        loadChildren: () =>
+          import('./seiten/verwaltung/verwaltung.routes').then((m) => m.VERWALTUNG_ROUTES),
       },
       {
         path: '**',

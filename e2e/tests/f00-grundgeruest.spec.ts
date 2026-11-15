@@ -82,7 +82,8 @@ test.describe('Start und Kacheln', () => {
   });
 
   test('F-00 K4: Teams zeigen ohne Teamzugehörigkeit einen leeren Zustand', async ({ page }) => {
-    await anmelden(page, 'petra');
+    // Seit F-01 hat nur Alex (Admin) keine Teamzugehörigkeit.
+    await anmelden(page, 'alex');
     await page.goto('/teams');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meine Teams');

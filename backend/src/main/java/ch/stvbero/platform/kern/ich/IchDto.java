@@ -1,6 +1,7 @@
 package ch.stvbero.platform.kern.ich;
 
 import ch.stvbero.platform.kern.saison.SaisonDto;
+import ch.stvbero.platform.kern.team.TeamzugehoerigkeitDto;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;

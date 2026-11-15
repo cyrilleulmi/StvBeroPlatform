@@ -137,6 +137,42 @@ stateDiagram-v2
     Gelesen --> [*]
 ```
 
+## Saison
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Geplant: angelegt (optional mit Übernahme, SAI-04)
+    Geplant --> Aktuell: zur aktuellen machen (SAI-06)
+    Aktuell --> Archiv: andere, spätere Saison wird aktuell
+    Archiv --> Aktuell: wieder zur aktuellen machen
+    Aktuell --> Geplant: frühere Saison wird aktuell
+```
+
+| Regel | Bezug |
+|---|---|
+| Es gibt immer genau eine aktuelle Saison. Ohne Angabe von `saison` gilt sie. | SAI-03 |
+| «Archiv» ist jede Saison, die vor der aktuellen beginnt. Teams und Zugehörigkeiten darin sind nur lesbar: Ändern ergibt 409 mit Regel SAI-02. | SAI-02 |
+| Eine neue Saison ist zuerst «geplant» und kann angepasst werden, bevor sie aktuell wird. | SAI-04 |
+| Übernahme kopiert Teams und Teamzugehörigkeiten (ab F-02 auch Linien). Die Quelle bleibt unverändert. | SAI-04 |
+| Name schon vergeben oder Zeitraum überschneidet sich mit einer anderen Saison: 409. Auch zwei gleichzeitige Anfragen (Doppelklick) ergeben 201 und 409, nie 500. Ende vor Beginn: 400. | SAI-01 |
+
+## Teamzugehörigkeit
+
+| Regel | Bezug |
+|---|---|
+| Pro Person, Team und Saison genau eine Funktion. Eine zweite Aufnahme ergibt 409 mit Regel PTF-04, auch wenn beide Anfragen gleichzeitig ankommen. Funktion wechseln geht über «Funktion ändern». | PTF-04 |
+| Coaches stehen nie bei den Spielerinnen. | PTF-07 |
+| Entfernen löscht nur die Zugehörigkeit; die Person bleibt bestehen. | PTF-01 |
+| Personen, Teams, Zugehörigkeiten und Saisons verwalten nur Admins (403). Ein Team sehen nur seine Mitglieder und Admins (403). | RR-04, RR-07 |
+| Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, Regel RR-04). | RR-04 |
+
+## Formulare
+
+| Regel | Bezug |
+|---|---|
+| Solange eine Anfrage läuft, ist der Absende-Button gesperrt und weitere Klicks (auch ein Doppelklick) lösen keine zweite Anfrage aus. | – |
+
 ## Sitzung
 
 ```mermaid
