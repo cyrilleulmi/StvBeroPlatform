@@ -92,8 +92,11 @@ public class TeamResource {
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
     @APIResponse(responseCode = "404", description = "Nicht gefunden",
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
-    public TeamDto aendern(@PathParam("teamId") UUID teamId, @Valid @NotNull TeamSchreiben eingabe) {
-        return teams.aendern(anmeldung.person(), teamId, eingabe);
+    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+            content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
+    public TeamDto aendern(@PathParam("teamId") UUID teamId, @QueryParam("saison") UUID saison,
+                           @Valid @NotNull TeamSchreiben eingabe) {
+        return teams.aendern(anmeldung.person(), teamId, saison, eingabe);
     }
 
     @POST

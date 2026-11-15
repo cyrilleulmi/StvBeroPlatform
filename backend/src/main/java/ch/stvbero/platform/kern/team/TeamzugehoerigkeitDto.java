@@ -11,9 +11,9 @@ public record TeamzugehoerigkeitDto(TeamName team, PersonKurz person, Funktion f
     public record TeamName(UUID id, String name) {
     }
 
-    /** Linien (gruppeId) kommen mit F-02; bis dahin immer ohne Gruppe. */
+    /** Teamname aus der Saison der Zugehörigkeit, damit das Archiv den damaligen Namen zeigt (SAI-02). Linien (gruppeId) kommen mit F-02; bis dahin immer ohne Gruppe. */
     public static TeamzugehoerigkeitDto von(Teamzugehoerigkeit z) {
-        return new TeamzugehoerigkeitDto(new TeamName(z.team.id, z.team.name), PersonKurz.von(z.person),
+        return new TeamzugehoerigkeitDto(new TeamName(z.team.id, z.team.nameIn(z.saison)), PersonKurz.von(z.person),
                 z.funktion, z.saison.id, null);
     }
 }

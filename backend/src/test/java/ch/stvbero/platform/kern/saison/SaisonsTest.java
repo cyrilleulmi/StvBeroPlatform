@@ -80,6 +80,29 @@ class SaisonsTest {
                 .body("zugehoerigkeiten[0].saisonId", equalTo(id));
     }
 
+    /** Nachbesserung #21: Die neue Saison übernimmt den aktuellen Namen; umbenennen dort ändert die Vorsaison nicht (SAI-02). */
+    @Test
+    void sai02TeamnameGiltProSaison() {
+        String team1 = "10000000-0000-4000-8000-000000000001";
+        given().cookie("stv_sitzung", alex).contentType(ContentType.JSON).body("{\"name\":\"Damen 1\"}")
+                .put("/api/teams/" + team1).then().statusCode(200);
+        String id = given().cookie("stv_sitzung", alex).contentType(ContentType.JSON).body(NEUE)
+                .post("/api/saisons").then().statusCode(201).extract().path("id");
+
+        given().cookie("stv_sitzung", alex).queryParam("saison", id).get("/api/teams").then().statusCode(200)
+                .body("name", contains("Damen 1", "Team 2", "Team 3"));
+
+        given().cookie("stv_sitzung", alex).queryParam("saison", id).contentType(ContentType.JSON)
+                .body("{\"name\":\"Damen A\"}").put("/api/teams/" + team1).then().statusCode(200)
+                .body("name", equalTo("Damen A"));
+        given().cookie("stv_sitzung", alex).queryParam("saison", id).get("/api/teams/" + team1).then().statusCode(200)
+                .body("name", equalTo("Damen A"));
+        given().cookie("stv_sitzung", alex).get("/api/teams/" + team1).then().statusCode(200)
+                .body("name", equalTo("Damen 1"));
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).get("/api/teams/" + team1).then().statusCode(200)
+                .body("name", equalTo("Team 1"));
+    }
+
     @Test
     void ohneUebernahmeIstDieNeueSaisonLeer() {
         String id = given().cookie("stv_sitzung", alex).contentType(ContentType.JSON)

@@ -7,6 +7,7 @@ import ch.stvbero.platform.kern.team.TeamzugehoerigkeitDto;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -33,8 +34,12 @@ public class PersonService {
         wer.pruefeAdmin();
         Person p = finden(id);
         List<TeamzugehoerigkeitDto> zugehoerigkeiten = Teamzugehoerigkeit.<Teamzugehoerigkeit>list(
-                        "person.id = ?1 order by saison.von desc, team.name", id)
-                .stream().map(TeamzugehoerigkeitDto::von).toList();
+                        "person.id = ?1", id).stream()
+                // Neueste Saison zuerst, darin nach dem Teamnamen dieser Saison (SAI-02).
+                .sorted(Comparator.comparing((Teamzugehoerigkeit z) -> z.saison.von).reversed()
+                        .thenComparing(z -> z.team.nameIn(z.saison), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(z -> z.team.id))
+                .map(TeamzugehoerigkeitDto::von).toList();
         return new PersonDetailDto(p.id, p.vorname, p.nachname, p.email, p.admin, zugehoerigkeiten);
     }
 

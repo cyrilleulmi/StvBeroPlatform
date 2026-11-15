@@ -21,8 +21,13 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class TeamService {
 
-    private static final Comparator<Team> NACH_NAME = Comparator
-            .comparing((Team t) -> t.name, String.CASE_INSENSITIVE_ORDER).thenComparing(t -> t.id);
+    private static final Comparator<TeamDto> NACH_NAME = Comparator
+            .comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id);
+
+    /** Teamzugehörigkeiten nach Teamname in ihrer Saison (SAI-02). */
+    static final Comparator<TeamzugehoerigkeitDto> NACH_TEAMNAME = Comparator
+            .comparing((TeamzugehoerigkeitDto z) -> z.team().name(), String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(z -> z.team().id());
 
     /** Teams einer Saison. Admins sehen alle, sonst nur die eigenen (PTF-12). */
     public List<TeamDto> liste(Angemeldet wer, UUID saisonId) {
@@ -30,11 +35,11 @@ public class TeamService {
         Map<UUID, Funktion> meine = Teamzugehoerigkeit.<Teamzugehoerigkeit>list("person.id = ?1 and saison.id = ?2",
                         wer.personId(), saison.id).stream()
                 .collect(Collectors.toMap(z -> z.team.id, z -> z.funktion));
-        List<Team> teams = Team.list("select t from Team t join t.saisons s where s.id = ?1", saison.id);
+        List<TeamSaison> teams = TeamSaison.list("saison.id", saison.id);
         return teams.stream()
-                .filter(t -> wer.admin() || meine.containsKey(t.id))
+                .filter(ts -> wer.admin() || meine.containsKey(ts.team.id))
+                .map(ts -> TeamDto.von(ts, meine.get(ts.team.id)))
                 .sorted(NACH_NAME)
-                .map(t -> TeamDto.von(t, meine.get(t.id)))
                 .toList();
     }
 
@@ -53,7 +58,7 @@ public class TeamService {
         }
         TeamRegeln.Aufteilung aufteilung = TeamRegeln.aufteilen(mitglieder(zugehoerigkeiten));
         // Linien und Goalies kommen mit F-02. Bis dahin stehen alle Spielerinnen unter «ohne Linie».
-        return new TeamDetailDto(team.id, team.name, team.suTeamId, meine.orElse(null), aufteilung.coaches(),
+        return new TeamDetailDto(team.id, team.nameIn(saison), team.suTeamId, meine.orElse(null), aufteilung.coaches(),
                 new TeamDetailDto.Gruppeneinteilung(List.of(), aufteilung.spielerinnen()));
     }
 
@@ -64,18 +69,25 @@ public class TeamService {
         saison.pruefeBeschreibbar();
         Team team = new Team();
         team.id = UUID.randomUUID();
-        team.name = eingabe.name().strip();
-        team.saisons.add(saison);
         team.persist();
-        return TeamDto.von(team, null);
+        team.aufnehmenIn(saison, eingabe.name().strip());
+        return TeamDto.von(team.in(saison).orElseThrow(), null);
     }
 
+    /**
+     * Team umbenennen. Der Name gilt nur in dieser Saison (Standard: aktuelle). Archivierte Saisons
+     * bleiben unverändert (409, SAI-02).
+     */
     @Transactional
-    public TeamDto aendern(Angemeldet wer, UUID teamId, TeamSchreiben eingabe) {
+    public TeamDto aendern(Angemeldet wer, UUID teamId, UUID saisonId, TeamSchreiben eingabe) {
         wer.pruefeAdmin();
         Team team = finden(teamId);
-        team.name = eingabe.name().strip();
-        return TeamDto.von(team, null);
+        Saison saison = Saison.oderAktuelle(saisonId);
+        TeamSaison ts = team.in(saison).orElseThrow(
+                () -> FachFehler.nichtGefunden("Dieses Team gibt es in der Saison " + saison.name + " nicht."));
+        saison.pruefeBeschreibbar();
+        ts.name = eingabe.name().strip();
+        return TeamDto.von(ts, null);
     }
 
     /** Person mit Funktion ins Team aufnehmen. Pro Team und Saison genau eine Funktion (PTF-04). */
@@ -87,9 +99,8 @@ public class TeamService {
         saison.pruefeBeschreibbar();
         Person person = PersonService.finden(eingabe.personId());
         TeamRegeln.pruefeAufnahme(mitglieder(imTeam(team, saison)), person.id);
-        if (!team.gehoertZu(saison)) {
-            team.saisons.add(saison);
-        }
+        // Kommt das Team neu in die Saison, übernimmt es den Namen aus der letzten Saison, in der es bestand.
+        team.aufnehmenIn(saison, letzterName(team));
         Teamzugehoerigkeit z = Teamzugehoerigkeit.neu(person, team, saison, eingabe.funktion());
         z.persist();
         // Gleichzeitige Aufnahme derselben Person (Doppelklick): 409 statt 500 (PTF-04).
@@ -120,8 +131,8 @@ public class TeamService {
 
     /** Teamzugehörigkeiten der angemeldeten Person in der aktuellen Saison, nach Teamname (PTF-12). */
     public List<TeamzugehoerigkeitDto> meine(UUID personId, Saison saison) {
-        return Teamzugehoerigkeit.<Teamzugehoerigkeit>list("person.id = ?1 and saison.id = ?2 order by team.name",
-                personId, saison.id).stream().map(TeamzugehoerigkeitDto::von).toList();
+        return Teamzugehoerigkeit.<Teamzugehoerigkeit>list("person.id = ?1 and saison.id = ?2", personId, saison.id)
+                .stream().map(TeamzugehoerigkeitDto::von).sorted(NACH_TEAMNAME).toList();
     }
 
     private Teamzugehoerigkeit zugehoerigkeit(UUID teamId, UUID personId, UUID saisonId) {
@@ -130,6 +141,11 @@ public class TeamService {
         return Teamzugehoerigkeit.<Teamzugehoerigkeit>find("team.id = ?1 and person.id = ?2 and saison.id = ?3",
                         team.id, personId, saison.id).firstResultOptional()
                 .orElseThrow(() -> FachFehler.nichtGefunden("Diese Person ist in dieser Saison nicht im Team."));
+    }
+
+    private static String letzterName(Team team) {
+        return team.saisons.stream().max(Comparator.comparing((TeamSaison ts) -> ts.saison.von))
+                .map(ts -> ts.name).orElseThrow();
     }
 
     private static List<Teamzugehoerigkeit> imTeam(Team team, Saison saison) {

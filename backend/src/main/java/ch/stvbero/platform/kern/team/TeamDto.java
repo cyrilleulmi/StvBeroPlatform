@@ -7,7 +7,8 @@ import java.util.UUID;
 @Schema(name = "Team")
 public record TeamDto(UUID id, String name, Integer suTeamId, Funktion meineFunktion) {
 
-    public static TeamDto von(Team t, Funktion meineFunktion) {
-        return new TeamDto(t.id, t.name, t.suTeamId, meineFunktion);
+    /** Team mit dem Namen, den es in dieser Saison trägt (SAI-02). */
+    public static TeamDto von(TeamSaison ts, Funktion meineFunktion) {
+        return new TeamDto(ts.team.id, ts.name, ts.team.suTeamId, meineFunktion);
     }
 }

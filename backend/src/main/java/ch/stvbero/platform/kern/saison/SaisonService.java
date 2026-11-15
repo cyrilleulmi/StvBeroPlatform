@@ -3,7 +3,7 @@ package ch.stvbero.platform.kern.saison;
 import ch.stvbero.platform.kern.anmeldung.Angemeldet;
 import ch.stvbero.platform.kern.fehler.Eindeutig;
 import ch.stvbero.platform.kern.fehler.FachFehler;
-import ch.stvbero.platform.kern.team.Team;
+import ch.stvbero.platform.kern.team.TeamSaison;
 import ch.stvbero.platform.kern.team.Teamzugehoerigkeit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -56,9 +56,10 @@ public class SaisonService {
 
     /** Teams und Teamzugehörigkeiten der Vorsaison als Ausgangslage (SAI-04). Linien folgen mit F-02. */
     private void uebernehmen(Saison quelle, Saison ziel) {
-        List<Team> teams = Team.list("select t from Team t join t.saisons s where s.id = ?1", quelle.id);
-        for (Team team : teams) {
-            team.saisons.add(ziel);
+        // Das Team behält in der neuen Saison seinen Namen aus der Vorsaison (SAI-02: Namen gelten pro Saison).
+        List<TeamSaison> teams = TeamSaison.list("saison.id", quelle.id);
+        for (TeamSaison ts : teams) {
+            ts.team.aufnehmenIn(ziel, ts.name);
         }
         List<Teamzugehoerigkeit> zugehoerigkeiten = Teamzugehoerigkeit.list("saison.id", quelle.id);
         for (Teamzugehoerigkeit z : zugehoerigkeiten) {

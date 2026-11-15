@@ -164,6 +164,42 @@ class TeamsTest {
                 .body("{\"name\":\"Team X\"}").post("/api/teams").then().statusCode(409);
     }
 
+    /** Nachbesserung #21: Umbenennen in der aktuellen Saison lässt das Archiv unverändert (SAI-02). */
+    @Test
+    void sai02UmbenennenVeraendertDasArchivNicht() {
+        given().cookie("stv_sitzung", alex).contentType(ContentType.JSON).body("{\"name\":\"Damen 1\"}")
+                .put("/api/teams/" + TEAM_1).then().statusCode(200).body("name", equalTo("Damen 1"));
+
+        // Aktuelle Saison: neuer Name
+        given().cookie("stv_sitzung", alex).get("/api/teams/" + TEAM_1).then().statusCode(200)
+                .body("name", equalTo("Damen 1"));
+        given().cookie("stv_sitzung", alex).get("/api/teams").then().statusCode(200)
+                .body("name", contains("Damen 1", "Team 2", "Team 3"));
+        // Archiv: weiterhin der damalige Name
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).get("/api/teams/" + TEAM_1).then().statusCode(200)
+                .body("name", equalTo("Team 1"));
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).get("/api/teams").then().statusCode(200)
+                .body("name", contains("Team 1"));
+        // Personendetail: Zugehörigkeit im Archiv mit dem damaligen Namen (Vera war nur 2025/26 in Team 1)
+        given().cookie("stv_sitzung", alex).get("/api/personen/" + VERA).then().statusCode(200)
+                .body("zugehoerigkeiten.team.name", contains("Team 1"))
+                .body("zugehoerigkeiten.saisonId", contains(SAISON_2025));
+        // Mein Bereich zeigt den aktuellen Namen
+        given().cookie("stv_sitzung", anmelden("petra")).get("/api/ich").then().statusCode(200)
+                .body("zugehoerigkeiten.team.name", contains("Damen 1", "Team 2"));
+    }
+
+    @Test
+    void sai02ArchivLaesstSichNichtUmbenennen() {
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).contentType(ContentType.JSON)
+                .body("{\"name\":\"Team X\"}").put("/api/teams/" + TEAM_1).then().statusCode(409)
+                .body("regel", equalTo("SAI-02"));
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).contentType(ContentType.JSON)
+                .body("{\"name\":\"Team X\"}").put("/api/teams/" + TEAM_2).then().statusCode(404);
+        given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).get("/api/teams/" + TEAM_1).then().statusCode(200)
+                .body("name", equalTo("Team 1"));
+    }
+
     @Test
     void teamDasEsInDerSaisonNichtGibt() {
         given().cookie("stv_sitzung", alex).queryParam("saison", SAISON_2025).get("/api/teams/" + TEAM_2).then().statusCode(404);
