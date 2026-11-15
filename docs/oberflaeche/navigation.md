@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) und F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons).
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) und F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie).
 
 ## Navigation
 
@@ -52,8 +52,8 @@ flowchart LR
 | `/termine/:id/aufgebot` | Aufgebot | Coach | Auswahl nach Linien gruppiert, Antwortstatus daneben, veröffentlichen | F-05 |
 | `/serien/:id` | Serie | Coach | Regel, Teams, Ausnahmen (Ferien) | F-03 |
 | `/teams` | Meine Teams | angemeldet | Eigene Teams der aktuellen Saison mit eigener Funktion (PTF-12), Link auf `/teams/:id` | F-01 |
-| `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), ab F-02 nach Linie. `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
-| `/teams/:id/linien` | Linien | Coach | Linien anlegen, umbenennen, sortieren, Spielerinnen zuweisen | F-02 |
+| `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), Spielerinnen nach Linie (Listen mit dem Gruppennamen, leere Gruppen fehlen). Coaches und Admins sehen den Link «Linien einteilen». `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
+| `/teams/:id/linien` | Linien | Coach, Admin (andere Mitglieder lesend) | Linien hinzufügen, umbenennen, sortieren («<Linie> nach oben/unten»), löschen (Dialog), Spielerinnen per Drag & Drop oder Auswahlfeld «Linie von <Name>» zuweisen; speichert sofort. Ohne Zugehörigkeit «Keine Berechtigung». Aktuelle Saison | F-02 |
 | `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, als gelesen markieren | F-06 |
 | `/profil` | Profil | angemeldet | Name, Hell/Dunkel/System, Abmelden | F-00 |
 | `/verwaltung` | Verwaltung | Admin | Einstieg: Links «Personen», «Teams verwalten», «Saisons». Andere sehen «Keine Berechtigung» | F-00, F-01 |
@@ -76,6 +76,7 @@ Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert
 | Absage-Grund | Antwort «nicht dabei» (optional, überspringbar) | «Nicht dabei» |
 | Stellvertretend antworten | Coach in der Übersicht, Menü bei einer Person | «Antwort für <Name> eintragen» |
 | Termin absagen | Termin bearbeiten | «Termin absagen» |
+| Linie löschen | Linien, «<Linie> löschen» | «<Linie> löschen?» |
 | Aufgebot veröffentlichen | Aufgebot | «Aufgebot veröffentlichen?» |
 
 ## Test-IDs
@@ -150,9 +151,11 @@ Zähler-Elemente tragen `data-zaehler="dabei|nicht-dabei|vielleicht|offen"`.
 | Test-ID | Element |
 |---|---|
 | `linien-verwaltung` | Linien-Screen eines Teams |
-| `gruppe-<gruppeId>` | Eine Linie oder Goalies |
+| `gruppe-<gruppeId>` | Eine Linie oder Goalies (`section`, benannt nach der Überschrift) |
+| `gruppe-ohne-linie` | Gruppe «Ohne Linie» im Linien-Screen (immer sichtbar, leer mit Text «Alle Spielerinnen sind eingeteilt.») |
+| `spielerin-<personId>` | Spielerin im Linien-Screen (`li` mit Namen als `aria-label`, ziehbar für Coaches) |
 | `linie-hinzufuegen` | Button «Linie hinzufügen» |
-| `zuweisung-<personId>` | Auswahlfeld «Linie» einer Spielerin (Alternative zu Drag & Drop) |
+| `zuweisung-<personId>` | Auswahlfeld «Linie von <Name>» einer Spielerin (Alternative zu Drag & Drop). Werte: Gruppen-IDs, leer = «Ohne Linie» |
 
 ## Darstellungsregeln, die Tests betreffen
 

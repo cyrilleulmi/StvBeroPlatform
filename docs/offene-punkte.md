@@ -32,6 +32,8 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-34 | Bekommt eine neu erfasste Person automatisch ein Konto? | Annahme F-01: nein. Das Konto entsteht mit dem Anmeldeverfahren (O-01). Neue Personen können sich im Testmodus nicht anmelden. |
 | O-35 | Dürfen alte Saisons nachträglich korrigiert werden? | Annahme F-01: nein, Saisons vor der aktuellen sind nur lesbar (SAI-02). Eine geplante Saison nach der aktuellen ist änderbar. |
 | O-36 | Wie entsteht in einer frischen Installation die erste aktuelle Saison? | Ohne aktuelle Saison zeigt die App allen, auch Admins, nur den Hinweis `/keine-saison` (Nachbesserung #13). Die Verwaltung der Saisons ist so nicht erreichbar. Annahme: Die erste Saison wird bei der Einrichtung angelegt (Seed bzw. Migration beim Produktivstart). Alternative: Admins sehen auf dem Hinweis einen Link zu `/verwaltung/saisons`. |
+| O-37 | Dürfen zwei Linien eines Teams gleich heissen? | Annahme F-02: nein, Namen sind pro Team eindeutig (ohne Gross-/Kleinschreibung), damit das Auswahlfeld eindeutig ist (409, LIN-09). |
+| O-38 | Lassen sich die Goalies umbenennen? | Annahme F-02: nein, «Goalies» ist fest (409, LIN-05). |
 
 ## Pipeline
 

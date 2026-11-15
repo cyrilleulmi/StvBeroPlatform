@@ -65,7 +65,7 @@
         {{ g.name }} <span class="anzahl">{{ g.spielerinnen.length }}</span>
       </h2>
       @if (darfBearbeiten() && g.art === 'LINIE' && umbenennenId() !== g.id) {
-        <div class="knoepfe">
+        <div class="knoepfe reihenfolge">
           <button
             type="button"
             class="icon-knopf"
@@ -88,6 +88,8 @@
           >
             <app-icon name="chevron-down" [groesse]="20" />
           </button>
+        </div>
+        <div class="knoepfe aktionen">
           <button
             type="button"
             class="button button-sekundaer button-klein"

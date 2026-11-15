@@ -28,15 +28,30 @@
 }
 
 .gruppe-kopf {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
 
 .gruppe-kopf .abschnitt-titel {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Mobil: Pfeile neben dem Titel, Umbenennen und Löschen darunter */
+.gruppe-kopf .aktionen {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 640px) {
+  .gruppe-kopf {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .gruppe-kopf .aktionen {
+    grid-column: auto;
+  }
 }
 
 .knoepfe {

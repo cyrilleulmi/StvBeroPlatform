@@ -155,7 +155,7 @@ stateDiagram-v2
 | Ist (noch) keine Saison aktuell, z.B. in einer frischen Installation ohne Seed, antwortet `GET /api/ich` und jede Anfrage ohne `saison` mit 409 «Keine aktuelle Saison» (Regel SAI-03). Die Oberfläche leitet dann jede Route auf den Hinweis `/keine-saison` um. Den Hinweis zeigt sie nur in diesem Zustand: direkt geöffnet ohne Anmeldung geht es zur Anmeldung, mit aktueller Saison weiter zum Ziel. | SAI-03 |
 | «Archiv» ist jede Saison, die vor der aktuellen beginnt. Teams und Zugehörigkeiten darin sind nur lesbar: Ändern ergibt 409 mit Regel SAI-02. | SAI-02 |
 | Eine neue Saison ist zuerst «geplant» und kann angepasst werden, bevor sie aktuell wird. | SAI-04 |
-| Übernahme kopiert Teams und Teamzugehörigkeiten (ab F-02 auch Linien). Die Quelle bleibt unverändert. | SAI-04 |
+| Übernahme kopiert Teams, Teamzugehörigkeiten und Linien mit Namen, Reihenfolge und Zuweisungen. Die Quelle bleibt unverändert. | SAI-04, LIN-11 |
 | Name schon vergeben oder Zeitraum überschneidet sich mit einer anderen Saison: 409. Auch zwei gleichzeitige Anfragen (Doppelklick) ergeben 201 und 409, nie 500. Ende vor Beginn: 400. | SAI-01 |
 
 ## Teamzugehörigkeit
@@ -168,12 +168,25 @@ stateDiagram-v2
 | Personen, Teams, Zugehörigkeiten und Saisons verwalten nur Admins (403). Ein Team sehen nur seine Mitglieder und Admins (403). | RR-04, RR-07 |
 | Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, Regel RR-04). | RR-04 |
 
+## Linien
+
+| Regel | Bezug |
+|---|---|
+| Linien und Goalies gehören zu einem Team in einer Saison. Die API arbeitet immer mit der aktuellen Saison; das Archiv zeigt seine Einteilung unverändert. | LIN-03, LIN-11, SAI-02 |
+| Jedes Team hat pro Saison genau eine Gruppe «Goalies». Sie entsteht mit dem Team (bzw. wenn es in eine Saison kommt) und lässt sich weder löschen noch umbenennen noch verschieben (409, Regel LIN-05). | LIN-05 |
+| Eine Spielerin ist pro Team in höchstens einer Gruppe. Eine neue Zuweisung ersetzt die bisherige; `gruppeId: null` heisst «ohne Linie». Zwei gleichzeitige Zuweisungen ergeben nie 500. | LIN-02, LIN-06 |
+| Nur Personen mit Funktion «Spielerin» im Team sind zuweisbar (sonst 409, Regel LIN-10). Wechselt eine Spielerin zur Coach, verliert sie ihre Zuweisung. | LIN-10 |
+| Neue Linie ohne Angabe kommt ans Ende. Verschieben und Löschen nummerieren die Linien neu (1, 2, …, ohne Lücke). Die Oberfläche schlägt «Linie n» mit dem nächsten freien n vor. | LIN-09 |
+| Namen sind pro Team eindeutig, ohne Gross-/Kleinschreibung, auch gegenüber «Goalies» (409, Regel LIN-09). | LIN-09 |
+| Gelöschte Linie: ihre Spielerinnen sind danach «Ohne Linie». | LIN-06 |
+| Ändern dürfen Coaches des Teams und Admins (sonst 403), ansehen alle Mitglieder des Teams und Admins. | LIN-07, RR-03, RR-07 |
+
 ## Formulare
 
 | Regel | Bezug |
 |---|---|
 | Solange eine Anfrage läuft, ist der Absende-Button gesperrt und weitere Klicks (auch ein Doppelklick) lösen keine zweite Anfrage aus. | – |
-| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
+| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
 
 ## Sitzung
 
