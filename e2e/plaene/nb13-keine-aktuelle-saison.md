@@ -39,3 +39,11 @@ Allgemein für jeden Fall:
 | K2.11 Ohne Anmeldung | Ohne Sitzung `/teams` öffnen | Anmeldung (`/dev-login?ziel=%2Fteams`), nicht der Saison-Hinweis |
 | K2.12 Darkmode | K2.1 mit `prefers-color-scheme: dark` | Text und Buttons gut lesbar, nichts Weisses auf Weiss |
 | K2.13 Mit Saison | Seed (aktuelle Saison vorhanden), als `anna` `/` | Normale Startseite «Hallo Anna», keine Weiterleitung (Regression) |
+| K2.14 Direktaufruf | Seed (aktuelle Saison vorhanden), a) ohne Anmeldung, b) als `anna`: `/keine-saison` direkt öffnen | Kein falscher Hinweis: a) Anmeldung (Zugriff «angemeldet», navigation.md), b) Weiter zum Ziel bzw. Startseite, weil es eine aktuelle Saison gibt |
+| K2.15 Doppelklick Abmelden | Ohne aktuelle Saison als `anna` auf dem Hinweis Doppelklick auf «Abmelden» | Abgemeldet, kein 500 von `POST /api/abmelden` |
+
+## Ergebnis Runde 0 (Stand `d3ea152`)
+
+- K1.1–K1.6, K2.1–K2.13 bestanden (mobil, Desktop für K2.1/K2.3, Darkmode).
+- K2.14 nicht bestanden: Hinweis «Noch keine aktuelle Saison» erscheint auch ohne Anmeldung und mit aktueller Saison.
+- K2.15 nicht bestanden: zweites `POST /api/abmelden` endet mit 500 (`OptimisticLockException` in `IchResource.abmelden`). Gleich bei «Abmelden» in der Navigation auf `main`, deshalb eigene Nachbesserung.
