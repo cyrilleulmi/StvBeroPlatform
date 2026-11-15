@@ -18,7 +18,7 @@ import { funktionText, name } from '../../kern/format';
 import { TEXTE } from '../../kern/texte';
 
 /**
- * Team: Coaches und Spielerinnen getrennt (PTF-07). Linien kommen mit F-02; bis dahin eine Liste.
+ * Team: Coaches und Spielerinnen getrennt (PTF-07), die Spielerinnen nach Linie (LIN-12).
  * `?saison=<id>` zeigt eine andere Saison, z.B. das Archiv (SAI-02).
  */
 @Component({
@@ -66,17 +66,30 @@ import { TEXTE } from '../../kern/texte';
           aria-labelledby="team-spielerinnen-titel"
           data-testid="team-spielerinnen"
         >
-          <h2 id="team-spielerinnen-titel" class="abschnitt-titel">
-            {{ texte.teams.spielerinnen }} <span class="anzahl">{{ spielerinnen().length }}</span>
-          </h2>
+          <div class="spielerinnen-kopf">
+            <h2 id="team-spielerinnen-titel" class="abschnitt-titel">
+              {{ texte.teams.spielerinnen }} <span class="anzahl">{{ spielerinnen().length }}</span>
+            </h2>
+            @if (darfLinienBearbeiten()) {
+              <a
+                class="button button-sekundaer button-klein"
+                [routerLink]="['/teams', t.id, 'linien']"
+                >{{ texte.teams.linienBearbeiten }}</a
+              >
+            }
+          </div>
           @if (spielerinnen().length === 0) {
             <p class="leer">{{ texte.teams.keineSpielerinnen }}</p>
           } @else {
-            <ul class="liste" [attr.aria-label]="texte.teams.spielerinnen">
-              @for (p of spielerinnen(); track p.id) {
-                <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
-              }
-            </ul>
+            <!-- Nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). Leere Gruppen fehlen. -->
+            @for (g of gruppen(); track g.schluessel) {
+              <h3 class="gruppe-titel" [id]="'team-gruppe-' + g.schluessel">{{ g.name }}</h3>
+              <ul class="liste" [attr.aria-labelledby]="'team-gruppe-' + g.schluessel">
+                @for (p of g.spielerinnen; track p.id) {
+                  <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
+                }
+              </ul>
+            }
           }
         </section>
       }
@@ -87,6 +100,25 @@ import { TEXTE } from '../../kern/texte';
     .abschnitte {
       display: grid;
       gap: var(--abschnitt);
+    }
+    .spielerinnen-kopf {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .spielerinnen-kopf .abschnitt-titel {
+      margin: 0;
+    }
+    .gruppe-titel {
+      margin: 12px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
     }
   `,
 })
@@ -107,7 +139,30 @@ export class Team {
   protected readonly laedt = signal(true);
   protected readonly fehler = signal<string | null>(null);
 
-  /** Alle Spielerinnen: nach Gruppen (ab F-02), dann ohne Linie. Coaches sind nie dabei (PTF-07). */
+  /** Nicht leere Gruppen in Anzeigereihenfolge, zuletzt «Ohne Linie». */
+  protected readonly gruppen = computed(() => {
+    const t = this.team();
+    if (!t) return [];
+    return [
+      ...t.einteilung.gruppen.map((g) => ({
+        schluessel: g.id,
+        name: g.name,
+        spielerinnen: g.spielerinnen,
+      })),
+      {
+        schluessel: 'ohne-linie',
+        name: TEXTE.linien.ohneLinie,
+        spielerinnen: t.einteilung.ohneLinie,
+      },
+    ].filter((g) => g.spielerinnen.length > 0);
+  });
+
+  /** Coaches des Teams und Admins teilen die Linien ein (LIN-07), nur in der aktuellen Saison. */
+  protected readonly darfLinienBearbeiten = computed(
+    () => !this.saison() && (this.anmeldung.istAdmin() || this.team()?.meineFunktion === 'COACH'),
+  );
+
+  /** Alle Spielerinnen: nach Gruppen, dann ohne Linie. Coaches sind nie dabei (PTF-07). */
   protected readonly spielerinnen = computed<PersonKurz[]>(() => {
     const t = this.team();
     if (!t) return [];

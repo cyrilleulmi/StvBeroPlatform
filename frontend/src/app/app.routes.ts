@@ -55,6 +55,11 @@ export const routes: Routes = [
         loadComponent: () => import('./seiten/teams/team').then((m) => m.Team),
       },
       {
+        path: 'teams/:teamId/linien',
+        title: titel('Linien'),
+        loadComponent: () => import('./seiten/teams/linien').then((m) => m.Linien),
+      },
+      {
         path: 'profil',
         title: titel('Profil'),
         loadComponent: () => import('./seiten/profil/profil').then((m) => m.Profil),

@@ -230,10 +230,17 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie» */
+        /**
+         * Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»
+         * @description Aktuelle Saison. Für Mitglieder des Teams (jede Funktion) und Admins, sonst 403.
+         */
         get: operations["gruppenLesen"];
         put?: never;
-        /** Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal. */
+        /**
+         * Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.
+         * @description Gilt für die aktuelle Saison (LIN-11). Ohne `reihenfolge` kommt die Linie ans Ende, sonst an
+         *     diese Position (die übrigen rücken nach). Namen sind pro Team eindeutig, sonst 409 (LIN-09).
+         */
         post: operations["linieAnlegen"];
         delete?: never;
         options?: never;
@@ -252,7 +259,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Linie umbenennen oder Reihenfolge ändern (Coach) */
+        /**
+         * Linie umbenennen oder Reihenfolge ändern (Coach)
+         * @description Mit `reihenfolge` rückt die Linie an diese Position, die übrigen werden neu nummeriert (1, 2, …).
+         *     Goalies lassen sich weder umbenennen noch verschieben (409, LIN-05).
+         */
         put: operations["linieAendern"];
         post?: never;
         /** Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409). */
@@ -1736,6 +1747,8 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     linieAendern: {
@@ -1763,8 +1776,10 @@ export interface operations {
                     "application/json": components["schemas"]["Gruppe"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     linieLoeschen: {
@@ -1820,6 +1835,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
