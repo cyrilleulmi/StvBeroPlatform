@@ -133,6 +133,15 @@ export const TEXTE = {
     verfahrenOffen: 'Die Anmeldung für alle Mitglieder wird gerade eingerichtet.',
     zumTestmodus: 'Zur Anmeldung im Testmodus',
   },
+  keineSaison: {
+    titel: 'Noch keine aktuelle Saison',
+    hinweis:
+      'Im Moment ist keine Saison als aktuelle Saison festgelegt. Deshalb kann die App noch nichts anzeigen.',
+    verwaltung:
+      'Die Verwaltung des Vereins legt die aktuelle Saison fest. Versuche es danach nochmals.',
+    nochmals: 'Nochmals versuchen',
+    abmelden: 'Abmelden',
+  },
   devLogin: {
     titel: 'Anmelden als …',
     hinweis: 'Testmodus',

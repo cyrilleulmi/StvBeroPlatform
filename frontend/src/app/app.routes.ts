@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { umgebung } from '../umgebung/umgebung';
 import { anmeldeGuard } from './kern/anmelde.guard';
+import { keineSaisonGuard } from './kern/keine-saison.guard';
 import { Shell } from './shell/shell';
 
 const titel = (seite: string) => `${seite} · STV Bero`;
@@ -11,6 +12,12 @@ export const routes: Routes = [
     path: 'anmelden',
     title: titel('Anmelden'),
     loadComponent: () => import('./seiten/anmelden/anmelden').then((m) => m.Anmelden),
+  },
+  {
+    path: 'keine-saison',
+    title: titel('Keine aktuelle Saison'),
+    canActivate: [keineSaisonGuard],
+    loadComponent: () => import('./seiten/keine-saison/keine-saison').then((m) => m.KeineSaison),
   },
   ...(umgebung.testmodus
     ? [

@@ -5,9 +5,11 @@ import ch.stvbero.platform.kern.anmeldung.SitzungService;
 import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.fehler.Fehler;
 import ch.stvbero.platform.kern.person.Konto;
+import ch.stvbero.platform.kern.saison.Saison;
 import ch.stvbero.platform.kern.uhr.Uhr;
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -93,6 +95,16 @@ public class TestResource {
     @APIResponse(responseCode = "204", description = "Gelöst")
     public void uhrLoesen() {
         uhr.loesen();
+    }
+
+    @DELETE
+    @Path("/aktuelle-saison")
+    @Transactional
+    @Operation(operationId = "testAktuelleSaisonEntfernen",
+            summary = "Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her.")
+    @APIResponse(responseCode = "204", description = "Entfernt")
+    public void aktuelleSaisonEntfernen() {
+        Saison.update("aktuell = false where aktuell = true");
     }
 
     @POST

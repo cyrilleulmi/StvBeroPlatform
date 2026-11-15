@@ -34,6 +34,7 @@ class ProdOhneTesthilfenTest {
         given().contentType("application/json").body("{\"schluessel\":\"alex\"}")
                 .post("/api/test/anmelden").then().statusCode(404);
         given().get("/api/test/personen").then().statusCode(404);
+        given().delete("/api/test/aktuelle-saison").then().statusCode(404);
     }
 
     @Test

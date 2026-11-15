@@ -231,4 +231,5 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S20 | Doppelrolle | Als `petra` `/teams` öffnen | Team 1 «Coach», Team 2 «Spielerin». In Team 2 steht Petra bei den Spielerinnen, in Team 1 bei den Coaches | PTF-04, PTF-07, PTF-12 |
 | S21 | Neue Saison | Als `alex` unter `/verwaltung/saisons` 2027/28 mit Übernahme aus 2026/27 anlegen, zur aktuellen machen | Teams und Zugehörigkeiten übernommen, 2026/27 wird Archiv | SAI-04, SAI-06 |
 | S22 | Eine Funktion pro Team | Als `alex` in Team 1 Petra nochmals aufnehmen wollen | Oberfläche: «(schon im Team)», nicht wählbar. API: 409 mit Regel PTF-04 | PTF-04 |
+| S23 | Keine aktuelle Saison | `DELETE /api/test/aktuelle-saison`, als `anna` `/teams` öffnen | Weiterleitung auf `/keine-saison?ziel=%2Fteams` mit Hinweis «Noch keine aktuelle Saison», `GET /api/ich` antwortet 409 mit Regel SAI-03 | SAI-03 |
 | S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |

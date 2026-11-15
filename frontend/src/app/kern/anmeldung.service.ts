@@ -4,6 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import { umgebung } from '../../umgebung/umgebung';
 import type { Ich, Sitzung } from '../api/typen';
 
+/**
+ * `GET /api/ich` antwortet mit 409, wenn keine Saison als aktuell festgelegt ist (SAI-03).
+ * Der Anmelde-Guard leitet dann auf `/keine-saison` um.
+ */
+export class KeineAktuelleSaison extends Error {
+  constructor() {
+    super('Keine aktuelle Saison');
+    this.name = 'KeineAktuelleSaison';
+  }
+}
+
 /** Wer angemeldet ist. Quelle ist immer das Backend (`GET /api/ich`). */
 @Injectable({ providedIn: 'root' })
 export class AnmeldungService {
@@ -13,7 +24,8 @@ export class AnmeldungService {
   readonly istAdmin = computed(() => this.ich()?.admin === true);
 
   /**
-   * Lädt die angemeldete Person. Liefert `null`, wenn niemand angemeldet ist.
+   * Lädt die angemeldete Person. Liefert `null`, wenn niemand angemeldet ist, und wirft
+   * `KeineAktuelleSaison`, wenn keine Saison als aktuell festgelegt ist (409).
    * Zuerst `GET /api/sitzung` (immer 200), damit ohne Anmeldung kein 401 in der Konsole landet.
    */
   async laden(): Promise<Ich | null> {
@@ -31,13 +43,24 @@ export class AnmeldungService {
         this.ich.set(null);
         return null;
       }
+      if (fehler instanceof HttpErrorResponse && fehler.status === 409) {
+        this.ich.set(null);
+        throw new KeineAktuelleSaison();
+      }
       throw fehler;
     }
   }
 
   async alsTestpersonAnmelden(schluessel: string): Promise<void> {
     await firstValueFrom(this.http.post<void>('/api/test/anmelden', { schluessel }));
-    await this.laden();
+    try {
+      await this.laden();
+    } catch (fehler) {
+      // Ohne aktuelle Saison ist die Anmeldung trotzdem gültig; der Guard zeigt den Hinweis.
+      if (!(fehler instanceof KeineAktuelleSaison)) {
+        throw fehler;
+      }
+    }
   }
 
   async abmelden(): Promise<void> {

@@ -54,6 +54,27 @@ public class AnmeldungTest {
                 .body("zugehoerigkeiten[0].funktion", equalTo("SPIELERIN"));
     }
 
+    /** Nachbesserung #13: ohne aktuelle Saison 409 als Problem Details (SAI-03), auch für Admins. */
+    @Test
+    void ichOhneAktuelleSaisonGibt409() {
+        given().delete("/api/test/aktuelle-saison").then().statusCode(204);
+
+        for (String schluessel : new String[] {"anna", "alex"}) {
+            given().cookie("stv_sitzung", anmelden(schluessel)).get("/api/ich").then().statusCode(409)
+                    .contentType("application/problem+json")
+                    .body("status", equalTo(409))
+                    .body("title", equalTo("Keine aktuelle Saison"))
+                    .body("regel", equalTo("SAI-03"));
+        }
+    }
+
+    @Test
+    void ichOhneSitzungGibtAuchOhneAktuelleSaison401() {
+        given().delete("/api/test/aktuelle-saison").then().statusCode(204);
+
+        given().get("/api/ich").then().statusCode(401);
+    }
+
     @Test
     void adminIstEigenschaftDerPerson() {
         given().cookie("stv_sitzung", anmelden("alex")).get("/api/ich").then().statusCode(200)

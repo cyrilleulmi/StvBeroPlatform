@@ -83,6 +83,24 @@ class TestEndpunkteTest {
     }
 
     @Test
+    void aktuelleSaisonEntfernenUndResetStelltSieWiederHer() {
+        given().delete("/api/test/aktuelle-saison").then().statusCode(204);
+        given().cookie("stv_sitzung", alexAnmelden()).get("/api/saisons").then().statusCode(200)
+                .body("$", hasSize(2))
+                .body("findAll { it.aktuell }", hasSize(0));
+
+        given().post("/api/test/reset").then().statusCode(204);
+
+        given().cookie("stv_sitzung", alexAnmelden()).get("/api/saisons").then().statusCode(200)
+                .body("findAll { it.aktuell }.name", org.hamcrest.Matchers.contains("2026/27"));
+    }
+
+    private static String alexAnmelden() {
+        return given().contentType(ContentType.JSON).body("{\"schluessel\":\"alex\"}")
+                .post("/api/test/anmelden").then().statusCode(204).extract().cookie("stv_sitzung");
+    }
+
+    @Test
     void personenListetAlleSeedPersonenSortiert() {
         given().get("/api/test/personen").then().statusCode(200)
                 .body("$", hasSize(17))

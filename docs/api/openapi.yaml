@@ -48,6 +48,9 @@ paths:
       tags: [Ich]
       operationId: ichLesen
       summary: Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
+      description: |
+        Ist keine Saison als aktuell festgelegt (SAI-03), antwortet die API mit 409, Titel «Keine
+        aktuelle Saison», Regel SAI-03. Die Oberfläche zeigt dann einen Hinweis statt der Startseite.
       responses:
         '200':
           description: OK
@@ -55,6 +58,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Ich' }
         '401': { $ref: '#/components/responses/NichtAngemeldet' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/kacheln:
     get:
       tags: [Ich]
@@ -963,6 +967,14 @@ paths:
       security: []
       responses:
         '204': { description: Gelöst }
+  /api/test/aktuelle-saison:
+    delete:
+      tags: [Test]
+      operationId: testAktuelleSaisonEntfernen
+      summary: Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her.
+      security: []
+      responses:
+        '204': { description: Entfernt }
   /api/test/anmelden:
     post:
       tags: [Test]
