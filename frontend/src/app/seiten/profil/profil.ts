@@ -20,6 +20,8 @@ export class Profil {
   private readonly router = inject(Router);
   protected readonly texte = TEXTE;
   protected readonly fehler = signal<string | null>(null);
+  /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
+  protected readonly abmeldend = signal(false);
 
   protected readonly modi: { wert: Modus; text: string }[] = [
     { wert: 'hell', text: TEXTE.profil.hell },
@@ -28,11 +30,15 @@ export class Profil {
   ];
 
   protected async abmelden(): Promise<void> {
+    if (this.abmeldend()) return;
+    this.abmeldend.set(true);
     try {
       await this.anmeldung.abmelden();
       await this.router.navigateByUrl(this.anmeldung.anmeldeRoute());
     } catch (e) {
       this.fehler.set(fehlertext(e));
+    } finally {
+      this.abmeldend.set(false);
     }
   }
 }

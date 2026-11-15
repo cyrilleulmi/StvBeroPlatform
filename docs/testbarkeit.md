@@ -43,6 +43,7 @@ Farbe allein trägt keine Information (siehe auch [design-grundlagen.md](design-
 | Aktiver Navigationspunkt | `aria-current="page"` |
 | Aufgeboten | Checkbox mit `aria-checked` bzw. Text «aufgeboten» |
 | Laden | Container mit `aria-busy="true"`, danach entfernt |
+| Aktion läuft | Geklickte Schaltfläche `disabled` und `aria-busy="true"`, danach entfernt |
 | Deaktiviert | `disabled` bzw. `aria-disabled="true"` mit Erklärung in der Nähe |
 | Fehler im Formular | `aria-invalid="true"` und Fehlermeldung über `aria-describedby` |
 

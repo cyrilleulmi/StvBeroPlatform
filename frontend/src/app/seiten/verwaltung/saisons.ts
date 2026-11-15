@@ -65,6 +65,8 @@ export class Saisons implements OnInit {
   protected readonly saisons = signal<Saison[]>([]);
   protected readonly laedt = signal(true);
   protected readonly speichert = signal(false);
+  /** Saison, deren Wechsel gerade läuft (für `aria-busy` an ihrer Schaltfläche). */
+  protected readonly aktiviertGerade = signal<string | null>(null);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
   protected readonly feldFehler = signal<Record<string, string>>({});
@@ -168,6 +170,7 @@ export class Saisons implements OnInit {
     this.erfolg.set(null);
     this.fehler.set(null);
     this.speichert.set(true);
+    this.aktiviertGerade.set(s.id);
     try {
       await firstValueFrom(this.http.post<void>(`/api/saisons/${s.id}/aktivieren`, null));
       await Promise.all([this.laden(false), this.anmeldung.laden()]);
@@ -176,6 +179,7 @@ export class Saisons implements OnInit {
       this.fehler.set(fehlertext(e));
     } finally {
       this.speichert.set(false);
+      this.aktiviertGerade.set(null);
     }
   }
 }

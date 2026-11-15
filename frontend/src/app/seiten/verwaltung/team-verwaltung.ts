@@ -77,6 +77,8 @@ export class TeamVerwaltung {
   protected readonly personen = signal<Person[]>([]);
   protected readonly laedt = signal(true);
   protected readonly speichert = signal(false);
+  /** Person, deren Entfernen gerade läuft (für `aria-busy` an ihrer Schaltfläche). */
+  protected readonly entferntGerade = signal<string | null>(null);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
   protected readonly nurLesen = computed(() => this.saisonDaten()?.archiv === true);
@@ -224,6 +226,8 @@ export class TeamVerwaltung {
   }
 
   protected entfernen(m: Mitglied): void {
+    if (this.speichert()) return;
+    this.entferntGerade.set(m.person.id);
     void this.ausfuehren(async () => {
       await firstValueFrom(
         this.http.delete(`/api/teams/${this.teamId()}/mitglieder/${m.person.id}`, {
@@ -231,6 +235,6 @@ export class TeamVerwaltung {
         }),
       );
       return TEXTE.teamVerwaltung.entfernt(name(m.person));
-    });
+    }).finally(() => this.entferntGerade.set(null));
   }
 }

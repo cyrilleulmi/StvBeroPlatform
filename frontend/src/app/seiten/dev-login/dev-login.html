@@ -14,7 +14,13 @@
       <ul class="liste" [attr.aria-label]="texte.devLogin.listeName">
         @for (person of personen(); track person.id) {
           <li [attr.data-testid]="'dev-login-person-' + person.schluessel">
-            <button type="button" class="person" (click)="anmelden(person)">
+            <button
+              type="button"
+              class="person"
+              [disabled]="anmeldend() !== null"
+              [attr.aria-busy]="anmeldend() === person.schluessel ? 'true' : null"
+              (click)="anmelden(person)"
+            >
               <span class="name">{{ person.vorname }} {{ person.nachname }}</span>
               <span class="details">
                 <span class="schluessel">{{ person.schluessel }}</span>

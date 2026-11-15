@@ -51,8 +51,16 @@
   cursor: pointer;
 }
 
-.person:hover {
+.person:hover:not(:disabled) {
   background: var(--primary-soft);
+}
+
+.person:disabled {
+  cursor: progress;
+}
+
+.person:disabled:not([aria-busy='true']) {
+  opacity: 0.6;
 }
 
 .name {

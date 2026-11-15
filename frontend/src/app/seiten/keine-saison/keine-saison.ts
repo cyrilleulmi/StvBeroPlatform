@@ -25,7 +25,13 @@ import { TEXTE } from '../../kern/texte';
           <button type="button" class="button button-primaer" (click)="nochmals()">
             {{ texte.keineSaison.nochmals }}
           </button>
-          <button type="button" class="button button-sekundaer" (click)="abmelden()">
+          <button
+            type="button"
+            class="button button-sekundaer"
+            [disabled]="abmeldend()"
+            [attr.aria-busy]="abmeldend() ? 'true' : null"
+            (click)="abmelden()"
+          >
             {{ texte.keineSaison.abmelden }}
           </button>
         </div>
@@ -39,6 +45,8 @@ export class KeineSaison {
   private readonly router = inject(Router);
   protected readonly texte = TEXTE;
   protected readonly fehler = signal('');
+  /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
+  protected readonly abmeldend = signal(false);
   readonly ziel = input<string>();
 
   /** Zurück zum Ziel. Der Guard prüft erneut und zeigt diesen Hinweis wieder, falls nötig. */
@@ -48,11 +56,15 @@ export class KeineSaison {
   }
 
   protected async abmelden(): Promise<void> {
+    if (this.abmeldend()) return;
+    this.abmeldend.set(true);
     try {
       await this.anmeldung.abmelden();
       await this.router.navigateByUrl(this.anmeldung.anmeldeRoute());
     } catch (e) {
       this.fehler.set(fehlertext(e));
+    } finally {
+      this.abmeldend.set(false);
     }
   }
 }

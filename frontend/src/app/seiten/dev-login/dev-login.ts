@@ -28,6 +28,8 @@ export class DevLogin implements OnInit {
   protected readonly personen = signal<TestPerson[]>([]);
   protected readonly laedt = signal(true);
   protected readonly fehler = signal<string | null>(null);
+  /** Schlüssel der Person, deren Anmeldung gerade läuft; sperrt weitere Klicks (Doppelklick). */
+  protected readonly anmeldend = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     try {
@@ -40,12 +42,16 @@ export class DevLogin implements OnInit {
   }
 
   protected async anmelden(person: TestPerson): Promise<void> {
+    if (this.anmeldend()) return;
+    this.anmeldend.set(person.schluessel);
     this.fehler.set(null);
     try {
       await this.anmeldung.alsTestpersonAnmelden(person.schluessel);
       await this.router.navigateByUrl(sicheresZiel(this.ziel()));
     } catch (e) {
       this.fehler.set(fehlertext(e));
+    } finally {
+      this.anmeldend.set(null);
     }
   }
 }
