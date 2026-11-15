@@ -38,9 +38,32 @@ public class Seed {
     record SeedTeam(int nr, String name, Integer suTeamId) {
     }
 
-    /** Teamzugehörigkeit: Person, Team, Saison (Nummern), Funktion. Linien folgen mit F-02. */
-    record SeedZugehoerigkeit(int person, int team, int saison, String funktion) {
+    /** Teamzugehörigkeit: Person, Team, Saison (Nummern), Funktion, Gruppe (Nummer, {@code null} = ohne Linie). */
+    record SeedZugehoerigkeit(int person, int team, int saison, String funktion, Integer gruppe) {
+
+        SeedZugehoerigkeit(int person, int team, int saison, String funktion) {
+            this(person, team, saison, funktion, null);
+        }
     }
+
+    /** Linie oder Goalies (docs/testdaten.md, «Gruppen»). Reihenfolge nur bei Linien. */
+    record SeedGruppe(int nr, int team, int saison, String art, String name, Integer reihenfolge) {
+    }
+
+    private static final String L = "LINIE";
+    private static final String G = "GOALIES";
+
+    static final List<SeedGruppe> GRUPPEN = List.of(
+            new SeedGruppe(1, 1, 2, L, "Linie 1", 1),
+            new SeedGruppe(2, 1, 2, L, "Linie 2", 2),
+            new SeedGruppe(3, 1, 2, G, "Goalies", null),
+            new SeedGruppe(4, 2, 2, L, "Linie 1", 1),
+            new SeedGruppe(5, 2, 2, L, "Linie 2", 2),
+            new SeedGruppe(6, 2, 2, G, "Goalies", null),
+            new SeedGruppe(7, 3, 2, L, "Linie 1", 1),
+            new SeedGruppe(8, 3, 2, G, "Goalies", null),
+            // Goalies von Team 1 im Archiv 2025/26 (jedes Team hat pro Saison Goalies, LIN-05)
+            new SeedGruppe(9, 1, 1, G, "Goalies", null));
 
     static final List<SeedTeam> TEAMS = List.of(
             new SeedTeam(1, "Team 1", 900001),
@@ -61,21 +84,21 @@ public class Seed {
 
     static final List<SeedZugehoerigkeit> ZUGEHOERIGKEITEN = List.of(
             // Saison 2026/27 (aktuell)
-            new SeedZugehoerigkeit(2, 1, 2, C), new SeedZugehoerigkeit(2, 2, 2, S),
+            new SeedZugehoerigkeit(2, 1, 2, C), new SeedZugehoerigkeit(2, 2, 2, S, 4),
             new SeedZugehoerigkeit(3, 2, 2, C),
             new SeedZugehoerigkeit(4, 3, 2, C),
-            new SeedZugehoerigkeit(5, 1, 2, S),
-            new SeedZugehoerigkeit(6, 1, 2, S), new SeedZugehoerigkeit(6, 2, 2, S),
-            new SeedZugehoerigkeit(7, 1, 2, S),
-            new SeedZugehoerigkeit(8, 1, 2, S),
-            new SeedZugehoerigkeit(9, 1, 2, S),
-            new SeedZugehoerigkeit(10, 1, 2, S),
+            new SeedZugehoerigkeit(5, 1, 2, S, 1),
+            new SeedZugehoerigkeit(6, 1, 2, S, 1), new SeedZugehoerigkeit(6, 2, 2, S, 5),
+            new SeedZugehoerigkeit(7, 1, 2, S, 1),
+            new SeedZugehoerigkeit(8, 1, 2, S, 2),
+            new SeedZugehoerigkeit(9, 1, 2, S, 2),
+            new SeedZugehoerigkeit(10, 1, 2, S, 3),
             new SeedZugehoerigkeit(11, 1, 2, S),
-            new SeedZugehoerigkeit(12, 2, 2, S),
-            new SeedZugehoerigkeit(13, 2, 2, S),
-            new SeedZugehoerigkeit(14, 2, 2, S),
-            new SeedZugehoerigkeit(15, 2, 2, S),
-            new SeedZugehoerigkeit(16, 3, 2, S),
+            new SeedZugehoerigkeit(12, 2, 2, S, 4),
+            new SeedZugehoerigkeit(13, 2, 2, S, 4),
+            new SeedZugehoerigkeit(14, 2, 2, S, 5),
+            new SeedZugehoerigkeit(15, 2, 2, S, 6),
+            new SeedZugehoerigkeit(16, 3, 2, S, 7),
             // Saison 2025/26 (Archiv)
             new SeedZugehoerigkeit(17, 1, 1, S));
 
@@ -150,12 +173,25 @@ public class Seed {
                     .setParameter(1, teamId(ts[0])).setParameter(2, saisonId(ts[1])).setParameter(3, teamName(ts[0]))
                     .executeUpdate();
         }
+        for (SeedGruppe g : GRUPPEN) {
+            em.createNativeQuery("insert into gruppe (id, team_id, saison_id, art, name, reihenfolge) values (?, ?, ?, ?, ?, "
+                            + (g.reihenfolge() == null ? "null" : g.reihenfolge()) + ")")
+                    .setParameter(1, gruppeId(g.nr())).setParameter(2, teamId(g.team()))
+                    .setParameter(3, saisonId(g.saison())).setParameter(4, g.art()).setParameter(5, g.name())
+                    .executeUpdate();
+        }
         for (SeedZugehoerigkeit z : ZUGEHOERIGKEITEN) {
+            UUID id = UUID.nameUUIDFromBytes(("tz-" + z.person() + "-" + z.team() + "-" + z.saison()).getBytes());
             em.createNativeQuery("insert into teamzugehoerigkeit (id, person_id, team_id, saison_id, funktion) values (?, ?, ?, ?, ?)")
-                    .setParameter(1, UUID.nameUUIDFromBytes(("tz-" + z.person() + "-" + z.team() + "-" + z.saison()).getBytes()))
+                    .setParameter(1, id)
                     .setParameter(2, personId(z.person())).setParameter(3, teamId(z.team()))
                     .setParameter(4, saisonId(z.saison())).setParameter(5, z.funktion())
                     .executeUpdate();
+            if (z.gruppe() != null) {
+                em.createNativeQuery("insert into gruppenzuweisung (teamzugehoerigkeit_id, gruppe_id) values (?, ?)")
+                        .setParameter(1, id).setParameter(2, gruppeId(z.gruppe()))
+                        .executeUpdate();
+            }
         }
         em.clear();
 
@@ -168,6 +204,10 @@ public class Seed {
 
     public static UUID personId(int nr) {
         return id("2", nr);
+    }
+
+    public static UUID gruppeId(int nr) {
+        return id("3", nr);
     }
 
     public static UUID saisonId(int nr) {

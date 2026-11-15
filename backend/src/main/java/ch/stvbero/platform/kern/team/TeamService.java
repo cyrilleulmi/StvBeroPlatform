@@ -3,6 +3,7 @@ package ch.stvbero.platform.kern.team;
 import ch.stvbero.platform.kern.anmeldung.Angemeldet;
 import ch.stvbero.platform.kern.fehler.Eindeutig;
 import ch.stvbero.platform.kern.fehler.FachFehler;
+import ch.stvbero.platform.kern.linie.LinienService;
 import ch.stvbero.platform.kern.person.Person;
 import ch.stvbero.platform.kern.person.PersonKurz;
 import ch.stvbero.platform.kern.person.PersonService;
@@ -57,9 +58,9 @@ public class TeamService {
             throw FachFehler.nichtGefunden("Dieses Team gibt es in der Saison " + saison.name + " nicht.");
         }
         TeamRegeln.Aufteilung aufteilung = TeamRegeln.aufteilen(mitglieder(zugehoerigkeiten));
-        // Linien und Goalies kommen mit F-02. Bis dahin stehen alle Spielerinnen unter «ohne Linie».
+        // Spielerinnen nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09)
         return new TeamDetailDto(team.id, team.nameIn(saison), team.suTeamId, meine.orElse(null), aufteilung.coaches(),
-                new TeamDetailDto.Gruppeneinteilung(List.of(), aufteilung.spielerinnen()));
+                LinienService.einteilung(team, saison, zugehoerigkeiten));
     }
 
     @Transactional
@@ -116,8 +117,11 @@ public class TeamService {
         wer.pruefeAdmin();
         Teamzugehoerigkeit z = zugehoerigkeit(teamId, personId, saisonId);
         z.saison.pruefeBeschreibbar();
-        // Linienzuweisung entfällt beim Wechsel zur Coach, sobald es Linien gibt (F-02).
         z.funktion = funktion;
+        // Nur Spielerinnen sind in einer Linie (LIN-10): Beim Wechsel zur Coach entfällt die Zuweisung.
+        if (funktion != Funktion.SPIELERIN) {
+            z.gruppen.clear();
+        }
         return TeamzugehoerigkeitDto.von(z);
     }
 
