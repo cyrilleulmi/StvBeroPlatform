@@ -177,7 +177,8 @@ stateDiagram-v2
 | Eine Spielerin ist pro Team in höchstens einer Gruppe. Eine neue Zuweisung ersetzt die bisherige; `gruppeId: null` heisst «ohne Linie». Zwei gleichzeitige Zuweisungen ergeben nie 500. | LIN-02, LIN-06 |
 | Nur Personen mit Funktion «Spielerin» im Team sind zuweisbar (sonst 409, Regel LIN-10). Wechselt eine Spielerin zur Coach, verliert sie ihre Zuweisung. | LIN-10 |
 | Neue Linie ohne Angabe kommt ans Ende. Verschieben und Löschen nummerieren die Linien neu (1, 2, …, ohne Lücke). Die Oberfläche schlägt «Linie n» mit dem nächsten freien n vor. | LIN-09 |
-| Namen sind pro Team eindeutig, ohne Gross-/Kleinschreibung, auch gegenüber «Goalies» (409, Regel LIN-09). | LIN-09 |
+| Namen sind pro Team eindeutig, ohne Gross-/Kleinschreibung, auch gegenüber «Goalies» (409, Regel LIN-09). Beim Umbenennen erscheint die Meldung beim Namensfeld, der Fokus bleibt im Feld. | LIN-09 |
+| Wird eine Linie mit «nach oben»/«nach unten» an den Rand verschoben, geht der Fokus auf den Gegenknopf derselben Linie (der gedrückte ist danach gesperrt). | LIN-09 |
 | Gelöschte Linie: ihre Spielerinnen sind danach «Ohne Linie». | LIN-06 |
 | Ändern dürfen Coaches des Teams und Admins (sonst 403), ansehen alle Mitglieder des Teams und Admins. | LIN-07, RR-03, RR-07 |
 

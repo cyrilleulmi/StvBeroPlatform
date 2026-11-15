@@ -31,13 +31,13 @@ Grenzfälle aus zustaende.md («Linien») und Robustheit. Vorbereitung wie oben.
 
 | Nr. | Fall | Schritte | Erwartung |
 |---|---|---|---|
-| G1 | Name doppelt (LIN-09) | `petra`, mobil → «Linie hinzufügen» → «Linie 3 umbenennen» → «Linie 1» (auch «LINIE 1», «goalies») → «Speichern» | 409 Regel LIN-09; Meldung «In diesem Team gibt es schon eine Gruppe «Linie 1».» **sichtbar beim Namensfeld**, Fokus bleibt im Feld, Name unverändert |
+| G1 | Name doppelt (LIN-09), E2E `F-02 G1` | `petra`, mobil → «Linie hinzufügen» → «Linie 3 umbenennen» → «Linie 1» (auch «LINIE 1», «goalies») → «Speichern» | 409 Regel LIN-09; Meldung «In diesem Team gibt es schon eine Gruppe «Linie 1».» **sichtbar beim Namensfeld**, Fokus bleibt im Feld, Name unverändert |
 | G2 | Name zu lang | API `POST …/gruppen` mit 300 Zeichen; Feld «Name von …» | 400 mit Feldfehler; Feld hat `maxlength="30"` |
 | G3 | Goalies unveränderlich (S25) | API `PUT …/gruppen/<03>` `{ name: "X" }`, `DELETE …/gruppen/<03>` | je 409, Regel LIN-05 |
 | G4 | Coach nicht zuweisbar (LIN-10) | `petra` API `PUT /api/teams/<T1>/zuweisungen/<Petra>` `{ gruppeId: <01> }` | 409, Regel LIN-10 |
 | G5 | Gruppe eines anderen Teams | API `PUT /api/teams/<T1>/zuweisungen/<Lea>` `{ gruppeId: <05> }` | 404 |
 | G6 | Schreibrechte | `anna` und `marc`: `POST …/gruppen` `{ name: "Test" }`, `PUT …/gruppen/<01>`, `DELETE …/gruppen/<01>`, `PUT …/zuweisungen/<Lea>` | je 403; `GET …/gruppen` anna 200, marc 403 |
-| G7 | Fokus beim Verschieben | Tastatur: Fokus auf «Linie 2 nach unten» (mit Linie 3), Enter | Linie 2 ist zuunterst. Fokus bleibt auf einem Bedienelement dieser Linie (z.B. «Linie 2 nach oben»), nicht auf `body` |
+| G7 | Fokus beim Verschieben, E2E `F-02 G7` | Tastatur: Fokus auf «Linie 2 nach unten» (mit Linie 3), Enter | Linie 2 ist zuunterst. Fokus bleibt auf einem Bedienelement dieser Linie (z.B. «Linie 2 nach oben»), nicht auf `body` |
 | G8 | Doppelklick | «Linie hinzufügen» doppelt; «Löschen» im Dialog doppelt; «Speichern» beim Umbenennen doppelt | Genau eine Linie neu bzw. eine Löschung bzw. eine Änderung, keine Fehlermeldung |
 | G9 | Zurück/Vor | Nach «Linie hinzufügen» Zurück-Taste, dann Vor | Zustand vom Server, Linie 3 bleibt |
 | G10 | Archiv | `alex` → `/teams/<T1>?saison=<2025/26>` | Hinweis Archiv, «Ohne Linie: Vera Studer», kein Link «Linien einteilen» |

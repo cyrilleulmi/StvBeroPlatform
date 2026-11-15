@@ -261,3 +261,56 @@ test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ä
     expect((await anfrage).status()).toBe(403);
   }
 });
+
+test.describe('Name schon vergeben', () => {
+  // Der Browser meldet die erwartete 409-Antwort in der Konsole.
+  test.use({ erwarteteKonsolenfehler: [/status of 409/] });
+
+  test('F-02 G1 LIN-09: doppelter Name wird beim Namensfeld gemeldet, Fokus bleibt im Feld', async ({ page }) => {
+    await anmelden(page, 'petra');
+    await page.goto(`/teams/${TEAM_1}/linien`);
+    const verwaltung = page.getByTestId('linien-verwaltung');
+    await page.getByTestId('linie-hinzufuegen').click();
+    await expect(page.getByRole('status')).toHaveText('Linie 3 ist hinzugefügt.');
+
+    await page.getByRole('button', { name: 'Linie 3 umbenennen' }).click();
+    const feld = page.getByLabel('Name von Linie 3');
+    await feld.fill('LINIE 1');
+    await page.getByRole('button', { name: 'Speichern' }).click();
+
+    await expect(feld).toHaveAttribute('aria-invalid', 'true');
+    await expect(feld).toHaveAccessibleDescription(/schon eine Gruppe/);
+    await expect(feld).toBeFocused();
+    await expect(feld).toBeInViewport();
+    await expect(feld).toHaveValue('LINIE 1');
+    await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 1', 'Linie 2', 'Linie 3', 'Goalies', 'Ohne Linie']);
+
+    // Korrigieren und speichern: Feldfehler verschwindet
+    await feld.fill('Powerplay');
+    await page.getByRole('button', { name: 'Speichern' }).click();
+    await expect(page.getByRole('status')).toHaveText('Neuer Name: Powerplay.');
+    await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 1', 'Linie 2', 'Powerplay', 'Goalies', 'Ohne Linie']);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+});
+
+test('F-02 G7 LIN-09: Fokus bleibt bei der Linie, wenn sie an den Rand verschoben wird', async ({ page }) => {
+  await anmelden(page, 'petra');
+  await page.goto(`/teams/${TEAM_1}/linien`);
+  const verwaltung = page.getByTestId('linien-verwaltung');
+  await page.getByTestId('linie-hinzufuegen').click();
+  await expect(page.getByRole('status')).toHaveText('Linie 3 ist hinzugefügt.');
+
+  // Linie 2 nach ganz unten: «nach unten» ist gesperrt, Fokus wechselt auf «nach oben»
+  await page.getByRole('button', { name: 'Linie 2 nach unten' }).focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 1', 'Linie 3', 'Linie 2', 'Goalies', 'Ohne Linie']);
+  await expect(page.getByRole('button', { name: 'Linie 2 nach unten' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Linie 2 nach oben' })).toBeFocused();
+
+  // Linie 3 nach ganz oben: Fokus wechselt auf «nach unten»
+  await page.getByRole('button', { name: 'Linie 3 nach oben' }).focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 3', 'Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
+  await expect(page.getByRole('button', { name: 'Linie 3 nach unten' })).toBeFocused();
+});

@@ -159,11 +159,16 @@ export class Linien {
     this.team.set(await firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${this.teamId()}`)));
   }
 
-  /** Führt eine Änderung aus, lädt die Einteilung neu und meldet das Ergebnis. */
+  /**
+   * Führt eine Änderung aus, lädt die Einteilung neu und meldet das Ergebnis. `fokus`: IDs der
+   * Elemente, die danach den Fokus bekommen sollen; das erste, das es gibt und nicht gesperrt ist.
+   * `beiFehler`: zeigt einen Fehler selbst an (z.B. beim Feld) statt oben auf der Seite.
+   */
   private async ausfuehren(
     schluessel: string,
     aktion: () => Promise<string>,
-    fokus?: string,
+    fokus?: string | string[],
+    beiFehler?: (meldung: string) => void,
   ): Promise<boolean> {
     if (this.speichert()) return false;
     this.erfolg.set(null);
@@ -176,21 +181,33 @@ export class Linien {
       this.erfolg.set(meldung);
       ok = true;
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      if (beiFehler) beiFehler(fehlertext(e));
+      else this.fehler.set(fehlertext(e));
       // Bei einem Fehler den tatsächlichen Stand zeigen (z.B. gleichzeitig geändert).
       await this.neuLaden().catch(() => undefined);
     } finally {
       this.laufendeAktion.set(null);
     }
     if (fokus) {
-      afterNextRender(
-        () => this.host.nativeElement.querySelector<HTMLElement>(`#${fokus}`)?.focus(),
-        {
-          injector: this.injector,
-        },
-      );
+      this.fokussieren(typeof fokus === 'string' ? [fokus] : fokus);
     }
     return ok;
+  }
+
+  /** Nach dem nächsten Rendern das erste vorhandene, nicht gesperrte Element fokussieren. */
+  private fokussieren(ids: string[]): void {
+    afterNextRender(
+      () => {
+        for (const id of ids) {
+          const el = this.host.nativeElement.querySelector<HTMLElement>(`#${id}`);
+          if (el && !(el as HTMLButtonElement).disabled) {
+            el.focus();
+            return;
+          }
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   /** Spielerin einer Gruppe zuweisen; `gruppeId` leer = ohne Linie (LIN-02, LIN-06, LIN-07). */
@@ -230,7 +247,9 @@ export class Linien {
   protected verschieben(g: Anzeigegruppe, richtung: -1 | 1): void {
     const ziel = g.index + 1 + richtung;
     if (!g.id || ziel < 1 || ziel > this.linien().length) return;
+    // Landet die Linie am Rand, ist dieser Knopf danach gesperrt: dann den Gegenknopf fokussieren.
     const knopf = `${richtung < 0 ? 'oben' : 'unten'}-${g.id}`;
+    const gegenknopf = `${richtung < 0 ? 'unten' : 'oben'}-${g.id}`;
     void this.ausfuehren(
       `${richtung < 0 ? 'oben' : 'unten'}:${g.id}`,
       async () => {
@@ -242,7 +261,7 @@ export class Linien {
         );
         return TEXTE.linien.verschoben(g.name);
       },
-      knopf,
+      [knopf, gegenknopf],
     );
   }
 
@@ -277,12 +296,21 @@ export class Linien {
       this.umbenennenAbbrechen(g);
       return;
     }
-    const ok = await this.ausfuehren(`umbenennen:${g.id}`, async () => {
-      await firstValueFrom(
-        this.http.put(`/api/teams/${this.teamId()}/gruppen/${g.id}`, { name: neu }),
-      );
-      return TEXTE.linien.umbenannt(neu);
-    });
+    // Fehler (z.B. Name schon vergeben, LIN-09) beim Namensfeld zeigen, Fokus bleibt im Feld.
+    const ok = await this.ausfuehren(
+      `umbenennen:${g.id}`,
+      async () => {
+        await firstValueFrom(
+          this.http.put(`/api/teams/${this.teamId()}/gruppen/${g.id}`, { name: neu }),
+        );
+        return TEXTE.linien.umbenannt(neu);
+      },
+      undefined,
+      (meldung) => {
+        this.nameFehler.set(meldung);
+        this.fokussieren([`name-${g.id}`]);
+      },
+    );
     if (ok) {
       this.umbenennenAbbrechen(g);
     }
