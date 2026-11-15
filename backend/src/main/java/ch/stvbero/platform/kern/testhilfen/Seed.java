@@ -1,5 +1,6 @@
 package ch.stvbero.platform.kern.testhilfen;
 
+import ch.stvbero.platform.kern.termin.TerminRegeln;
 import ch.stvbero.platform.kern.uhr.Uhr;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.runtime.StartupEvent;
@@ -9,9 +10,13 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -121,6 +126,56 @@ public class Seed {
             new SeedPerson(16, "tina", "Tina", "Bucher", false),
             new SeedPerson(17, "vera", "Vera", "Studer", false));
 
+    /** Serie (docs/testdaten.md, «Serien»). Teams und Saison als Nummern. */
+    record SeedSerie(int nr, String wochentag, DayOfWeek tag, LocalTime beginn, LocalTime ende, String ort,
+                     LocalDate von, LocalDate bis, List<Integer> teams, SeedAusnahme ausnahme) {
+    }
+
+    record SeedAusnahme(LocalDate von, LocalDate bis, String grund) {
+    }
+
+    private static final String NORD = "Sporthalle Nord";
+
+    static final List<SeedSerie> SERIEN = List.of(
+            new SeedSerie(1, "DIENSTAG", DayOfWeek.TUESDAY, LocalTime.of(18, 30), LocalTime.of(20, 0), NORD,
+                    LocalDate.of(2026, 8, 18), LocalDate.of(2027, 4, 27), List.of(1, 2),
+                    new SeedAusnahme(LocalDate.of(2026, 12, 21), LocalDate.of(2027, 1, 3), "Weihnachtsferien")),
+            new SeedSerie(2, "DONNERSTAG", DayOfWeek.THURSDAY, LocalTime.of(19, 0), LocalTime.of(20, 30), NORD,
+                    LocalDate.of(2026, 8, 20), LocalDate.of(2027, 4, 29), List.of(1), null),
+            new SeedSerie(3, "MITTWOCH", DayOfWeek.WEDNESDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), "Turnhalle Dorf",
+                    LocalDate.of(2026, 8, 19), LocalDate.of(2027, 4, 28), List.of(3), null));
+
+    /** Serientermine mit fester ID (docs/testdaten.md, «Termine mit festen IDs»): Serie, Datum → Termin-Nummer. */
+    static final Map<String, Integer> FESTE_SERIENTERMINE = Map.of(
+            "1:2026-11-17", 1,
+            "2:2026-11-19", 2,
+            "1:2026-11-24", 3,
+            "1:2026-11-10", 7);
+
+    /** Abgesagte Seed-Termine: Nummer → Grund. */
+    static final Map<Integer, String> ABGESAGT = Map.of(3, "Halle besetzt");
+
+    /** Einzeltermin. Ort mit Adresse und Google-Maps-Link optional, Treffpunkt nur bei Spieltagen. */
+    record SeedTermin(int nr, int saison, String typ, String titel, LocalDateTime beginn, LocalDateTime ende,
+                      String ort, String adresse, String mapsUrl, String hinweise, LocalDateTime treffpunktZeit,
+                      String treffpunktOrt, List<Integer> teams) {
+    }
+
+    static final List<SeedTermin> EINZELTERMINE = List.of(
+            new SeedTermin(4, 2, "SPIELTAG", "Spieltag", LocalDateTime.of(2026, 11, 22, 9, 30),
+                    LocalDateTime.of(2026, 11, 22, 13, 0), "Sporthalle Seefeld", "Musterdorf",
+                    "https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf",
+                    "Weisse Trikots mitnehmen", LocalDateTime.of(2026, 11, 22, 8, 0), "Parkplatz Sporthalle Nord",
+                    List.of(1)),
+            new SeedTermin(5, 2, "SPIELTAG", "Spieltag", LocalDateTime.of(2026, 11, 28, 14, 0),
+                    LocalDateTime.of(2026, 11, 28, 16, 0), "Turnhalle Weid", "Beispielstadt",
+                    "https://www.google.com/maps/search/?api=1&query=Turnhalle+Weid+Beispielstadt",
+                    null, LocalDateTime.of(2026, 11, 28, 12, 30), NORD, List.of(2)),
+            new SeedTermin(6, 2, "ANLASS", "Teamessen", LocalDateTime.of(2026, 12, 11, 19, 0),
+                    LocalDateTime.of(2026, 12, 11, 22, 0), null, null, null, null, null, null, List.of(1, 2, 3)),
+            new SeedTermin(8, 1, "TRAINING", "Training", LocalDateTime.of(2026, 5, 12, 18, 30),
+                    LocalDateTime.of(2026, 5, 12, 20, 0), NORD, null, null, null, null, null, List.of(1)));
+
     @Inject
     EntityManager em;
 
@@ -193,9 +248,81 @@ public class Seed {
                         .executeUpdate();
             }
         }
+        serienUndTermine();
         em.clear();
 
         uhr.festsetzen(STANDARD_JETZT.atZone(Uhr.ZONE).toInstant());
+    }
+
+    /** Serien mit allen ihren Terminen (auch vergangenen) und die Einzeltermine (F-03). */
+    private void serienUndTermine() {
+        for (SeedSerie s : SERIEN) {
+            em.createNativeQuery("""
+                            insert into serie (id, saison_id, typ, titel, wochentag, beginn_zeit, ende_zeit, gueltig_von,
+                                               gueltig_bis, ort_name, antwortfrist_stunden)
+                            values (?, ?, 'TRAINING', 'Training', ?, ?, ?, ?, ?, ?, ?)""")
+                    .setParameter(1, serieId(s.nr())).setParameter(2, saisonId(2)).setParameter(3, s.wochentag())
+                    .setParameter(4, s.beginn()).setParameter(5, s.ende()).setParameter(6, s.von())
+                    .setParameter(7, s.bis()).setParameter(8, s.ort())
+                    .setParameter(9, TerminRegeln.ANTWORTFRIST_STANDARD)
+                    .executeUpdate();
+            for (int team : s.teams()) {
+                em.createNativeQuery("insert into serie_team (serie_id, team_id) values (?, ?)")
+                        .setParameter(1, serieId(s.nr())).setParameter(2, teamId(team)).executeUpdate();
+            }
+            List<TerminRegeln.Zeitraum> ausnahmen = List.of();
+            if (s.ausnahme() != null) {
+                SeedAusnahme a = s.ausnahme();
+                em.createNativeQuery("insert into ausnahme (id, serie_id, von, bis, grund) values (?, ?, ?, ?, ?)")
+                        .setParameter(1, UUID.nameUUIDFromBytes(("ausnahme-" + s.nr()).getBytes()))
+                        .setParameter(2, serieId(s.nr())).setParameter(3, a.von()).setParameter(4, a.bis())
+                        .setParameter(5, a.grund()).executeUpdate();
+                ausnahmen = List.of(new TerminRegeln.Zeitraum(a.von(), a.bis()));
+            }
+            for (LocalDate tag : TerminRegeln.daten(s.tag(), s.von(), s.bis(), ausnahmen)) {
+                Integer nr = FESTE_SERIENTERMINE.get(s.nr() + ":" + tag);
+                UUID id = nr != null ? terminId(nr) : UUID.nameUUIDFromBytes(("termin-" + s.nr() + "-" + tag).getBytes());
+                em.createNativeQuery("""
+                                insert into termin (id, saison_id, typ, titel, beginn, ende, status, absagegrund, ort_name,
+                                                    antwortfrist_stunden, serie_id, serie_datum)
+                                values (?, ?, 'TRAINING', 'Training', ?, ?, ?, ?, ?, ?, ?, ?)""")
+                        .setParameter(1, id).setParameter(2, saisonId(2))
+                        .setParameter(3, TerminRegeln.zeitpunkt(tag, s.beginn()))
+                        .setParameter(4, TerminRegeln.zeitpunkt(tag, s.ende()))
+                        .setParameter(5, nr != null && ABGESAGT.containsKey(nr) ? "ABGESAGT" : "GEPLANT")
+                        .setParameter(6, nr != null ? ABGESAGT.get(nr) : null)
+                        .setParameter(7, s.ort()).setParameter(8, TerminRegeln.ANTWORTFRIST_STANDARD)
+                        .setParameter(9, serieId(s.nr())).setParameter(10, tag)
+                        .executeUpdate();
+                teamsZuordnen(id, s.teams());
+            }
+        }
+        for (SeedTermin t : EINZELTERMINE) {
+            em.createNativeQuery("""
+                            insert into termin (id, saison_id, typ, titel, beginn, ende, status, ort_name, ort_adresse,
+                                                ort_maps_url, hinweise, antwortfrist_stunden, treffpunkt_zeit, treffpunkt_ort)
+                            values (?, ?, ?, ?, ?, ?, 'GEPLANT', ?, ?, ?, ?, ?, ?, ?)""")
+                    .setParameter(1, terminId(t.nr())).setParameter(2, saisonId(t.saison()))
+                    .setParameter(3, t.typ()).setParameter(4, t.titel())
+                    .setParameter(5, zurich(t.beginn())).setParameter(6, zurich(t.ende()))
+                    .setParameter(7, t.ort()).setParameter(8, t.adresse()).setParameter(9, t.mapsUrl())
+                    .setParameter(10, t.hinweise()).setParameter(11, TerminRegeln.ANTWORTFRIST_STANDARD)
+                    .setParameter(12, t.treffpunktZeit() == null ? null : zurich(t.treffpunktZeit()))
+                    .setParameter(13, t.treffpunktOrt())
+                    .executeUpdate();
+            teamsZuordnen(terminId(t.nr()), t.teams());
+        }
+    }
+
+    private void teamsZuordnen(UUID terminId, List<Integer> teams) {
+        for (int team : teams) {
+            em.createNativeQuery("insert into termin_team (termin_id, team_id) values (?, ?)")
+                    .setParameter(1, terminId).setParameter(2, teamId(team)).executeUpdate();
+        }
+    }
+
+    private static Instant zurich(LocalDateTime zeit) {
+        return zeit.atZone(Uhr.ZONE).toInstant();
     }
 
     public static UUID teamId(int nr) {
@@ -208,6 +335,14 @@ public class Seed {
 
     public static UUID gruppeId(int nr) {
         return id("3", nr);
+    }
+
+    public static UUID terminId(int nr) {
+        return id("4", nr);
+    }
+
+    public static UUID serieId(int nr) {
+        return id("7", nr);
     }
 
     public static UUID saisonId(int nr) {
