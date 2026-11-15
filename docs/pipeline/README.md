@@ -24,8 +24,8 @@ stateDiagram-v2
     Backlog --> Bereit: Cyrille setzt status:bereit
     Bereit --> Entwicklung: Trigger Issue labeled
     Entwicklung --> Review: PR + pipeline:review
-    Review --> Nacharbeit: Muss-Befunde<br/>pipeline:nacharbeit
-    Review --> Test: keine Muss-Befunde<br/>pipeline:test
+    Review --> Nacharbeit: Muss- oder Sollte-Befunde<br/>pipeline:nacharbeit
+    Review --> Test: keine offenen Befunde<br/>pipeline:test
     Test --> Nacharbeit: Fehler gefunden<br/>pipeline:nacharbeit
     Test --> Gemergt: alles bestanden<br/>Test-Agent mergt<br/>pipeline:gemergt
     Nacharbeit --> Review: behoben<br/>pipeline:review
@@ -57,7 +57,7 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 | `pipeline:nacharbeit` | PR | Befunde aus Review oder Test sind zu beheben | Review, Test |
 | `pipeline:test` | PR | Wartet auf Test | Review |
 | `pipeline:gemergt` | PR | Vom Test-Agenten nach `main` gemergt | Test |
-| `typ:nachbesserung` | Issue | Nicht blockierender Befund aus Review oder Test. Wird mit `status:bereit` angelegt und vor dem nächsten Feature automatisch umgesetzt. Befunde aus einer Nachbesserung selbst kommen ohne `status:bereit` | Review, Test |
+| `typ:nachbesserung` | Issue | Befund, der nicht in die Nacharbeit des PRs gehört: betrifft Code, der schon auf `main` war, oder ist ein neues «Sollte» ab Runde 3. Wird mit `status:bereit` angelegt und vor dem nächsten Feature automatisch umgesetzt. Befunde aus einer Nachbesserung selbst kommen ohne `status:bereit` | Review, Test |
 | `pipeline:blockiert` | Issue, PR | Braucht eine Entscheidung von Cyrille | alle |
 | `agent:aktiv` | Issue, PR | Ein Agent arbeitet gerade daran (Sperre) | alle |
 
