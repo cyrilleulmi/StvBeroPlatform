@@ -169,7 +169,7 @@ test.describe('Design', () => {
 
     const umschalter = page.getByTestId('theme-umschalter');
     await expect(umschalter).toHaveAccessibleName('Darstellung');
-    await expect(umschalter.getByRole('radio', { name: 'Wie System' })).toBeChecked();
+    await expect(umschalter.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(await hintergrund(page)).toBe(HELL);
 
     await umschalter.getByRole('radio', { name: 'Dunkel' }).check();
@@ -186,11 +186,11 @@ test.describe('Design', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
     expect(await hintergrund(page)).toBe(HELL);
 
-    await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Wie System' }).check();
+    await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' }).check();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/);
     expect(await hintergrund(page)).toBe(DUNKEL);
     await page.reload();
-    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Wie System' })).toBeChecked();
+    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' })).toBeChecked();
   });
 
   test('F-00 K6: Start im Darkmode ohne Barrierefreiheits-Befunde', async ({ page }) => {

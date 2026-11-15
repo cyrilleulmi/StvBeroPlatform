@@ -227,4 +227,4 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S16 | Archiv | Als `alex` Saison 2025/26 wählen | Vera und Termin 08 sichtbar, nur lesend | SAI-02 |
 | S17 | Anmeldung im Testmodus | `/profil` ohne Anmeldung öffnen, auf `/dev-login` «Petra Keller» wählen | Weiterleitung auf `/dev-login?ziel=%2Fprofil`, danach zurück auf `/profil` | F-00 |
 | S18 | Kacheln nach Rolle | Als `anna` und als `alex` `/` öffnen | Beide sehen die Kachel «Anwesenheit». Nur `alex` hat «Verwaltung» in der Navigation | NF-12, RR-05 |
-| S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «Wie System» folgt der Systemeinstellung | NF-06 |
+| S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |

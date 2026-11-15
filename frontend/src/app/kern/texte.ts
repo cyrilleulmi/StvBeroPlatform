@@ -30,7 +30,7 @@ export const TEXTE = {
     darstellung: 'Darstellung',
     hell: 'Hell',
     dunkel: 'Dunkel',
-    system: 'Wie System',
+    system: 'System',
     abmelden: 'Abmelden',
   },
   verwaltung: {
