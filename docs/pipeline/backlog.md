@@ -35,12 +35,12 @@ flowchart LR
 
 **Ziel:** Ein lauffähiges, leeres Gerüst, auf dem alle weiteren Features aufbauen. Es legt die Konventionen fest, an die sich spätere Läufe halten.
 
-**Annahmen für das Gerüst** (zu offenen Punkten, damit nicht jeder Lauf neu entscheidet):
+**Vorgaben für das Gerüst**, damit nicht jeder Lauf neu entscheidet:
 
-| Punkt | Annahme |
+| Punkt | Vorgabe |
 |---|---|
-| Backend-Sprache (O-07) | Java 21 |
-| Migrationen (O-08) | Flyway |
+| Backend-Sprache | Java 25 (entschieden, E-57). In der Cloud über `source scripts/java.sh`. |
+| Migrationen | Flyway (entschieden, E-57) |
 | Build | Maven im Backend, npm im Frontend und in `e2e/` |
 | Anmeldung (O-01) | Sitzungs-Cookie. Im Profil `dev`/`test` Anmeldung über `/dev-login`. Produktives Verfahren folgt, sobald entschieden. |
 

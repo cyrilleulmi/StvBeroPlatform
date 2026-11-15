@@ -34,7 +34,31 @@ Befehle:
   pr-issue <nr>                  Issue-Nummer aus «Closes #n» im PR
   runde <nr>                     Anzahl Nacharbeitsrunden (Entwicklungs-Kommentare minus 1, min. 0)
   letzter-befund <nr>            Text des neuesten Review- oder Test-Kommentars
+  mergebar <nr>                  Exit 0, wenn der PR offen, konfliktfrei und alle Checks grün sind; sonst Grund auf stderr
+  mergen <nr> <erwarteter-sha>   Squash-Merge nach main, nur wenn mergebar und Head = erwarteter SHA. Gibt Merge-SHA aus
 EOF
+}
+
+# Prüft, ob ein PR gemergt werden darf. Gründe gehen auf stderr.
+mergebar() {
+  local nr="$1" info state mergeable mstate sha draft i
+  for i in 1 2 3 4 5 6; do   # GitHub berechnet «mergeable» asynchron
+    info=$(gh api "$API/pulls/$nr" --jq '[.state, (.mergeable|tostring), .mergeable_state, .head.sha, (.draft|tostring), .base.ref] | @tsv')
+    IFS=$'\t' read -r state mergeable mstate sha draft base <<<"$info"
+    [ "$mergeable" != "null" ] && break
+    sleep 5
+  done
+  [ "$state" = "open" ]      || { echo "PR ist nicht offen ($state)" >&2; return 1; }
+  [ "$base" = "main" ]       || { echo "PR zielt nicht auf main ($base)" >&2; return 1; }
+  [ "$draft" = "false" ]     || { echo "PR ist ein Entwurf" >&2; return 1; }
+  [ "$mergeable" = "true" ]  || { echo "PR hat Konflikte mit main (mergeable=$mergeable, state=$mstate)" >&2; return 1; }
+  # Checks (CI): alle abgeschlossen und erfolgreich oder übersprungen
+  local offen fehl
+  offen=$(gh api "$API/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.status != "completed")] | length')
+  fehl=$(gh api "$API/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.status == "completed" and (.conclusion | IN("success","skipped","neutral") | not))] | map(.name) | join(", ")')
+  [ "$offen" = "0" ] || { echo "Checks laufen noch ($offen offen)" >&2; return 1; }
+  [ -z "$fehl" ]     || { echo "Checks fehlgeschlagen: $fehl" >&2; return 1; }
+  echo "$sha"
 }
 
 labels_von() { gh api "$API/issues/$1/labels" --jq '.[].name'; }
@@ -102,6 +126,15 @@ case "$cmd" in
     gh api "$API/issues/$1/comments?per_page=100" --paginate \
       --jq '.[] | select((.body | startswith("<!-- pipeline:review -->")) or (.body | startswith("<!-- pipeline:test -->"))) | .body' \
       | awk 'BEGIN{RS="<!-- pipeline:"} NF{last=$0} END{printf "<!-- pipeline:%s", last}' ;;
+  mergebar) mergebar "$1" >/dev/null ;;
+  mergen)
+    nr="$1"; erwartet="${2:-}"
+    [ -n "$erwartet" ] || { echo "mergen braucht den geprüften Head-SHA als zweites Argument" >&2; exit 2; }
+    sha=$(mergebar "$nr") || exit 1
+    [ "$sha" = "$erwartet" ] || { echo "Head hat sich seit dem Test geändert ($sha statt $erwartet). Nicht gemergt." >&2; exit 1; }
+    titel=$(gh api "$API/pulls/$nr" --jq .title)
+    gh api -X PUT "$API/pulls/$nr/merge" -f merge_method=squash -f "sha=$sha" \
+      -f "commit_title=$titel (#$nr)" --jq .sha ;;
   ""|-h|--help|hilfe) hilfe ;;
   *) echo "Unbekannter Befehl: $cmd" >&2; hilfe >&2; exit 2 ;;
 esac

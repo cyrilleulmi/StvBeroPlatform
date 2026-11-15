@@ -24,7 +24,8 @@ Gilt für Entwicklung, Review und Test. Jeder Skill verweist hierher.
 
 ## 4. Was kein Agent tut
 
-- Auf `main` pushen, Force-Push, mergen, PRs oder Issues schliessen, Branches löschen.
+- Auf `main` pushen, Force-Push auf fremde Branches, PRs oder Issues schliessen, Branches löschen.
+- Mergen. **Einzige Ausnahme:** Der Test-Agent mergt einen PR, der alle Tests bestanden hat, ausschliesslich mit `scripts/pipeline.sh mergen` (prüft Konflikte, CI und dass genau der getestete Stand gemergt wird).
 - Anforderungen mit Status «Entschieden» ändern.
 - Secrets, Tokens oder Passwörter in Code, Kommentare oder Logs schreiben.
 - Andere Repos verändern.
@@ -63,6 +64,7 @@ Der Kommentar ist für Cyrille und den nächsten Agenten geschrieben: kurz, konk
 ## 8. Umgebung
 
 - In der Cloud gibt es keinen Docker-Daemon. Datenbank: `scripts/db-start.sh`. Quarkus Dev Services und Testcontainers sind im Profil `test` aus und zeigen auf `localhost:5432/stv`.
+- Java: In der Cloud ist nur JDK 21 vorinstalliert. Vor jedem Build `source scripts/java.sh` (installiert bei Bedarf JDK 25 und setzt `JAVA_HOME`).
 - Browser: Google Chrome ist installiert. Playwright nutzt `channel: 'chrome'`, Playwright MCP ist in `.mcp.json` konfiguriert.
 - Netzwerk: nur die Standard-Allowlist (Paket-Registries, GitHub). swiss unihockey ist in Tests nie echt, sondern simuliert.
 - Lange Prozesse (Backend, Frontend) im Hintergrund starten und am Ende des Laufs beenden.

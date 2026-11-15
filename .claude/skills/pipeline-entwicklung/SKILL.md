@@ -51,15 +51,16 @@ Nichts gefunden: notieren und beenden.
 1. Sperre setzen, Startkommentar.
 2. Den PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Die Befunde stehen im neuesten Review- oder Test-Kommentar: `scripts/pipeline.sh letzter-befund <nr>`.
 3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 3 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
-4. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
-5. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.
-6. Commit und Push auf denselben Branch.
-7. Abschlusskommentar mit `<!-- pipeline:entwicklung -->`: Tabelle Befund → Lösung (Datei, Test). Befunde, die du bewusst nicht umsetzt, mit Begründung.
-8. `scripts/pipeline.sh wechseln <nr> pipeline:nacharbeit pipeline:review`, dann `scripts/pipeline.sh entsperren <nr>`.
+4. Meldet der Befund Konflikte mit `main`: zuerst `git fetch origin main && git rebase origin/main`, Konflikte lösen, dann alles erneut prüfen. Danach mit `git push --force-with-lease` auf den eigenen `claude/`-Branch pushen (der einzige erlaubte Force-Push).
+5. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
+6. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.
+7. Commit und Push auf denselben Branch.
+8. Abschlusskommentar mit `<!-- pipeline:entwicklung -->`: Tabelle Befund → Lösung (Datei, Test). Befunde, die du bewusst nicht umsetzt, mit Begründung.
+9. `scripts/pipeline.sh wechseln <nr> pipeline:nacharbeit pipeline:review`, dann `scripts/pipeline.sh entsperren <nr>`.
 
 ## Erstes Feature (F-00)
 
-Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Annahmen dort (z.B. Java 21, Flyway), damit spätere Läufe nicht umbauen.
+Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Vorgaben dort (Java 25, Flyway), damit spätere Läufe nicht umbauen.
 
 ## Qualität
 

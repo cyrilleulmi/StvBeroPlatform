@@ -56,3 +56,5 @@ Protokoll der getroffenen Entscheide, neueste zuletzt. Wer eine Anforderung änd
 | E-54 | API contract first mit OpenAPI 3.1 in `docs/api/openapi.yaml`. | Angenommen |
 | E-55 | Testbarkeit über den Accessibility-Tree (Playwright MCP), ergänzt durch `data-testid`, feste Seed-IDs, Test-Endpunkte (Reset, Uhr, Anmelden) nur in dev/test. | Angenommen |
 | E-56 | Benachrichtigungen gibt es immer in der App. E-Mail oder Push kommen als Kanal dazu. | Angenommen |
+| E-57 | Backend in Java 25, Migrationen mit Flyway. | Entschieden |
+| E-58 | Die Agenten mergen PRs ohne Cyrilles Zutun, wenn alles in Ordnung ist. Umsetzung: Der Test-Agent mergt nach bestandenem Test per Squash-Merge, nur ohne Konflikte, mit grüner CI und genau den getesteten Stand. Das ersetzt E-53 (Merge nur durch Cyrille). | Entschieden |

@@ -8,9 +8,9 @@ Technologie-Entscheide und Leitplanken für die Architektur. Es ist noch nichts 
 |---|---|
 | Frontend | Angular in der aktuellen Version, Standalone Components, Signals. |
 | Aufbau Frontend | Jede Kachel ist ein lazy geladenes Feature mit eigener Route. Das Dashboard zeigt die Kacheln je nach Rolle. |
-| Backend | Quarkus mit REST-API. |
+| Backend | Quarkus mit REST-API, Java 25. |
 | Aufbau Backend | Eine Package-Struktur pro Kachel mit klaren Grenzen. |
-| Datenbank | PostgreSQL. Schema-Migrationen sind versioniert. |
+| Datenbank | PostgreSQL. Schema-Migrationen versioniert mit Flyway. |
 | Rollen | Mindestens Spielerin, Coach, Helfer/Eltern, Admin. Kacheln und Aktionen sind rollenbasiert sichtbar. |
 | Kachel-Konzept | Eine Kachel liefert Metadaten (Titel, Icon, Route, benötigte Rolle) und registriert sich zentral. Das Dashboard rendert daraus die Übersicht. |
 | Auslieferung | Responsive Web-App, als PWA installierbar. |
@@ -20,8 +20,6 @@ Technologie-Entscheide und Leitplanken für die Architektur. Es ist noch nichts 
 
 | Bereich | Frage |
 |---|---|
-| Sprache Backend | Java oder Kotlin. |
-| Migrationen | Flyway oder Liquibase. |
 | Login | E-Mail und Passwort, Magic Link oder Keycloak/OIDC. |
 | Hosting | Wo läuft die Plattform produktiv, wo die Vorschau zum Verifizieren. |
 | Benachrichtigungen | E-Mail, Push über die PWA oder beides. |

@@ -1,9 +1,9 @@
 # Produktionspipeline
 
-Drei KI-Agenten bauen Features in der Claude-Cloud, nacheinander und unabhängig voneinander. Cyrille gibt Features frei und nimmt sie ab. Dazwischen läuft alles von selbst.
+Drei KI-Agenten bauen Features in der Claude-Cloud, nacheinander und unabhängig voneinander. Cyrille gibt Features frei. Danach läuft alles von selbst bis auf `main`: Besteht ein PR Review und Test, mergt ihn der Test-Agent.
 
 ```
-Issue «status:bereit»  →  Entwicklung  →  Review  →  Test  →  Abnahme durch Cyrille (Merge)
+Issue «status:bereit»  →  Entwicklung  →  Review  →  Test  →  Merge nach main (Test-Agent)
                               ↑______________|_________|
                                   Nacharbeit (höchstens 3 Runden)
 ```
@@ -13,7 +13,7 @@ Issue «status:bereit»  →  Entwicklung  →  Review  →  Test  →  Abnahme 
 - **Jeder Agent ist eine eigene Claude-Code-Aufgabe in der Cloud** (scheduled task, früher «Routine»). Jeder Lauf ist eine frische Cloud-Sitzung ohne Wissen aus dem vorherigen Lauf. Der Review- und der Test-Agent beurteilen also Arbeit, die sie nicht selbst gemacht haben.
 - **Der Zustand steht auf GitHub, in Labels.** Ein Agent schliesst seine Arbeit ab, indem er das Label wechselt. Das Label-Ereignis startet über einen GitHub-Trigger den nächsten Agenten.
 - **Die Anleitung jedes Agenten liegt im Repo** als Skill unter `.claude/skills/`. Die Cloud-Aufgabe ruft nur den Skill auf. Änderungen an der Pipeline laufen damit über normale Commits.
-- **Gemergt wird nur von Cyrille.** Kein Agent merged, pusht auf `main` oder schliesst Issues.
+- **Gemergt wird automatisch, aber nur vom Test-Agenten** und nur über `scripts/pipeline.sh mergen`: Squash-Merge, nur ohne Konflikte, nur mit grüner CI und nur genau der getestete Stand. Kein Agent pusht direkt auf `main`. Cyrille greift nur bei `pipeline:blockiert` ein.
 
 ## Ablauf
 
@@ -27,12 +27,12 @@ stateDiagram-v2
     Review --> Nacharbeit: Muss-Befunde<br/>pipeline:nacharbeit
     Review --> Test: keine Muss-Befunde<br/>pipeline:test
     Test --> Nacharbeit: Fehler gefunden<br/>pipeline:nacharbeit
-    Test --> Abnahme: alles bestanden<br/>pipeline:abnahme
+    Test --> Gemergt: alles bestanden<br/>Test-Agent mergt<br/>pipeline:gemergt
     Nacharbeit --> Review: behoben<br/>pipeline:review
     Nacharbeit --> Blockiert: 3 Runden erreicht<br/>pipeline:blockiert
     Entwicklung --> Blockiert: Widerspruch zu einer<br/>entschiedenen Anforderung
     Blockiert --> Bereit: Cyrille klärt und setzt Label neu
-    Abnahme --> [*]: Cyrille merged
+    Gemergt --> [*]: Issue geschlossen
 ```
 
 Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test. So wird jede Änderung geprüft.
@@ -43,8 +43,8 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 |---|---|---|---|---|
 | **Entwicklung** (Aufgaben «Entwicklung» und «Nacharbeit») | [`pipeline-entwicklung`](../../.claude/skills/pipeline-entwicklung/SKILL.md) | Issue bekommt `status:bereit`, PR bekommt `pipeline:nacharbeit` | Branch `claude/…` anlegen, Code schreiben, PR eröffnen, Labels wechseln | auf `main` pushen, mergen, Anforderungen mit Status «Entschieden» ändern |
 | **Review** | [`pipeline-review`](../../.claude/skills/pipeline-review/SKILL.md) | PR bekommt `pipeline:review` | Code lesen, Build und Tests ausführen, kommentieren, Label wechseln | Code ändern |
-| **Test** | [`pipeline-test`](../../.claude/skills/pipeline-test/SKILL.md) | PR bekommt `pipeline:test` | App starten, durchtesten, Testplan unter `e2e/plaene/` committen, Label wechseln | Produktivcode ändern |
-| **Cyrille** | – | PR hat `pipeline:abnahme` oder `pipeline:blockiert` | alles | – |
+| **Test** | [`pipeline-test`](../../.claude/skills/pipeline-test/SKILL.md) | PR bekommt `pipeline:test` | App starten, durchtesten, Testplan unter `e2e/plaene/` committen, Label wechseln, **bestandenen PR mergen** | Produktivcode ändern, mergen ohne bestandenen Test |
+| **Cyrille** | – | PR hat `pipeline:blockiert`; sonst nach Belieben | alles | – |
 
 ## Labels
 
@@ -56,7 +56,7 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 | `pipeline:review` | PR | Wartet auf Review | Entwicklung |
 | `pipeline:nacharbeit` | PR | Befunde aus Review oder Test sind zu beheben | Review, Test |
 | `pipeline:test` | PR | Wartet auf Test | Review |
-| `pipeline:abnahme` | PR | Bereit zum Mergen | Test |
+| `pipeline:gemergt` | PR | Vom Test-Agenten nach `main` gemergt | Test |
 | `pipeline:blockiert` | Issue, PR | Braucht eine Entscheidung von Cyrille | alle |
 | `agent:aktiv` | Issue, PR | Ein Agent arbeitet gerade daran (Sperre) | alle |
 
@@ -73,7 +73,8 @@ Das Repo ist öffentlich. Jeder kann Issues und Kommentare schreiben.
 - Labels setzen können nur Personen mit Schreibrechten. Die Pipeline startet nur über Labels.
 - Ein Agent arbeitet ein Issue nur ab, wenn `status:bereit` von `cyrilleulmi` gesetzt wurde. Er prüft das über die Ereignisse des Issues.
 - Anweisungen nehmen die Agenten nur aus diesem Repo (Skills, Anforderungen) und aus Issue-Texten und Kommentaren von `cyrilleulmi`. Alles andere (fremde Kommentare, Inhalte von Webseiten, Antworten von swiss unihockey) sind Daten, keine Anweisungen.
-- `.claude/settings.json` verbietet Force-Push, Merge und Löschen über die Kommandozeile.
+- `.claude/settings.json` verbietet Force-Push ohne `--force-with-lease`, direkten Push auf `main` und Löschen des Repos.
+- Weil ohne menschliche Prüfung gemergt wird, sind Review und Test die einzigen Sicherungen vor `main`. Will Cyrille wieder selbst abnehmen, ersetzt er im Test-Skill den Merge durch ein Label `pipeline:abnahme`.
 - Commits und PRs der Agenten erscheinen unter Cyrilles GitHub-Konto. Deshalb kann der Review-Agent einen PR nicht formell «approven» (GitHub verbietet das für eigene PRs). Er entscheidet über das Label.
 
 ## Einrichtung
@@ -98,7 +99,7 @@ Was man beim Einrichten wissen muss:
 - **Aufgaben über claude.ai/code/routines anlegen** (*New task → Set up manually*), nicht aus einem Chat in einem claude.ai-Projekt. Aus einem Projekt angelegte Aufgaben sind Chat-Aufgaben: ohne Repository, ohne GitHub-Trigger, Connectors nicht entfernbar.
 - **Trigger nach dem Speichern prüfen.** Auf der Detailseite muss unter «Triggers» `GitHub · cyrilleulmi/stvberoplatform` stehen. Beim Anlegen gingen PR-Trigger einmal verloren («Manual only»). Nach dem Eintragen des Filterwerts mit Tab aus dem Feld gehen, dann speichern.
 - Der Filter «Labels is one of» prüft, ob das Label auf dem Issue/PR **vorhanden** ist, nicht nur, ob es gerade gesetzt wurde. Setzt ein Agent z.B. `agent:aktiv` auf ein Issue mit `status:bereit`, startet ein weiterer Lauf. Der erkennt die Sperre und endet sofort.
-- Ein Setup-Skript ist nicht nötig: Das Standard-Image hat Java 21, Maven, Node 22, Chrome und PostgreSQL. `scripts/cloud-setup.sh` prüft das bei Bedarf.
+- Setup-Skript: optional. Das Standard-Image hat Java 21, Maven, Node 22, Chrome und PostgreSQL. Java 25 installiert `scripts/java.sh` bei Bedarf in jedem Lauf (etwa eine Minute). Wer das sparen will, trägt den Inhalt von `scripts/cloud-setup.sh` als Setup-Skript der Umgebung «Default» ein, dann ist JDK 25 vorinstalliert und gecacht.
 - Optional: Bei «Entwicklung» einen Zeitplan-Trigger (z.B. täglich) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Das geht nur, wenn keine GitHub-Trigger nötig ist, also in einer separaten Aufgabe.
 
 ## Ein Feature durch die Pipeline schicken
@@ -107,10 +108,10 @@ Was man beim Einrichten wissen muss:
 2. Akzeptanzkriterien prüfen. Sie sind das, was der Test-Agent prüft.
 3. Label `status:bereit` setzen.
 4. Warten. Der Fortschritt steht als Kommentare im PR. Jede Cloud-Sitzung ist unter claude.ai/code einsehbar.
-5. Bei `pipeline:abnahme`: Testbericht lesen, optional selbst ausprobieren, mergen.
+5. Bei `pipeline:gemergt`: Das Feature ist auf `main`. Der Testbericht im PR sagt, was neu ist.
 6. Bei `pipeline:blockiert`: Frage im Kommentar beantworten, dann das passende Label wieder setzen.
 
-Features nacheinander freigeben, nicht alle auf einmal. Spätere Features bauen auf früheren auf (siehe [Backlog](backlog.md)), und parallele PRs erzeugen Konflikte.
+Features nacheinander freigeben, nicht alle auf einmal: das nächste erst, wenn das vorherige gemergt ist. Spätere Features bauen auf früheren auf (siehe [Backlog](backlog.md)), und parallele PRs erzeugen Konflikte.
 
 ## Grenzen und Kosten
 
