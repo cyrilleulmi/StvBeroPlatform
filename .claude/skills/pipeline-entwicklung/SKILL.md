@@ -60,7 +60,7 @@ Nichts gefunden: notieren und beenden.
 
 ## Erstes Feature (F-00)
 
-Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Vorgaben dort (Java 25, Flyway), damit spätere Läufe nicht umbauen.
+Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Vorgaben dort (Java 21, Flyway), damit spätere Läufe nicht umbauen.
 
 ## Qualität
 

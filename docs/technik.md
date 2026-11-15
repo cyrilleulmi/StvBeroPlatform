@@ -8,7 +8,7 @@ Technologie-Entscheide und Leitplanken für die Architektur. Es ist noch nichts 
 |---|---|
 | Frontend | Angular in der aktuellen Version, Standalone Components, Signals. |
 | Aufbau Frontend | Jede Kachel ist ein lazy geladenes Feature mit eigener Route. Das Dashboard zeigt die Kacheln je nach Rolle. |
-| Backend | Quarkus mit REST-API, Java 25. |
+| Backend | Quarkus mit REST-API, Java 21 (LTS). |
 | Aufbau Backend | Eine Package-Struktur pro Kachel mit klaren Grenzen. |
 | Datenbank | PostgreSQL. Schema-Migrationen versioniert mit Flyway. |
 | Rollen | Mindestens Spielerin, Coach, Helfer/Eltern, Admin. Kacheln und Aktionen sind rollenbasiert sichtbar. |

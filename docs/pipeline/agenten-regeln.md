@@ -64,7 +64,7 @@ Der Kommentar ist für Cyrille und den nächsten Agenten geschrieben: kurz, konk
 ## 8. Umgebung
 
 - In der Cloud gibt es keinen Docker-Daemon. Datenbank: `scripts/db-start.sh`. Quarkus Dev Services und Testcontainers sind im Profil `test` aus und zeigen auf `localhost:5432/stv`.
-- Java: In der Cloud ist nur JDK 21 vorinstalliert. Vor jedem Build `source scripts/java.sh` (installiert bei Bedarf JDK 25 und setzt `JAVA_HOME`).
+- Java: JDK 21 ist in der Cloud vorinstalliert. Das Projekt nutzt Java 21.
 - Browser: Google Chrome ist installiert. Playwright nutzt `channel: 'chrome'`, Playwright MCP ist in `.mcp.json` konfiguriert.
 - Netzwerk: nur die Standard-Allowlist (Paket-Registries, GitHub). swiss unihockey ist in Tests nie echt, sondern simuliert.
 - Lange Prozesse (Backend, Frontend) im Hintergrund starten und am Ende des Laufs beenden.

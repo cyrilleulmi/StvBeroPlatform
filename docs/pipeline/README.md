@@ -99,7 +99,7 @@ Was man beim Einrichten wissen muss:
 - **Aufgaben über claude.ai/code/routines anlegen** (*New task → Set up manually*), nicht aus einem Chat in einem claude.ai-Projekt. Aus einem Projekt angelegte Aufgaben sind Chat-Aufgaben: ohne Repository, ohne GitHub-Trigger, Connectors nicht entfernbar.
 - **Trigger nach dem Speichern prüfen.** Auf der Detailseite muss unter «Triggers» `GitHub · cyrilleulmi/stvberoplatform` stehen. Beim Anlegen gingen PR-Trigger einmal verloren («Manual only»). Nach dem Eintragen des Filterwerts mit Tab aus dem Feld gehen, dann speichern.
 - Der Filter «Labels is one of» prüft, ob das Label auf dem Issue/PR **vorhanden** ist, nicht nur, ob es gerade gesetzt wurde. Setzt ein Agent z.B. `agent:aktiv` auf ein Issue mit `status:bereit`, startet ein weiterer Lauf. Der erkennt die Sperre und endet sofort.
-- Setup-Skript: optional. Das Standard-Image hat Java 21, Maven, Node 22, Chrome und PostgreSQL. Java 25 installiert `scripts/java.sh` bei Bedarf in jedem Lauf (etwa eine Minute). Wer das sparen will, trägt den Inhalt von `scripts/cloud-setup.sh` als Setup-Skript der Umgebung «Default» ein, dann ist JDK 25 vorinstalliert und gecacht.
+- Ein Setup-Skript ist nicht nötig: Das Standard-Image hat alles, was das Projekt braucht (Java 21, Maven, Node 22, Chrome, PostgreSQL). `scripts/cloud-setup.sh` prüft das bei Bedarf.
 - Optional: Bei «Entwicklung» einen Zeitplan-Trigger (z.B. täglich) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Das geht nur, wenn keine GitHub-Trigger nötig ist, also in einer separaten Aufgabe.
 
 ## Ein Feature durch die Pipeline schicken

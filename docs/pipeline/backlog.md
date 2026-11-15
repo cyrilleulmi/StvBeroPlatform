@@ -39,7 +39,7 @@ flowchart LR
 
 | Punkt | Vorgabe |
 |---|---|
-| Backend-Sprache | Java 25 (entschieden, E-57). In der Cloud über `source scripts/java.sh`. |
+| Backend-Sprache | Java 21 LTS (entschieden, E-57). In der Cloud vorinstalliert. |
 | Migrationen | Flyway (entschieden, E-57) |
 | Build | Maven im Backend, npm im Frontend und in `e2e/` |
 | Anmeldung (O-01) | Sitzungs-Cookie. Im Profil `dev`/`test` Anmeldung über `/dev-login`. Produktives Verfahren folgt, sobald entschieden. |

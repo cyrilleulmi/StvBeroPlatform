@@ -12,7 +12,7 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-04 | **Mandantenfähigkeit:** Braucht es mehrere Vereine in einer Installation? | Mehrere Teams innerhalb des Vereins sind Teil des Kerns. |
 | O-05 | **Benachrichtigungen:** E-Mail, Push über die PWA oder beides? | Siehe [BEN-10](anforderungen/08-benachrichtigungen.md). |
 | O-06 | **Grösse:** Wie viele Teams und Mitglieder ungefähr? | |
-| O-07 | ~~**Backend-Sprache:** Java oder Kotlin?~~ | Entschieden: Java 25 (E-57). |
+| O-07 | ~~**Backend-Sprache:** Java oder Kotlin?~~ | Entschieden: Java 21 (E-57). |
 | O-08 | ~~**Migrationen:** Flyway oder Liquibase?~~ | Entschieden: Flyway (E-57). |
 
 ## Kern
@@ -35,7 +35,7 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | Nr. | Frage | Bemerkung |
 |---|---|---|
 | O-30 | Vorschau-URL zum Ausprobieren | Hängt am Hosting (O-02). Bis dahin über eine Cloud-Sitzung auf dem PR-Branch. |
-| O-31 | ~~Java und Migrationswerkzeug für F-00~~ | Entschieden: Java 25 und Flyway (E-57). |
+| O-31 | ~~Java und Migrationswerkzeug für F-00~~ | Entschieden: Java 21 und Flyway (E-57). |
 
 ## swiss unihockey
 
