@@ -15,7 +15,7 @@ Dieses Repo wird mit Unterstützung von KI-Agenten entwickelt. Diese Datei sagt,
 
 ## Stand und Pipeline
 
-Features werden über die [Produktionspipeline](docs/pipeline/README.md) gebaut: Entwicklung → Review → Test → Abnahme durch Cyrille. Ein Feature wird umgesetzt, sobald Cyrille das Issue mit `status:bereit` freigibt. Reihenfolge und Akzeptanzkriterien: [docs/pipeline/backlog.md](docs/pipeline/backlog.md).
+Features werden über die [Produktionspipeline](docs/pipeline/README.md) gebaut: Entwicklung → Review → Test → automatischer Merge durch den Test-Agenten. Ein Feature wird umgesetzt, sobald Cyrille das Issue mit `status:bereit` freigibt. Reihenfolge und Akzeptanzkriterien: [docs/pipeline/backlog.md](docs/pipeline/backlog.md).
 
 Die Rollen sind Skills unter `.claude/skills/` (`/pipeline-entwicklung`, `/pipeline-review`, `/pipeline-test`). Gemeinsame Regeln: [docs/pipeline/agenten-regeln.md](docs/pipeline/agenten-regeln.md). Was jeder PR erfüllen muss: [docs/pipeline/definition-of-done.md](docs/pipeline/definition-of-done.md).
 

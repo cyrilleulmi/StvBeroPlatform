@@ -4,11 +4,9 @@
   ],
   "permissions": {
     "deny": [
-      "Bash(git push --force*)",
+      "Bash(git push --force origin*)",
       "Bash(git push -f*)",
       "Bash(git push origin main*)",
-      "Bash(gh pr merge*)",
-      "Bash(gh api -X PUT repos/*/pulls/*/merge*)",
       "Bash(gh repo delete*)",
       "mcp__Gmail",
       "mcp__Google_Calendar",

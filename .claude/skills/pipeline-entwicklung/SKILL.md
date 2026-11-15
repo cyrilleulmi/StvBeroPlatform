@@ -15,15 +15,16 @@ In dieser Reihenfolge, genau einen Eintrag:
 
 1. **Nacharbeit:** offener PR mit `pipeline:nacharbeit`, ohne `agent:aktiv`, ältester zuerst.
    `scripts/pipeline.sh prs pipeline:nacharbeit`
-2. **Neues Feature:** offenes Issue mit `status:bereit`, ohne `agent:aktiv`, ohne offenen PR, der es schliesst. Kleinste Feature-Nummer (F-xx im Titel) zuerst, sonst ältestes.
-   `scripts/pipeline.sh issues status:bereit`
-   Prüfe, dass `scripts/pipeline.sh label-von <nr> status:bereit` den Wert `cyrilleulmi` liefert. Prüfe mit den offenen PRs (`scripts/pipeline.sh prs …` für alle `pipeline:`-Labels und `scripts/pipeline.sh pr-issue <pr>`), dass es noch keinen PR für das Issue gibt. Prüfe die Abhängigkeiten im [Backlog](../../../docs/pipeline/backlog.md): Ist ein vorausgesetztes Feature nicht auf `main`, setze `pipeline:blockiert` mit Erklärung und beende.
+2. **Neues Feature**, nur wenn die Pipeline frei ist. Es wird immer nur **ein** Feature gleichzeitig gebaut (Warteschlange):
+   - `scripts/pipeline.sh laufend` muss leer sein. Steht dort etwas (PR in Review/Test/Nacharbeit, Issue in Arbeit oder blockiert), beenden: Das nächste Feature wird angestossen, sobald das laufende gemergt ist.
+   - Nächstes Feature: `scripts/pipeline.sh naechstes-feature`. Das liefert das Issue mit `status:bereit` und der kleinsten F-Nummer, dessen Voraussetzungen alle geschlossen (also gemergt) sind. Leer: beenden. Features mit offenen Voraussetzungen bleiben einfach in der Warteschlange, sie werden **nicht** blockiert.
+   - Beanspruchen: `scripts/pipeline.sh beanspruchen <issue>`. Endet das mit Fehler, war ein anderer Lauf schneller: beenden, ohne etwas zu ändern. Das passiert, wenn mehrere Issues gleichzeitig `status:bereit` bekommen.
 
 Nichts gefunden: notieren und beenden.
 
 ## 2. Neues Feature umsetzen
 
-1. Sperre setzen (`agent:aktiv`), Startkommentar.
+1. Die Sperre ist durch `beanspruchen` schon gesetzt.
 2. **Verstehen.** Issue, die genannten Anforderungen in `docs/anforderungen/`, [fachmodell.md](../../../docs/fachmodell.md), [testbarkeit.md](../../../docs/testbarkeit.md), [navigation.md](../../../docs/oberflaeche/navigation.md), [testdaten.md](../../../docs/testdaten.md), [zustaende.md](../../../docs/zustaende.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-grundlagen.md](../../../docs/design-grundlagen.md).
 3. **Unklarheiten:** Sinnvolle Annahme treffen und im PR unter «Annahmen» aufführen. Nicht nachfragen. Nur bei einem Widerspruch zu einer Anforderung mit Status «Entschieden»: `pipeline:blockiert` auf das Issue, Frage stellen, beenden.
 4. **Branch** von aktuellem `main`: `claude/f<nr>-<kurzname>`, z.B. `claude/f04-anmeldung`.
@@ -50,16 +51,17 @@ Nichts gefunden: notieren und beenden.
 
 1. Sperre setzen, Startkommentar.
 2. Den PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Die Befunde stehen im neuesten Review- oder Test-Kommentar: `scripts/pipeline.sh letzter-befund <nr>`.
-3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 3 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
-4. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
-5. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.
-6. Commit und Push auf denselben Branch.
-7. Abschlusskommentar mit `<!-- pipeline:entwicklung -->`: Tabelle Befund → Lösung (Datei, Test). Befunde, die du bewusst nicht umsetzt, mit Begründung.
-8. `scripts/pipeline.sh wechseln <nr> pipeline:nacharbeit pipeline:review`, dann `scripts/pipeline.sh entsperren <nr>`.
+3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 5 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
+4. Meldet der Befund Konflikte mit `main`: zuerst `git fetch origin main && git rebase origin/main`, Konflikte lösen, dann alles erneut prüfen. Danach mit `git push --force-with-lease` auf den eigenen `claude/`-Branch pushen (der einzige erlaubte Force-Push).
+5. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
+6. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.
+7. Commit und Push auf denselben Branch.
+8. Abschlusskommentar mit `<!-- pipeline:entwicklung -->`: Tabelle Befund → Lösung (Datei, Test). Befunde, die du bewusst nicht umsetzt, mit Begründung.
+9. `scripts/pipeline.sh wechseln <nr> pipeline:nacharbeit pipeline:review`, dann `scripts/pipeline.sh entsperren <nr>`.
 
 ## Erstes Feature (F-00)
 
-Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Annahmen dort (z.B. Java 21, Flyway), damit spätere Läufe nicht umbauen.
+Gibt es noch keinen Code, legt F-00 das Grundgerüst an. Die Struktur steht im Backlog. Halte dich an die Vorgaben dort (Java 21, Flyway), damit spätere Läufe nicht umbauen.
 
 ## Qualität
 

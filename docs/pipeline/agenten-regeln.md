@@ -24,7 +24,8 @@ Gilt für Entwicklung, Review und Test. Jeder Skill verweist hierher.
 
 ## 4. Was kein Agent tut
 
-- Auf `main` pushen, Force-Push, mergen, PRs oder Issues schliessen, Branches löschen.
+- Auf `main` pushen, Force-Push auf fremde Branches, PRs oder Issues schliessen, Branches löschen.
+- Mergen. **Einzige Ausnahme:** Der Test-Agent mergt einen PR, der alle Tests bestanden hat, ausschliesslich mit `scripts/pipeline.sh mergen` (prüft Konflikte, CI und dass genau der getestete Stand gemergt wird).
 - Anforderungen mit Status «Entschieden» ändern.
 - Secrets, Tokens oder Passwörter in Code, Kommentare oder Logs schreiben.
 - Andere Repos verändern.
@@ -42,7 +43,7 @@ scripts/pipeline.sh entsperren <nr>
 ## 6. Runden und Blockade
 
 - Jede Nacharbeit ist eine Runde. `scripts/pipeline.sh runde <nr>` zählt die Kommentare mit der Markierung `<!-- pipeline:entwicklung -->` auf dem PR, minus 1 für die erste Umsetzung.
-- **Ab Runde 3** setzt der Agent, der erneut Nacharbeit verlangen würde, stattdessen `pipeline:blockiert` und fasst im Kommentar zusammen, was offen ist und was Cyrille entscheiden muss.
+- **Ab Runde 5** setzt der Agent, der erneut Nacharbeit verlangen würde, stattdessen `pipeline:blockiert` und fasst im Kommentar zusammen, was offen ist und was Cyrille entscheiden muss.
 - `pipeline:blockiert` auch bei: Widerspruch zu einer entschiedenen Anforderung, fehlendem Zugang, Umgebung kaputt (z.B. Build-Werkzeuge fehlen) nach einem zweiten Versuch.
 
 ## 7. Abschlusskommentar
@@ -63,6 +64,7 @@ Der Kommentar ist für Cyrille und den nächsten Agenten geschrieben: kurz, konk
 ## 8. Umgebung
 
 - In der Cloud gibt es keinen Docker-Daemon. Datenbank: `scripts/db-start.sh`. Quarkus Dev Services und Testcontainers sind im Profil `test` aus und zeigen auf `localhost:5432/stv`.
+- Java: JDK 21 ist in der Cloud vorinstalliert. Das Projekt nutzt Java 21.
 - Browser: Google Chrome ist installiert. Playwright nutzt `channel: 'chrome'`, Playwright MCP ist in `.mcp.json` konfiguriert.
 - Netzwerk: nur die Standard-Allowlist (Paket-Registries, GitHub). swiss unihockey ist in Tests nie echt, sondern simuliert.
 - Lange Prozesse (Backend, Frontend) im Hintergrund starten und am Ende des Laufs beenden.

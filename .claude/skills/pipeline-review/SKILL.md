@@ -101,7 +101,7 @@ Den Kommentar mit `scripts/pipeline.sh kommentieren <nr> bericht.md` posten. Dat
 
 **Label** (mit `scripts/pipeline.sh wechseln`, danach `entsperren`):
 - Keine Muss-Befunde: `pipeline:review` → `pipeline:test`.
-- Muss-Befunde: `pipeline:review` → `pipeline:nacharbeit`. Ab Runde 3 stattdessen `pipeline:blockiert` (siehe agenten-regeln.md).
+- Muss-Befunde: `pipeline:review` → `pipeline:nacharbeit`. Ab Runde 5 stattdessen `pipeline:blockiert` (siehe agenten-regeln.md).
 - `agent:aktiv` entfernen.
 
 Ein formelles «Approve» ist nicht möglich und nicht nötig. Das Label ist die Entscheidung.

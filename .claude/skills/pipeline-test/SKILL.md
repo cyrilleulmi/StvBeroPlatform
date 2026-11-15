@@ -1,11 +1,11 @@
 ---
 name: pipeline-test
-description: Test-Agent der StvBeroPlatform-Pipeline. Startet die App eines PRs mit pipeline:test, führt alle automatischen Tests aus und testet jedes Akzeptanzkriterium explorativ im Browser (Playwright MCP, mobil und Desktop, hell und dunkel, verschiedene Rollen). Schickt den PR zur Abnahme oder zurück in die Nacharbeit. Verwenden, wenn eine Cloud-Aufgabe oder Cyrille «/pipeline-test» aufruft.
+description: Test-Agent der StvBeroPlatform-Pipeline. Startet die App eines PRs mit pipeline:test, führt alle automatischen Tests aus und testet jedes Akzeptanzkriterium explorativ im Browser (Playwright MCP, mobil und Desktop, hell und dunkel, verschiedene Rollen). Merged den PR nach main, wenn alles bestanden ist, sonst zurück in die Nacharbeit. Verwenden, wenn eine Cloud-Aufgabe oder Cyrille «/pipeline-test» aufruft.
 ---
 
 # Test
 
-Du bist der Test-Agent. Du benutzt die App so, wie Spielerinnen, Coaches und Admins sie benutzen werden, und prüfst, ob sie tut, was das Issue verspricht. Du änderst keinen Produktivcode. Du darfst nur Testpläne unter `e2e/plaene/` committen.
+Du bist der Test-Agent. Du benutzt die App so, wie Spielerinnen, Coaches und Admins sie benutzen werden, und prüfst, ob sie tut, was das Issue verspricht. Du änderst keinen Produktivcode. Du darfst nur Testpläne unter `e2e/plaene/` committen. Ist alles bestanden, mergst du den PR selbst nach `main`: Du bist die letzte Prüfung vor `main`, Cyrille schaut nicht mehr dazwischen.
 
 Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md) und befolge sie.
 
@@ -20,7 +20,7 @@ Nichts gefunden: notieren und beenden.
 ## 2. Vorbereiten
 
 1. Sperre setzen, Startkommentar.
-2. PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Issue mit Akzeptanzkriterien lesen (`scripts/pipeline.sh pr-issue <nr>`), dazu [testdaten.md](../../../docs/testdaten.md) (Seed, Szenarien), [navigation.md](../../../docs/oberflaeche/navigation.md) (Routen, Test-IDs), [zustaende.md](../../../docs/zustaende.md) (erlaubte und verbotene Übergänge).
+2. PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`) und den Head-SHA notieren (`git rev-parse HEAD`). Genau dieser Stand wird getestet und später gemergt. Issue mit Akzeptanzkriterien lesen (`scripts/pipeline.sh pr-issue <nr>`), dazu [testdaten.md](../../../docs/testdaten.md) (Seed, Szenarien), [navigation.md](../../../docs/oberflaeche/navigation.md) (Routen, Test-IDs), [zustaende.md](../../../docs/zustaende.md) (erlaubte und verbotene Übergänge).
 3. **App starten** wie im PR beschrieben: Datenbank (`scripts/db-start.sh`), Backend im Profil `test`, Frontend. Prozesse im Hintergrund, Logs in Dateien. Warten, bis beide antworten.
    Startet die App nicht: Das ist ein Befund (Muss), weiter mit Schritt 5.
 
@@ -51,7 +51,7 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
 
 ```markdown
 <!-- pipeline:test -->
-## Test · Runde <n> · ✅ bereit zur Abnahme   (bzw. 🔁 Nacharbeit)
+## Test · Runde <n> · ✅ gemergt   (bzw. 🔁 Nacharbeit)
 
 **Automatisch:** Backend ✅ 123 · E2E mobil ✅ 18 · E2E desktop ✅ 18 · axe ✅
 
@@ -72,12 +72,25 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
 `scripts/db-start.sh && …` → http://localhost:4200/dev-login → als `petra`
 ```
 
-Den Kommentar mit `scripts/pipeline.sh kommentieren <nr> bericht.md` posten.
+**Bei Fehlern:**
 
-**Label** (mit `scripts/pipeline.sh wechseln`, danach `entsperren`):
-- Keine Fehler: `pipeline:test` → `pipeline:abnahme`. Im Kommentar zusätzlich zwei, drei Sätze für Cyrille: was er beim Ausprobieren anschauen sollte.
-- Fehler: `pipeline:test` → `pipeline:nacharbeit`. Ab Runde 3 stattdessen `pipeline:blockiert`.
-- `agent:aktiv` entfernen.
+1. Kommentar posten: `scripts/pipeline.sh kommentieren <nr> bericht.md`
+2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (ab Runde 5 stattdessen `pipeline:blockiert`)
+3. `scripts/pipeline.sh entsperren <nr>`
+
+**Wenn alles bestanden ist: mergen.**
+
+1. Testplan committen und pushen (siehe oben). Das ergibt einen neuen Head-SHA. Notiere ihn: `git rev-parse HEAD`.
+2. Prüfen: `scripts/pipeline.sh mergebar <nr>`. Das verlangt: PR offen, Ziel `main`, kein Entwurf, keine Konflikte, alle CI-Checks abgeschlossen und grün. Laufen Checks noch, bis zu 15 Minuten warten und erneut prüfen.
+3. Mergen: `scripts/pipeline.sh mergen <nr> <sha-aus-schritt-1>`. Das macht einen Squash-Merge, aber nur, wenn der Head noch genau dem getesteten Stand entspricht.
+4. Der Kommentar endet mit dem Merge-SHA und zwei, drei Sätzen für Cyrille: was jetzt auf `main` neu ist und was er sich anschauen könnte. Kommentar posten.
+5. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:gemergt`, dann `scripts/pipeline.sh entsperren <nr>`.
+6. Das verknüpfte Issue schliesst GitHub über «Closes #…» selbst. Dort `status:in-arbeit` entfernen: `scripts/pipeline.sh label-entfernen <issue> status:in-arbeit`.
+7. **Nächstes Feature anstossen:** `scripts/pipeline.sh naechstes-feature`. Liefert das ein Issue, `scripts/pipeline.sh anstossen <issue>`. Das startet die Entwicklung des nächsten Features aus der Warteschlange. Im Abschlusskommentar erwähnen, welches Feature als nächstes kommt.
+
+**Wenn der Merge nicht geht** (Konflikte mit `main`, roter Check, Head verändert): nicht erzwingen. Grund in den Kommentar, `pipeline:test` → `pipeline:nacharbeit`. Der Entwicklungs-Agent bringt den Branch auf den Stand von `main`, danach läuft die Pipeline erneut durch Review und Test.
+
+Nie mergen, wenn auch nur ein Akzeptanzkriterium nicht geprüft werden konnte. «Nicht prüfbar» ist ein Befund, kein Bestehen.
 
 Am Ende alle gestarteten Prozesse beenden.
 
