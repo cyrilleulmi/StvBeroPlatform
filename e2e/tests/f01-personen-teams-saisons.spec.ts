@@ -130,14 +130,15 @@ test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async
   const coaches = page.getByTestId('team-coaches');
   const spielerinnen = page.getByTestId('team-spielerinnen');
   await expect(coaches.getByRole('listitem')).toHaveText(['Petra Keller']);
+  // Ab F-02 nach Linie: Linie 1, Linie 2, Goalies, Ohne Linie; darin nach Nachname (LIN-09)
   await expect(spielerinnen.getByRole('listitem')).toHaveText([
-    'Kim Baumann',
-    'Sara Brun',
     'Mia Frei',
     'Lea Graf',
     'Anna Muster',
+    'Sara Brun',
     'Nina Roth',
     'Jana Wyss',
+    'Kim Baumann',
   ]);
   await expect(spielerinnen.getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
   await barrierefrei(page);

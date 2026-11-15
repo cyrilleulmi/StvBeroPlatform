@@ -137,6 +137,14 @@ export class Linien {
   private async laden(teamId: string): Promise<void> {
     this.laedt.set(true);
     this.ladefehler.set(null);
+    const ich = this.anmeldung.ich();
+    if (ich && !ich.admin && !ich.zugehoerigkeiten.some((z) => z.team.id === teamId)) {
+      // Ohne Zugehörigkeit gar nicht erst anfragen; das Backend lehnt ab (403, RR-07).
+      this.team.set(null);
+      this.ladefehler.set(TEXTE.allgemein.keineBerechtigung);
+      this.laedt.set(false);
+      return;
+    }
     try {
       this.team.set(await firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`)));
     } catch (e) {
