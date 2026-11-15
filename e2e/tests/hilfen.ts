@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { APIRequestContext, Page, expect, test as basis } from '@playwright/test';
+import { APIRequestContext, Locator, Page, expect, test as basis } from '@playwright/test';
 
 /**
  * Gemeinsame Hilfen für alle E2E-Tests.
@@ -45,4 +45,19 @@ export async function barrierefrei(page: Page): Promise<void> {
     .filter((v) => v.impact === 'critical' || v.impact === 'serious')
     .map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`);
   expect(befunde, 'axe-Befunde').toEqual([]);
+}
+
+/**
+ * Dokument-Elemente ohne Rolle (docs/testbarkeit.md, Ausnahme zu «keine CSS-Selektoren»).
+ * `html` und `link` erscheinen nicht im Accessibility-Tree, deshalb gibt es für sie keinen
+ * Locator über Rolle, Label, Text oder Test-ID. Nur hier sind CSS-Selektoren erlaubt;
+ * nb17-keine-css-selektoren.spec.ts prüft, dass die übrigen Tests keine verwenden.
+ */
+export function dokumentWurzel(page: Page): Locator {
+  return page.locator('html');
+}
+
+/** Der `<link rel="…">`-Eintrag im Dokumentkopf, z.B. `manifest`. */
+export function kopfLink(page: Page, rel: string): Locator {
+  return page.locator(`head link[rel="${rel}"]`);
 }
