@@ -47,3 +47,8 @@ Allgemein für jeden Fall:
 - K1.1–K1.6, K2.1–K2.13 bestanden (mobil, Desktop für K2.1/K2.3, Darkmode).
 - K2.14 nicht bestanden: Hinweis «Noch keine aktuelle Saison» erscheint auch ohne Anmeldung und mit aktueller Saison.
 - K2.15 nicht bestanden: zweites `POST /api/abmelden` endet mit 500 (`OptimisticLockException` in `IchResource.abmelden`). Gleich bei «Abmelden» in der Navigation auf `main`, deshalb eigene Nachbesserung.
+
+## Nacharbeit Runde 1
+
+- K2.14 behoben: `keineSaisonGuard` (`frontend/src/app/kern/keine-saison.guard.ts`) auf `/keine-saison`. E2E: `nb13-keine-aktuelle-saison.spec.ts`, Block «mit aktueller Saison».
+- K2.15 bleibt ausserhalb dieses PRs (Nachbesserung #26).
