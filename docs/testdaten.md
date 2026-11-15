@@ -42,8 +42,9 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 |---|---|
 | F-00 | Saisons, alle Personen mit Konto und Schlüssel, Uhr auf Standard-«Jetzt». E-Mail jeder Person: `<schluessel>@example.ch` |
 | F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team. Der Teamname gilt pro Saison: Wird Team 1 umbenannt, zeigt 2025/26 weiterhin «Team 1» (SAI-02, Nachbesserung #21) |
+| F-02 | Gruppen 01–08 und Linienzuweisungen gemäss Tabellen «Gruppen» und «Personen». Kim ist ohne Linie. Zusätzlich Gruppe 09: Goalies von Team 1 in Saison 2025/26 (leer, Vera ist dort ohne Linie) |
 
-Gruppen, Linienzuweisungen, Serien, Termine und Antworten folgen mit F-02 bis F-05. Die Tabellen unten sind das Zielbild.
+Serien, Termine und Antworten folgen mit F-03 bis F-05. Die Tabellen unten sind das Zielbild.
 
 Im Profil `dev` wird der Seed beim Start des Backends geladen. Jeder Neustart (auch Live-Reload) setzt die Daten zurück.
 
@@ -74,6 +75,7 @@ Im Profil `dev` wird der Seed beim Start des Backends geladen. Jeder Neustart (a
 | 06 | Team 2 | Goalies | – |
 | 07 | Team 3 | Linie 1 | 1 |
 | 08 | Team 3 | Goalies (leer) | – |
+| 09 | Team 1, Saison 2025/26 | Goalies (leer, Archiv) | – |
 
 ## Personen
 
@@ -225,6 +227,9 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S13 | Abgesagter Termin | Als `anna` Termin 03 öffnen | Als abgesagt erkennbar, mit Grund. Antworten nicht möglich | TER-06 |
 | S14 | Linie wechseln | Als `petra` in Team 1 Kim der Linie 2 zuweisen | Kim erscheint bei Termin 01 unter Linie 2 von Team 1, «Ohne Linie» ist leer und wird nicht angezeigt | LIN-07, LIN-06 |
 | S15 | Eine Linie pro Team | Als `petra` Anna zusätzlich Linie 2 in Team 1 zuweisen | Anna wechselt in Linie 2, ist danach nicht mehr in Linie 1 | LIN-02 |
+| S24 | Linie löschen | Als `petra` unter `/teams/<Team 1>/linien` «Linie 2 löschen» bestätigen | Sara und Nina stehen unter «Ohne Linie», Linie 1 und Goalies unverändert | LIN-06, LIN-07 |
+| S25 | Goalies bleiben | Als `petra` die Goalies von Team 1 löschen wollen (`DELETE /api/teams/<Team 1>/gruppen/<Gruppe 03>`) | Oberfläche bietet es nicht an, API 409 mit Regel LIN-05 | LIN-05 |
+| S26 | Linien nur lesend | Als `anna` `/teams/<Team 1>/linien` öffnen; als `marc` dasselbe | Anna sieht die Einteilung ohne Bedienelemente. Marc: «Keine Berechtigung», API 403 | LIN-07, RR-07 |
 | S16 | Archiv | Als `alex` unter `/verwaltung/saisons` bei 2025/26 «Teams ansehen», Team 1 öffnen | Hinweis «Archiv: nur lesend», Vera als Spielerin sichtbar, keine Bearbeitung möglich (API 409). Termin 08 ab F-03 | SAI-02 |
 | S17 | Anmeldung im Testmodus | `/profil` ohne Anmeldung öffnen, auf `/dev-login` «Petra Keller» wählen | Weiterleitung auf `/dev-login?ziel=%2Fprofil`, danach zurück auf `/profil` | F-00 |
 | S18 | Kacheln nach Rolle | Als `anna` und als `alex` `/` öffnen | Beide sehen die Kachel «Anwesenheit». Nur `alex` hat «Verwaltung» in der Navigation | NF-12, RR-05 |

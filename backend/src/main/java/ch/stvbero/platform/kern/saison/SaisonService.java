@@ -3,6 +3,7 @@ package ch.stvbero.platform.kern.saison;
 import ch.stvbero.platform.kern.anmeldung.Angemeldet;
 import ch.stvbero.platform.kern.fehler.Eindeutig;
 import ch.stvbero.platform.kern.fehler.FachFehler;
+import ch.stvbero.platform.kern.linie.LinienService;
 import ch.stvbero.platform.kern.team.TeamSaison;
 import ch.stvbero.platform.kern.team.Teamzugehoerigkeit;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,7 +11,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /** Saisons anlegen, übernehmen und wechseln (SAI-03, SAI-04, SAI-06). */
@@ -54,7 +57,7 @@ public class SaisonService {
         return SaisonDto.von(neu, Saison.aktuelle().orElse(null));
     }
 
-    /** Teams und Teamzugehörigkeiten der Vorsaison als Ausgangslage (SAI-04). Linien folgen mit F-02. */
+    /** Teams, Teamzugehörigkeiten und Linien der Vorsaison als Ausgangslage (SAI-04, LIN-11). */
     private void uebernehmen(Saison quelle, Saison ziel) {
         // Das Team behält in der neuen Saison seinen Namen aus der Vorsaison (SAI-02: Namen gelten pro Saison).
         List<TeamSaison> teams = TeamSaison.list("saison.id", quelle.id);
@@ -62,10 +65,13 @@ public class SaisonService {
             ts.team.aufnehmenIn(ziel, ts.name);
         }
         List<Teamzugehoerigkeit> zugehoerigkeiten = Teamzugehoerigkeit.list("saison.id", quelle.id);
+        Map<Teamzugehoerigkeit, Teamzugehoerigkeit> kopien = new LinkedHashMap<>();
         for (Teamzugehoerigkeit z : zugehoerigkeiten) {
             Teamzugehoerigkeit kopie = Teamzugehoerigkeit.neu(z.person, z.team, ziel, z.funktion);
             kopie.persist();
+            kopien.put(z, kopie);
         }
+        LinienService.uebernehmen(quelle, ziel, kopien);
     }
 
     /** Zur aktuellen Saison machen. Es gibt immer genau eine aktuelle Saison (SAI-03). */

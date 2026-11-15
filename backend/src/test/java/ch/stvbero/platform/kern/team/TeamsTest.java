@@ -68,10 +68,13 @@ class TeamsTest {
                 .body("name", equalTo("Team 1"))
                 .body("meineFunktion", equalTo("SPIELERIN"))
                 .body("coaches.vorname", contains("Petra"))
-                .body("einteilung.gruppen", empty())
-                .body("einteilung.ohneLinie", hasSize(7))
-                .body("einteilung.ohneLinie.vorname", not(hasItem("Petra")))
-                .body("einteilung.ohneLinie.nachname", contains("Baumann", "Brun", "Frei", "Graf", "Muster", "Roth", "Wyss"));
+                // Ab F-02 nach Linie: Linien nach Reihenfolge, Goalies, dann «Ohne Linie» (LIN-06, LIN-09)
+                .body("einteilung.gruppen.name", contains("Linie 1", "Linie 2", "Goalies"))
+                .body("einteilung.gruppen[0].spielerinnen.nachname", contains("Frei", "Graf", "Muster"))
+                .body("einteilung.gruppen[1].spielerinnen.nachname", contains("Brun", "Roth"))
+                .body("einteilung.gruppen[2].spielerinnen.nachname", contains("Wyss"))
+                .body("einteilung.ohneLinie.nachname", contains("Baumann"))
+                .body("einteilung.gruppen.spielerinnen.flatten().vorname", not(hasItem("Petra")));
         given().cookie("stv_sitzung", anna).get("/api/teams/" + TEAM_2).then().statusCode(403);
     }
 

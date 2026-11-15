@@ -13,6 +13,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasSize;
 
 /** F-01: Saisons anlegen, übernehmen und wechseln (SAI-02, SAI-03, SAI-04, SAI-06, RR-07). */
@@ -65,7 +66,12 @@ class SaisonsTest {
         given().cookie("stv_sitzung", alex).queryParam("saison", id)
                 .get("/api/teams/10000000-0000-4000-8000-000000000001").then().statusCode(200)
                 .body("coaches.vorname", contains("Petra"))
-                .body("einteilung.ohneLinie", hasSize(7));
+                // Linien und Zuweisungen werden mit übernommen (SAI-04, LIN-11)
+                .body("einteilung.gruppen.name", contains("Linie 1", "Linie 2", "Goalies"))
+                .body("einteilung.gruppen[0].spielerinnen.vorname", contains("Mia", "Lea", "Anna"))
+                .body("einteilung.gruppen[0].id", not(equalTo("30000000-0000-4000-8000-000000000001")))
+                .body("einteilung.gruppen[2].spielerinnen.vorname", contains("Jana"))
+                .body("einteilung.ohneLinie.vorname", contains("Kim"));
 
         given().cookie("stv_sitzung", alex).post("/api/saisons/" + id + "/aktivieren").then().statusCode(204);
 

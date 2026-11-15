@@ -11,9 +11,13 @@ public record TeamzugehoerigkeitDto(TeamName team, PersonKurz person, Funktion f
     public record TeamName(UUID id, String name) {
     }
 
-    /** Teamname aus der Saison der Zugehörigkeit, damit das Archiv den damaligen Namen zeigt (SAI-02). Linien (gruppeId) kommen mit F-02; bis dahin immer ohne Gruppe. */
+    /**
+     * Teamname aus der Saison der Zugehörigkeit, damit das Archiv den damaligen Namen zeigt (SAI-02).
+     * {@code gruppeId}: Linie oder Goalies, {@code null} = ohne Linie (LIN-02: höchstens eine).
+     */
     public static TeamzugehoerigkeitDto von(Teamzugehoerigkeit z) {
+        UUID gruppeId = z.gruppen.stream().map(g -> g.id).findFirst().orElse(null);
         return new TeamzugehoerigkeitDto(new TeamName(z.team.id, z.team.nameIn(z.saison)), PersonKurz.von(z.person),
-                z.funktion, z.saison.id, null);
+                z.funktion, z.saison.id, gruppeId);
     }
 }

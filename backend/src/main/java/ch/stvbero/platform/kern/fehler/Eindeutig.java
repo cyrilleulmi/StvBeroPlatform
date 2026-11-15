@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import org.hibernate.exception.ConstraintViolationException;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -17,10 +18,15 @@ public final class Eindeutig {
     }
 
     public static void speichern(EntityManager em, String constraint, Supplier<FachFehler> fehler) {
+        speichern(em, List.of(constraint), fehler);
+    }
+
+    /** Wie oben, für mehrere Constraints, die dieselbe Regel schützen. */
+    public static void speichern(EntityManager em, List<String> constraints, Supplier<FachFehler> fehler) {
         try {
             em.flush();
         } catch (PersistenceException ausnahme) {
-            if (verletzt(ausnahme, constraint)) {
+            if (constraints.stream().anyMatch(c -> verletzt(ausnahme, c))) {
                 throw fehler.get();
             }
             throw ausnahme;

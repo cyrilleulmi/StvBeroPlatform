@@ -1,0 +1,223 @@
+<div class="kopf">
+  <a class="zurueck" [routerLink]="['/teams', teamId()]">{{
+    team() ? texte.linien.zurueckZu(team()!.name) : texte.allgemein.zurueck
+  }}</a>
+  <h1>{{ texte.linien.titel }}</h1>
+  @if (team(); as t) {
+    <p class="nebentext">{{ t.name }}</p>
+  }
+</div>
+
+@if (ladefehler(); as meldung) {
+  <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+}
+@if (erfolg(); as meldung) {
+  <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+}
+@if (fehler(); as meldung) {
+  <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+}
+
+@if (laedt()) {
+  <p class="leer" aria-busy="true">{{ texte.allgemein.laden }}</p>
+} @else if (team()) {
+  @if (darfBearbeiten()) {
+    <p class="nebentext hinweis">{{ texte.linien.ziehenHinweis }}</p>
+  } @else {
+    <p class="meldung-hinweis">{{ texte.linien.nurLesen }}</p>
+  }
+
+  <div class="gruppen" data-testid="linien-verwaltung">
+    @for (g of linien(); track g.id) {
+      <ng-container *ngTemplateOutlet="gruppeVorlage; context: { $implicit: g }" />
+    }
+    @if (darfBearbeiten()) {
+      <button
+        type="button"
+        class="button button-sekundaer hinzufuegen"
+        data-testid="linie-hinzufuegen"
+        [disabled]="speichert()"
+        [attr.aria-busy]="laufendeAktion() === 'hinzufuegen' ? 'true' : null"
+        (click)="hinzufuegen()"
+      >
+        + {{ texte.linien.hinzufuegen }}
+      </button>
+    }
+    @for (g of uebrige(); track g.id ?? 'ohne-linie') {
+      <ng-container *ngTemplateOutlet="gruppeVorlage; context: { $implicit: g }" />
+    }
+  </div>
+}
+
+<ng-template #gruppeVorlage let-g>
+  <section
+    class="karte gruppe"
+    [class.ziel]="dropZiel() === (g.id ?? ohneLinieWert)"
+    [attr.data-art]="g.art"
+    [attr.aria-labelledby]="titelId(g)"
+    [attr.data-testid]="testId(g)"
+    (dragover)="ueber($event, g)"
+    (dragleave)="verlassen($event, g)"
+    (drop)="ablegen($event, g)"
+  >
+    <div class="gruppe-kopf">
+      <h2 [id]="titelId(g)" class="abschnitt-titel">
+        {{ g.name }} <span class="anzahl">{{ g.spielerinnen.length }}</span>
+      </h2>
+      @if (darfBearbeiten() && g.art === 'LINIE' && umbenennenId() !== g.id) {
+        <div class="knoepfe reihenfolge">
+          <button
+            type="button"
+            class="icon-knopf"
+            [id]="'oben-' + g.id"
+            [attr.aria-label]="texte.linien.nachOben(g.name)"
+            [disabled]="speichert() || g.index === 0"
+            [attr.aria-busy]="laufendeAktion() === 'oben:' + g.id ? 'true' : null"
+            (click)="verschieben(g, -1)"
+          >
+            <app-icon name="chevron-up" [groesse]="20" />
+          </button>
+          <button
+            type="button"
+            class="icon-knopf"
+            [id]="'unten-' + g.id"
+            [attr.aria-label]="texte.linien.nachUnten(g.name)"
+            [disabled]="speichert() || g.index === linien().length - 1"
+            [attr.aria-busy]="laufendeAktion() === 'unten:' + g.id ? 'true' : null"
+            (click)="verschieben(g, 1)"
+          >
+            <app-icon name="chevron-down" [groesse]="20" />
+          </button>
+        </div>
+        <div class="knoepfe aktionen">
+          <button
+            type="button"
+            class="button button-sekundaer button-klein"
+            [id]="'umbenennen-' + g.id"
+            [attr.aria-label]="texte.linien.umbenennen(g.name)"
+            [disabled]="speichert()"
+            (click)="umbenennenStarten(g)"
+          >
+            {{ texte.linien.umbenennenKurz }}
+          </button>
+          <button
+            type="button"
+            class="button button-sekundaer button-klein loeschen"
+            [id]="'loeschen-' + g.id"
+            [attr.aria-label]="texte.linien.loeschen(g.name)"
+            [disabled]="speichert()"
+            [attr.aria-busy]="laufendeAktion() === 'loeschen:' + g.id ? 'true' : null"
+            (click)="loeschenFragen(g)"
+          >
+            {{ texte.linien.loeschenKurz }}
+          </button>
+        </div>
+      }
+    </div>
+    @if (umbenennenId() === g.id && g.id) {
+      <form class="umbenennen" (submit)="umbenennen($event, g)" novalidate>
+        <div class="feld">
+          <label [for]="'name-' + g.id">{{ texte.linien.nameVon(g.name) }}</label>
+          <input
+            [id]="'name-' + g.id"
+            type="text"
+            maxlength="30"
+            autocomplete="off"
+            [value]="neuerName()"
+            (input)="neuerName.set($any($event.target).value)"
+            (keydown.escape)="umbenennenAbbrechen(g)"
+            [attr.aria-invalid]="nameFehler() ? 'true' : null"
+            [attr.aria-describedby]="nameFehler() ? 'name-fehler-' + g.id : null"
+          />
+          @if (nameFehler(); as m) {
+            <p class="feldfehler" [id]="'name-fehler-' + g.id">{{ m }}</p>
+          }
+        </div>
+        <div class="knoepfe">
+          <button
+            type="submit"
+            class="button button-primaer button-klein"
+            [disabled]="speichert()"
+            [attr.aria-busy]="laufendeAktion() === 'umbenennen:' + g.id ? 'true' : null"
+          >
+            {{ texte.linien.speichern }}
+          </button>
+          <button
+            type="button"
+            class="button button-sekundaer button-klein"
+            (click)="umbenennenAbbrechen(g)"
+          >
+            {{ texte.linien.abbrechen }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (g.spielerinnen.length === 0) {
+      <p class="leer">{{ g.id ? texte.linien.leer : texte.linien.ohneLinieLeer }}</p>
+    } @else {
+      <ul class="liste" [attr.aria-label]="g.name">
+        @for (p of g.spielerinnen; track p.id) {
+          <li
+            class="zeile spielerin"
+            [class.gezogen]="gezogen()?.id === p.id"
+            [attr.aria-label]="name(p)"
+            [attr.data-testid]="'spielerin-' + p.id"
+            [attr.draggable]="darfBearbeiten() ? 'true' : null"
+            (dragstart)="ziehenStart($event, p)"
+            (dragend)="ziehenEnde()"
+          >
+            @if (darfBearbeiten()) {
+              <app-icon class="griff" name="grip-vertical" [groesse]="18" />
+            }
+            <span class="zeile-titel">{{ name(p) }}</span>
+            @if (darfBearbeiten()) {
+              <select
+                [id]="'zuweisung-' + p.id"
+                [attr.data-testid]="'zuweisung-' + p.id"
+                [attr.aria-label]="texte.linien.zuweisungVon(name(p))"
+                [disabled]="speichert()"
+                [attr.aria-busy]="laufendeAktion() === 'zuweisen:' + p.id ? 'true' : null"
+                (change)="zuweisen(p, $any($event.target).value)"
+              >
+                @for (o of optionen(); track o.wert) {
+                  <option [value]="o.wert" [selected]="o.wert === (g.id ?? ohneLinieWert)">
+                    {{ o.name }}
+                  </option>
+                }
+              </select>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</ng-template>
+
+<dialog
+  #loeschenDialog
+  class="karte dialog"
+  aria-modal="true"
+  aria-labelledby="loeschen-titel"
+  aria-describedby="loeschen-text"
+  (close)="dialogGeschlossen()"
+>
+  @if (zuLoeschen(); as g) {
+    <h2 id="loeschen-titel">{{ texte.linien.loeschenFrage(g.name) }}</h2>
+    <p id="loeschen-text">
+      {{ g.spielerinnen.length > 0 ? texte.linien.loeschenFolge : texte.linien.loeschenLeer }}
+    </p>
+    <div class="knoepfe">
+      <button type="button" class="button button-primaer button-klein" (click)="loeschen()">
+        {{ texte.linien.loeschenBestaetigen }}
+      </button>
+      <button
+        type="button"
+        class="button button-sekundaer button-klein"
+        (click)="loeschenAbbrechen()"
+      >
+        {{ texte.linien.abbrechen }}
+      </button>
+    </div>
+  }
+</dialog>

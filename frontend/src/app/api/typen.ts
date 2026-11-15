@@ -16,3 +16,7 @@ export type PersonKurz = components['schemas']['PersonKurz'];
 export type Person = components['schemas']['Person'];
 export type PersonDetail = components['schemas']['PersonDetail'];
 export type PersonSchreiben = components['schemas']['PersonSchreiben'];
+export type Gruppe = components['schemas']['Gruppe'];
+export type GruppenArt = components['schemas']['GruppenArt'];
+export type Gruppeneinteilung = components['schemas']['Gruppeneinteilung'];
+export type LinieSchreiben = components['schemas']['LinieSchreiben'];

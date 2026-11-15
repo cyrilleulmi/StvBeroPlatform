@@ -1,6 +1,7 @@
 package ch.stvbero.platform.kern.team;
 
 import ch.stvbero.platform.kern.fehler.FachFehler;
+import ch.stvbero.platform.kern.linie.Gruppe;
 import ch.stvbero.platform.kern.saison.Saison;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.CascadeType;
@@ -47,12 +48,16 @@ public class Team extends PanacheEntityBase {
                 .orElseThrow(() -> FachFehler.nichtGefunden("Dieses Team gibt es in der Saison " + saison.name + " nicht."));
     }
 
-    /** Team in die Saison aufnehmen, mit dem angegebenen Namen. Ist es schon dabei, bleibt alles, wie es ist. */
+    /**
+     * Team in die Saison aufnehmen, mit dem angegebenen Namen. Es bekommt dort seine Goalies (LIN-05).
+     * Ist es schon dabei, bleibt alles, wie es ist.
+     */
     public void aufnehmenIn(Saison saison, String name) {
         if (!gehoertZu(saison)) {
             TeamSaison ts = TeamSaison.neu(this, saison, name);
             saisons.add(ts);
             ts.persist();
+            Gruppe.goalies(this, saison).persist();
         }
     }
 }
