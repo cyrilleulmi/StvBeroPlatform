@@ -91,3 +91,14 @@ Personen `20000000-0000-4000-8000-0000000000NN` nach testdaten.md.
 
 - Jeder neue Screen (`/teams`, `/teams/:id`, `/verwaltung`, Personen, Person, Teams verwalten, Team verwalten, Saisons) einmal im Darkmode 375px: lesbar, kein Weiss auf Weiss, kein horizontales Scrollen.
 - Desktop 1280px: dieselben Screens ohne Überlauf.
+
+## Runde 1 · Nacharbeit (Doppelklick, gleichzeitige Anfragen, Beobachtungen)
+
+| Fall | Schritte | Erwartung |
+|---|---|---|
+| R1.1 Doppelklick Aktivieren | `alex` → `/verwaltung/saisons` (2027/28 angelegt) → Doppelklick «Zur aktuellen Saison machen» | Genau ein `POST …/aktivieren` 204, Status «2027/28 ist jetzt die aktuelle Saison.», kein Alarm |
+| R1.2 Doppelklick Entfernen | `alex` → `/verwaltung/teams/<Team 1>` → Doppelklick «Mia Frei entfernen» | Mia entfernt, kein Alarm, keine Konsolenfehler |
+| R1.3 Gleichzeitige Aufnahme (API) | 3 × gleichzeitig `POST /api/teams/<Team 1>/mitglieder` mit Ruth, `COACH` | Genau eine 201, sonst 409 `regel: PTF-04`, nie 500 |
+| R1.4 Gleichzeitige Saison (API) | 3 × gleichzeitig `POST /api/saisons` mit Name «2028/29», `von` 2028-07-01, `bis` 2029-06-30 | Genau eine 201, sonst 409 `regel: SAI-01`, Saison existiert einmal |
+| R1.5 «noch keinen Coach» | `alex` → `/teams/<Team 1>?saison=<2025/26>` und `/verwaltung/teams/<Team 1>?saison=<2025/26>` | «Dieses Team hat noch keinen Coach.» |
+| R1.6 Langer Name | Bei Kim Vorname mit 80 × «X» eingeben → Speichern → `/verwaltung/personen` bei 375px | Feld nimmt 60 Zeichen, `scrollWidth` = 375 |
