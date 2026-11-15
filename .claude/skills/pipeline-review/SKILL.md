@@ -72,15 +72,15 @@ Befunde einteilen:
 |---|---|---|
 | **Muss** | Fehler, Regelverstoss, fehlender Test für ein Kriterium, Sicherheitslücke, roter Build | Nacharbeit |
 | **Sollte** | Verbesserung mit klarem Nutzen | blockiert nicht, wird als Nachbesserungs-Issue angelegt |
-| **Hinweis** | Geschmack, Idee für später | blockiert nicht, wird als Nachbesserungs-Issue angelegt, wenn es eine konkrete Massnahme gibt |
+| **Hinweis** | Geschmack, Idee für später | blockiert nicht, bleibt nur im Kommentar (wird nicht automatisch umgesetzt) |
 
-**Nachbesserungen festhalten.** Für jeden Befund, der nicht blockiert, legst du ein Issue an, damit er nach dem Merge nicht verloren geht:
+**Nachbesserungen festhalten.** Für jeden «Sollte»-Befund legst du ein Issue an. Er blockiert den Merge nicht, wird aber danach automatisch behoben:
 
 ```bash
 scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
 ```
 
-`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung`, aber kein `status:bereit`: Cyrille entscheidet, wann es in die Warteschlange geht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung` und `status:bereit`. Der Entwicklungs-Agent setzt es in einem eigenen Lauf um, sobald der laufende PR gemergt ist, und es durchläuft Review und Test wie jedes Feature. Schreib die Akzeptanzkriterien deshalb so, dass ein Agent sie ohne Rückfrage umsetzen und prüfen kann. Ausnahme: Ist der geprüfte PR selbst eine Nachbesserung, setzt das Script kein `status:bereit`, damit keine Endlosschleife entsteht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
 
 Ausnahme: Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), bekommt kein eigenes Issue, sondern einen Verweis auf dieses Feature.
 

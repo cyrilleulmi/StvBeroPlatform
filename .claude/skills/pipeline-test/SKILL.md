@@ -30,7 +30,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 4. Testplan und explorativer Test
 
-1. **Testplan schreiben** unter `e2e/plaene/f<nr>-<kurzname>.md`. Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus zustaende.md (jeder verbotene Übergang) und die passenden Szenarien aus testdaten.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
+1. **Testplan schreiben** unter `e2e/plaene/f<nr>-<kurzname>.md` (bei einer Nachbesserung `e2e/plaene/nb<issue>-<kurzname>.md`). Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus zustaende.md (jeder verbotene Übergang) und die passenden Szenarien aus testdaten.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
 2. **Ausführen mit Playwright MCP.** Für jeden Fall:
    - `POST /api/test/reset`, bei Bedarf Uhr setzen (`PUT /api/test/uhr`), anmelden über `/dev-login` oder `POST /api/test/anmelden`.
    - Per Deep Link zum Screen springen. Mit Schnappschüssen des Accessibility-Trees arbeiten, nicht mit Koordinaten.
@@ -45,7 +45,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 5. Entscheiden und berichten
 
-Testplan committen und pushen (nur `e2e/plaene/`), Commit `F-<nr>: Testplan`.
+Testplan committen und pushen (nur `e2e/plaene/`), Commit `F-<nr>: Testplan` bzw. `Nachbesserung #<issue>: Testplan`.
 
 Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!-- pipeline:test -->`:
 
@@ -112,7 +112,7 @@ Jede Beobachtung, für die es eine konkrete Massnahme gibt, wird ein Issue, bevo
 scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
 ```
 
-`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung`, aber kein `status:bereit`: Cyrille entscheidet, wann es in die Warteschlange geht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung` und `status:bereit`. Der Entwicklungs-Agent setzt es in einem eigenen Lauf um, sobald der laufende PR gemergt ist, und es durchläuft Review und Test wie jedes Feature. Schreib die Akzeptanzkriterien deshalb so, dass ein Agent sie ohne Rückfrage umsetzen und prüfen kann. Ausnahme: Ist der geprüfte PR selbst eine Nachbesserung, setzt das Script kein `status:bereit`, damit keine Endlosschleife entsteht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
 
 Ausnahme: Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), bekommt kein eigenes Issue, sondern einen Verweis auf dieses Feature.
 
