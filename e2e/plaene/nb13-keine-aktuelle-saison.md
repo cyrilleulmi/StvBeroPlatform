@@ -1,0 +1,41 @@
+# Testplan Nachbesserung #13 · Keine aktuelle Saison (409 von GET /api/ich)
+
+Issue #13 · PR #25 · Anforderung SAI-03 · Szenario S23 (testdaten.md)
+
+Allgemein für jeden Fall:
+
+- Vorbereitung: `POST /api/test/reset`, dann `DELETE /api/test/aktuelle-saison` (ausser anders angegeben),
+  dann `POST /api/test/anmelden` mit `{ "schluessel": "<person>" }` oder über `/dev-login`.
+- Uhr: Standard, die Uhr spielt hier keine Rolle.
+- Ansichten: mobil 375×812 (alle Fälle), Desktop 1280×800 (K2.1, K2.3). Hinweis-Screen einmal im Darkmode.
+- Nach jedem Fall: Konsolenfehler prüfen. Erlaubt ist nur der Browser-Eintrag «Failed to load resource … 409»
+  zu `GET /api/ich`. Keine anderen 4xx/5xx.
+
+## K1 · API-Vertrag (Kriterium 1)
+
+| Fall | Schritte | Erwartung |
+|---|---|---|
+| K1.1 Vertrag | `docs/api/openapi.yaml`, Pfad `/api/ich` `get` lesen | Antwort `'409'` mit `#/components/responses/Konflikt` |
+| K1.2 Lint | `npx @redocly/cli lint docs/api/openapi.yaml` | Keine Fehler, keine Warnungen |
+| K1.3 Laufzeit-Vertrag | `GET /q/openapi?format=json`, Pfad `/api/ich` | Statuscodes 200, 401, 409 |
+| K1.4 Antwort 409 | Ohne aktuelle Saison als `anna` und als `alex` `GET /api/ich` | 409, `application/problem+json`, `title` «Keine aktuelle Saison», `regel` «SAI-03» |
+| K1.5 Ohne Sitzung | Ohne aktuelle Saison, ohne Cookie `GET /api/ich` | 401 (nicht 409) |
+| K1.6 Test-Hilfe | `DELETE /api/test/aktuelle-saison`, dann `POST /api/test/reset` | 204, danach ist «2026/27» wieder aktuell, `GET /api/ich` 200 |
+
+## K2 · Hinweis in der Oberfläche (Kriterium 2)
+
+| Fall | Schritte | Erwartung |
+|---|---|---|
+| K2.1 Deep Link | Als `anna` `/teams` öffnen | Weiter auf `/keine-saison?ziel=%2Fteams`, Titel «Keine aktuelle Saison · STV Bero», Überschrift «Noch keine aktuelle Saison», `keine-saison-hinweis` mit Erklärung, Buttons «Nochmals versuchen» und «Abmelden». Kein leerer Bildschirm, keine Navigation |
+| K2.2 Startseite | Als `anna` `/` öffnen | `/keine-saison` (ohne `ziel`) |
+| K2.3 Admin | Als `alex` `/verwaltung/saisons` öffnen | Ebenfalls `/keine-saison?ziel=%2Fverwaltung%2Fsaisons` (Annahme O-36) |
+| K2.4 Coach über Testmodus | `/dev-login?ziel=%2Fprofil` → «Petra Keller» | `/keine-saison?ziel=%2Fprofil` mit Hinweis |
+| K2.5 Nochmals ohne Saison | Auf dem Hinweis «Nochmals versuchen» | Bleibt auf dem Hinweis, keine Fehlermeldung |
+| K2.6 Nochmals nach Reset | `POST /api/test/reset`, neu anmelden, «Nochmals versuchen» | Zurück zu `/teams` bzw. `/`, Inhalt erscheint |
+| K2.7 Abmelden | «Abmelden» | `/dev-login`, Sitzung beendet (`GET /api/sitzung` ohne Person) |
+| K2.8 Neuladen | Auf `/keine-saison?ziel=%2Fteams` neu laden | Hinweis bleibt, keine weiteren Fehler |
+| K2.9 Zurück-Taste | Nach Weiterleitung Zurück drücken | Kein leerer Bildschirm, keine Endlosschleife |
+| K2.10 Doppelklick | Doppelklick auf «Nochmals versuchen» und auf «Abmelden» | Kein Fehler, kein doppelter Ablauf mit Fehlermeldung |
+| K2.11 Ohne Anmeldung | Ohne Sitzung `/teams` öffnen | Anmeldung (`/dev-login?ziel=%2Fteams`), nicht der Saison-Hinweis |
+| K2.12 Darkmode | K2.1 mit `prefers-color-scheme: dark` | Text und Buttons gut lesbar, nichts Weisses auf Weiss |
+| K2.13 Mit Saison | Seed (aktuelle Saison vorhanden), als `anna` `/` | Normale Startseite «Hallo Anna», keine Weiterleitung (Regression) |
