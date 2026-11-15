@@ -60,6 +60,28 @@ a span {
   white-space: nowrap;
 }
 
+/* Sehr schmale Handys (z.B. 320px): Mit fünf Einträgen wäre «Verwaltung» breiter als die Inhaltsfläche
+   des Eintrags und stiesse an den Rand der Markierung. Zwischenräume weg, Schrift etwas enger (Nachbesserung #23). */
+@media (max-width: 359px) {
+  .navigation {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  ul {
+    gap: 0;
+  }
+
+  a {
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+
+  a span {
+    letter-spacing: -0.03em;
+  }
+}
+
 a.aktiv {
   background: var(--primary-soft);
   color: var(--primary);
