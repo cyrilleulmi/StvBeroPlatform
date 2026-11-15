@@ -42,3 +42,16 @@ Grenzfälle aus zustaende.md («Linien») und Robustheit. Vorbereitung wie oben.
 | G9 | Zurück/Vor | Nach «Linie hinzufügen» Zurück-Taste, dann Vor | Zustand vom Server, Linie 3 bleibt |
 | G10 | Archiv | `alex` → `/teams/<T1>?saison=<2025/26>` | Hinweis Archiv, «Ohne Linie: Vera Studer», kein Link «Linien einteilen» |
 | G11 | Darkmode | `/teams/<T1>/linien` mit Umbenennen-Feldfehler und Lösch-Dialog, `/teams/<T1>` | Alles lesbar, Kontrast ausreichend |
+
+## Nachtest Test-Agent (Runde 1)
+
+Geprüft auf `ec9c568`, Vorbereitung wie oben.
+
+| Nr. | Fall | Schritte | Erwartung |
+|---|---|---|---|
+| R1.1 | G1 mobil | `petra`, 375×812 → «Linie hinzufügen» → «Linie 3 umbenennen» → «LINIE 1», dann «goalies» (mit Enter) → «Speichern» | Meldung beim Feld (`aria-invalid`, `aria-describedby`) im sichtbaren Bereich, Fokus im Feld, keine Meldung oben auf der Seite |
+| R1.2 | G1 Korrektur | nach R1.1 «Powerplay» → «Speichern», Neuladen | «Neuer Name: Powerplay.», Feldfehler weg, Fokus auf «Powerplay umbenennen», Name bleibt nach Neuladen |
+| R1.3 | G1 Abbrechen | nach Fehler «Abbrechen», erneut «Linie 3 umbenennen» | Feld mit «Linie 3», ohne alten Fehler; Fokus nach Abbrechen auf «Linie 3 umbenennen» |
+| R1.4 | G1 Doppelklick | Desktop dunkel, «Linie 2» → Doppelklick «Speichern» | nur eine Anfrage (409), Meldung beim Feld gut lesbar |
+| R1.5 | G7 Tastatur | Enter auf «Linie 2 nach unten» (zuunterst); Enter auf «Linie 3 nach oben» (zuoberst), Enter, Leertaste | Fokus wechselt am Rand auf den Gegenknopf derselben Linie, in der Mitte bleibt er; nie auf `body` |
+| R1.6 | Rechte (Regression) | API `GET`/`PUT …/gruppen/<01>`, `DELETE …/gruppen/<03>` als `anna`, `marc`, `petra` | anna 200/403/403, marc 403/403/403, petra 200/200/409 |
