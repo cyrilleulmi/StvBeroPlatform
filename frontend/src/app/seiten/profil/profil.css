@@ -1,0 +1,67 @@
+:host {
+  display: grid;
+  gap: var(--abschnitt);
+  justify-items: stretch;
+}
+
+.person p {
+  margin: 4px 0 0;
+}
+
+.umschalter {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.optionen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.option:has(input:checked) {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.option:has(input:focus-visible) {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  .button {
+    justify-self: start;
+  }
+}

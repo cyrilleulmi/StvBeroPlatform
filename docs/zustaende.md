@@ -137,7 +137,44 @@ stateDiagram-v2
     Gelesen --> [*]
 ```
 
+## Sitzung
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> ABGEMELDET
+    ABGEMELDET --> ANGEMELDET: POST /api/test/anmelden (dev/test) · produktives Verfahren offen (O-01)
+    ANGEMELDET --> ABGEMELDET: POST /api/abmelden
+    ANGEMELDET --> ANGEMELDET: weitere Anmeldung (neue Sitzung, alte bleibt gültig)
+```
+
+| Regel | Bezug |
+|---|---|
+| Ohne gültige Sitzung antworten alle fachlichen Endpunkte mit 401 (Problem Details). Öffentlich sind nur `GET /api/sitzung`, `POST /api/abmelden` und die Test-Endpunkte. | RR-07 |
+| `GET /api/sitzung` antwortet immer 200 mit `angemeldet: true/false`. | F-00 |
+| Abmelden löscht die Sitzung und das Cookie, auch ohne gültige Sitzung 204. | F-00 |
+| Eine Sitzung läuft nicht ab (Annahme, O-33). | O-01 |
+
 ## Abläufe
+
+### Anmeldung und Rückleitung
+
+```mermaid
+sequenceDiagram
+    actor P as Person
+    participant F as Frontend
+    participant B as Backend
+    P->>F: öffnet /profil
+    F->>B: GET /api/sitzung
+    B-->>F: {angemeldet: false}
+    F-->>P: /dev-login?ziel=/profil (prod: /anmelden?ziel=/profil)
+    P->>F: wählt «Petra Keller»
+    F->>B: POST /api/test/anmelden {schluessel: petra}
+    B-->>F: 204, Set-Cookie stv_sitzung
+    F->>B: GET /api/ich
+    B-->>F: Person, aktuelle Saison
+    F-->>P: /profil
+```
 
 ### Antworten mit einem Tap
 

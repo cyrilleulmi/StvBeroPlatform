@@ -1,0 +1,68 @@
+:host {
+  display: grid;
+  gap: var(--abschnitt);
+}
+
+.kacheln {
+  display: grid;
+  gap: 12px;
+}
+
+.raster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .raster {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.kachel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 112px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-tile);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.kachel-titel {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.icon-feld {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.icon-feld[data-farbe='blue'] {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.icon-feld[data-farbe='mustard'] {
+  background: var(--mustard-soft);
+  color: var(--mustard);
+}
+
+.icon-feld[data-farbe='coral'] {
+  background: var(--coral-soft);
+  color: var(--coral);
+}

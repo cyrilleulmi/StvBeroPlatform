@@ -1,0 +1,39 @@
+<h1>{{ texte.profil.titel }}</h1>
+
+@if (anmeldung.ich(); as ich) {
+  <section class="karte person" aria-labelledby="profil-name">
+    <h2 id="profil-name">{{ ich.vorname }} {{ ich.nachname }}</h2>
+    @if (ich.email) {
+      <p class="nebentext">{{ ich.email }}</p>
+    }
+  </section>
+}
+
+<section class="karte">
+  <fieldset class="umschalter" data-testid="theme-umschalter">
+    <legend>{{ texte.profil.darstellung }}</legend>
+    <div class="optionen">
+      @for (m of modi; track m.wert) {
+        <label class="option">
+          <input
+            type="radio"
+            name="darstellung"
+            [value]="m.wert"
+            [checked]="theme.modus() === m.wert"
+            (change)="theme.setzen(m.wert)"
+          />
+          <span>{{ m.text }}</span>
+        </label>
+      }
+    </div>
+  </fieldset>
+</section>
+
+@if (fehler(); as meldung) {
+  <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+}
+
+<button type="button" class="button button-sekundaer" (click)="abmelden()">
+  <app-icon name="log-out" [groesse]="20" />
+  {{ texte.profil.abmelden }}
+</button>

@@ -69,6 +69,34 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Kachel' }
         '401': { $ref: '#/components/responses/NichtAngemeldet' }
+  /api/sitzung:
+    get:
+      tags: [Ich]
+      operationId: sitzungLesen
+      summary: Ob eine gültige Sitzung besteht
+      description: |
+        Öffentlich und immer 200, damit die Oberfläche ohne Fehlerantwort prüfen kann, ob sie zur
+        Anmeldung weiterleiten muss. Die Daten der Person liefert `GET /api/ich`.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sitzung' }
+  /api/abmelden:
+    post:
+      tags: [Ich]
+      operationId: abmelden
+      summary: Sitzung beenden und Sitzungs-Cookie löschen
+      description: Auch ohne gültige Sitzung erfolgreich, damit das Abmelden immer funktioniert.
+      security: []
+      responses:
+        '204':
+          description: Abgemeldet
+          headers:
+            Set-Cookie:
+              schema: { type: string }
 
   # ---------------------------------------------------------------- Saisons
   /api/saisons:
@@ -883,6 +911,7 @@ paths:
                   examples: ['2026-11-16T19:00:00+01:00']
       responses:
         '204': { description: Gesetzt }
+        '400': { $ref: '#/components/responses/Ungueltig' }
     get:
       tags: [Test]
       operationId: testUhrLesen
@@ -930,7 +959,22 @@ paths:
           headers:
             Set-Cookie:
               schema: { type: string }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/test/personen:
+    get:
+      tags: [Test]
+      operationId: testPersonenLesen
+      summary: Personen mit Schlüssel für die Testmodus-Anmeldung (/dev-login)
+      security: []
+      responses:
+        '200':
+          description: Nach Nachname, dann Vorname
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TestPerson' }
   /api/test/benachrichtigungen:
     get:
       tags: [Test]
@@ -1141,6 +1185,11 @@ components:
             zugehoerigkeiten:
               type: array
               items: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+    Sitzung:
+      type: object
+      required: [angemeldet]
+      properties:
+        angemeldet: { type: boolean }
     Kachel:
       type: object
       required: [id, titel, icon, route, farbe]
@@ -1153,6 +1202,17 @@ components:
           type: string
           enum: [primary, blue, mustard, coral]
         hinweis: { type: [string, 'null'], description: 'Kurzer Status, z.B. «2 offen»' }
+
+    TestPerson:
+      type: object
+      description: Seed-Person mit Schlüssel aus docs/testdaten.md. Nur Profile dev und test.
+      required: [schluessel, id, vorname, nachname, admin]
+      properties:
+        schluessel: { type: string, examples: [petra] }
+        id: { type: string, format: uuid }
+        vorname: { type: string }
+        nachname: { type: string }
+        admin: { type: boolean }
 
     Saison:
       type: object

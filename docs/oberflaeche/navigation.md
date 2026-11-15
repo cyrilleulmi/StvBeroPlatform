@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Was noch nicht gebaut ist, ist mit «geplant» und der Feature-Nummer aus dem [Backlog](../pipeline/backlog.md) markiert.
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut ist bisher F-00 (Grundgerüst): `/anmelden`, `/dev-login`, `/` (Begrüssung, Kacheln), `/termine`, `/teams` und `/verwaltung` (jeweils leerer Zustand), `/profil`.
 
 ## Navigation
 
@@ -10,6 +10,7 @@ Stand: Zielbild für den Kern. Was noch nicht gebaut ist, ist mit «geplant» un
 - **Desktop (ab 1024px):** dieselben Einträge als Seitennavigation links.
 - Der aktive Eintrag hat `aria-current="page"`.
 - Die Navigation ist ein `nav` mit `aria-label="Hauptnavigation"`.
+- Reihenfolge: Start, Termine, Teams, Profil, (Verwaltung). Seitentitel im Browser: «<Seite> · STV Bero».
 
 ```mermaid
 flowchart LR
@@ -37,8 +38,8 @@ flowchart LR
 
 | Route | Screen | Wer | Inhalt | Feature |
 |---|---|---|---|---|
-| `/anmelden` | Anmelden | alle | Login (Verfahren offen, O-01) | F-00 |
-| `/dev-login` | Testmodus-Anmeldung | nur `dev`/`test` | Liste der Seed-Personen, ein Klick meldet an | F-00 |
+| `/anmelden` | Anmelden | alle | Login (Verfahren offen, O-01). Im Testmodus Link «Zur Anmeldung im Testmodus». `?ziel=` wird weitergegeben | F-00 |
+| `/dev-login` | Testmodus-Anmeldung | nur `dev`/`test` (Development-Build) | Liste der Seed-Personen (`GET /api/test/personen`), ein Klick meldet an und führt auf `?ziel=` bzw. `/` | F-00 |
 | `/` | Start | angemeldet | Begrüssung, nächster eigener Termin mit Antwort-Buttons, Kacheln je nach Rolle | F-00, F-04 |
 | `/termine` | Termine | angemeldet | Kommende Termine aller eigenen Teams, eigene Antwort direkt änderbar. Filter `?team=<id>`, `?ansicht=vergangen` | F-03, F-04 |
 | `/termine/:id` | Termin | Mitglieder der beteiligten Teams | Angaben, eigene Antwort, Übersicht nach Team und Linie, Coach-Block. Bei Spieltag: Spiele, Treffpunkt, Spielort, eigener Aufgebotsstatus | F-04, F-05 |
@@ -51,11 +52,13 @@ flowchart LR
 | `/teams/:id/linien` | Linien | Coach | Linien anlegen, umbenennen, sortieren, Spielerinnen zuweisen | F-02 |
 | `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, als gelesen markieren | F-06 |
 | `/profil` | Profil | angemeldet | Name, Hell/Dunkel/System, Abmelden | F-00 |
+| `/verwaltung` | Verwaltung | Admin | Einstieg in die Verwaltung (bis F-01 leerer Zustand). Andere sehen «Keine Berechtigung» | F-00, F-01 |
+| `/**` | Nicht gefunden | angemeldet | «Diese Seite gibt es nicht.» mit Link «Zur Startseite» | F-00 |
 | `/verwaltung/personen` | Personen | Admin | Personen anlegen, bearbeiten | F-01 |
 | `/verwaltung/teams` | Teams | Admin | Teams, Teamzugehörigkeiten, Verknüpfung swiss unihockey, Abgleich auslösen | F-01, F-07 |
 | `/verwaltung/saisons` | Saisons | Admin | Saisons anlegen, aktuelle Saison wechseln, Archiv | F-01 |
 
-Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert"`) statt eines leeren Bildschirms. Ohne Anmeldung leitet jede Route auf `/anmelden` (bzw. im Testmodus `/dev-login`) und danach zurück.
+Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert"`) statt eines leeren Bildschirms. Ohne Anmeldung leitet jede Route auf `/anmelden` (bzw. im Testmodus `/dev-login`) mit `?ziel=<ursprüngliche Route>` und nach der Anmeldung dorthin zurück. Ob jemand angemeldet ist, prüft das Frontend über `GET /api/sitzung` (immer 200), damit ohne Anmeldung keine Fehler in der Konsole entstehen.
 
 ## Dialoge
 
@@ -78,7 +81,8 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | `hauptnavigation` | Navigation (mobil und Desktop) |
 | `theme-umschalter` | Umschalter Hell/Dunkel/System im Profil |
 | `testmodus-hinweis` | Banner «Testmodus» (nur dev/test) |
-| `kachel-<id>` | Kachel auf dem Start-Screen, z.B. `kachel-anwesenheit` |
+| `kachel-<id>` | Kachel auf dem Start-Screen (Link), z.B. `kachel-anwesenheit` |
+| `dev-login-person-<schluessel>` | Eintrag einer Testperson auf `/dev-login`, z.B. `dev-login-person-petra` |
 | `naechster-termin` | Karte «Nächster Termin» auf dem Start-Screen |
 | `benachrichtigungen-zaehler` | Anzahl ungelesener Benachrichtigungen |
 

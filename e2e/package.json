@@ -1,0 +1,15 @@
+{
+  "name": "stvbero-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test --trace off",
+    "test:mobil": "playwright test --project=mobil --trace off",
+    "test:desktop": "playwright test --project=desktop --trace off"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

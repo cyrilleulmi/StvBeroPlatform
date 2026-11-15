@@ -36,6 +36,8 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 |---|---|---|
 | O-30 | Vorschau-URL zum Ausprobieren | Hängt am Hosting (O-02). Bis dahin über eine Cloud-Sitzung auf dem PR-Branch. |
 | O-31 | ~~Java und Migrationswerkzeug für F-00~~ | Entschieden: Java 21 und Flyway (E-57). |
+| O-32 | Kontrast aktiver Navigationseintrag | `primary` auf `primary-soft` erreicht im Lightmode nur 3.97:1 (WCAG AA verlangt 4.5:1 für kleinen Text). Annahme F-00: Icon in `primary`, Text in `text`. Alternative: `primary` im Lightmode etwas dunkler. |
+| O-33 | Wie lange gilt eine Sitzung? | Annahme F-00: bis zum Abmelden, ohne Ablauf. Hängt am Anmeldeverfahren (O-01). |
 
 ## swiss unihockey
 
