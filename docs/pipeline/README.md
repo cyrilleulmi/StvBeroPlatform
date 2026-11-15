@@ -10,7 +10,7 @@ Issue «status:bereit»  →  Entwicklung  →  Review  →  Test  →  Abnahme 
 
 ## Wie es funktioniert
 
-- **Jeder Agent ist eine eigene Claude-Cloud-Aufgabe** (scheduled task, früher «Routine»). Jeder Lauf ist eine frische Cloud-Sitzung ohne Wissen aus dem vorherigen Lauf. Der Review- und der Test-Agent beurteilen also Arbeit, die sie nicht selbst gemacht haben.
+- **Jeder Agent ist eine eigene Claude-Code-Aufgabe in der Cloud** (scheduled task, früher «Routine»). Jeder Lauf ist eine frische Cloud-Sitzung ohne Wissen aus dem vorherigen Lauf. Der Review- und der Test-Agent beurteilen also Arbeit, die sie nicht selbst gemacht haben.
 - **Der Zustand steht auf GitHub, in Labels.** Ein Agent schliesst seine Arbeit ab, indem er das Label wechselt. Das Label-Ereignis startet über einen GitHub-Trigger den nächsten Agenten.
 - **Die Anleitung jedes Agenten liegt im Repo** als Skill unter `.claude/skills/`. Die Cloud-Aufgabe ruft nur den Skill auf. Änderungen an der Pipeline laufen damit über normale Commits.
 - **Gemergt wird nur von Cyrille.** Kein Agent merged, pusht auf `main` oder schliesst Issues.
@@ -41,7 +41,7 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 
 | Agent | Skill | Startet bei | Darf | Darf nicht |
 |---|---|---|---|---|
-| **Entwicklung** | [`pipeline-entwicklung`](../../.claude/skills/pipeline-entwicklung/SKILL.md) | Issue bekommt `status:bereit`, PR bekommt `pipeline:nacharbeit` | Branch `claude/…` anlegen, Code schreiben, PR eröffnen, Labels wechseln | auf `main` pushen, mergen, Anforderungen mit Status «Entschieden» ändern |
+| **Entwicklung** (Aufgaben «Entwicklung» und «Nacharbeit») | [`pipeline-entwicklung`](../../.claude/skills/pipeline-entwicklung/SKILL.md) | Issue bekommt `status:bereit`, PR bekommt `pipeline:nacharbeit` | Branch `claude/…` anlegen, Code schreiben, PR eröffnen, Labels wechseln | auf `main` pushen, mergen, Anforderungen mit Status «Entschieden» ändern |
 | **Review** | [`pipeline-review`](../../.claude/skills/pipeline-review/SKILL.md) | PR bekommt `pipeline:review` | Code lesen, Build und Tests ausführen, kommentieren, Label wechseln | Code ändern |
 | **Test** | [`pipeline-test`](../../.claude/skills/pipeline-test/SKILL.md) | PR bekommt `pipeline:test` | App starten, durchtesten, Testplan unter `e2e/plaene/` committen, Label wechseln | Produktivcode ändern |
 | **Cyrille** | – | PR hat `pipeline:abnahme` oder `pipeline:blockiert` | alles | – |
@@ -78,25 +78,28 @@ Das Repo ist öffentlich. Jeder kann Issues und Kommentare schreiben.
 
 ## Einrichtung
 
-Einmalig, in dieser Reihenfolge. Was schon erledigt ist, ist abgehakt.
+Stand 15.11.2026: erledigt.
 
 - [x] Labels im Repo angelegt
 - [x] Skills, Vorlagen und Doku im Repo
-- [x] Drei Cloud-Aufgaben angelegt (ohne Trigger, Freigabemodus «auto»): «StvBero · Entwicklung», «StvBero · Review», «StvBero · Test»
 - [x] Backlog F-00 bis F-07 als Issues #1–#8 angelegt (ohne `status:bereit`)
-- [ ] **Claude GitHub App** auf `cyrilleulmi/StvBeroPlatform` installieren: https://github.com/apps/claude (nötig für GitHub-Trigger)
-- [ ] **Cloud-Umgebung** prüfen: Unter claude.ai/code/routines bei jeder Aufgabe *Bearbeiten → Advanced settings*: Repository `cyrilleulmi/StvBeroPlatform` wählen, Umgebung mit Netzwerkzugriff **Trusted** (Standard). Als Setup-Skript `scripts/cloud-setup.sh` eintragen.
-- [ ] **GitHub-Trigger** pro Aufgabe hinzufügen (*Bearbeiten → Trigger → + → GitHub event*):
+- [x] Vier Claude-Code-Aufgaben unter [claude.ai/code/routines](https://claude.ai/code/routines), je mit Repository `cyrilleulmi/StvBeroPlatform`, Umgebung «Default» (Netzwerk «Trusted»), ohne Connectors, Auto-fix aus:
 
-| Aufgabe | Ereignis | Filter |
-|---|---|---|
-| StvBero · Entwicklung | Issue → labeled | – (der Skill prüft das Label selbst) |
-| StvBero · Entwicklung | Pull request → labeled | Labels: is one of `pipeline:nacharbeit` |
-| StvBero · Review | Pull request → labeled | Labels: is one of `pipeline:review` |
-| StvBero · Test | Pull request → labeled | Labels: is one of `pipeline:test` |
+| Aufgabe | Skill | GitHub-Ereignis | Filter |
+|---|---|---|---|
+| StvBero Pipeline · Entwicklung | `pipeline-entwicklung` | Issue: Labeled | Labels is one of `status:bereit` |
+| StvBero Pipeline · Nacharbeit | `pipeline-entwicklung` | Pull request: Labeled | Labels is one of `pipeline:nacharbeit` |
+| StvBero Pipeline · Review | `pipeline-review` | Pull request: Labeled | Labels is one of `pipeline:review` |
+| StvBero Pipeline · Test | `pipeline-test` | Pull request: Labeled | Labels is one of `pipeline:test` |
 
-- [ ] **Connectors** bei allen drei Aufgaben entfernen. Beim Anlegen wurden automatisch Gmail, Google Calendar und Claude Docs angehängt. Die Pipeline braucht keinen davon, GitHub läuft über die App.
-- [ ] Optional: Bei «Entwicklung» einen zusätzlichen Zeitplan-Trigger (z.B. täglich 06:47) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Der Skill findet liegengebliebene Arbeit selbst.
+Was man beim Einrichten wissen muss:
+
+- **Nur eine GitHub-Trigger pro Aufgabe.** Deshalb gibt es für die Nacharbeit eine eigene Aufgabe mit demselben Skill wie die Entwicklung.
+- **Aufgaben über claude.ai/code/routines anlegen** (*New task → Set up manually*), nicht aus einem Chat in einem claude.ai-Projekt. Aus einem Projekt angelegte Aufgaben sind Chat-Aufgaben: ohne Repository, ohne GitHub-Trigger, Connectors nicht entfernbar.
+- **Trigger nach dem Speichern prüfen.** Auf der Detailseite muss unter «Triggers» `GitHub · cyrilleulmi/stvberoplatform` stehen. Beim Anlegen gingen PR-Trigger einmal verloren («Manual only»). Nach dem Eintragen des Filterwerts mit Tab aus dem Feld gehen, dann speichern.
+- Der Filter «Labels is one of» prüft, ob das Label auf dem Issue/PR **vorhanden** ist, nicht nur, ob es gerade gesetzt wurde. Setzt ein Agent z.B. `agent:aktiv` auf ein Issue mit `status:bereit`, startet ein weiterer Lauf. Der erkennt die Sperre und endet sofort.
+- Ein Setup-Skript ist nicht nötig: Das Standard-Image hat Java 21, Maven, Node 22, Chrome und PostgreSQL. `scripts/cloud-setup.sh` prüft das bei Bedarf.
+- Optional: Bei «Entwicklung» einen Zeitplan-Trigger (z.B. täglich) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Das geht nur, wenn keine GitHub-Trigger nötig ist, also in einer separaten Aufgabe.
 
 ## Ein Feature durch die Pipeline schicken
 
