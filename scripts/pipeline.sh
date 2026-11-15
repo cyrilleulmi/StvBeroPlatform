@@ -34,6 +34,13 @@ Befehle:
   pr-issue <nr>                  Issue-Nummer aus «Closes #n» im PR
   runde <nr>                     Anzahl Nacharbeitsrunden (Entwicklungs-Kommentare minus 1, min. 0)
   letzter-befund <nr>            Text des neuesten Review- oder Test-Kommentars
+  laufend                        Was gerade in der Pipeline ist: offene PRs mit pipeline:-Label (ausser gemergt)
+                                 und Issues mit status:in-arbeit, pipeline:blockiert oder agent:aktiv. Leer = Pipeline frei
+  voraussetzungen <issue>        Exit 0, wenn alle «Voraussetzung: F-xx»-Issues geschlossen sind; sonst offene auf stderr
+  naechstes-feature              Kleinstes F-Issue mit status:bereit, ohne Sperre/Blockade, Voraussetzungen erfüllt
+  beanspruchen <issue>           Setzt Sperre und Anspruchs-Kommentar, wartet 20 s. Exit 0 nur, wenn dieser Lauf
+                                 den ältesten Anspruch hat (verhindert, dass zwei Läufe dasselbe Feature bauen)
+  anstossen <issue>              status:bereit entfernen und neu setzen: startet die Entwicklungs-Aufgabe
   mergebar <nr>                  Exit 0, wenn der PR offen, konfliktfrei und alle Checks grün sind; sonst Grund auf stderr
   mergen <nr> <erwarteter-sha>   Squash-Merge nach main, nur wenn mergebar und Head = erwarteter SHA. Gibt Merge-SHA aus
 EOF
@@ -126,6 +133,41 @@ case "$cmd" in
     gh api "$API/issues/$1/comments?per_page=100" --paginate \
       --jq '.[] | select((.body | startswith("<!-- pipeline:review -->")) or (.body | startswith("<!-- pipeline:test -->"))) | .body' \
       | awk 'BEGIN{RS="<!-- pipeline:"} NF{last=$0} END{printf "<!-- pipeline:%s", last}' ;;
+  laufend)
+    gh api "$API/issues?state=open&per_page=100" --jq '.[]
+      | {nr: .number, pr: (.pull_request != null), titel: .title, l: [.labels[].name]}
+      | select( (.pr and any(.l[]; startswith("pipeline:") and . != "pipeline:gemergt"))
+             or ((.pr|not) and any(.l[]; . == "status:in-arbeit" or . == "pipeline:blockiert" or . == "agent:aktiv")) )
+      | "\(.nr)\t\(if .pr then "PR" else "Issue" end)\t\(.l | map(select(startswith("pipeline:") or startswith("status:"))) | join(","))\t\(.titel)"' ;;
+  voraussetzungen)
+    vor=$(gh api "$API/issues/$1" --jq '.body // ""' | grep -m1 -oE 'Voraussetzung:\**[^\n]*' | grep -oE 'F-[0-9]{2}' || true)
+    offen=""
+    for f in $vor; do
+      st=$(gh api "$API/issues?state=all&per_page=100" --jq ".[] | select(.pull_request == null and (.title | startswith(\"$f \"))) | .state" | head -1)
+      [ "$st" = "closed" ] || offen="$offen $f(${st:-fehlt})"
+    done
+    [ -z "$offen" ] || { echo "Offene Voraussetzungen:$offen" >&2; exit 1; } ;;
+  naechstes-feature)
+    gh api "$API/issues?state=open&labels=status%3Abereit&per_page=100" \
+      --jq '.[] | select(.pull_request == null) | select([.labels[].name] | index("pipeline:blockiert") | not) | select(.title | test("^F-[0-9]{2} ")) | [.number, .title] | @tsv' \
+      | sort -t$'\t' -k2 | while IFS=$'\t' read -r nr titel; do
+          gesperrt "$nr" && continue
+          "$0" voraussetzungen "$nr" 2>/dev/null || continue
+          printf '%s\t%s\n' "$nr" "$titel"; break
+        done ;;
+  beanspruchen)
+    nr="$1"; token="$(date +%s)-$RANDOM$RANDOM"
+    "$0" label-setzen "$nr" "$SPERRE"
+    tmp=$(mktemp); printf '<!-- pipeline:anspruch %s -->\n🤖 Entwicklung beansprucht dieses Feature.\n' "$token" > "$tmp"
+    gh api -X POST "$API/issues/$nr/comments" -F "body=@$tmp" --silent; rm -f "$tmp"
+    sleep 20
+    seit=$(python3 -c 'import datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ"))')
+    erster=$(gh api "$API/issues/$nr/comments?since=$seit&per_page=100" \
+      --jq '[.[] | select(.body | startswith("<!-- pipeline:anspruch "))] | sort_by(.created_at, .id) | first | .body' \
+      | grep -oE 'anspruch [^ ]+' | cut -d' ' -f2)
+    if [ "$erster" = "$token" ]; then echo "beansprucht"; else echo "Anderer Lauf war schneller ($erster)" >&2; exit 1; fi ;;
+  anstossen)
+    "$0" label-entfernen "$1" "status:bereit"; sleep 2; "$0" label-setzen "$1" "status:bereit" ;;
   mergebar) mergebar "$1" >/dev/null ;;
   mergen)
     nr="$1"; erwartet="${2:-}"

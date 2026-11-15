@@ -86,6 +86,7 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
 4. Der Kommentar endet mit dem Merge-SHA und zwei, drei Sätzen für Cyrille: was jetzt auf `main` neu ist und was er sich anschauen könnte. Kommentar posten.
 5. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:gemergt`, dann `scripts/pipeline.sh entsperren <nr>`.
 6. Das verknüpfte Issue schliesst GitHub über «Closes #…» selbst. Dort `status:in-arbeit` entfernen: `scripts/pipeline.sh label-entfernen <issue> status:in-arbeit`.
+7. **Nächstes Feature anstossen:** `scripts/pipeline.sh naechstes-feature`. Liefert das ein Issue, `scripts/pipeline.sh anstossen <issue>`. Das startet die Entwicklung des nächsten Features aus der Warteschlange. Im Abschlusskommentar erwähnen, welches Feature als nächstes kommt.
 
 **Wenn der Merge nicht geht** (Konflikte mit `main`, roter Check, Head verändert): nicht erzwingen. Grund in den Kommentar, `pipeline:test` → `pipeline:nacharbeit`. Der Entwicklungs-Agent bringt den Branch auf den Stand von `main`, danach läuft die Pipeline erneut durch Review und Test.
 

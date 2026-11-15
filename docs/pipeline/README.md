@@ -111,7 +111,17 @@ Was man beim Einrichten wissen muss:
 5. Bei `pipeline:gemergt`: Das Feature ist auf `main`. Der Testbericht im PR sagt, was neu ist.
 6. Bei `pipeline:blockiert`: Frage im Kommentar beantworten, dann das passende Label wieder setzen.
 
-Features nacheinander freigeben, nicht alle auf einmal: das nächste erst, wenn das vorherige gemergt ist. Spätere Features bauen auf früheren auf (siehe [Backlog](backlog.md)), und parallele PRs erzeugen Konflikte.
+### Warteschlange
+
+Du kannst beliebig viele Features gleichzeitig auf `status:bereit` setzen. Die Pipeline arbeitet sie **nacheinander** ab:
+
+1. Es ist immer nur ein Feature in Arbeit. Solange ein PR in Review, Test oder Nacharbeit ist, beginnt kein neues Feature. So entstehen keine Konflikte zwischen parallelen PRs.
+2. Als nächstes kommt das Feature mit der kleinsten F-Nummer, dessen Voraussetzungen (Zeile «Voraussetzung» im Issue) schon gemergt sind.
+3. Nach jedem Merge stösst der Test-Agent das nächste Feature an.
+4. Gehen mehrere Issues gleichzeitig auf `status:bereit`, starten mehrere Entwicklungs-Läufe. Nur einer beansprucht das Feature (`scripts/pipeline.sh beanspruchen`), die anderen enden sofort.
+5. Steht etwas auf `pipeline:blockiert`, hält die Warteschlange an, bis Cyrille entschieden hat. Danach geht es mit dem blockierten Eintrag weiter.
+
+Die Reihenfolge und Abhängigkeiten stehen im [Backlog](backlog.md).
 
 ## Grenzen und Kosten
 
