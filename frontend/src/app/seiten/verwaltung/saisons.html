@@ -40,7 +40,7 @@
                   type="button"
                   class="button button-sekundaer button-klein"
                   [disabled]="speichert()"
-                  [attr.aria-busy]="aktiviertGerade() === s.id ? 'true' : null"
+                  [attr.aria-busy]="laufendeAktion() === 'aktivieren:' + s.id ? 'true' : null"
                   (click)="aktivieren(s)"
                 >
                   {{ texte.saisons.aktivieren }}
@@ -96,7 +96,7 @@
       type="submit"
       class="button button-primaer"
       [disabled]="speichert()"
-      [attr.aria-busy]="speichert() ? 'true' : null"
+      [attr.aria-busy]="laufendeAktion() === 'anlegen' ? 'true' : null"
     >
       {{ texte.saisons.anlegen }}
     </button>

@@ -76,9 +76,12 @@ export class TeamVerwaltung {
   protected readonly saisonDaten = signal<Saison | null>(null);
   protected readonly personen = signal<Person[]>([]);
   protected readonly laedt = signal(true);
-  protected readonly speichert = signal(false);
-  /** Person, deren Entfernen gerade läuft (für `aria-busy` an ihrer Schaltfläche). */
-  protected readonly entferntGerade = signal<string | null>(null);
+  /**
+   * Welche Aktion gerade läuft: `umbenennen`, `aufnehmen`, `funktion:<personId>` oder
+   * `entfernen:<personId>`. `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
+   */
+  protected readonly laufendeAktion = signal<string | null>(null);
+  protected readonly speichert = computed(() => this.laufendeAktion() !== null);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
   protected readonly nurLesen = computed(() => this.saisonDaten()?.archiv === true);
@@ -155,11 +158,11 @@ export class TeamVerwaltung {
     this.team.set(t);
   }
 
-  private async ausfuehren(aktion: () => Promise<string>): Promise<void> {
+  private async ausfuehren(schluessel: string, aktion: () => Promise<string>): Promise<void> {
     if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
-    this.speichert.set(true);
+    this.laufendeAktion.set(schluessel);
     try {
       const meldung = await aktion();
       await this.neuLaden();
@@ -167,7 +170,7 @@ export class TeamVerwaltung {
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {
-      this.speichert.set(false);
+      this.laufendeAktion.set(null);
     }
   }
 
@@ -179,7 +182,7 @@ export class TeamVerwaltung {
       return;
     }
     this.teamnameFehler.set(null);
-    void this.ausfuehren(async () => {
+    void this.ausfuehren('umbenennen', async () => {
       await firstValueFrom(this.http.put(`/api/teams/${this.teamId()}`, { name: neuerName }));
       return TEXTE.teamVerwaltung.umbenannt;
     });
@@ -194,7 +197,7 @@ export class TeamVerwaltung {
     }
     this.personFehler.set(null);
     const funktion = this.neueFunktion();
-    void this.ausfuehren(async () => {
+    void this.ausfuehren('aufnehmen', async () => {
       const z = await firstValueFrom(
         this.http.post<Teamzugehoerigkeit>(
           `/api/teams/${this.teamId()}/mitglieder`,
@@ -213,7 +216,7 @@ export class TeamVerwaltung {
   }
 
   protected funktionAendern(m: Mitglied, funktion: Funktion): void {
-    void this.ausfuehren(async () => {
+    void this.ausfuehren(`funktion:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.put(
           `/api/teams/${this.teamId()}/mitglieder/${m.person.id}`,
@@ -226,15 +229,13 @@ export class TeamVerwaltung {
   }
 
   protected entfernen(m: Mitglied): void {
-    if (this.speichert()) return;
-    this.entferntGerade.set(m.person.id);
-    void this.ausfuehren(async () => {
+    void this.ausfuehren(`entfernen:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.delete(`/api/teams/${this.teamId()}/mitglieder/${m.person.id}`, {
           params: this.params(),
         }),
       );
       return TEXTE.teamVerwaltung.entfernt(name(m.person));
-    }).finally(() => this.entferntGerade.set(null));
+    });
   }
 }

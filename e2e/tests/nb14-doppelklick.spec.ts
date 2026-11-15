@@ -37,11 +37,23 @@ async function bremsen(page: Page, methode: string, pfad: RegExp): Promise<Brems
   return bremse;
 }
 
-/** Doppelklick, dann prüfen, dass die Schaltfläche während der Anfrage gesperrt ist. */
-async function doppelklickWaehrendAnfrage(knopf: Locator, bremse: Bremse): Promise<void> {
+/**
+ * Doppelklick, dann prüfen, dass die Schaltfläche während der Anfrage gesperrt und als
+ * «läuft» markiert ist. `andere` Schaltflächen daneben sind gesperrt, aber ohne `aria-busy`
+ * (docs/testbarkeit.md «Aktion läuft»).
+ */
+async function doppelklickWaehrendAnfrage(
+  knopf: Locator,
+  bremse: Bremse,
+  andere: Locator[] = [],
+): Promise<void> {
   await knopf.dblclick();
   await expect(knopf).toBeDisabled();
   await expect(knopf).toHaveAttribute('aria-busy', 'true');
+  for (const a of andere) {
+    await expect(a).toBeDisabled();
+    await expect(a).not.toHaveAttribute('aria-busy');
+  }
   bremse.freigeben();
 }
 
@@ -130,7 +142,10 @@ test('Nachbesserung #14 K2: Doppelklick auf Umbenennen speichert den Namen einma
   const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/teams/${TEAM_1}$`));
   await page.getByLabel('Teamname').fill('Damen 1');
 
-  await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Umbenennen' }), bremse);
+  await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Umbenennen' }), bremse, [
+    page.getByRole('button', { name: 'Aufnehmen' }),
+    page.getByRole('button', { name: 'Anna Muster entfernen' }),
+  ]);
 
   await expect(page.getByRole('status')).toHaveText('Name gespeichert.');
   expect(bremse.anzahl).toBe(1);
@@ -142,7 +157,15 @@ test('Nachbesserung #14 K2: Doppelklick auf Entfernen entfernt die Person einmal
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   const bremse = await bremsen(page, 'DELETE', new RegExp(`/mitglieder/${ANNA}$`));
 
-  await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Anna Muster entfernen' }), bremse);
+  await doppelklickWaehrendAnfrage(
+    page.getByRole('button', { name: 'Anna Muster entfernen' }),
+    bremse,
+    [
+      page.getByRole('button', { name: 'Umbenennen' }),
+      page.getByRole('button', { name: 'Aufnehmen' }),
+      page.getByRole('button', { name: /entfernen$/ }).filter({ hasNotText: 'Anna Muster' }).first(),
+    ],
+  );
 
   await expect(page.getByRole('status')).toHaveText('Anna Muster ist nicht mehr im Team.');
   await expect(page.getByRole('alert')).toHaveCount(0);
@@ -173,7 +196,9 @@ test('Nachbesserung #14 K2: Doppelklick auf «Zur aktuellen Saison machen» wech
   const knopf = page
     .getByRole('listitem', { name: '2027/28' })
     .getByRole('button', { name: 'Zur aktuellen Saison machen' });
-  await doppelklickWaehrendAnfrage(knopf, bremse);
+  await doppelklickWaehrendAnfrage(knopf, bremse, [
+    page.getByRole('button', { name: 'Saison anlegen' }),
+  ]);
 
   await expect(page.getByRole('status')).toHaveText('2027/28 ist jetzt die aktuelle Saison.');
   await expect(page.getByRole('alert')).toHaveCount(0);
