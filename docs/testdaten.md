@@ -41,8 +41,9 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | Feature | Inhalt |
 |---|---|
 | F-00 | Saisons, alle Personen mit Konto und Schlüssel, Uhr auf Standard-«Jetzt». E-Mail jeder Person: `<schluessel>@example.ch` |
+| F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team |
 
-Teams, Gruppen, Teamzugehörigkeiten, Serien, Termine und Antworten folgen mit F-01 bis F-05. Die Tabellen unten sind das Zielbild.
+Gruppen, Linienzuweisungen, Serien, Termine und Antworten folgen mit F-02 bis F-05. Die Tabellen unten sind das Zielbild.
 
 Im Profil `dev` wird der Seed beim Start des Backends geladen. Jeder Neustart (auch Live-Reload) setzt die Daten zurück.
 
@@ -224,7 +225,10 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S13 | Abgesagter Termin | Als `anna` Termin 03 öffnen | Als abgesagt erkennbar, mit Grund. Antworten nicht möglich | TER-06 |
 | S14 | Linie wechseln | Als `petra` in Team 1 Kim der Linie 2 zuweisen | Kim erscheint bei Termin 01 unter Linie 2 von Team 1, «Ohne Linie» ist leer und wird nicht angezeigt | LIN-07, LIN-06 |
 | S15 | Eine Linie pro Team | Als `petra` Anna zusätzlich Linie 2 in Team 1 zuweisen | Anna wechselt in Linie 2, ist danach nicht mehr in Linie 1 | LIN-02 |
-| S16 | Archiv | Als `alex` Saison 2025/26 wählen | Vera und Termin 08 sichtbar, nur lesend | SAI-02 |
+| S16 | Archiv | Als `alex` unter `/verwaltung/saisons` bei 2025/26 «Teams ansehen», Team 1 öffnen | Hinweis «Archiv: nur lesend», Vera als Spielerin sichtbar, keine Bearbeitung möglich (API 409). Termin 08 ab F-03 | SAI-02 |
 | S17 | Anmeldung im Testmodus | `/profil` ohne Anmeldung öffnen, auf `/dev-login` «Petra Keller» wählen | Weiterleitung auf `/dev-login?ziel=%2Fprofil`, danach zurück auf `/profil` | F-00 |
 | S18 | Kacheln nach Rolle | Als `anna` und als `alex` `/` öffnen | Beide sehen die Kachel «Anwesenheit». Nur `alex` hat «Verwaltung» in der Navigation | NF-12, RR-05 |
+| S20 | Doppelrolle | Als `petra` `/teams` öffnen | Team 1 «Coach», Team 2 «Spielerin». In Team 2 steht Petra bei den Spielerinnen, in Team 1 bei den Coaches | PTF-04, PTF-07, PTF-12 |
+| S21 | Neue Saison | Als `alex` unter `/verwaltung/saisons` 2027/28 mit Übernahme aus 2026/27 anlegen, zur aktuellen machen | Teams und Zugehörigkeiten übernommen, 2026/27 wird Archiv | SAI-04, SAI-06 |
+| S22 | Eine Funktion pro Team | Als `alex` in Team 1 Petra nochmals aufnehmen wollen | Oberfläche: «(schon im Team)», nicht wählbar. API: 409 mit Regel PTF-04 | PTF-04 |
 | S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |

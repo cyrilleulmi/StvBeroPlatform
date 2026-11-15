@@ -89,7 +89,12 @@ export interface paths {
         /** Alle Saisons, neueste zuerst */
         get: operations["saisonsLesen"];
         put?: never;
-        /** Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin) */
+        /**
+         * Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
+         * @description Die neue Saison ist noch nicht aktuell. Mit `uebernehmenAus` werden die Teams und
+         *     Teamzugehörigkeiten dieser Saison übernommen. Name schon vergeben oder Zeitraum überschneidet
+         *     sich mit einer anderen Saison: 409.
+         */
         post: operations["saisonAnlegen"];
         delete?: never;
         options?: never;
@@ -126,7 +131,10 @@ export interface paths {
         /** Teams einer Saison. Ohne Admin-Rechte nur die eigenen. */
         get: operations["teamsLesen"];
         put?: never;
-        /** Team anlegen (Admin) */
+        /**
+         * Team anlegen (Admin)
+         * @description Das Team gehört ab sofort zur angegebenen Saison. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         */
         post: operations["teamAnlegen"];
         delete?: never;
         options?: never;
@@ -167,7 +175,8 @@ export interface paths {
         put?: never;
         /**
          * Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
-         * @description Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die API mit 409.
+         * @description Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die
+         *     API mit 409 (Regel PTF-04). Archivierte Saisons sind nur lesbar (409, SAI-02).
          */
         post: operations["mitgliedHinzufuegen"];
         delete?: never;
@@ -190,10 +199,14 @@ export interface paths {
         /**
          * Funktion im Team ändern (Admin)
          * @description Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
+         *     Archivierte Saisons sind nur lesbar (409, SAI-02).
          */
         put: operations["funktionAendern"];
         post?: never;
-        /** Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten. */
+        /**
+         * Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
+         * @description Archivierte Saisons sind nur lesbar (409, SAI-02).
+         */
         delete: operations["mitgliedEntfernen"];
         options?: never;
         head?: never;
@@ -294,7 +307,10 @@ export interface paths {
         };
         /** Person mit allen Teamzugehörigkeiten (Admin) */
         get: operations["personLesen"];
-        /** Person ändern (Admin) */
+        /**
+         * Person ändern (Admin)
+         * @description Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, RR-04).
+         */
         put: operations["personAendern"];
         post?: never;
         delete?: never;
@@ -870,8 +886,11 @@ export interface components {
             /** Format: date */
             bis: string;
             aktuell: boolean;
+            /** @description Saison vor der aktuellen. Nur lesbar (SAI-02). */
+            archiv: boolean;
         };
         SaisonAnlegen: {
+            /** @example 2027/28 */
             name: string;
             /** Format: date */
             von: string;
@@ -1404,6 +1423,8 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     saisonAktivieren: {
@@ -1454,7 +1475,10 @@ export interface operations {
     };
     teamAnlegen: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                saison?: components["parameters"]["saison"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1476,6 +1500,8 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     teamLesen: {
@@ -1536,7 +1562,10 @@ export interface operations {
     };
     mitgliedHinzufuegen: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                saison?: components["parameters"]["saison"];
+            };
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
@@ -1560,12 +1589,16 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
         };
     };
     funktionAendern: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                saison?: components["parameters"]["saison"];
+            };
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
@@ -1590,13 +1623,18 @@ export interface operations {
                     "application/json": components["schemas"]["Teamzugehoerigkeit"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     mitgliedEntfernen: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                saison?: components["parameters"]["saison"];
+            };
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
@@ -1615,6 +1653,7 @@ export interface operations {
             };
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     gruppenLesen: {
@@ -1857,6 +1896,7 @@ export interface operations {
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     termineLesen: {

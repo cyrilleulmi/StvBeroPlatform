@@ -7,12 +7,14 @@ Technologie-Entscheide und Leitplanken für die Architektur. Umgesetzt ist das G
 | Thema | Konvention |
 |---|---|
 | Versionen | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
-| Backend-Packages | `ch.stvbero.platform.kern.*` (Uhr, Person, Saison, Anmeldung, Kachel, Fehler, Test-Hilfen), `ch.stvbero.platform.<kachel>` pro Kachel (z.B. `anwesenheit`) |
+| Backend-Packages | `ch.stvbero.platform.kern.*` (Uhr, Person, Saison, Team, Anmeldung, Kachel, Fehler, Test-Hilfen), `ch.stvbero.platform.<kachel>` pro Kachel (z.B. `anwesenheit`) |
 | Kachel registrieren | Backend: CDI-Bean, die `KachelDefinition` umsetzt (Metadaten, `sichtbarFuer`). Frontend: Route `loadChildren` in `app.routes.ts`, Icon in `kern/icon.ts` |
 | «Jetzt» | `java.time.Clock` injizieren. Im Profil dev/test über `PUT /api/test/uhr` steuerbar |
 | Test-Hilfen | Build-Eigenschaft `stv.testhilfen` (`true` nur in `%dev`/`%test`). Ressourcen mit `@IfBuildProperty`, im Profil prod nicht vorhanden |
 | Anmeldung | Cookie `stv_sitzung` (HttpOnly, SameSite=Lax), Sitzungen in der Datenbank. Ressourcen ohne `@Oeffentlich` verlangen eine Sitzung (401) |
 | Fehler | `FachFehler` → Problem Details (`application/problem+json`), Validierung → 400 mit `felder` |
+| Fachregeln | Pro Bereich eine Klasse `…Regeln` ohne Datenbank (z.B. `TeamRegeln`, `SaisonRegeln`), mit Unit-Tests. Services laden, Regeln entscheiden, Ressourcen bleiben dünn (F-01) |
+| Saison-Parameter | Endpunkte mit Saisonbezug nehmen `?saison=<id>`, ohne Angabe gilt die aktuelle Saison. Saisons vor der aktuellen sind nur lesbar (409, SAI-02) |
 | Vertrag | `OpenApiVertragTest` vergleicht `/q/openapi` mit `docs/api/openapi.yaml` (Pfade, Methoden, operationId, Statuscodes, Schemas) |
 | Frontend-Typen | `npm run api-typen` erzeugt `src/app/api/schema.d.ts` aus dem Vertrag (läuft vor `start` und `build`) |
 | Texte | `frontend/src/app/kern/texte.ts` |

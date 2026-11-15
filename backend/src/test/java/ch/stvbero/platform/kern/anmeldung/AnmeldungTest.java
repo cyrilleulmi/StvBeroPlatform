@@ -13,14 +13,15 @@ import static org.hamcrest.Matchers.equalTo;
 
 /** F-00: Anmeldung über Sitzungs-Cookie, /api/ich, /api/kacheln, Abmelden. */
 @QuarkusTest
-class AnmeldungTest {
+public class AnmeldungTest {
 
     @BeforeEach
     void reset() {
         given().post("/api/test/reset").then().statusCode(204);
     }
 
-    static String anmelden(String schluessel) {
+    /** Meldet als Seed-Person an und liefert das Sitzungs-Cookie. Auch für andere Tests. */
+    public static String anmelden(String schluessel) {
         return given().contentType(ContentType.JSON).body("{\"schluessel\":\"" + schluessel + "\"}")
                 .post("/api/test/anmelden").then().statusCode(204).extract().cookie("stv_sitzung");
     }
@@ -48,13 +49,16 @@ class AnmeldungTest {
                 .body("admin", equalTo(false))
                 .body("saison.name", equalTo("2026/27"))
                 .body("saison.aktuell", equalTo(true))
-                .body("zugehoerigkeiten", empty());
+                .body("saison.archiv", equalTo(false))
+                .body("zugehoerigkeiten.team.name", contains("Team 1"))
+                .body("zugehoerigkeiten[0].funktion", equalTo("SPIELERIN"));
     }
 
     @Test
     void adminIstEigenschaftDerPerson() {
         given().cookie("stv_sitzung", anmelden("alex")).get("/api/ich").then().statusCode(200)
-                .body("admin", equalTo(true));
+                .body("admin", equalTo(true))
+                .body("zugehoerigkeiten", empty());
     }
 
     @Test

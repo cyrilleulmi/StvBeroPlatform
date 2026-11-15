@@ -29,6 +29,8 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-17 | Wer wird bei einer kurzfristigen Absage benachrichtigt, wenn ein Termin mehrere Teams hat? | Annahme: nur die Coaches der Teams, in denen die Person Spielerin ist ([BEN-02](anforderungen/08-benachrichtigungen.md)). |
 | O-18 | Wann geht die Erinnerung raus? | Annahme: 12 Stunden vor der Antwortfrist ([zustaende.md](zustaende.md#termin)). |
 | O-19 | Was passiert mit Serienterminen in einer neuen Ausnahme? | Annahme: ohne Antworten entfernt, mit Antworten abgesagt ([zustaende.md](zustaende.md#serie)). |
+| O-34 | Bekommt eine neu erfasste Person automatisch ein Konto? | Annahme F-01: nein. Das Konto entsteht mit dem Anmeldeverfahren (O-01). Neue Personen können sich im Testmodus nicht anmelden. |
+| O-35 | Dürfen alte Saisons nachträglich korrigiert werden? | Annahme F-01: nein, Saisons vor der aktuellen sind nur lesbar (SAI-02). Eine geplante Saison nach der aktuellen ist änderbar. |
 
 ## Pipeline
 

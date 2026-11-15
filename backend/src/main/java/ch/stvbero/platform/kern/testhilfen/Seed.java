@@ -35,6 +35,46 @@ public class Seed {
             new SeedSaison(1, "2025/26", LocalDate.of(2025, 7, 1), LocalDate.of(2026, 6, 30), false),
             new SeedSaison(2, "2026/27", LocalDate.of(2026, 7, 1), LocalDate.of(2027, 6, 30), true));
 
+    record SeedTeam(int nr, String name, Integer suTeamId) {
+    }
+
+    /** Teamzugehörigkeit: Person, Team, Saison (Nummern), Funktion. Linien folgen mit F-02. */
+    record SeedZugehoerigkeit(int person, int team, int saison, String funktion) {
+    }
+
+    static final List<SeedTeam> TEAMS = List.of(
+            new SeedTeam(1, "Team 1", 900001),
+            new SeedTeam(2, "Team 2", null),
+            new SeedTeam(3, "Team 3", null));
+
+    /** Welche Teams in welcher Saison bestehen: Team, Saison. */
+    static final List<int[]> TEAM_SAISONS = List.of(
+            new int[]{1, 1},
+            new int[]{1, 2}, new int[]{2, 2}, new int[]{3, 2});
+
+    private static final String S = "SPIELERIN";
+    private static final String C = "COACH";
+
+    static final List<SeedZugehoerigkeit> ZUGEHOERIGKEITEN = List.of(
+            // Saison 2026/27 (aktuell)
+            new SeedZugehoerigkeit(2, 1, 2, C), new SeedZugehoerigkeit(2, 2, 2, S),
+            new SeedZugehoerigkeit(3, 2, 2, C),
+            new SeedZugehoerigkeit(4, 3, 2, C),
+            new SeedZugehoerigkeit(5, 1, 2, S),
+            new SeedZugehoerigkeit(6, 1, 2, S), new SeedZugehoerigkeit(6, 2, 2, S),
+            new SeedZugehoerigkeit(7, 1, 2, S),
+            new SeedZugehoerigkeit(8, 1, 2, S),
+            new SeedZugehoerigkeit(9, 1, 2, S),
+            new SeedZugehoerigkeit(10, 1, 2, S),
+            new SeedZugehoerigkeit(11, 1, 2, S),
+            new SeedZugehoerigkeit(12, 2, 2, S),
+            new SeedZugehoerigkeit(13, 2, 2, S),
+            new SeedZugehoerigkeit(14, 2, 2, S),
+            new SeedZugehoerigkeit(15, 2, 2, S),
+            new SeedZugehoerigkeit(16, 3, 2, S),
+            // Saison 2025/26 (Archiv)
+            new SeedZugehoerigkeit(17, 1, 1, S));
+
     static final List<SeedPerson> PERSONEN = List.of(
             new SeedPerson(1, "alex", "Alex", "Admin", true),
             new SeedPerson(2, "petra", "Petra", "Keller", false),
@@ -91,9 +131,35 @@ public class Seed {
                     .setParameter(1, kontoId(p.nr())).setParameter(2, personId(p.nr())).setParameter(3, p.schluessel())
                     .executeUpdate();
         }
+        for (SeedTeam t : TEAMS) {
+            em.createNativeQuery("insert into team (id, name) values (?, ?)")
+                    .setParameter(1, teamId(t.nr())).setParameter(2, t.name())
+                    .executeUpdate();
+            if (t.suTeamId() != null) {
+                em.createNativeQuery("update team set su_team_id = ? where id = ?")
+                        .setParameter(1, t.suTeamId()).setParameter(2, teamId(t.nr()))
+                        .executeUpdate();
+            }
+        }
+        for (int[] ts : TEAM_SAISONS) {
+            em.createNativeQuery("insert into team_saison (team_id, saison_id) values (?, ?)")
+                    .setParameter(1, teamId(ts[0])).setParameter(2, saisonId(ts[1]))
+                    .executeUpdate();
+        }
+        for (SeedZugehoerigkeit z : ZUGEHOERIGKEITEN) {
+            em.createNativeQuery("insert into teamzugehoerigkeit (id, person_id, team_id, saison_id, funktion) values (?, ?, ?, ?, ?)")
+                    .setParameter(1, UUID.nameUUIDFromBytes(("tz-" + z.person() + "-" + z.team() + "-" + z.saison()).getBytes()))
+                    .setParameter(2, personId(z.person())).setParameter(3, teamId(z.team()))
+                    .setParameter(4, saisonId(z.saison())).setParameter(5, z.funktion())
+                    .executeUpdate();
+        }
         em.clear();
 
         uhr.festsetzen(STANDARD_JETZT.atZone(Uhr.ZONE).toInstant());
+    }
+
+    public static UUID teamId(int nr) {
+        return id("1", nr);
     }
 
     public static UUID personId(int nr) {

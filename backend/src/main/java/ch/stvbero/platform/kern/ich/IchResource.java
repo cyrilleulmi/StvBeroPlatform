@@ -4,11 +4,11 @@ import ch.stvbero.platform.kern.anmeldung.Angemeldet;
 import ch.stvbero.platform.kern.anmeldung.Anmeldung;
 import ch.stvbero.platform.kern.anmeldung.Oeffentlich;
 import ch.stvbero.platform.kern.anmeldung.SitzungService;
-import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.fehler.Fehler;
 import ch.stvbero.platform.kern.person.Person;
 import ch.stvbero.platform.kern.saison.Saison;
 import ch.stvbero.platform.kern.saison.SaisonDto;
+import ch.stvbero.platform.kern.team.TeamService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -22,8 +22,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import java.util.List;
-
 @Path("/api")
 @Tag(name = "Ich")
 public class IchResource {
@@ -33,6 +31,9 @@ public class IchResource {
 
     @Inject
     SitzungService sitzungen;
+
+    @Inject
+    TeamService teams;
 
     @GET
     @Path("/ich")
@@ -45,11 +46,9 @@ public class IchResource {
     public IchDto lesen() {
         Angemeldet angemeldet = anmeldung.person();
         Person person = Person.findById(angemeldet.personId());
-        Saison saison = Saison.aktuelle()
-                .orElseThrow(() -> new FachFehler(409, "Keine aktuelle Saison", "Es ist keine aktuelle Saison festgelegt.", "SAI-01"));
-        // Teamzugehörigkeiten kommen mit F-01.
+        Saison saison = Saison.aktuelleOderFehler();
         return new IchDto(person.id, person.vorname, person.nachname, person.email, person.admin,
-                SaisonDto.von(saison), List.of());
+                SaisonDto.von(saison, saison), teams.meine(person.id, saison));
     }
 
     @POST

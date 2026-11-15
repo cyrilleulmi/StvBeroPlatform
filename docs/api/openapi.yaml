@@ -117,6 +117,10 @@ paths:
       tags: [Saisons]
       operationId: saisonAnlegen
       summary: Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
+      description: |
+        Die neue Saison ist noch nicht aktuell. Mit `uebernehmenAus` werden die Teams und
+        Teamzugehörigkeiten dieser Saison übernommen. Name schon vergeben oder Zeitraum überschneidet
+        sich mit einer anderen Saison: 409.
       requestBody:
         required: true
         content:
@@ -130,6 +134,8 @@ paths:
               schema: { $ref: '#/components/schemas/Saison' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/saisons/{saisonId}/aktivieren:
     parameters:
       - $ref: '#/components/parameters/saisonId'
@@ -163,6 +169,9 @@ paths:
       tags: [Teams]
       operationId: teamAnlegen
       summary: Team anlegen (Admin)
+      description: Das Team gehört ab sofort zur angegebenen Saison. Archivierte Saisons sind nur lesbar (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/saison'
       requestBody:
         required: true
         content:
@@ -176,6 +185,8 @@ paths:
               schema: { $ref: '#/components/schemas/Team' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/teams/{teamId}:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -218,7 +229,11 @@ paths:
       tags: [Teams]
       operationId: mitgliedHinzufuegen
       summary: Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
-      description: Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die API mit 409.
+      description: |
+        Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die
+        API mit 409 (Regel PTF-04). Archivierte Saisons sind nur lesbar (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/saison'
       requestBody:
         required: true
         content:
@@ -232,6 +247,7 @@ paths:
               schema: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
         '409': { $ref: '#/components/responses/Konflikt' }
   /api/teams/{teamId}/mitglieder/{personId}:
     parameters:
@@ -241,7 +257,11 @@ paths:
       tags: [Teams]
       operationId: funktionAendern
       summary: Funktion im Team ändern (Admin)
-      description: Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
+      description: |
+        Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
+        Archivierte Saisons sind nur lesbar (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/saison'
       requestBody:
         required: true
         content:
@@ -257,16 +277,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
     delete:
       tags: [Teams]
       operationId: mitgliedEntfernen
       summary: Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
+      description: Archivierte Saisons sind nur lesbar (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/saison'
       responses:
         '204': { description: Entfernt }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
 
   # ---------------------------------------------------------------- Linien
   /api/teams/{teamId}/gruppen:
@@ -416,6 +442,7 @@ paths:
       tags: [Personen]
       operationId: personAendern
       summary: Person ändern (Admin)
+      description: Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, RR-04).
       requestBody:
         required: true
         content:
@@ -430,6 +457,7 @@ paths:
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
 
   # ---------------------------------------------------------------- Termine
   /api/termine:
@@ -1216,18 +1244,21 @@ components:
 
     Saison:
       type: object
-      required: [id, name, von, bis, aktuell]
+      required: [id, name, von, bis, aktuell, archiv]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, examples: [2026/27] }
         von: { type: string, format: date }
         bis: { type: string, format: date }
         aktuell: { type: boolean }
+        archiv:
+          type: boolean
+          description: Saison vor der aktuellen. Nur lesbar (SAI-02).
     SaisonAnlegen:
       type: object
       required: [name, von, bis]
       properties:
-        name: { type: string }
+        name: { type: string, minLength: 1, maxLength: 20, examples: [2027/28] }
         von: { type: string, format: date }
         bis: { type: string, format: date }
         uebernehmenAus:

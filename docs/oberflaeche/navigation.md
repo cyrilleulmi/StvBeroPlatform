@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut ist bisher F-00 (Grundgerüst): `/anmelden`, `/dev-login`, `/` (Begrüssung, Kacheln), `/termine`, `/teams` und `/verwaltung` (jeweils leerer Zustand), `/profil`.
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) und F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons).
 
 ## Navigation
 
@@ -30,8 +30,12 @@ flowchart LR
     Start --> Profil["/profil"]
     Start --> Verwaltung["/verwaltung (Admin)"]
     Verwaltung --> Personen["/verwaltung/personen"]
+    Personen --> PersonNeu["/verwaltung/personen/neu"]
+    Personen --> PersonDetail["/verwaltung/personen/:id"]
     Verwaltung --> VTeams["/verwaltung/teams"]
+    VTeams --> VTeam["/verwaltung/teams/:id"]
     Verwaltung --> Saisons["/verwaltung/saisons"]
+    Saisons -->|Teams ansehen| VTeams
 ```
 
 ## Routen
@@ -47,16 +51,19 @@ flowchart LR
 | `/termine/:id/bearbeiten` | Termin bearbeiten | Coach | Angaben ändern, verschieben, absagen | F-03 |
 | `/termine/:id/aufgebot` | Aufgebot | Coach | Auswahl nach Linien gruppiert, Antwortstatus daneben, veröffentlichen | F-05 |
 | `/serien/:id` | Serie | Coach | Regel, Teams, Ausnahmen (Ferien) | F-03 |
-| `/teams` | Meine Teams | angemeldet | Eigene Teams mit eigener Funktion | F-01 |
-| `/teams/:id` | Team | Mitglieder | Coaches, Spielerinnen nach Linie | F-01, F-02 |
+| `/teams` | Meine Teams | angemeldet | Eigene Teams der aktuellen Saison mit eigener Funktion (PTF-12), Link auf `/teams/:id` | F-01 |
+| `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), ab F-02 nach Linie. `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
 | `/teams/:id/linien` | Linien | Coach | Linien anlegen, umbenennen, sortieren, Spielerinnen zuweisen | F-02 |
 | `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, als gelesen markieren | F-06 |
 | `/profil` | Profil | angemeldet | Name, Hell/Dunkel/System, Abmelden | F-00 |
-| `/verwaltung` | Verwaltung | Admin | Einstieg in die Verwaltung (bis F-01 leerer Zustand). Andere sehen «Keine Berechtigung» | F-00, F-01 |
+| `/verwaltung` | Verwaltung | Admin | Einstieg: Links «Personen», «Teams verwalten», «Saisons». Andere sehen «Keine Berechtigung» | F-00, F-01 |
 | `/**` | Nicht gefunden | angemeldet | «Diese Seite gibt es nicht.» mit Link «Zur Startseite» | F-00 |
-| `/verwaltung/personen` | Personen | Admin | Personen anlegen, bearbeiten | F-01 |
-| `/verwaltung/teams` | Teams | Admin | Teams, Teamzugehörigkeiten, Verknüpfung swiss unihockey, Abgleich auslösen | F-01, F-07 |
-| `/verwaltung/saisons` | Saisons | Admin | Saisons anlegen, aktuelle Saison wechseln, Archiv | F-01 |
+| `/verwaltung/personen` | Personen | Admin | Liste nach Nachname, Suche `?suche=`, Link «Person erfassen» | F-01 |
+| `/verwaltung/personen/neu` | Person erfassen | Admin | Vorname, Nachname, E-Mail, Admin. Nach dem Speichern weiter auf `/verwaltung/personen/:id` | F-01 |
+| `/verwaltung/personen/:id` | Person bearbeiten | Admin | Angaben ändern, Teamzugehörigkeiten aller Saisons | F-01 |
+| `/verwaltung/teams` | Teams verwalten | Admin | Auswahl «Saison» (`?saison=<id>`), Teams der Saison, «Team anlegen». Archiv nur lesend. Ab F-07: Verknüpfung swiss unihockey | F-01, F-07 |
+| `/verwaltung/teams/:id` | Team verwalten | Admin | Umbenennen, Coaches und Spielerinnen mit Auswahl «Funktion von <Name>» und «<Name> entfernen», «Person aufnehmen». `?saison=<id>`; Archiv nur lesend | F-01 |
+| `/verwaltung/saisons` | Saisons | Admin | Saisons mit Status (aktuell, Archiv, geplant), «Teams ansehen», «Zur aktuellen Saison machen», Formular «Neue Saison» mit Übernahme | F-01 |
 
 Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert"`) statt eines leeren Bildschirms. Ohne Anmeldung leitet jede Route auf `/anmelden` (bzw. im Testmodus `/dev-login`) mit `?ziel=<ursprüngliche Route>` und nach der Anmeldung dorthin zurück. Ob jemand angemeldet ist, prüft das Frontend über `GET /api/sitzung` (immer 200), damit ohne Anmeldung keine Fehler in der Konsole entstehen.
 
@@ -85,6 +92,23 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | `dev-login-person-<schluessel>` | Eintrag einer Testperson auf `/dev-login`, z.B. `dev-login-person-petra` |
 | `naechster-termin` | Karte «Nächster Termin» auf dem Start-Screen |
 | `benachrichtigungen-zaehler` | Anzahl ungelesener Benachrichtigungen |
+
+### Teams und Verwaltung (F-01)
+
+| Test-ID | Element |
+|---|---|
+| `team-karte-<teamId>` | Eintrag in «Meine Teams» (`/teams`) |
+| `team-coaches` | Abschnitt «Coaches» (`/teams/:id`, `/verwaltung/teams/:id`) |
+| `team-spielerinnen` | Abschnitt «Spielerinnen» (`/teams/:id`, `/verwaltung/teams/:id`) |
+| `team-person-<personId>` | Person in `/teams/:id` |
+| `mitglied-<personId>` | Person in `/verwaltung/teams/:id` (`li` mit Namen als `aria-label`) |
+| `archiv-hinweis` | Hinweis «Saison … im Archiv: nur lesend.» |
+| `person-<personId>` | Eintrag in `/verwaltung/personen` |
+| `team-<teamId>` | Eintrag in `/verwaltung/teams` |
+| `saison-<saisonId>` | Eintrag in `/verwaltung/saisons` (`li` mit Saisonname als `aria-label`) |
+| `saison-status` | Status einer Saison: «aktuell», «Archiv», «geplant» |
+
+Erfolgsmeldungen haben `role="status"`, Fehler `role="alert"`. In «Person aufnehmen» sind Personen, die schon im Team sind, mit «(schon im Team)» markiert und nicht wählbar (PTF-04).
 
 ### Termine
 
