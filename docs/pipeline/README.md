@@ -104,6 +104,19 @@ Was man beim Einrichten wissen muss:
 - Ein Setup-Skript ist nicht nötig: Das Standard-Image hat alles, was das Projekt braucht (Java 21, Maven, Node 22, Chrome, PostgreSQL). `scripts/cloud-setup.sh` prüft das bei Bedarf.
 - Optional: Bei «Entwicklung» einen Zeitplan-Trigger (z.B. täglich) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Das geht nur, wenn keine GitHub-Trigger nötig ist, also in einer separaten Aufgabe.
 
+## Statusseite und Benachrichtigungen
+
+**Statusseite:** https://cyrilleulmi.github.io/StvBeroPlatform/ (Quelle `status/index.html`, veröffentlicht durch `.github/workflows/statusseite.yml`). Sie liest den Stand live aus der GitHub-API und zeigt:
+
+- was dich braucht (Blockaden, Nachbesserungen ohne Freigabe)
+- was gerade in Arbeit ist, mit Stufe und Runde
+- was seit deinem letzten Besuch passiert ist (oder in den letzten 24 Stunden bzw. 7 Tagen), mit der ganzen Meldung der Agenten
+- die Warteschlange in der Reihenfolge, in der die Pipeline sie abarbeitet
+
+«Letzter Besuch» wird pro Gerät im Browser gespeichert. Ohne Anmeldung erlaubt GitHub 60 Abfragen pro Stunde, die Seite braucht drei pro Aktualisierung.
+
+**Push-Nachrichten** kommen nur, wenn etwas schiefgegangen ist (E-64, Regeln in [agenten-regeln.md](agenten-regeln.md) Abschnitt 8).
+
 ## Ein Feature durch die Pipeline schicken
 
 1. Issue mit der Vorlage «Feature» anlegen (oder eines aus dem [Backlog](backlog.md) nehmen).

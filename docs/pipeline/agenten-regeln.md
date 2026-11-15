@@ -61,7 +61,19 @@ Jeder Lauf endet mit genau einem Kommentar auf dem PR (bzw. Issue), der mit sein
 
 Der Kommentar ist für Cyrille und den nächsten Agenten geschrieben: kurz, konkret, mit Dateipfaden und Anforderungs-IDs. Keine Nacherzählung des Vorgehens.
 
-## 8. Umgebung
+## 8. Push-Nachrichten an Cyrille
+
+Cyrille verfolgt den normalen Ablauf auf der [Statusseite](https://cyrilleulmi.github.io/StvBeroPlatform/). Eine Push-Nachricht (Werkzeug `PushNotification`) schickst du **nur, wenn etwas schiefgegangen ist** und er handeln muss:
+
+- Du setzt `pipeline:blockiert` (Runde 5, Widerspruch zu einer entschiedenen Anforderung, fehlender Zugang, kaputte Umgebung).
+- Ein Merge scheitert auf eine Art, die die Pipeline nicht selbst lösen kann.
+- Der Wächter erkennt einen Fall, den das Skript nicht abdeckt, oder GitHub ist auch beim zweiten Versuch nicht erreichbar.
+
+**Keine** Push-Nachricht für alles, was wie vorgesehen läuft: Lauf gestartet, Umsetzung fertig, Übergabe, Review bestanden, Nacharbeit-Runde, Nachbesserung angelegt, Merge, «nichts zu tun». Auch nicht als Abschluss eines Laufs.
+
+Format: eine Zeile unter 200 Zeichen, zuerst was zu tun ist, z.B. `StvBero blockiert: F-03 #31, Runde 5, Konflikt um Serienende. Entscheid nötig.`
+
+## 9. Umgebung
 
 - In der Cloud gibt es keinen Docker-Daemon. Datenbank: `scripts/db-start.sh`. Quarkus Dev Services und Testcontainers sind im Profil `test` aus und zeigen auf `localhost:5432/stv`.
 - Java: JDK 21 ist in der Cloud vorinstalliert. Das Projekt nutzt Java 21.
