@@ -31,7 +31,8 @@ Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-reg
 
 3. Ausgabe prüfen. Meldet das Skript einen Fehler (z.B. GitHub nicht erreichbar), einmal wiederholen. Schlägt es erneut fehl, den Fehler in die Zusammenfassung schreiben und beenden.
 
-4. Zusammenfassung als letzte Nachricht des Laufs, zwei bis vier Zeilen: Was läuft, was wurde angestossen, was ist blockiert. Kein Kommentar auf GitHub ausser denen, die das Skript schreibt.
+4. Push-Nachricht nur nach [agenten-regeln.md, Abschnitt 8](../../../docs/pipeline/agenten-regeln.md): wenn das Skript in diesem Lauf `pipeline:blockiert` gesetzt hat, GitHub auch beim zweiten Versuch nicht erreichbar war oder du einen Fall siehst, den das Skript nicht abdeckt. Für «alles läuft» und für Neu-Anstösse keine Push-Nachricht.
+5. Zusammenfassung als letzte Nachricht des Laufs, zwei bis vier Zeilen: Was läuft, was wurde angestossen, was ist blockiert. Kein Kommentar auf GitHub ausser denen, die das Skript schreibt.
 
 ## Was du nicht tust
 

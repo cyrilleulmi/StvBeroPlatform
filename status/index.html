@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StvBero Pipeline · Status</title>
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0F5F2; --surface: #FFFFFF; --text: #1F2A26; --muted: #56645E; --border: #DCE6E0;
+  --primary: #2C7F69; --on-primary: #FFFFFF; --primary-soft: #D7EEE6;
+  --coral: #B8503A; --coral-soft: #FCE4DD;
+  --mustard: #6E6400; --mustard-soft: #F1EFC4;
+  --blue: #2F6C9A; --blue-soft: #DCEBF6;
+  --radius-card: 22px; --radius-tile: 18px; --radius-icon: 12px; --radius-pill: 999px;
+  --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18201D; --surface: #212B27; --text: #E7EEEA; --muted: #A2B0AA; --border: #31403A;
+    --primary: #6FD0B4; --on-primary: #0E2620; --primary-soft: #224238;
+    --coral: #F3A493; --coral-soft: #48302C;
+    --mustard: #E3D97A; --mustard-soft: #3E3B22;
+    --blue: #8EC3EC; --blue-soft: #233848;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 var(--font); }
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+a { color: var(--primary); font-weight: 600; text-decoration: none; }
+a:hover { text-decoration: underline; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+.sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px; }
+.card.alarm { border-color: var(--coral); background: var(--coral-soft); }
+.row { display: flex; gap: 10px; align-items: flex-start; }
+.row + .row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.icon { flex: 0 0 38px; height: 38px; border-radius: var(--radius-icon); display: grid; place-items: center; font-size: 18px; background: var(--primary-soft); }
+.icon.coral { background: var(--coral-soft); } .icon.mustard { background: var(--mustard-soft); } .icon.blue { background: var(--blue-soft); }
+.grow { flex: 1; min-width: 0; }
+.title { font-weight: 700; }
+.meta { color: var(--muted); font-size: 13px; }
+.btn { font: 700 14px var(--font); border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 0 16px; min-height: 44px; cursor: pointer; }
+.btn.primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface); padding: 3px; margin-bottom: 14px; flex-wrap: wrap; }
+.seg button { font: 600 13px var(--font); border: 0; background: none; color: var(--muted); border-radius: var(--radius-pill); padding: 0 12px; min-height: 36px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--primary-soft); color: var(--primary); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border-radius: var(--radius-tile); border: 1px solid var(--border); background: var(--surface); padding: 10px 14px; min-width: 120px; flex: 1; }
+.chip b { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
+.chip span { color: var(--muted); font-size: 13px; }
+.chip.coral b { color: var(--coral); } .chip.primary b { color: var(--primary); } .chip.mustard b { color: var(--mustard); }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; border-radius: var(--radius-pill); padding: 2px 9px; background: var(--primary-soft); color: var(--primary); white-space: nowrap; }
+.tag.coral { background: var(--coral-soft); color: var(--coral); } .tag.mustard { background: var(--mustard-soft); color: var(--mustard); } .tag.blue { background: var(--blue-soft); color: var(--blue); } .tag.muted { background: var(--bg); color: var(--muted); }
+.new { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); margin-right: 6px; vertical-align: middle; }
+.day { font-weight: 700; font-size: 13px; color: var(--muted); margin: 18px 0 8px 4px; }
+details { margin-top: 6px; }
+summary { cursor: pointer; color: var(--primary); font-weight: 600; font-size: 13px; }
+.body { white-space: pre-wrap; word-break: break-word; font-size: 13px; background: var(--bg); border-radius: 12px; padding: 10px 12px; margin-top: 6px; max-height: 420px; overflow: auto; }
+.empty { color: var(--muted); }
+.error { color: var(--coral); font-weight: 600; }
+label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; margin: 0 0 10px 4px; }
+.flow { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.flow span { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--bg); color: var(--muted); }
+.flow span.on { background: var(--primary); color: var(--on-primary); }
+.flow span.done { background: var(--primary-soft); color: var(--primary); }
+.flow span.bad { background: var(--coral); color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>StvBero Pipeline</h1>
+      <div class="sub" id="stand">Lädt …</div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="neu-laden" type="button" data-testid="neu-laden">Aktualisieren</button>
+      <button class="btn primary" id="gelesen" type="button" data-testid="gelesen">Alles gelesen</button>
+    </div>
+  </header>
+
+  <section id="alarm" aria-label="Braucht dich"></section>
+
+  <section class="card" aria-labelledby="h-jetzt">
+    <h2 id="h-jetzt">Gerade in Arbeit</h2>
+    <div id="jetzt"><p class="empty">Lädt …</p></div>
+  </section>
+
+  <section aria-labelledby="h-seit">
+    <h2 id="h-seit" style="margin-left:4px">Was passiert ist</h2>
+    <div class="seg" role="group" aria-label="Zeitraum">
+      <button type="button" data-range="besuch" aria-pressed="true">Seit letztem Besuch</button>
+      <button type="button" data-range="24h" aria-pressed="false">24 Stunden</button>
+      <button type="button" data-range="7d" aria-pressed="false">7 Tage</button>
+    </div>
+    <div class="chips" id="zahlen"></div>
+    <label class="toggle"><input type="checkbox" id="alle"> auch Starts und Zwischenschritte zeigen</label>
+    <div id="verlauf"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-schlange" style="margin-top:14px">
+    <h2 id="h-schlange">Warteschlange</h2>
+    <div id="schlange"><p class="empty">Lädt …</p></div>
+  </section>
+
+  <p class="meta" style="margin:20px 4px 0">Live aus GitHub (<a href="https://github.com/cyrilleulmi/StvBeroPlatform">cyrilleulmi/StvBeroPlatform</a>). «Letzter Besuch» wird pro Gerät im Browser gespeichert. Aktualisiert sich alle 5 Minuten.</p>
+</main>
+
+<script>
+(() => {
+  const REPO = 'cyrilleulmi/StvBeroPlatform';
+  const API = 'https://api.github.com/repos/' + REPO;
+  const AGENT = 'cyrilleulmi';   // Die Agenten schreiben unter diesem Konto; Inhalte anderer sind ausgeblendet.
+  const STUFEN = ['Entwicklung', 'Review', 'Test', 'Gemergt'];
+  const $ = id => document.getElementById(id);
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+    sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+  };
+
+  // «Seit letztem Besuch»: der Stand vor diesem Besuch gilt für die ganze Sitzung (auch nach Neuladen im selben Tab).
+  const jetzt = Date.now();
+  let besuch = Number(store.sget('stvbero.besuch') || store.get('stvbero.letzterBesuch') || (jetzt - 86400000));
+  store.sset('stvbero.besuch', String(besuch));
+  store.set('stvbero.letzterBesuch', String(jetzt));
+
+  let range = 'besuch';
+  let daten = null;
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const zeit = t => new Date(t).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  const tag = t => {
+    const d = new Date(t), h = new Date(); h.setHours(0, 0, 0, 0);
+    const diff = Math.round((h - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
+    if (diff === 0) return 'Heute';
+    if (diff === 1) return 'Gestern';
+    return d.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+  const vor = t => {
+    const m = Math.round((Date.now() - new Date(t)) / 60000);
+    if (m < 1) return 'gerade eben';
+    if (m < 60) return 'vor ' + m + ' Min.';
+    const h = Math.floor(m / 60);
+    if (h < 24) return 'vor ' + h + ' Std.' + (m % 60 && h < 3 ? ' ' + (m % 60) + ' Min.' : '');
+    return 'vor ' + Math.round(h / 24) + ' Tagen';
+  };
+  const labels = it => (it.labels || []).map(l => l.name);
+  const link = it => `<a href="${esc(it.html_url)}">#${it.number}</a>`;
+
+  async function holen(pfad) {
+    const r = await fetch(API + pfad, { headers: { Accept: 'application/vnd.github+json' } });
+    if (r.status === 403 || r.status === 429) {
+      const reset = Number(r.headers.get('x-ratelimit-reset')) * 1000;
+      throw new Error('GitHub-Abfragelimit erreicht' + (reset ? ', wieder möglich um ' + zeit(reset) : '') + '.');
+    }
+    if (!r.ok) throw new Error('GitHub antwortet mit ' + r.status + '.');
+    return r.json();
+  }
+
+  async function laden() {
+    $('stand').textContent = 'Lädt …';
+    try {
+      const seit = new Date(Math.min(besuch, Date.now() - 7 * 86400000)).toISOString();
+      const [items, kommentare, ereignisse] = await Promise.all([
+        holen('/issues?state=all&sort=updated&direction=desc&per_page=100'),
+        holen('/issues/comments?sort=created&direction=desc&per_page=100&since=' + encodeURIComponent(seit)),
+        holen('/issues/events?per_page=100'),
+      ]);
+      daten = { items, kommentare: kommentare.filter(k => k.user && k.user.login === AGENT), ereignisse, geladen: Date.now() };
+      store.set('stvbero.daten', JSON.stringify(daten));
+      zeichnen();
+    } catch (e) {
+      const alt = store.get('stvbero.daten');
+      if (alt && !daten) { daten = JSON.parse(alt); zeichnen(); }
+      $('stand').innerHTML = `<span class="error">${esc(e.message)}</span>` + (daten ? ' Angezeigt wird der Stand von ' + zeit(daten.geladen) + '.' : '');
+    }
+  }
+
+  function itemNr(url) { return Number(String(url).split('/').pop()); }
+
+  // Einordnung eines Agenten-Kommentars
+  function einordnen(k) {
+    const b = k.body || '';
+    const kopf = (b.match(/^##\s+(.+)$/m) || [])[1] || '';
+    const ersteZeile = b.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/^#+\s*/, '');
+    if (/<!-- pipeline:anspruch/.test(b)) return null;
+    const art = (b.match(/<!-- pipeline:([a-z-]+)/) || [])[1] || '';
+    const blockiert = /blockiert|⛔/i.test(kopf);
+    const zurueck = /🔁|nacharbeit/i.test(kopf);
+    const gemergt = /gemergt/i.test(kopf);
+    let wichtig = ['entwicklung', 'review', 'test', 'waechter'].includes(art) && !!kopf;
+    if (/startet|gestartet|beansprucht/i.test(ersteZeile) && !kopf) wichtig = false;
+    if (!art && !/startet|gestartet/i.test(ersteZeile)) wichtig = true; // freie Kommentare (z.B. Fragen, Befunde) zeigen
+    let ton = 'primary', icon = '✔️';
+    if (art === 'entwicklung') icon = '🛠️';
+    if (art === 'review') icon = '🔍';
+    if (art === 'test') icon = '🧪';
+    if (art === 'waechter') icon = '🛡️';
+    if (zurueck) { ton = 'mustard'; }
+    if (gemergt) { icon = '🎉'; }
+    if (blockiert) { ton = 'coral'; icon = '⛔'; }
+    if (!wichtig) { ton = 'muted'; icon = '▶️'; }
+    return { zeit: k.created_at, nr: itemNr(k.issue_url), titel: kopf || ersteZeile || 'Kommentar', text: b.replace(/<!--[\s\S]*?-->/g, '').trim(), url: k.html_url, ton, icon, wichtig, gemergt, zurueck, blockiert };
+  }
+
+  function zeichnen() {
+    if (!daten) return;
+    const ab = range === 'besuch' ? besuch : Date.now() - (range === '24h' ? 86400000 : 7 * 86400000);
+    const byNr = Object.fromEntries(daten.items.map(i => [i.number, i]));
+    const offen = daten.items.filter(i => i.state === 'open');
+
+    $('stand').textContent = 'Stand ' + zeit(daten.geladen) + ' · letzter Besuch ' + (besuch ? tag(besuch).toLowerCase().replace(/^(heute|gestern)$/, m => m) + ' ' + zeit(besuch) : '–');
+
+    // Braucht dich
+    const blockiert = offen.filter(i => labels(i).includes('pipeline:blockiert'));
+    const freigabe = offen.filter(i => labels(i).includes('typ:nachbesserung') && !labels(i).includes('status:bereit') && !labels(i).includes('status:in-arbeit'));
+    let alarm = '';
+    if (blockiert.length || freigabe.length) {
+      alarm = '<div class="card alarm"><h2 style="color:var(--coral)">Braucht dich</h2>';
+      for (const i of blockiert) {
+        const letzter = daten.kommentare.filter(k => itemNr(k.issue_url) === i.number)[0];
+        alarm += `<div class="row"><div class="icon coral">⛔</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Blockiert: die Pipeline wartet auf deinen Entscheid.${letzter ? ' Letzter Kommentar ' + vor(letzter.created_at) + '.' : ''}</div></div></div>`;
+      }
+      for (const i of freigabe) {
+        alarm += `<div class="row"><div class="icon mustard">✋</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Nachbesserung ohne Freigabe. Mit Label <b>status:bereit</b> wird sie automatisch umgesetzt.</div></div></div>`;
+      }
+      alarm += '</div>';
+    }
+    $('alarm').innerHTML = alarm;
+
+    // Gerade in Arbeit
+    const prs = offen.filter(i => i.pull_request && labels(i).some(l => l.startsWith('pipeline:')));
+    const inArbeit = offen.filter(i => !i.pull_request && labels(i).includes('status:in-arbeit') && !prs.some(p => p.title === i.title));
+    let jetztHtml = '';
+    for (const p of prs) {
+      const l = labels(p);
+      const stufe = l.includes('pipeline:test') ? 2 : l.includes('pipeline:review') ? 1 : 0;
+      const nacharbeit = l.includes('pipeline:nacharbeit');
+      const aktiv = l.includes('agent:aktiv');
+      const k = daten.kommentare.filter(c => itemNr(c.issue_url) === p.number);
+      const runde = Math.max(0, k.filter(c => /<!-- pipeline:entwicklung -->/.test(c.body)).length - (nacharbeit ? 0 : 1));
+      const wer = nacharbeit ? 'Nacharbeit' : STUFEN[stufe];
+      const zustand = aktiv ? `${wer}: Agent arbeitet` : `${wer}: wartet auf den Agenten`;
+      const flow = STUFEN.map((s, x) => `<span class="${l.includes('pipeline:blockiert') && x === stufe ? 'bad' : x < stufe ? 'done' : x === stufe ? 'on' : ''}">${x === 0 && nacharbeit ? 'Nacharbeit' : s}</span>`).join('');
+      jetztHtml += `<div class="row"><div class="icon ${nacharbeit ? 'mustard' : 'blue'}">${aktiv ? '⚙️' : '⏳'}</div><div class="grow"><div class="title">${esc(p.title)} ${link(p)}</div><div class="meta">${esc(zustand)} · Runde ${runde}${k[0] ? ' · letzte Meldung ' + vor(k[0].created_at) : ''}</div><div class="flow">${flow}</div></div></div>`;
+    }
+    for (const i of inArbeit) {
+      jetztHtml += `<div class="row"><div class="icon blue">🛠️</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Entwicklung läuft, noch kein PR</div><div class="flow">${STUFEN.map((s, x) => `<span class="${x === 0 ? 'on' : ''}">${s}</span>`).join('')}</div></div></div>`;
+    }
+    $('jetzt').innerHTML = jetztHtml || '<p class="empty">Nichts in Arbeit.</p>';
+
+    // Verlauf
+    const eintraege = daten.kommentare.map(einordnen).filter(Boolean).filter(e => new Date(e.zeit) >= ab);
+    const neueNb = daten.items.filter(i => labels(i).includes('typ:nachbesserung') && new Date(i.created_at) >= ab);
+    for (const i of neueNb) eintraege.push({ zeit: i.created_at, nr: i.number, titel: 'Neue Nachbesserung: ' + i.title.replace(/^Nachbesserung · /, ''), text: '', url: i.html_url, ton: 'blue', icon: '📝', wichtig: true });
+    const gemergtEv = daten.ereignisse.filter(e => e.event === 'merged' && new Date(e.created_at) >= ab);
+    const blockEv = daten.ereignisse.filter(e => e.event === 'labeled' && e.label && e.label.name === 'pipeline:blockiert' && new Date(e.created_at) >= ab);
+    for (const e of blockEv) eintraege.push({ zeit: e.created_at, nr: e.issue.number, titel: 'Blockiert', text: '', url: e.issue.html_url, ton: 'coral', icon: '⛔', wichtig: true, blockiert: true });
+    eintraege.sort((a, b) => new Date(b.zeit) - new Date(a.zeit));
+
+    const runden = eintraege.filter(e => e.zurueck && e.wichtig).length;
+    $('zahlen').innerHTML = [
+      ['primary', gemergtEv.length, 'gemergt'],
+      ['mustard', runden, 'zurück in Nacharbeit'],
+      ['', neueNb.length, 'neue Nachbesserungen'],
+      ['coral', blockEv.length, 'blockiert'],
+    ].map(([c, n, t]) => `<div class="chip ${n ? c : ''}"><b>${n}</b><span>${t}</span></div>`).join('');
+
+    const zeigeAlle = $('alle').checked;
+    const sicht = eintraege.filter(e => zeigeAlle || e.wichtig);
+    let html = '', letzterTag = '';
+    for (const e of sicht) {
+      const t = tag(e.zeit);
+      if (t !== letzterTag) { if (html) html += '</div>'; html += `<div class="day">${esc(t)}</div><div class="card">`; letzterTag = t; }
+      const it = byNr[e.nr];
+      const neu = new Date(e.zeit) > besuch;
+      html += `<div class="row"><div class="icon ${e.ton === 'primary' ? '' : e.ton}">${e.icon}</div><div class="grow">`
+        + `<div class="title">${neu ? '<span class="new" title="neu"></span>' : ''}${esc(e.titel)}</div>`
+        + `<div class="meta">${zeit(e.zeit)} · ${it ? esc(it.title) + ' ' : ''}<a href="${esc(e.url)}">#${e.nr}</a></div>`
+        + (e.text && e.wichtig ? `<details><summary>Ganze Meldung</summary><div class="body">${esc(e.text)}</div></details>` : '')
+        + `</div></div>`;
+    }
+    if (html) html += '</div>';
+    $('verlauf').innerHTML = html || `<div class="card"><p class="empty" style="margin:0">${range === 'besuch' ? 'Seit deinem letzten Besuch ist nichts passiert.' : 'In diesem Zeitraum ist nichts passiert.'}</p></div>`;
+
+    // Warteschlange (gleiche Reihenfolge wie scripts/pipeline.sh naechstes-feature)
+    const bereit = offen.filter(i => !i.pull_request && labels(i).includes('status:bereit') && !labels(i).includes('pipeline:blockiert'));
+    const nb = bereit.filter(i => labels(i).includes('typ:nachbesserung')).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const f = bereit.filter(i => /^F-\d{2} /.test(i.title)).sort((a, b) => a.title.localeCompare(b.title));
+    const geschlossenF = new Set(daten.items.filter(i => i.state === 'closed' && /^F-\d{2} /.test(i.title)).map(i => i.title.slice(0, 4)));
+    const schlange = [...nb, ...f];
+    $('schlange').innerHTML = schlange.length ? schlange.map((i, x) => {
+      const vor = ((i.body || '').match(/Voraussetzung:\**([^\n]*)/) || [])[1] || '';
+      const offenV = (vor.match(/F-\d{2}/g) || []).filter(v => !geschlossenF.has(v));
+      const meta = labels(i).includes('typ:nachbesserung') ? 'Nachbesserung' : offenV.length ? 'wartet auf ' + offenV.join(', ') : 'bereit';
+      return `<div class="row"><div class="icon ${labels(i).includes('typ:nachbesserung') ? 'mustard' : ''}">${x + 1}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">${esc(meta)}</div></div></div>`;
+    }).join('') : '<p class="empty">Die Warteschlange ist leer.</p>';
+  }
+
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    range = b.dataset.range;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    zeichnen();
+  }));
+  $('alle').addEventListener('change', zeichnen);
+  $('neu-laden').addEventListener('click', laden);
+  $('gelesen').addEventListener('click', () => {
+    besuch = Date.now();
+    store.sset('stvbero.besuch', String(besuch));
+    store.set('stvbero.letzterBesuch', String(besuch));
+    zeichnen();
+  });
+  setInterval(() => { if (document.visibilityState === 'visible') laden(); }, 5 * 60000);
+  laden();
+})();
+</script>
+</body>
+</html>
