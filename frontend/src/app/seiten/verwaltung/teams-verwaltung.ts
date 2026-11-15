@@ -105,7 +105,12 @@ import { TEXTE } from '../../kern/texte';
               <p class="feldfehler" id="team-neu-name-fehler">{{ m }}</p>
             }
           </div>
-          <button type="submit" class="button button-primaer" [disabled]="speichert()">
+          <button
+            type="submit"
+            class="button button-primaer"
+            [disabled]="speichert()"
+            [attr.aria-busy]="speichert() ? 'true' : null"
+          >
             {{ texte.teamVerwaltung.anlegen }}
           </button>
         </form>

@@ -40,6 +40,7 @@
                   type="button"
                   class="button button-sekundaer button-klein"
                   [disabled]="speichert()"
+                  [attr.aria-busy]="laufendeAktion() === 'aktivieren:' + s.id ? 'true' : null"
                   (click)="aktivieren(s)"
                 >
                   {{ texte.saisons.aktivieren }}
@@ -91,7 +92,12 @@
         }
       </select>
     </div>
-    <button type="submit" class="button button-primaer" [disabled]="speichert()">
+    <button
+      type="submit"
+      class="button button-primaer"
+      [disabled]="speichert()"
+      [attr.aria-busy]="laufendeAktion() === 'anlegen' ? 'true' : null"
+    >
       {{ texte.saisons.anlegen }}
     </button>
   </form>

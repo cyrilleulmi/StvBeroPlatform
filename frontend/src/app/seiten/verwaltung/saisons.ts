@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Saison, SaisonAnlegen } from '../../api/typen';
@@ -64,7 +64,12 @@ export class Saisons implements OnInit {
 
   protected readonly saisons = signal<Saison[]>([]);
   protected readonly laedt = signal(true);
-  protected readonly speichert = signal(false);
+  /**
+   * Welche Aktion gerade läuft: `anlegen` oder `aktivieren:<saisonId>`.
+   * `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
+   */
+  protected readonly laufendeAktion = signal<string | null>(null);
+  protected readonly speichert = computed(() => this.laufendeAktion() !== null);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
   protected readonly feldFehler = signal<Record<string, string>>({});
@@ -150,7 +155,7 @@ export class Saisons implements OnInit {
       bis: n.bis,
       uebernehmenAus: n.uebernehmenAus || null,
     };
-    this.speichert.set(true);
+    this.laufendeAktion.set('anlegen');
     try {
       const saison = await firstValueFrom(this.http.post<Saison>('/api/saisons', eingabe));
       await this.laden(true);
@@ -159,7 +164,7 @@ export class Saisons implements OnInit {
       this.feldFehler.set(feldfehler(e));
       this.fehler.set(fehlertext(e));
     } finally {
-      this.speichert.set(false);
+      this.laufendeAktion.set(null);
     }
   }
 
@@ -167,7 +172,7 @@ export class Saisons implements OnInit {
     if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
-    this.speichert.set(true);
+    this.laufendeAktion.set(`aktivieren:${s.id}`);
     try {
       await firstValueFrom(this.http.post<void>(`/api/saisons/${s.id}/aktivieren`, null));
       await Promise.all([this.laden(false), this.anmeldung.laden()]);
@@ -175,7 +180,7 @@ export class Saisons implements OnInit {
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {
-      this.speichert.set(false);
+      this.laufendeAktion.set(null);
     }
   }
 }

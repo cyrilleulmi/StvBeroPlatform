@@ -82,7 +82,12 @@ type Feld = 'vorname' | 'nachname' | 'email';
             <input type="checkbox" formControlName="admin" />
             <span>{{ texte.personen.adminRecht }}</span>
           </label>
-          <button type="submit" class="button button-primaer" [disabled]="speichert()">
+          <button
+            type="submit"
+            class="button button-primaer"
+            [disabled]="speichert()"
+            [attr.aria-busy]="speichert() ? 'true' : null"
+          >
             {{ texte.personen.speichern }}
           </button>
         </form>
