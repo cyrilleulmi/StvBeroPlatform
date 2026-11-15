@@ -43,6 +43,8 @@ public class IchResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = IchDto.class)))
     @APIResponse(responseCode = "401", description = "Nicht angemeldet",
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
+    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+            content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
     public IchDto lesen() {
         Angemeldet angemeldet = anmeldung.person();
         Person person = Person.findById(angemeldet.personId());

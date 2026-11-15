@@ -12,6 +12,11 @@ export const routes: Routes = [
     title: titel('Anmelden'),
     loadComponent: () => import('./seiten/anmelden/anmelden').then((m) => m.Anmelden),
   },
+  {
+    path: 'keine-saison',
+    title: titel('Keine aktuelle Saison'),
+    loadComponent: () => import('./seiten/keine-saison/keine-saison').then((m) => m.KeineSaison),
+  },
   ...(umgebung.testmodus
     ? [
         {

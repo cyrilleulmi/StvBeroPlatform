@@ -4,17 +4,21 @@ import { APIRequestContext, Page, expect, test as basis } from '@playwright/test
 /**
  * Gemeinsame Hilfen für alle E2E-Tests.
  * - `test` prüft nach jedem Test, dass die Browser-Konsole ohne Fehler blieb.
+ * - `erwarteteKonsolenfehler`: Muster für Meldungen, die ein Test bewusst auslöst (z.B. der
+ *   Browser-Eintrag zu einer erwarteten 409-Antwort). Standard: keine.
  */
-export const test = basis.extend<{ konsole: string[] }>({
+export const test = basis.extend<{ konsole: string[]; erwarteteKonsolenfehler: RegExp[] }>({
+  erwarteteKonsolenfehler: [[], { option: true }],
   konsole: [
-    async ({ page }, use) => {
+    async ({ page, erwarteteKonsolenfehler }, use) => {
       const fehler: string[] = [];
       page.on('console', (m) => {
         if (m.type() === 'error') fehler.push(m.text());
       });
       page.on('pageerror', (e) => fehler.push(e.message));
       await use(fehler);
-      expect(fehler, 'Fehler in der Browser-Konsole').toEqual([]);
+      const unerwartet = fehler.filter((f) => !erwarteteKonsolenfehler.some((m) => m.test(f)));
+      expect(unerwartet, 'Fehler in der Browser-Konsole').toEqual([]);
     },
     { auto: true },
   ],
