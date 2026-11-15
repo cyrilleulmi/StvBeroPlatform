@@ -15,7 +15,8 @@
   z-index: 10;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  /* Wenig Rand seitlich: Mit fünf Einträgen (Admins) muss «Verwaltung» bei 375px ganz Platz haben (Nachbesserung #15). */
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
 }
 
 .marke {
@@ -28,7 +29,7 @@ ul {
   padding: 0;
   display: flex;
   justify-content: space-around;
-  gap: 4px;
+  gap: 2px;
 }
 
 li {
@@ -43,7 +44,7 @@ a {
   justify-content: center;
   gap: 2px;
   min-height: 56px;
-  padding: 6px 4px;
+  padding: 6px 2px;
   border-radius: var(--radius-nav);
   color: var(--muted);
   text-decoration: none;
@@ -51,10 +52,11 @@ a {
   font-weight: 600;
 }
 
+/* Beschriftungen werden nie abgeschnitten (Nachbesserung #15). Mobil 11px, damit fünf Einträge
+   bei 375px nebeneinander passen; der Desktop setzt unten wieder 15px. */
 a span {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 11px;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -108,6 +110,11 @@ a.aktiv span {
     min-height: 48px;
     padding: 10px 14px;
     font-size: 15px;
+  }
+
+  a span {
+    font-size: inherit;
+    letter-spacing: normal;
   }
 
   .inhalt {
