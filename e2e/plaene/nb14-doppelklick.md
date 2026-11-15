@@ -50,3 +50,11 @@ Allgemein für jeden Fall:
 |---|---|---|
 | R1 Normale Bedienung | Einfacher Klick auf alle obigen Aktionen ohne Bremse | Funktioniert wie vorher, Schaltflächen danach wieder bedienbar |
 | R2 Automatisch | `e2e/tests/nb14-doppelklick.spec.ts` und alle übrigen E2E-Tests | Grün, mobil und Desktop, axe ohne Befund |
+
+## Ergebnis Runde 1 (Stand `b5962d6`)
+
+- Automatisch: Backend 67 ✅, E2E 90 ✅ (mobil + Desktop, axe), API-Lint und Frontend-Build ✅.
+- K1.1–K1.7 bestanden (mobil, Desktop für K1.1, Darkmode). Je genau 1 `POST /api/test/anmelden`.
+- K2.1–K2.12 bestanden: je genau 1 Anfrage, `aria-busy` nur an der geklickten Schaltfläche,
+  übrige `disabled` ohne `aria-busy`, nach Fehler wieder bedienbar. Desktop für K2.1 und K2.4.
+- Konsole: nur erwartete Einträge (simulierte 500, 409 von `GET /api/ich` ohne Saison).
