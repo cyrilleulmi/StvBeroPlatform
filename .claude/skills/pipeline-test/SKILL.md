@@ -66,7 +66,7 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
    Erwartet: Team 1 «6 dabei · 0 offen» · Tatsächlich: bleibt «5 dabei · 1 offen» bis Neuladen
 
 ### Beobachtungen (blockieren nicht)
-- …
+- Mobil 375px: «Verwaltu…» abgeschnitten → #<issue>
 
 ### Selbst ausprobieren
 `scripts/db-start.sh && …` → http://localhost:4200/dev-login → als `petra`
@@ -103,3 +103,19 @@ Am Ende alle gestarteten Prozesse beenden.
 - Ein Element ist für den Accessibility-Tree unsichtbar oder namenlos, sodass du es nicht bedienen kannst. Das ist ein Fehler, kein Hindernis: Melde es mit der Stelle.
 
 Darstellungsfragen ohne Funktionsverlust sind Beobachtungen, keine Fehler.
+
+## Beobachtungen festhalten
+
+Jede Beobachtung, für die es eine konkrete Massnahme gibt, wird ein Issue, bevor du den Abschlusskommentar schreibst. Im Kommentar steht dann die Issue-Nummer neben der Beobachtung.
+
+```bash
+scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
+```
+
+`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung`, aber kein `status:bereit`: Cyrille entscheidet, wann es in die Warteschlange geht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+
+Ausnahme: Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), bekommt kein eigenes Issue, sondern einen Verweis auf dieses Feature.
+
+Sicherheitsbefunde, die vor dem produktiven Betrieb behoben sein müssen, aber das aktuelle Feature nicht blockieren, gehören zu F-08 «Härtung vor dem produktiven Betrieb» (#12). Ergänze sie dort als Kommentar im Issue statt ein neues Issue anzulegen.
+
+

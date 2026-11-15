@@ -57,6 +57,7 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 | `pipeline:nacharbeit` | PR | Befunde aus Review oder Test sind zu beheben | Review, Test |
 | `pipeline:test` | PR | Wartet auf Test | Review |
 | `pipeline:gemergt` | PR | Vom Test-Agenten nach `main` gemergt | Test |
+| `typ:nachbesserung` | Issue | Nicht blockierender Befund aus Review oder Test. Geht erst mit `status:bereit` in die Warteschlange, dann vor dem nächsten Feature | Review, Test |
 | `pipeline:blockiert` | Issue, PR | Braucht eine Entscheidung von Cyrille | alle |
 | `agent:aktiv` | Issue, PR | Ein Agent arbeitet gerade daran (Sperre) | alle |
 
@@ -117,7 +118,7 @@ Was man beim Einrichten wissen muss:
 Du kannst beliebig viele Features gleichzeitig auf `status:bereit` setzen. Die Pipeline arbeitet sie **nacheinander** ab:
 
 1. Es ist immer nur ein Feature in Arbeit. Solange ein PR in Review, Test oder Nacharbeit ist, beginnt kein neues Feature. So entstehen keine Konflikte zwischen parallelen PRs.
-2. Als nächstes kommt das Feature mit der kleinsten F-Nummer, dessen Voraussetzungen (Zeile «Voraussetzung» im Issue) schon gemergt sind.
+2. Als nächstes kommen freigegebene Nachbesserungen (`typ:nachbesserung`, älteste zuerst), dann das Feature mit der kleinsten F-Nummer, dessen Voraussetzungen (Zeile «Voraussetzung» im Issue) schon gemergt sind.
 3. Nach jedem Merge stösst der Test-Agent das nächste Feature an.
 4. Gehen mehrere Issues gleichzeitig auf `status:bereit`, starten mehrere Entwicklungs-Läufe. Nur einer beansprucht das Feature (`scripts/pipeline.sh beanspruchen`), die anderen enden sofort.
 5. Steht etwas auf `pipeline:blockiert`, hält die Warteschlange an, bis Cyrille entschieden hat. Danach geht es mit dem blockierten Eintrag weiter.

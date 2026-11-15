@@ -37,7 +37,9 @@ Befehle:
   laufend                        Was gerade in der Pipeline ist: offene PRs mit pipeline:-Label (ausser gemergt)
                                  und Issues mit status:in-arbeit, pipeline:blockiert oder agent:aktiv. Leer = Pipeline frei
   voraussetzungen <issue>        Exit 0, wenn alle «Voraussetzung: F-xx»-Issues geschlossen sind; sonst offene auf stderr
-  naechstes-feature              Kleinstes F-Issue mit status:bereit, ohne Sperre/Blockade, Voraussetzungen erfüllt
+  naechstes-feature              Nächstes Issue mit status:bereit: zuerst Nachbesserungen (älteste), dann F-Issues
+                                 (kleinste Nummer); ohne Sperre/Blockade, Voraussetzungen erfüllt
+  nachbesserung <pr> <titel> <datei>  Issue typ:nachbesserung anlegen (Text aus Datei), Duplikate per Titel vermeiden
   beanspruchen <issue>           Setzt Sperre und Anspruchs-Kommentar, wartet 20 s. Exit 0 nur, wenn dieser Lauf
                                  den ältesten Anspruch hat (verhindert, dass zwei Läufe dasselbe Feature bauen)
   anstossen <issue>              status:bereit entfernen und neu setzen: startet die Entwicklungs-Aufgabe
@@ -268,13 +270,31 @@ case "$cmd" in
     done
     [ -z "$offen" ] || { echo "Offene Voraussetzungen:$offen" >&2; exit 1; } ;;
   naechstes-feature)
-    gh api "$API/issues?state=open&labels=status%3Abereit&per_page=100" \
-      --jq '.[] | select(.pull_request == null) | select([.labels[].name] | index("pipeline:blockiert") | not) | select(.title | test("^F-[0-9]{2} ")) | [.number, .title] | @tsv' \
-      | sort -t$'\t' -k2 | while IFS=$'\t' read -r nr titel; do
+    # Reihenfolge: freigegebene Nachbesserungen (älteste zuerst), dann Features nach F-Nummer.
+    # Jeweils ohne Sperre, ohne Blockade und mit erfüllten Voraussetzungen.
+    {
+      gh api "$API/issues?state=open&labels=status%3Abereit&sort=created&direction=asc&per_page=100" \
+        --jq '.[] | select(.pull_request == null) | select([.labels[].name] | (index("pipeline:blockiert") | not) and (index("typ:nachbesserung") != null)) | [.number, .title] | @tsv'
+      gh api "$API/issues?state=open&labels=status%3Abereit&per_page=100" \
+        --jq '.[] | select(.pull_request == null) | select([.labels[].name] | index("pipeline:blockiert") | not) | select(.title | test("^F-[0-9]{2} ")) | [.number, .title] | @tsv' \
+        | sort -t$'\t' -k2
+    } | while IFS=$'\t' read -r nr titel; do
           gesperrt "$nr" && continue
           "$0" voraussetzungen "$nr" 2>/dev/null || continue
           printf '%s\t%s\n' "$nr" "$titel"; break
         done ;;
+  nachbesserung)
+    # nachbesserung <pr> <titel> <datei>: legt ein Issue typ:nachbesserung an, ausser es gibt schon ein offenes
+    # mit gleichem Titel. Gibt die Issue-Nummer aus.
+    pr="$1"; titel="Nachbesserung · $2"; datei="$3"
+    vorhanden=$(gh api "$API/issues?state=open&labels=typ%3Anachbesserung&per_page=100" --jq ".[] | select(.title == \"$titel\") | .number" | head -1)
+    if [ -n "$vorhanden" ]; then echo "$vorhanden"; exit 0; fi
+    tmp=$(mktemp); { cat "$datei"; printf '\n\n---\nGefunden in #%s. Geht in die Warteschlange, sobald `status:bereit` gesetzt wird.\n' "$pr"; } > "$tmp"
+    python3 - "$titel" "$tmp" > "$tmp.json" <<'PY'
+import json,sys
+print(json.dumps({"title":sys.argv[1],"body":open(sys.argv[2],encoding="utf-8").read(),"labels":["typ:nachbesserung"]}))
+PY
+    gh api -X POST "$API/issues" --input "$tmp.json" --jq .number; rm -f "$tmp" "$tmp.json" ;;
   beanspruchen)
     nr="$1"; token="$(date +%s)-$RANDOM$RANDOM"
     "$0" label-setzen "$nr" "$SPERRE"
