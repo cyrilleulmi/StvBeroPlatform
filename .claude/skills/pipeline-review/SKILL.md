@@ -71,8 +71,21 @@ Befunde einteilen:
 | Stufe | Bedeutung | Folge |
 |---|---|---|
 | **Muss** | Fehler, Regelverstoss, fehlender Test für ein Kriterium, Sicherheitslücke, roter Build | Nacharbeit |
-| **Sollte** | Verbesserung mit klarem Nutzen | wird notiert, blockiert nicht |
-| **Hinweis** | Geschmack, Idee für später | wird notiert, blockiert nicht |
+| **Sollte** | Verbesserung mit klarem Nutzen | blockiert nicht, wird als Nachbesserungs-Issue angelegt |
+| **Hinweis** | Geschmack, Idee für später | blockiert nicht, wird als Nachbesserungs-Issue angelegt, wenn es eine konkrete Massnahme gibt |
+
+**Nachbesserungen festhalten.** Für jeden Befund, der nicht blockiert, legst du ein Issue an, damit er nach dem Merge nicht verloren geht:
+
+```bash
+scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
+```
+
+`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung`, aber kein `status:bereit`: Cyrille entscheidet, wann es in die Warteschlange geht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+
+Ausnahme: Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), bekommt kein eigenes Issue, sondern einen Verweis auf dieses Feature.
+
+Sicherheitsbefunde, die vor dem produktiven Betrieb behoben sein müssen, aber das aktuelle Feature nicht blockieren, gehören zu F-08 «Härtung vor dem produktiven Betrieb» (#12). Ergänze sie dort als Kommentar im Issue statt ein neues Issue anzulegen.
+
 
 Abschlusskommentar mit `<!-- pipeline:review -->`:
 
@@ -86,10 +99,10 @@ Abschlusskommentar mit `<!-- pipeline:review -->`:
 1. `backend/src/main/java/.../AntwortService.java:42` – Kurzfristig wird auch vor der Frist gesetzt. ANM-10. Erwartet: …
 
 ### Sollte
-- …
+- `IchResource.java:49` – 409 fehlt im API-Vertrag → #<issue>
 
 ### Hinweise
-- …
+- Swagger UI auch in `prod` → ergänzt in F-08 (#12)
 
 ### Frühere Befunde
 | Befund | Status |

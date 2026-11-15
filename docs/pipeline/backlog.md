@@ -14,6 +14,7 @@ Die Akzeptanzkriterien sind das, was der Test-Agent prüft. Szenarien `S…` ste
 | F-05 | Spieltage und Aufgebot | F-04 | AUF |
 | F-06 | Benachrichtigungen | F-04, F-05 | BEN |
 | F-07 | Anbindung swiss unihockey | F-05, F-06 | SUH |
+| F-08 | Härtung vor dem produktiven Betrieb | F-07 | RR-07, NF-30 |
 
 ```mermaid
 flowchart LR
@@ -27,6 +28,7 @@ flowchart LR
     F05 --> F06
     F05 --> F07[F-07 swiss unihockey]
     F06 --> F07
+    F07 --> F08[F-08 Härtung]
 ```
 
 ---
@@ -190,3 +192,18 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 6. Simulator «nicht erreichbar»: Abgleich meldet den Fehler, nichts wird verändert, die App funktioniert normal (SUH-09).
 7. Täglicher Abgleich als geplanter Job.
 8. Die offenen Fragen O-20 bis O-24 sind, soweit ohne Zugangsdaten möglich, geklärt und in offene-punkte.md bzw. 06-swiss-unihockey.md nachgeführt.
+
+---
+
+## F-08 · Härtung vor dem produktiven Betrieb
+
+**Ziel:** Sicherheitslücken schliessen, die in der Entwicklung bewusst offen blieben. Sammelt Sicherheitsbefunde aus Review und Test (E-62). Muss vor dem ersten produktiven Betrieb erledigt sein.
+
+**Akzeptanzkriterien:**
+
+1. Schutz gegen Anfragen von fremden Seiten (CSRF) für alle schreibenden Endpunkte, z.B. Sitzungs-Cookie mit `SameSite` plus Prüfung von `Origin`. Eine schreibende Anfrage mit fremdem `Origin` wird mit 403 abgelehnt (Test).
+2. Sitzungen laufen ab: nach Inaktivität und nach einer Höchstdauer (Werte als Annahme festlegen und in offene-punkte.md nennen). Abmelden macht die Sitzung sofort ungültig (Test).
+3. Sitzungs-Token werden nur gehasht gespeichert. Ein Token aus der Datenbank allein erlaubt keine Anmeldung (Test).
+4. Swagger UI ist im Profil `prod` nicht erreichbar (Test).
+5. Sicherheits-Header im Profil `prod`: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` (Test).
+6. Weitere Sicherheitsbefunde, die bis dahin als Kommentar in diesem Issue gesammelt wurden, sind behoben oder begründet zurückgestellt.
