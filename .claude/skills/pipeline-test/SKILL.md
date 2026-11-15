@@ -30,7 +30,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 4. Testplan und explorativer Test
 
-1. **Testplan schreiben** unter `e2e/plaene/f<nr>-<kurzname>.md`. Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus zustaende.md (jeder verbotene Übergang) und die passenden Szenarien aus testdaten.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
+1. **Testplan schreiben** unter `e2e/plaene/f<nr>-<kurzname>.md` (bei einer Nachbesserung `e2e/plaene/nb<issue>-<kurzname>.md`). Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus zustaende.md (jeder verbotene Übergang) und die passenden Szenarien aus testdaten.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
 2. **Ausführen mit Playwright MCP.** Für jeden Fall:
    - `POST /api/test/reset`, bei Bedarf Uhr setzen (`PUT /api/test/uhr`), anmelden über `/dev-login` oder `POST /api/test/anmelden`.
    - Per Deep Link zum Screen springen. Mit Schnappschüssen des Accessibility-Trees arbeiten, nicht mit Koordinaten.
@@ -45,7 +45,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 5. Entscheiden und berichten
 
-Testplan committen und pushen (nur `e2e/plaene/`), Commit `F-<nr>: Testplan`.
+Testplan committen und pushen (nur `e2e/plaene/`), Commit `F-<nr>: Testplan` bzw. `Nachbesserung #<issue>: Testplan`.
 
 Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!-- pipeline:test -->`:
 
@@ -65,20 +65,20 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
    Schritte: Reset → als `nina` → `/termine` → bei «Training Di 17.11.» «dabei» tippen
    Erwartet: Team 1 «6 dabei · 0 offen» · Tatsächlich: bleibt «5 dabei · 1 offen» bis Neuladen
 
-### Beobachtungen (blockieren nicht)
-- Mobil 375px: «Verwaltu…» abgeschnitten → #<issue>
+### Beobachtungen
+- Mobil 375px: «Verwaltu…» in der Navigation abgeschnitten. Erwartet: «Verwaltung» vollständig lesbar
 
 ### Selbst ausprobieren
 `scripts/db-start.sh && …` → http://localhost:4200/dev-login → als `petra`
 ```
 
-**Bei Fehlern:**
+**Bei Fehlern oder Beobachtungen** (ausser den Ausnahmen unter «Beobachtungen»):
 
 1. Kommentar posten: `scripts/pipeline.sh kommentieren <nr> bericht.md`
 2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (ab Runde 5 stattdessen `pipeline:blockiert`)
 3. `scripts/pipeline.sh entsperren <nr>`
 
-**Wenn alles bestanden ist: mergen.**
+**Wenn alles bestanden ist und keine Beobachtung zurückschickt: mergen.**
 
 1. Testplan committen und pushen (siehe oben). Das ergibt einen neuen Head-SHA. Notiere ihn: `git rev-parse HEAD`.
 2. Prüfen: `scripts/pipeline.sh mergebar <nr>`. Das verlangt: PR offen, Ziel `main`, kein Entwurf, keine Konflikte, alle CI-Checks abgeschlossen und grün. Laufen Checks noch, bis zu 15 Minuten warten und erneut prüfen.
@@ -102,20 +102,21 @@ Am Ende alle gestarteten Prozesse beenden.
 - Konsolenfehler, unbehandelte 5xx, Absturz, Datenverlust.
 - Ein Element ist für den Accessibility-Tree unsichtbar oder namenlos, sodass du es nicht bedienen kannst. Das ist ein Fehler, kein Hindernis: Melde es mit der Stelle.
 
-Darstellungsfragen ohne Funktionsverlust sind Beobachtungen, keine Fehler.
+Darstellungsfragen ohne Funktionsverlust sind Beobachtungen, keine Fehler. Auch sie gehen in die Nacharbeit, siehe unten.
 
-## Beobachtungen festhalten
+## Beobachtungen
 
-Jede Beobachtung, für die es eine konkrete Massnahme gibt, wird ein Issue, bevor du den Abschlusskommentar schreibst. Im Kommentar steht dann die Issue-Nummer neben der Beobachtung.
+Beobachtungen mit einer konkreten Massnahme (z.B. abgeschnittene Beschriftung, fehlende Fehlermeldung) schicken den PR ebenfalls zurück in die Nacharbeit. Behoben wird vor dem Merge, nicht danach. Schreib sie wie Fehler: Stelle, Schritte, Erwartung.
+
+Zwei Ausnahmen, damit ein PR fertig wird. Statt der Nacharbeit legst du ein Nachbesserungs-Issue an:
+
+- **Neue Beobachtungen ab Runde 3:** Eine Beobachtung, die in keiner früheren Runde gemeldet war, schickt den PR ab Runde 3 nicht mehr zurück. Fehler schicken immer zurück.
+- **Beobachtungen in Teilen, die der PR nicht geändert hat:** Was schon vorher auf `main` war, gehört nicht in diesen PR.
 
 ```bash
 scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
 ```
 
-`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, an denen der Test-Agent später die Behebung prüft. Das Issue bekommt `typ:nachbesserung`, aber kein `status:bereit`: Cyrille entscheidet, wann es in die Warteschlange geht. Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, die ein Agent ohne Rückfrage umsetzen und prüfen kann. Das Issue bekommt `typ:nachbesserung` und `status:bereit` und wird nach dem laufenden PR automatisch umgesetzt. Ist der geprüfte PR selbst eine Nachbesserung, setzt das Script kein `status:bereit` (keine Endlosschleife). Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
 
-Ausnahme: Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), bekommt kein eigenes Issue, sondern einen Verweis auf dieses Feature.
-
-Sicherheitsbefunde, die vor dem produktiven Betrieb behoben sein müssen, aber das aktuelle Feature nicht blockieren, gehören zu F-08 «Härtung vor dem produktiven Betrieb» (#12). Ergänze sie dort als Kommentar im Issue statt ein neues Issue anzulegen.
-
-
+Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), schickt nicht zurück und bekommt kein Issue, sondern einen Verweis auf dieses Feature. Sicherheitsbefunde für den produktiven Betrieb, die das aktuelle Feature nicht betreffen, ergänzt du als Kommentar in F-08 «Härtung vor dem produktiven Betrieb» (#12).

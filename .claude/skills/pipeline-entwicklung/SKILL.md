@@ -17,7 +17,7 @@ In dieser Reihenfolge, genau einen Eintrag:
    `scripts/pipeline.sh prs pipeline:nacharbeit`
 2. **Neues Feature**, nur wenn die Pipeline frei ist. Es wird immer nur **ein** Feature gleichzeitig gebaut (Warteschlange):
    - `scripts/pipeline.sh laufend` muss leer sein. Steht dort etwas (PR in Review/Test/Nacharbeit, Issue in Arbeit oder blockiert), beenden: Das nächste Feature wird angestossen, sobald das laufende gemergt ist.
-   - Nächstes Feature: `scripts/pipeline.sh naechstes-feature`. Das liefert das Issue mit `status:bereit` und der kleinsten F-Nummer, dessen Voraussetzungen alle geschlossen (also gemergt) sind. Leer: beenden. Features mit offenen Voraussetzungen bleiben einfach in der Warteschlange, sie werden **nicht** blockiert.
+   - Nächstes Feature: `scripts/pipeline.sh naechstes-feature`. Das liefert zuerst die älteste offene Nachbesserung (`typ:nachbesserung`, siehe [Abschnitt Nachbesserung](#nachbesserung-umsetzen)), sonst das Issue mit `status:bereit` und der kleinsten F-Nummer, dessen Voraussetzungen alle geschlossen (also gemergt) sind. Leer: beenden. Features mit offenen Voraussetzungen bleiben einfach in der Warteschlange, sie werden **nicht** blockiert.
    - Beanspruchen: `scripts/pipeline.sh beanspruchen <issue>`. Endet das mit Fehler, war ein anderer Lauf schneller: beenden, ohne etwas zu ändern. Das passiert, wenn mehrere Issues gleichzeitig `status:bereit` bekommen.
 
 Nichts gefunden: notieren und beenden.
@@ -54,11 +54,22 @@ Nichts gefunden: notieren und beenden.
 2. Den PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Die Befunde stehen im neuesten Review- oder Test-Kommentar: `scripts/pipeline.sh letzter-befund <nr>`.
 3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 5 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
 4. Meldet der Befund Konflikte mit `main`: zuerst `git fetch origin main && git rebase origin/main`, Konflikte lösen, dann alles erneut prüfen. Danach mit `git push --force-with-lease` auf den eigenen `claude/`-Branch pushen (der einzige erlaubte Force-Push).
-5. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
+5. Jeden Befund beheben: aus dem Review «Muss» und «Sollte», aus dem Test Fehler und Beobachtungen. «Hinweise» nur, wenn es mit wenig Aufwand geht. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
 6. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.
 7. Commit und Push auf denselben Branch.
 8. Abschlusskommentar mit `<!-- pipeline:entwicklung -->`: Tabelle Befund → Lösung (Datei, Test). Befunde, die du bewusst nicht umsetzt, mit Begründung.
 9. `scripts/pipeline.sh wechseln <nr> pipeline:nacharbeit pipeline:review`, dann `scripts/pipeline.sh entsperren <nr>`.
+
+## Nachbesserung umsetzen
+
+Issues mit `typ:nachbesserung` stammen aus Review oder Test eines früheren PRs. Sie laufen wie ein Feature durch Abschnitt 2, mit diesen Unterschieden:
+
+- **Umfang:** nur was das Issue verlangt. Problem, Stelle und Akzeptanzkriterien stehen im Issue, der Ursprung unter «Gefunden in #…». Kein Umbau darüber hinaus.
+- **Branch:** `claude/nb<issue>-<kurzname>`, z.B. `claude/nb13-ich-409`.
+- **Tests:** mindestens ein automatischer Test pro Akzeptanzkriterium (Unit, API oder E2E, je nachdem wo das Problem liegt). Der Test muss ohne die Korrektur fehlschlagen.
+- **Commit:** `Nachbesserung #<issue>: <was>`, Anforderungs-IDs, wo es welche gibt.
+- **PR:** Titel `Nachbesserung · <Titel des Issues>`, mit `Closes #<issue>`. Die Definition of Done gilt, Punkte ohne Bezug (z.B. neuer Screen) mit «entfällt» markieren.
+- **Übergabe** wie in Schritt 9.
 
 ## Erstes Feature (F-00)
 

@@ -39,7 +39,8 @@ Befehle:
   voraussetzungen <issue>        Exit 0, wenn alle «Voraussetzung: F-xx»-Issues geschlossen sind; sonst offene auf stderr
   naechstes-feature              Nächstes Issue mit status:bereit: zuerst Nachbesserungen (älteste), dann F-Issues
                                  (kleinste Nummer); ohne Sperre/Blockade, Voraussetzungen erfüllt
-  nachbesserung <pr> <titel> <datei>  Issue typ:nachbesserung anlegen (Text aus Datei), Duplikate per Titel vermeiden
+  nachbesserung <pr> <titel> <datei>  Issue typ:nachbesserung + status:bereit anlegen (Text aus Datei), Duplikate per Titel vermeiden;
+                                 stammt der PR selbst von einer Nachbesserung, ohne status:bereit (keine Endlosschleife)
   beanspruchen <issue>           Setzt Sperre und Anspruchs-Kommentar, wartet 20 s. Exit 0 nur, wenn dieser Lauf
                                  den ältesten Anspruch hat (verhindert, dass zwei Läufe dasselbe Feature bauen)
   anstossen <issue>              status:bereit entfernen und neu setzen: startet die Entwicklungs-Aufgabe
@@ -285,14 +286,22 @@ case "$cmd" in
         done ;;
   nachbesserung)
     # nachbesserung <pr> <titel> <datei>: legt ein Issue typ:nachbesserung an, ausser es gibt schon ein offenes
-    # mit gleichem Titel. Gibt die Issue-Nummer aus.
+    # mit gleichem Titel. Gibt die Issue-Nummer aus. Normalfall: mit status:bereit, die Entwicklung nimmt es
+    # nach dem laufenden PR automatisch auf (E-63). Stammt der PR selbst von einer Nachbesserung, wird nicht
+    # automatisch freigegeben, damit keine Endlosschleife aus Befund und Nachbesserung entsteht.
     pr="$1"; titel="Nachbesserung · $2"; datei="$3"
     vorhanden=$(gh api "$API/issues?state=open&labels=typ%3Anachbesserung&per_page=100" --jq ".[] | select(.title == \"$titel\") | .number" | head -1)
     if [ -n "$vorhanden" ]; then echo "$vorhanden"; exit 0; fi
-    tmp=$(mktemp); { cat "$datei"; printf '\n\n---\nGefunden in #%s. Geht in die Warteschlange, sobald `status:bereit` gesetzt wird.\n' "$pr"; } > "$tmp"
-    python3 - "$titel" "$tmp" > "$tmp.json" <<'PY'
+    quelle=$("$0" pr-issue "$pr" 2>/dev/null || true)
+    freigeben=1
+    if [ -n "$quelle" ] && gh api "$API/issues/$quelle" --jq '[.labels[].name] | index("typ:nachbesserung") != null' | grep -q true; then freigeben=0; fi
+    if [ "$freigeben" = 1 ]; then hinweis='Wird nach dem laufenden PR automatisch von der Entwicklung umgesetzt.'
+    else hinweis='Stammt aus einer Nachbesserung und wird deshalb nicht automatisch freigegeben. Mit `status:bereit` geht es in die Warteschlange.'; fi
+    tmp=$(mktemp); { cat "$datei"; printf '\n\n---\nGefunden in #%s. %s\n' "$pr" "$hinweis"; } > "$tmp"
+    python3 - "$titel" "$tmp" "$freigeben" > "$tmp.json" <<'PY'
 import json,sys
-print(json.dumps({"title":sys.argv[1],"body":open(sys.argv[2],encoding="utf-8").read(),"labels":["typ:nachbesserung"]}))
+labels=["typ:nachbesserung"]+(["status:bereit"] if sys.argv[3]=="1" else [])
+print(json.dumps({"title":sys.argv[1],"body":open(sys.argv[2],encoding="utf-8").read(),"labels":labels}))
 PY
     gh api -X POST "$API/issues" --input "$tmp.json" --jq .number; rm -f "$tmp" "$tmp.json" ;;
   beanspruchen)
