@@ -133,6 +133,7 @@ export class Saisons implements OnInit {
 
   protected async anlegen(ereignis: Event): Promise<void> {
     ereignis.preventDefault();
+    if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
     const n = this.neu();
@@ -163,6 +164,7 @@ export class Saisons implements OnInit {
   }
 
   protected async aktivieren(s: Saison): Promise<void> {
+    if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
     this.speichert.set(true);

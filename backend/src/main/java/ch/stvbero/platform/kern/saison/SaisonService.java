@@ -1,6 +1,7 @@
 package ch.stvbero.platform.kern.saison;
 
 import ch.stvbero.platform.kern.anmeldung.Angemeldet;
+import ch.stvbero.platform.kern.fehler.Eindeutig;
 import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.team.Team;
 import ch.stvbero.platform.kern.team.Teamzugehoerigkeit;
@@ -43,6 +44,9 @@ public class SaisonService {
         neu.bis = eingabe.bis();
         neu.aktuell = false;
         neu.persist();
+        // Gleichzeitiges Anlegen derselben Saison (Doppelklick): 409 statt 500 (SAI-01).
+        Eindeutig.speichern(em, "saison_name_key",
+                () -> FachFehler.konflikt("Name vergeben", "Es gibt schon eine Saison «" + neu.name + "».", "SAI-01"));
 
         if (quelle != null) {
             uebernehmen(quelle, neu);

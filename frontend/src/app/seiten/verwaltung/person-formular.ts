@@ -206,6 +206,7 @@ export class PersonFormular {
   }
 
   protected async speichern(): Promise<void> {
+    if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
     const f = this.formular.getRawValue();

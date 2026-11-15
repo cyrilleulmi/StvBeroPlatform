@@ -26,7 +26,7 @@ export const TEXTE = {
     leer: 'Du bist noch in keinem Team.',
     coaches: 'Coaches',
     spielerinnen: 'Spielerinnen',
-    keineCoaches: 'Dieses Team hat noch keine Coach.',
+    keineCoaches: 'Dieses Team hat noch keinen Coach.',
     keineSpielerinnen: 'Dieses Team hat noch keine Spielerinnen.',
     nichtGefunden: 'Dieses Team gibt es nicht.',
     alleTeams: 'Alle meine Teams',

@@ -177,6 +177,7 @@ export class TeamsVerwaltung {
 
   protected async anlegen(ereignis: Event): Promise<void> {
     ereignis.preventDefault();
+    if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
     const name = this.neuerName().trim();

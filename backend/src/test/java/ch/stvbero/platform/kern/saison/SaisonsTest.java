@@ -1,12 +1,16 @@
 package ch.stvbero.platform.kern.saison;
 
+import ch.stvbero.platform.kern.fehler.Gleichzeitig;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static ch.stvbero.platform.kern.anmeldung.AnmeldungTest.anmelden;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -25,6 +29,18 @@ class SaisonsTest {
     void reset() {
         given().post("/api/test/reset").then().statusCode(204);
         alex = anmelden("alex");
+    }
+
+    @Test
+    void sai01GleichzeitigesAnlegenErgibt409Statt500() {
+        for (int runde = 0; runde < 5; runde++) {
+            reset();
+            List<Integer> status = Gleichzeitig.statuscodes(2, () -> given().cookie("stv_sitzung", alex)
+                    .contentType(ContentType.JSON).body(NEUE).post("/api/saisons").statusCode());
+            assertThat(status, contains(201, 409));
+            given().cookie("stv_sitzung", alex).get("/api/saisons").then().statusCode(200)
+                    .body("name", contains("2027/28", "2026/27", "2025/26"));
+        }
     }
 
     @Test

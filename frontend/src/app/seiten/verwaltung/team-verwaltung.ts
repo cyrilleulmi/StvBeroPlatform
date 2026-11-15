@@ -154,6 +154,7 @@ export class TeamVerwaltung {
   }
 
   private async ausfuehren(aktion: () => Promise<string>): Promise<void> {
+    if (this.speichert()) return;
     this.erfolg.set(null);
     this.fehler.set(null);
     this.speichert.set(true);

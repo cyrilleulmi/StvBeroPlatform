@@ -1,12 +1,16 @@
 package ch.stvbero.platform.kern.team;
 
+import ch.stvbero.platform.kern.fehler.Gleichzeitig;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static ch.stvbero.platform.kern.anmeldung.AnmeldungTest.anmelden;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -69,6 +73,20 @@ class TeamsTest {
                 .body("einteilung.ohneLinie.vorname", not(hasItem("Petra")))
                 .body("einteilung.ohneLinie.nachname", contains("Baumann", "Brun", "Frei", "Graf", "Muster", "Roth", "Wyss"));
         given().cookie("stv_sitzung", anna).get("/api/teams/" + TEAM_2).then().statusCode(403);
+    }
+
+    @Test
+    void ptf04GleichzeitigeAufnahmeErgibt409Statt500() {
+        for (int runde = 0; runde < 5; runde++) {
+            reset();
+            List<Integer> status = Gleichzeitig.statuscodes(2, () -> given().cookie("stv_sitzung", alex)
+                    .contentType(ContentType.JSON)
+                    .body("{\"personId\":\"" + TINA + "\",\"funktion\":\"COACH\"}")
+                    .post("/api/teams/" + TEAM_1 + "/mitglieder").statusCode());
+            assertThat(status, contains(201, 409));
+            given().cookie("stv_sitzung", alex).get("/api/teams/" + TEAM_1).then().statusCode(200)
+                    .body("coaches.vorname.findAll { it == 'Tina' }", hasSize(1));
+        }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package ch.stvbero.platform.kern.team;
 
 import ch.stvbero.platform.kern.anmeldung.Angemeldet;
+import ch.stvbero.platform.kern.fehler.Eindeutig;
 import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.person.Person;
 import ch.stvbero.platform.kern.person.PersonKurz;
@@ -91,6 +92,10 @@ public class TeamService {
         }
         Teamzugehoerigkeit z = Teamzugehoerigkeit.neu(person, team, saison, eingabe.funktion());
         z.persist();
+        // Gleichzeitige Aufnahme derselben Person (Doppelklick): 409 statt 500 (PTF-04).
+        Eindeutig.speichern(Team.getEntityManager(), "teamzugehoerigkeit_eine_funktion",
+                () -> FachFehler.konflikt("Schon im Team", person.vorname + " " + person.nachname
+                        + " ist schon in diesem Team. Pro Team gibt es nur eine Funktion.", "PTF-04"));
         return TeamzugehoerigkeitDto.von(z);
     }
 

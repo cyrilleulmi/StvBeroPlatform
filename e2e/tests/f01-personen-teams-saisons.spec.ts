@@ -245,3 +245,94 @@ test('F-01 RR-02: Fremdes Team zeigt «Keine Berechtigung»', async ({ page }) =
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   expect((await page.request.get(`/api/teams/${TEAM_2}`)).status()).toBe(403);
 });
+
+/** Zählt die POST-Anfragen auf einen API-Pfad (Doppelklick darf nur eine auslösen). */
+function postsZaehlen(page: import('@playwright/test').Page, pfad: RegExp): { anzahl: number } {
+  const zaehler = { anzahl: 0 };
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && pfad.test(new URL(r.url()).pathname)) zaehler.anzahl++;
+  });
+  return zaehler;
+}
+
+test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', async ({ page }) => {
+  await anmelden(page, 'alex');
+  await page.goto('/verwaltung/personen/neu');
+  const posts = postsZaehlen(page, /^\/api\/personen$/);
+  await page.getByLabel('Vorname').fill('Flurina');
+  await page.getByLabel('Nachname').fill('Testerin');
+  await page.getByRole('button', { name: 'Speichern' }).dblclick();
+
+  await expect(page.getByRole('status')).toHaveText('Flurina Testerin ist erfasst.');
+  await page.goto('/verwaltung/personen?suche=Flurina');
+  await expect(page.getByRole('list', { name: 'Personen' }).getByRole('link')).toHaveText(['Flurina Testerin']);
+  expect(posts.anzahl).toBe(1);
+});
+
+test('F-01 K3: Doppelklick auf Team anlegen legt das Team nur einmal an', async ({ page }) => {
+  await anmelden(page, 'alex');
+  await page.goto('/verwaltung/teams');
+  await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveCount(3);
+  const posts = postsZaehlen(page, /^\/api\/teams$/);
+  await page.getByLabel('Name des neuen Teams').fill('Team 4');
+  await page.getByRole('button', { name: 'Team anlegen' }).dblclick();
+
+  await expect(page.getByRole('status')).toHaveText(/Team 4/);
+  await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveText([
+    'Team 1',
+    'Team 2',
+    'Team 3',
+    'Team 4',
+  ]);
+  expect(posts.anzahl).toBe(1);
+});
+
+test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohne Fehler', async ({ page }) => {
+  await anmelden(page, 'alex');
+  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
+  const posts = postsZaehlen(page, /\/mitglieder$/);
+  await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Ruth Meier' });
+  await page.getByLabel('Funktion', { exact: true }).selectOption({ label: 'Coach' });
+  await page.getByRole('button', { name: 'Aufnehmen' }).dblclick();
+
+  await expect(page.getByRole('status')).toHaveText('Ruth Meier ist jetzt Coach in Team 1.');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Coaches' }).getByRole('listitem', { name: 'Ruth Meier' })).toHaveCount(1);
+  expect(posts.anzahl).toBe(1);
+});
+
+test('F-01 K6 SAI-01: Doppelklick auf Saison anlegen legt die Saison einmal an, ohne Fehler', async ({ page }) => {
+  await anmelden(page, 'alex');
+  await page.goto('/verwaltung/saisons');
+  await expect(page.getByLabel('Name')).toHaveValue('2027/28');
+  const posts = postsZaehlen(page, /^\/api\/saisons$/);
+  await page.getByRole('button', { name: 'Saison anlegen' }).dblclick();
+
+  await expect(page.getByRole('status')).toHaveText('Saison 2027/28 ist angelegt. Du kannst sie jetzt anpassen.');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('listitem', { name: '2027/28' })).toHaveCount(1);
+  expect(posts.anzahl).toBe(1);
+});
+
+test('F-01 K7: Team ohne Coach zeigt «noch keinen Coach»', async ({ page }) => {
+  await anmelden(page, 'alex');
+  await page.goto(`/verwaltung/teams/${TEAM_1}?saison=${SAISON_2025}`);
+  await expect(page.getByText('Dieses Team hat noch keinen Coach.')).toBeVisible();
+});
+
+test('F-01 K2 PTF-11: Langer Name ohne Leerzeichen bricht in der Liste um', async ({ page }) => {
+  await anmelden(page, 'alex');
+  const lang = ('Maximiliane'.repeat(6)).slice(0, 60); // Maximum, ohne Leerzeichen
+  const antwort = await page.request.post('/api/personen', {
+    data: { vorname: lang, nachname: 'Lang', email: null, admin: false },
+  });
+  expect(antwort.status()).toBe(201);
+  await page.goto('/verwaltung/personen');
+  await expect(page.getByRole('list', { name: 'Personen' }).getByText(/^Maximiliane/)).toBeVisible();
+  const breite = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    fenster: document.documentElement.clientWidth,
+  }));
+  expect(breite.scroll).toBeLessThanOrEqual(breite.fenster);
+});
