@@ -82,7 +82,8 @@ Einmalig, in dieser Reihenfolge. Was schon erledigt ist, ist abgehakt.
 
 - [x] Labels im Repo angelegt
 - [x] Skills, Vorlagen und Doku im Repo
-- [x] Drei Cloud-Aufgaben angelegt (ohne Trigger): «StvBero · Entwicklung», «StvBero · Review», «StvBero · Test»
+- [x] Drei Cloud-Aufgaben angelegt (ohne Trigger, Freigabemodus «auto»): «StvBero · Entwicklung», «StvBero · Review», «StvBero · Test»
+- [x] Backlog F-00 bis F-07 als Issues #1–#8 angelegt (ohne `status:bereit`)
 - [ ] **Claude GitHub App** auf `cyrilleulmi/StvBeroPlatform` installieren: https://github.com/apps/claude (nötig für GitHub-Trigger)
 - [ ] **Cloud-Umgebung** prüfen: Unter claude.ai/code/routines bei jeder Aufgabe *Bearbeiten → Advanced settings*: Repository `cyrilleulmi/StvBeroPlatform` wählen, Umgebung mit Netzwerkzugriff **Trusted** (Standard). Als Setup-Skript `scripts/cloud-setup.sh` eintragen.
 - [ ] **GitHub-Trigger** pro Aufgabe hinzufügen (*Bearbeiten → Trigger → + → GitHub event*):
@@ -94,7 +95,7 @@ Einmalig, in dieser Reihenfolge. Was schon erledigt ist, ist abgehakt.
 | StvBero · Review | Pull request → labeled | Labels: is one of `pipeline:review` |
 | StvBero · Test | Pull request → labeled | Labels: is one of `pipeline:test` |
 
-- [ ] **Connectors** der Aufgaben auf das Nötige reduzieren (keine nötig, GitHub läuft über die App).
+- [ ] **Connectors** bei allen drei Aufgaben entfernen. Beim Anlegen wurden automatisch Gmail, Google Calendar und Claude Docs angehängt. Die Pipeline braucht keinen davon, GitHub läuft über die App.
 - [ ] Optional: Bei «Entwicklung» einen zusätzlichen Zeitplan-Trigger (z.B. täglich 06:47) als Auffangnetz, falls ein GitHub-Ereignis verloren geht. Der Skill findet liegengebliebene Arbeit selbst.
 
 ## Ein Feature durch die Pipeline schicken
