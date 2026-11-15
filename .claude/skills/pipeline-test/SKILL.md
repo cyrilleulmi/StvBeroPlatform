@@ -75,7 +75,7 @@ Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!--
 **Bei Fehlern:**
 
 1. Kommentar posten: `scripts/pipeline.sh kommentieren <nr> bericht.md`
-2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (ab Runde 3 stattdessen `pipeline:blockiert`)
+2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (ab Runde 5 stattdessen `pipeline:blockiert`)
 3. `scripts/pipeline.sh entsperren <nr>`
 
 **Wenn alles bestanden ist: mergen.**

@@ -51,7 +51,7 @@ Nichts gefunden: notieren und beenden.
 
 1. Sperre setzen, Startkommentar.
 2. Den PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Die Befunde stehen im neuesten Review- oder Test-Kommentar: `scripts/pipeline.sh letzter-befund <nr>`.
-3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 3 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
+3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 5 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
 4. Meldet der Befund Konflikte mit `main`: zuerst `git fetch origin main && git rebase origin/main`, Konflikte lösen, dann alles erneut prüfen. Danach mit `git push --force-with-lease` auf den eigenen `claude/`-Branch pushen (der einzige erlaubte Force-Push).
 5. Jeden Befund beheben. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
 6. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.

@@ -43,7 +43,7 @@ scripts/pipeline.sh entsperren <nr>
 ## 6. Runden und Blockade
 
 - Jede Nacharbeit ist eine Runde. `scripts/pipeline.sh runde <nr>` zählt die Kommentare mit der Markierung `<!-- pipeline:entwicklung -->` auf dem PR, minus 1 für die erste Umsetzung.
-- **Ab Runde 3** setzt der Agent, der erneut Nacharbeit verlangen würde, stattdessen `pipeline:blockiert` und fasst im Kommentar zusammen, was offen ist und was Cyrille entscheiden muss.
+- **Ab Runde 5** setzt der Agent, der erneut Nacharbeit verlangen würde, stattdessen `pipeline:blockiert` und fasst im Kommentar zusammen, was offen ist und was Cyrille entscheiden muss.
 - `pipeline:blockiert` auch bei: Widerspruch zu einer entschiedenen Anforderung, fehlendem Zugang, Umgebung kaputt (z.B. Build-Werkzeuge fehlen) nach einem zweiten Versuch.
 
 ## 7. Abschlusskommentar

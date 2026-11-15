@@ -5,7 +5,7 @@ Drei KI-Agenten bauen Features in der Claude-Cloud, nacheinander und unabhängig
 ```
 Issue «status:bereit»  →  Entwicklung  →  Review  →  Test  →  Merge nach main (Test-Agent)
                               ↑______________|_________|
-                                  Nacharbeit (höchstens 3 Runden)
+                                  Nacharbeit (höchstens 4 Runden)
 ```
 
 ## Wie es funktioniert
@@ -29,7 +29,7 @@ stateDiagram-v2
     Test --> Nacharbeit: Fehler gefunden<br/>pipeline:nacharbeit
     Test --> Gemergt: alles bestanden<br/>Test-Agent mergt<br/>pipeline:gemergt
     Nacharbeit --> Review: behoben<br/>pipeline:review
-    Nacharbeit --> Blockiert: 3 Runden erreicht<br/>pipeline:blockiert
+    Nacharbeit --> Blockiert: Runde 5 erreicht<br/>pipeline:blockiert
     Entwicklung --> Blockiert: Widerspruch zu einer<br/>entschiedenen Anforderung
     Blockiert --> Bereit: Cyrille klärt und setzt Label neu
     Gemergt --> [*]: Issue geschlossen
