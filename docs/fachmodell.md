@@ -8,7 +8,7 @@ Die Begriffe der App und wie sie zusammenhängen. Das ist ein fachliches Modell,
 |---|---|
 | **Konto** | Ein Login. Heute gehört zu jedem Konto genau eine Person. Später kann ein Konto für mehrere Personen antworten (Eltern für Kinder). |
 | **Person** | Ein Mensch im Verein. Es gibt jede Person genau einmal, egal in wie vielen Teams sie ist. |
-| **Team** | Eine Mannschaft des Vereins. |
+| **Team** | Eine Mannschaft des Vereins. Besteht über Saisons hinweg; der Name gilt pro Saison, damit das Archiv den damaligen Namen behält (SAI-02). |
 | **Saison** | Zeitraum, für den Teamzugehörigkeiten und Linien gelten. |
 | **Funktion** | Was eine Person in einem Team ist: mindestens «Spielerin» oder «Coach». |
 | **Teamzugehörigkeit** | Verbindung von Person, Team und Funktion in einer Saison. Pro Person und Team gibt es genau eine Funktion. |

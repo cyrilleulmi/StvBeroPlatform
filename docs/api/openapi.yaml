@@ -212,6 +212,11 @@ paths:
       tags: [Teams]
       operationId: teamAendern
       summary: Team umbenennen (Admin)
+      description: |
+        Der Name gilt pro Saison. Umbenannt wird nur in der angegebenen Saison (Standard: aktuelle),
+        alte Saisons behalten den damaligen Namen. Archivierte Saisons sind nur lesbar (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/saison'
       requestBody:
         required: true
         content:
@@ -226,6 +231,7 @@ paths:
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/teams/{teamId}/mitglieder:
     parameters:
       - $ref: '#/components/parameters/teamId'

@@ -47,7 +47,11 @@ public class Seed {
             new SeedTeam(2, "Team 2", null),
             new SeedTeam(3, "Team 3", null));
 
-    /** Welche Teams in welcher Saison bestehen: Team, Saison. */
+    private static String teamName(int nr) {
+        return TEAMS.stream().filter(t -> t.nr() == nr).findFirst().orElseThrow().name();
+    }
+
+    /** Welche Teams in welcher Saison bestehen: Team, Saison. Der Name gilt pro Saison (SAI-02). */
     static final List<int[]> TEAM_SAISONS = List.of(
             new int[]{1, 1},
             new int[]{1, 2}, new int[]{2, 2}, new int[]{3, 2});
@@ -132,8 +136,8 @@ public class Seed {
                     .executeUpdate();
         }
         for (SeedTeam t : TEAMS) {
-            em.createNativeQuery("insert into team (id, name) values (?, ?)")
-                    .setParameter(1, teamId(t.nr())).setParameter(2, t.name())
+            em.createNativeQuery("insert into team (id) values (?)")
+                    .setParameter(1, teamId(t.nr()))
                     .executeUpdate();
             if (t.suTeamId() != null) {
                 em.createNativeQuery("update team set su_team_id = ? where id = ?")
@@ -142,8 +146,8 @@ public class Seed {
             }
         }
         for (int[] ts : TEAM_SAISONS) {
-            em.createNativeQuery("insert into team_saison (team_id, saison_id) values (?, ?)")
-                    .setParameter(1, teamId(ts[0])).setParameter(2, saisonId(ts[1]))
+            em.createNativeQuery("insert into team_saison (team_id, saison_id, name) values (?, ?, ?)")
+                    .setParameter(1, teamId(ts[0])).setParameter(2, saisonId(ts[1])).setParameter(3, teamName(ts[0]))
                     .executeUpdate();
         }
         for (SeedZugehoerigkeit z : ZUGEHOERIGKEITEN) {

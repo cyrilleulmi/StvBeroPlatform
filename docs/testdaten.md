@@ -41,7 +41,7 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | Feature | Inhalt |
 |---|---|
 | F-00 | Saisons, alle Personen mit Konto und Schlüssel, Uhr auf Standard-«Jetzt». E-Mail jeder Person: `<schluessel>@example.ch` |
-| F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team |
+| F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team. Der Teamname gilt pro Saison: Wird Team 1 umbenannt, zeigt 2025/26 weiterhin «Team 1» (SAI-02, Nachbesserung #21) |
 
 Gruppen, Linienzuweisungen, Serien, Termine und Antworten folgen mit F-02 bis F-05. Die Tabellen unten sind das Zielbild.
 

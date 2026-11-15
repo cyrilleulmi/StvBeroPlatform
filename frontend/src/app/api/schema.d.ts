@@ -157,7 +157,11 @@ export interface paths {
         };
         /** Team mit Coaches und Spielerinnen nach Gruppe */
         get: operations["teamLesen"];
-        /** Team umbenennen (Admin) */
+        /**
+         * Team umbenennen (Admin)
+         * @description Der Name gilt pro Saison. Umbenannt wird nur in der angegebenen Saison (Standard: aktuelle),
+         *     alte Saisons behalten den damaligen Namen. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         */
         put: operations["teamAendern"];
         post?: never;
         delete?: never;
@@ -1555,7 +1559,10 @@ export interface operations {
     };
     teamAendern: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                saison?: components["parameters"]["saison"];
+            };
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
@@ -1580,6 +1587,7 @@ export interface operations {
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     mitgliedHinzufuegen: {

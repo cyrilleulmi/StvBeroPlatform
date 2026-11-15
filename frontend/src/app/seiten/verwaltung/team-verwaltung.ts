@@ -183,7 +183,9 @@ export class TeamVerwaltung {
     }
     this.teamnameFehler.set(null);
     void this.ausfuehren('umbenennen', async () => {
-      await firstValueFrom(this.http.put(`/api/teams/${this.teamId()}`, { name: neuerName }));
+      await firstValueFrom(
+        this.http.put(`/api/teams/${this.teamId()}`, { name: neuerName }, { params: this.params() }),
+      );
       return TEXTE.teamVerwaltung.umbenannt;
     });
   }
