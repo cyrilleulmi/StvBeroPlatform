@@ -103,6 +103,7 @@ Diese Hilfen gibt es nur in den Quarkus-Profilen `dev` und `test`. Im Profil `pr
 |---|---|---|
 | **Seed zurücksetzen** | Datenbank in den definierten Ausgangszustand bringen | `POST /api/test/reset` |
 | **Feste Uhr** | «Jetzt» festlegen, um Antwortfristen, kurzfristige Absagen und Erinnerungen zu prüfen | `PUT /api/test/uhr`, `DELETE /api/test/uhr` |
+| **Ohne aktuelle Saison** | Zustand «keine Saison als aktuell festgelegt» herstellen (Hinweis `/keine-saison`). Reset stellt den Seed wieder her | `DELETE /api/test/aktuelle-saison` |
 | **Anmelden als** | Ohne Passwort als beliebige Seed-Person anmelden | `POST /api/test/anmelden`, Seite `/dev-login` |
 | **Benachrichtigungen mitlesen** | Prüfen, wer wann worüber benachrichtigt wurde | `GET /api/test/benachrichtigungen` |
 | **swiss unihockey simulieren** | Spieldaten vorgeben, die der Abgleich «von swiss unihockey» erhält | `PUT /api/test/swiss-unihockey/spiele` |

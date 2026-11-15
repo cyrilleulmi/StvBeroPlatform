@@ -11,7 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison */
+        /**
+         * Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
+         * @description Ist keine Saison als aktuell festgelegt (SAI-03), antwortet die API mit 409, Titel «Keine
+         *     aktuelle Saison», Regel SAI-03. Die Oberfläche zeigt dann einen Hinweis statt der Startseite.
+         */
         get: operations["ichLesen"];
         put?: never;
         post?: never;
@@ -700,6 +704,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/test/aktuelle-saison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her. */
+        delete: operations["testAktuelleSaisonEntfernen"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/test/anmelden": {
         parameters: {
             query?: never;
@@ -1316,6 +1337,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NichtAngemeldet"];
+            409: components["responses"]["Konflikt"];
         };
     };
     kachelnLesen: {
@@ -2588,6 +2610,24 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Gelöst */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    testAktuelleSaisonEntfernen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entfernt */
             204: {
                 headers: {
                     [name: string]: unknown;
