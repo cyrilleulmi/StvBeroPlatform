@@ -1,0 +1,14 @@
+.anmelden {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 48px var(--seitenrand);
+}
+
+.karte {
+  display: grid;
+  gap: 12px;
+}
+
+.anmelden p {
+  margin: 0;
+}

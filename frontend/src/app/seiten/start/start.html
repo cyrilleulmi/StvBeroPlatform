@@ -1,0 +1,28 @@
+<h1>{{ texte.start.begruessung(anmeldung.ich()?.vorname ?? '') }}</h1>
+
+<section class="kacheln" aria-labelledby="kacheln-titel" [attr.aria-busy]="laedt() ? 'true' : null">
+  <h2 id="kacheln-titel">{{ texte.start.kachelnTitel }}</h2>
+  @if (fehler(); as meldung) {
+    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  } @else if (laedt()) {
+    <p class="leer">{{ texte.allgemein.laden }}</p>
+  } @else if (kacheln().length === 0) {
+    <p class="leer">{{ texte.start.keineKacheln }}</p>
+  } @else {
+    <ul class="raster">
+      @for (kachel of kacheln(); track kachel.id) {
+        <li>
+          <a class="kachel" [routerLink]="kachel.route" [attr.data-testid]="'kachel-' + kachel.id">
+            <span class="icon-feld" [attr.data-farbe]="kachel.farbe">
+              <app-icon [name]="kachel.icon" />
+            </span>
+            <span class="kachel-titel">{{ kachel.titel }}</span>
+            @if (kachel.hinweis) {
+              <span class="nebentext">{{ kachel.hinweis }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

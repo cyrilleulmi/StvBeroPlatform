@@ -2,7 +2,25 @@
 
 Zentrale Web-Plattform für das Unihockey des STV Beromünster. Sie bündelt die organisatorischen Werkzeuge, die heute verstreut sind (Listen, Chats, Tabellen), an einem Ort – einfach genug, dass Spielerinnen, Coaches und Helfer sie ohne Anleitung nutzen können.
 
-> **Stand 15.11.2026:** Anforderungen und [Produktionspipeline](docs/pipeline/README.md) stehen. Es ist noch kein Code implementiert. Features entstehen über die Pipeline, sobald ein Issue `status:bereit` bekommt.
+> **Stand 15.11.2026:** Anforderungen und [Produktionspipeline](docs/pipeline/README.md) stehen. Das Grundgerüst (F-00) ist gebaut. Weitere Features entstehen über die Pipeline, sobald ein Issue `status:bereit` bekommt.
+
+## Starten und testen
+
+```bash
+scripts/start.sh   # Datenbank, Backend (Quarkus, Profil dev) und Frontend starten
+scripts/test.sh    # API-Lint, Backend-Tests, Frontend-Lint/Build, E2E-Tests (mobil + desktop)
+```
+
+Danach: http://localhost:4200 – im Testmodus über http://localhost:4200/dev-login als Seed-Person anmelden ([testdaten.md](docs/testdaten.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
+
+Voraussetzungen: Java 21, Maven, Node 22, PostgreSQL-Binaries (oder eine Datenbank `stv` auf `localhost:5432`, Benutzer/Passwort `stv`), Google Chrome für die E2E-Tests.
+
+| Ordner | Inhalt |
+|---|---|
+| `backend/` | Quarkus, Java 21. Package pro Kachel unter `ch.stvbero.platform.<kachel>`, gemeinsamer Kern unter `ch.stvbero.platform.kern`. Migrationen: `src/main/resources/db/migration` (Flyway) |
+| `frontend/` | Angular (Standalone, Signals). Eine Kachel = ein lazy geladenes Feature |
+| `e2e/` | Playwright Test (`tests/`, `plaene/`), Projekte `mobil` und `desktop` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh` |
 
 ## Warum eine eigene App?
 

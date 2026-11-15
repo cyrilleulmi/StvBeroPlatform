@@ -1,0 +1,32 @@
+<main class="dev-login">
+  <p class="testmodus" data-testid="testmodus-hinweis">{{ texte.devLogin.hinweis }}</p>
+  <h1>{{ texte.devLogin.titel }}</h1>
+  <p class="nebentext">{{ texte.devLogin.erklaerung }}</p>
+
+  @if (fehler(); as meldung) {
+    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  }
+
+  <div [attr.aria-busy]="laedt() ? 'true' : null">
+    @if (laedt()) {
+      <p class="leer">{{ texte.allgemein.laden }}</p>
+    } @else {
+      <ul class="liste" [attr.aria-label]="texte.devLogin.listeName">
+        @for (person of personen(); track person.id) {
+          <li [attr.data-testid]="'dev-login-person-' + person.schluessel">
+            <button type="button" class="person" (click)="anmelden(person)">
+              <span class="name">{{ person.vorname }} {{ person.nachname }}</span>
+              <span class="details">
+                <span class="schluessel">{{ person.schluessel }}</span>
+                @if (person.admin) {
+                  <span class="chip">{{ texte.devLogin.admin }}</span>
+                }
+              </span>
+              <app-icon name="chevron-right" [groesse]="20" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</main>

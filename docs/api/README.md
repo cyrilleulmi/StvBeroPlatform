@@ -1,6 +1,6 @@
 # API
 
-Der Vertrag steht in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 50 Operationen). Er beschreibt das Zielbild für den Kern.
+Der Vertrag steht in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 53 Operationen). Er beschreibt das Zielbild für den Kern.
 
 ## Arbeitsweise: Contract first
 

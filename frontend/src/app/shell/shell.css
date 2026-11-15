@@ -1,0 +1,116 @@
+.rahmen {
+  min-height: 100dvh;
+}
+
+.inhalt {
+  padding: 24px var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
+  max-width: 880px;
+}
+
+.navigation {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+}
+
+.marke {
+  display: none;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-around;
+  gap: 4px;
+}
+
+li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px 4px;
+  border-radius: var(--radius-nav);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+a span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.aktiv {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Text in `text` statt `primary`: primary auf primary-soft erreicht im Lightmode nur 3.97:1 (WCAG AA 4.5:1). */
+a.aktiv span {
+  color: var(--text);
+}
+
+@media (min-width: 1024px) {
+  .rahmen {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+  }
+
+  .navigation {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    border-top: 0;
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+  }
+
+  .marke {
+    display: block;
+    margin: 0 0 24px 12px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  ul {
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  li {
+    flex: 0 0 auto;
+  }
+
+  a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .inhalt {
+    padding: 40px 48px;
+  }
+}

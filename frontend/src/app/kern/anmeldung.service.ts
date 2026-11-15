@@ -1,0 +1,60 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { umgebung } from '../../umgebung/umgebung';
+import type { Ich, Sitzung } from '../api/typen';
+
+/** Wer angemeldet ist. Quelle ist immer das Backend (`GET /api/ich`). */
+@Injectable({ providedIn: 'root' })
+export class AnmeldungService {
+  private readonly http = inject(HttpClient);
+
+  readonly ich = signal<Ich | null>(null);
+  readonly istAdmin = computed(() => this.ich()?.admin === true);
+
+  /**
+   * Lädt die angemeldete Person. Liefert `null`, wenn niemand angemeldet ist.
+   * Zuerst `GET /api/sitzung` (immer 200), damit ohne Anmeldung kein 401 in der Konsole landet.
+   */
+  async laden(): Promise<Ich | null> {
+    const sitzung = await firstValueFrom(this.http.get<Sitzung>('/api/sitzung'));
+    if (!sitzung.angemeldet) {
+      this.ich.set(null);
+      return null;
+    }
+    try {
+      const ich = await firstValueFrom(this.http.get<Ich>('/api/ich'));
+      this.ich.set(ich);
+      return ich;
+    } catch (fehler) {
+      if (fehler instanceof HttpErrorResponse && fehler.status === 401) {
+        this.ich.set(null);
+        return null;
+      }
+      throw fehler;
+    }
+  }
+
+  async alsTestpersonAnmelden(schluessel: string): Promise<void> {
+    await firstValueFrom(this.http.post<void>('/api/test/anmelden', { schluessel }));
+    await this.laden();
+  }
+
+  async abmelden(): Promise<void> {
+    await firstValueFrom(this.http.post<void>('/api/abmelden', null));
+    this.ich.set(null);
+  }
+
+  /** Route der Anmeldung: im Testmodus /dev-login, sonst /anmelden. */
+  anmeldeRoute(): string {
+    return umgebung.testmodus ? '/dev-login' : '/anmelden';
+  }
+}
+
+/** Nur Ziele innerhalb der App zulassen (kein offener Redirect). */
+export function sicheresZiel(ziel: string | null | undefined): string {
+  if (!ziel || !ziel.startsWith('/') || ziel.startsWith('//') || ziel.startsWith('/\\')) {
+    return '/';
+  }
+  return ziel;
+}

@@ -1,6 +1,23 @@
 # Technik
 
-Technologie-Entscheide und Leitplanken für die Architektur. Es ist noch nichts implementiert.
+Technologie-Entscheide und Leitplanken für die Architektur. Umgesetzt ist das Grundgerüst (F-00).
+
+## Konventionen aus dem Grundgerüst (F-00)
+
+| Thema | Konvention |
+|---|---|
+| Versionen | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
+| Backend-Packages | `ch.stvbero.platform.kern.*` (Uhr, Person, Saison, Anmeldung, Kachel, Fehler, Test-Hilfen), `ch.stvbero.platform.<kachel>` pro Kachel (z.B. `anwesenheit`) |
+| Kachel registrieren | Backend: CDI-Bean, die `KachelDefinition` umsetzt (Metadaten, `sichtbarFuer`). Frontend: Route `loadChildren` in `app.routes.ts`, Icon in `kern/icon.ts` |
+| «Jetzt» | `java.time.Clock` injizieren. Im Profil dev/test über `PUT /api/test/uhr` steuerbar |
+| Test-Hilfen | Build-Eigenschaft `stv.testhilfen` (`true` nur in `%dev`/`%test`). Ressourcen mit `@IfBuildProperty`, im Profil prod nicht vorhanden |
+| Anmeldung | Cookie `stv_sitzung` (HttpOnly, SameSite=Lax), Sitzungen in der Datenbank. Ressourcen ohne `@Oeffentlich` verlangen eine Sitzung (401) |
+| Fehler | `FachFehler` → Problem Details (`application/problem+json`), Validierung → 400 mit `felder` |
+| Vertrag | `OpenApiVertragTest` vergleicht `/q/openapi` mit `docs/api/openapi.yaml` (Pfade, Methoden, operationId, Statuscodes, Schemas) |
+| Frontend-Typen | `npm run api-typen` erzeugt `src/app/api/schema.d.ts` aus dem Vertrag (läuft vor `start` und `build`) |
+| Texte | `frontend/src/app/kern/texte.ts` |
+| Schrift | Plus Jakarta Sans lokal über `@fontsource` (keine Anfragen an Google Fonts) |
+| PWA | `public/manifest.webmanifest`, eigener schlanker Service Worker `public/sw.js` (Offline-Seite, keine Datencaches) |
 
 ## Entschieden
 

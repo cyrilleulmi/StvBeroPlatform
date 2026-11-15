@@ -1,0 +1,23 @@
+<div class="rahmen">
+  <nav class="navigation" [attr.aria-label]="texte.navigation.name" data-testid="hauptnavigation">
+    <p class="marke" aria-hidden="true">{{ texte.appName }}</p>
+    <ul>
+      @for (eintrag of eintraege(); track eintrag.route) {
+        <li>
+          <a
+            [routerLink]="eintrag.route"
+            routerLinkActive="aktiv"
+            ariaCurrentWhenActive="page"
+            [routerLinkActiveOptions]="{ exact: eintrag.exakt }"
+          >
+            <app-icon [name]="eintrag.icon" />
+            <span>{{ eintrag.text }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+  <main class="inhalt">
+    <router-outlet />
+  </main>
+</div>
