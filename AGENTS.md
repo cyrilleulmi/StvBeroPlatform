@@ -9,10 +9,17 @@ Dieses Repo wird mit Unterstützung von KI-Agenten entwickelt. Diese Datei sagt,
 3. [docs/anforderungen/](docs/anforderungen/) – die Anforderungen mit IDs (z.B. `ANM-03`).
 4. [docs/design-grundlagen.md](docs/design-grundlagen.md) – verbindliches Design.
 5. [docs/technik.md](docs/technik.md) – Technologie und Leitplanken.
+6. [docs/testbarkeit.md](docs/testbarkeit.md) – verbindliche Regeln, damit Test-Agenten das Frontend bedienen können.
+7. [docs/api/openapi.yaml](docs/api/openapi.yaml) – API-Vertrag (contract first), Konventionen in [docs/api/README.md](docs/api/README.md).
+8. [docs/zustaende.md](docs/zustaende.md), [docs/oberflaeche/navigation.md](docs/oberflaeche/navigation.md), [docs/testdaten.md](docs/testdaten.md) – Verhalten, Screens, Seed.
 
-## Stand
+## Stand und Pipeline
 
-Es ist noch nichts implementiert. Mit der Umsetzung wird erst begonnen, wenn Cyrille das ausdrücklich verlangt.
+Features werden über die [Produktionspipeline](docs/pipeline/README.md) gebaut: Entwicklung → Review → Test → Abnahme durch Cyrille. Ein Feature wird umgesetzt, sobald Cyrille das Issue mit `status:bereit` freigibt. Reihenfolge und Akzeptanzkriterien: [docs/pipeline/backlog.md](docs/pipeline/backlog.md).
+
+Die Rollen sind Skills unter `.claude/skills/` (`/pipeline-entwicklung`, `/pipeline-review`, `/pipeline-test`). Gemeinsame Regeln: [docs/pipeline/agenten-regeln.md](docs/pipeline/agenten-regeln.md). Was jeder PR erfüllen muss: [docs/pipeline/definition-of-done.md](docs/pipeline/definition-of-done.md).
+
+In Cloud-Sitzungen gibt es keinen Docker-Daemon. Datenbank: `scripts/db-start.sh`.
 
 ## Umgang mit Anforderungen
 

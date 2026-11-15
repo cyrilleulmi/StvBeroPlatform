@@ -2,7 +2,7 @@
 
 Zentrale Web-Plattform für das Unihockey des STV Beromünster. Sie bündelt die organisatorischen Werkzeuge, die heute verstreut sind (Listen, Chats, Tabellen), an einem Ort – einfach genug, dass Spielerinnen, Coaches und Helfer sie ohne Anleitung nutzen können.
 
-> **Stand 15.11.2026: Anforderungsphase.** Dieses Repo enthält bisher nur die Anforderungen. Es ist noch nichts implementiert.
+> **Stand 15.11.2026:** Anforderungen und [Produktionspipeline](docs/pipeline/README.md) stehen. Es ist noch kein Code implementiert. Features entstehen über die Pipeline, sobald ein Issue `status:bereit` bekommt.
 
 ## Warum eine eigene App?
 
@@ -26,6 +26,12 @@ Dazu kommt: Coaches melden sich ebenfalls an und ab, erscheinen aber nicht als S
 | [docs/technik.md](docs/technik.md) | Technologie-Entscheide und Architektur-Leitplanken |
 | [docs/offene-punkte.md](docs/offene-punkte.md) | Ungeklärte Fragen |
 | [docs/entscheide.md](docs/entscheide.md) | Protokoll der getroffenen Entscheide |
+| [docs/pipeline/](docs/pipeline/README.md) | Produktionspipeline: Ablauf, Einrichtung, Backlog, Definition of Done |
+| [docs/api/](docs/api/README.md) | API-Vertrag (OpenAPI 3.1) und Konventionen |
+| [docs/zustaende.md](docs/zustaende.md) | Zustands- und Sequenzdiagramme |
+| [docs/oberflaeche/navigation.md](docs/oberflaeche/navigation.md) | Routen, Screens, feste Test-IDs |
+| [docs/testbarkeit.md](docs/testbarkeit.md) | Regeln, damit Test-Agenten das Frontend bedienen können |
+| [docs/testdaten.md](docs/testdaten.md) | Seed-Daten mit festen IDs und Testszenarien |
 | [AGENTS.md](AGENTS.md) | Hinweise für KI-Coding-Agenten, die in diesem Repo arbeiten |
 
 ### Anforderungen an den Kern

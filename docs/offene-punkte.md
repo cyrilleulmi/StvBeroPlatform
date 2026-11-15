@@ -26,6 +26,16 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-14 | Gehört ein Spieltag immer zu genau einem Team? | Annahme: ja ([AUF-03](anforderungen/05-spieltage-aufgebot.md)). |
 | O-15 | Heisst es in der Oberfläche «Spielerin» oder «Spieler/in»? | In der Erarbeitung wurde «Spielerinnen» verwendet, in älteren Unterlagen «Spieler/innen». |
 | O-16 | Farben und Symbole für die vier Antwortstatus | Vorschlag in [design-grundlagen.md](design-grundlagen.md#noch-nicht-festgelegt). |
+| O-17 | Wer wird bei einer kurzfristigen Absage benachrichtigt, wenn ein Termin mehrere Teams hat? | Annahme: nur die Coaches der Teams, in denen die Person Spielerin ist ([BEN-02](anforderungen/08-benachrichtigungen.md)). |
+| O-18 | Wann geht die Erinnerung raus? | Annahme: 12 Stunden vor der Antwortfrist ([zustaende.md](zustaende.md#termin)). |
+| O-19 | Was passiert mit Serienterminen in einer neuen Ausnahme? | Annahme: ohne Antworten entfernt, mit Antworten abgesagt ([zustaende.md](zustaende.md#serie)). |
+
+## Pipeline
+
+| Nr. | Frage | Bemerkung |
+|---|---|---|
+| O-30 | Vorschau-URL für die Abnahme | Hängt am Hosting (O-02). Bis dahin über eine Cloud-Sitzung auf dem PR-Branch. |
+| O-31 | Für F-00 angenommen: Java 21 und Flyway (O-07, O-08) | Siehe [Backlog](pipeline/backlog.md#f-00--grundgerüst). Vor der Freigabe von F-00 bestätigen oder ändern. |
 
 ## swiss unihockey
 

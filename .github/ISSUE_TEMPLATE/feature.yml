@@ -1,0 +1,45 @@
+name: Feature
+description: Ein Feature für die Pipeline. Freigabe zur Entwicklung mit dem Label status:bereit.
+title: "F-xx · "
+labels: ["typ:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Der Entwicklungs-Agent setzt dieses Issue um, sobald Cyrille das Label `status:bereit` setzt.
+        Der Test-Agent prüft genau die Akzeptanzkriterien. Je konkreter sie sind, desto besser das Ergebnis.
+        Hilfe: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Testdaten und Szenarien](../blob/main/docs/testdaten.md)
+  - type: textarea
+    id: ziel
+    attributes:
+      label: Ziel
+      description: Ein, zwei Sätze. Wer kann danach was?
+    validations:
+      required: true
+  - type: input
+    id: anforderungen
+    attributes:
+      label: Anforderungen
+      description: IDs aus docs/anforderungen/, z.B. ANM-01–ANM-12, RR-06
+    validations:
+      required: true
+  - type: input
+    id: voraussetzung
+    attributes:
+      label: Voraussetzung
+      description: Features, die vorher auf main sein müssen, z.B. F-02, F-03
+  - type: textarea
+    id: kriterien
+    attributes:
+      label: Akzeptanzkriterien
+      description: Nummeriert. Wenn möglich mit Seed-Personen und Szenarien aus docs/testdaten.md.
+      placeholder: |
+        1. Szenario S2: Als `nina` bei Termin 01 «dabei» tippen → Team 1 zeigt 6 dabei, 0 offen.
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: hinweise
+    attributes:
+      label: Hinweise und Annahmen
+      description: Was sonst noch gilt. Was nicht dazugehört.

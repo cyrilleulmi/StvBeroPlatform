@@ -1,0 +1,1598 @@
+openapi: 3.1.0
+info:
+  title: StvBeroPlatform API
+  version: 0.1.0
+  summary: REST-API des Kerns (Personen, Teams, Linien, Termine, An-/Abmeldung, Spieltage, Aufgebot).
+  description: |
+    Vertrag zwischen Frontend, Backend und Test-Agenten. **Contract first:** Änderungen an der API
+    werden zuerst hier gemacht, dann umgesetzt. Konventionen: [README.md](README.md).
+
+    Anforderungs-IDs (z.B. `ANM-04`) verweisen auf `docs/anforderungen/`.
+    Endpunkte mit dem Tag `Test` existieren nur in den Quarkus-Profilen `dev` und `test`.
+  license:
+    name: Proprietär
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:8080
+    description: Lokal (Quarkus dev/test)
+security:
+  - sitzung: []
+tags:
+  - name: Ich
+    description: Angemeldete Person, Kacheln
+  - name: Saisons
+    description: Saisons und Archiv (SAI)
+  - name: Teams
+    description: Teams und Teamzugehörigkeiten (PTF)
+  - name: Linien
+    description: Linien und Goalies (LIN)
+  - name: Personen
+    description: Personenverwaltung (Admin)
+  - name: Termine
+    description: Termine, Serien (TER)
+  - name: Antworten
+    description: An- und Abmeldung, Übersicht (ANM)
+  - name: Spieltage
+    description: Spiele und Aufgebot (AUF)
+  - name: SwissUnihockey
+    description: Anbindung swiss unihockey (SUH)
+  - name: Benachrichtigungen
+    description: In-App-Benachrichtigungen (BEN)
+  - name: Test
+    description: Nur in den Profilen dev und test. Siehe docs/testbarkeit.md.
+
+paths:
+  # ---------------------------------------------------------------- Ich
+  /api/ich:
+    get:
+      tags: [Ich]
+      operationId: ichLesen
+      summary: Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ich' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+  /api/kacheln:
+    get:
+      tags: [Ich]
+      operationId: kachelnLesen
+      summary: Kacheln, die die angemeldete Person sehen darf (NF-11, NF-12)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Kachel' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+
+  # ---------------------------------------------------------------- Saisons
+  /api/saisons:
+    get:
+      tags: [Saisons]
+      operationId: saisonsLesen
+      summary: Alle Saisons, neueste zuerst
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Saison' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+    post:
+      tags: [Saisons]
+      operationId: saisonAnlegen
+      summary: Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaisonAnlegen' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Saison' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/saisons/{saisonId}/aktivieren:
+    parameters:
+      - $ref: '#/components/parameters/saisonId'
+    post:
+      tags: [Saisons]
+      operationId: saisonAktivieren
+      summary: Saison zur aktuellen Saison machen (SAI-03, SAI-06, Admin)
+      responses:
+        '204': { description: Aktiviert }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+
+  # ---------------------------------------------------------------- Teams
+  /api/teams:
+    get:
+      tags: [Teams]
+      operationId: teamsLesen
+      summary: Teams einer Saison. Ohne Admin-Rechte nur die eigenen.
+      parameters:
+        - $ref: '#/components/parameters/saison'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Team' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+    post:
+      tags: [Teams]
+      operationId: teamAnlegen
+      summary: Team anlegen (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TeamSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/teams/{teamId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [Teams]
+      operationId: teamLesen
+      summary: Team mit Coaches und Spielerinnen nach Gruppe
+      parameters:
+        - $ref: '#/components/parameters/saison'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamDetail' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    put:
+      tags: [Teams]
+      operationId: teamAendern
+      summary: Team umbenennen (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TeamSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/teams/{teamId}/mitglieder:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [Teams]
+      operationId: mitgliedHinzufuegen
+      summary: Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
+      description: Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die API mit 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MitgliedSchreiben' }
+      responses:
+        '201':
+          description: Aufgenommen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+  /api/teams/{teamId}/mitglieder/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - $ref: '#/components/parameters/personId'
+    put:
+      tags: [Teams]
+      operationId: funktionAendern
+      summary: Funktion im Team ändern (Admin)
+      description: Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [funktion]
+              properties:
+                funktion: { $ref: '#/components/schemas/Funktion' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    delete:
+      tags: [Teams]
+      operationId: mitgliedEntfernen
+      summary: Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
+      responses:
+        '204': { description: Entfernt }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+
+  # ---------------------------------------------------------------- Linien
+  /api/teams/{teamId}/gruppen:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [Linien]
+      operationId: gruppenLesen
+      summary: Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Gruppeneinteilung' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    post:
+      tags: [Linien]
+      operationId: linieAnlegen
+      summary: Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LinieSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Gruppe' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/teams/{teamId}/gruppen/{gruppeId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - $ref: '#/components/parameters/gruppeId'
+    put:
+      tags: [Linien]
+      operationId: linieAendern
+      summary: Linie umbenennen oder Reihenfolge ändern (Coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LinieSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Gruppe' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    delete:
+      tags: [Linien]
+      operationId: linieLoeschen
+      summary: Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409).
+      responses:
+        '204': { description: Gelöscht }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+  /api/teams/{teamId}/zuweisungen/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - $ref: '#/components/parameters/personId'
+    put:
+      tags: [Linien]
+      operationId: zuweisungSetzen
+      summary: Spielerin einer Gruppe zuweisen oder auf «ohne Linie» setzen (LIN-02, LIN-07, LIN-10)
+      description: |
+        Ersetzt eine bestehende Zuweisung im selben Team (höchstens eine Gruppe pro Team).
+        Nur Personen mit Funktion `SPIELERIN` in diesem Team, sonst 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gruppeId]
+              properties:
+                gruppeId:
+                  type: [string, 'null']
+                  format: uuid
+                  description: '`null` = ohne Linie'
+      responses:
+        '204': { description: Gesetzt }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+
+  # ---------------------------------------------------------------- Personen
+  /api/personen:
+    get:
+      tags: [Personen]
+      operationId: personenLesen
+      summary: Alle Personen (Admin)
+      parameters:
+        - name: suche
+          in: query
+          schema: { type: string }
+          description: Teil von Vor- oder Nachname
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Person' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+    post:
+      tags: [Personen]
+      operationId: personAnlegen
+      summary: Person anlegen (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PersonSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Person' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/personen/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/personId'
+    get:
+      tags: [Personen]
+      operationId: personLesen
+      summary: Person mit allen Teamzugehörigkeiten (Admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonDetail' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    put:
+      tags: [Personen]
+      operationId: personAendern
+      summary: Person ändern (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PersonSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Person' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+
+  # ---------------------------------------------------------------- Termine
+  /api/termine:
+    get:
+      tags: [Termine]
+      operationId: termineLesen
+      summary: Termine der eigenen Teams mit eigener Antwort (TER-13)
+      parameters:
+        - name: von
+          in: query
+          description: Standard ist «jetzt» (Backend-Uhr)
+          schema: { type: string, format: date }
+        - name: bis
+          in: query
+          schema: { type: string, format: date }
+        - name: team
+          in: query
+          schema: { type: string, format: uuid }
+        - name: typ
+          in: query
+          schema: { $ref: '#/components/schemas/TerminTyp' }
+        - name: ansicht
+          in: query
+          schema:
+            type: string
+            enum: [kommend, vergangen]
+            default: kommend
+      responses:
+        '200':
+          description: Chronologisch sortiert (vergangene absteigend)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TerminKurz' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+    post:
+      tags: [Termine]
+      operationId: terminAnlegen
+      summary: Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
+      description: Die Person muss Coach in jedem angegebenen Team sein. Ein Spieltag hat genau ein Team (AUF-03).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TerminSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Termin' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/termine/{terminId}:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    get:
+      tags: [Termine]
+      operationId: terminLesen
+      summary: Termin mit eigener Antwort, bei Spieltag mit Spielen, Treffpunkt und eigenem Aufgebotsstatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Termin' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    put:
+      tags: [Termine]
+      operationId: terminAendern
+      summary: Termin ändern oder verschieben (TER-06, TER-12, Coach)
+      description: Eine geänderte Beginnzeit gilt als Verschiebung und benachrichtigt alle Betroffenen. Antworten bleiben erhalten.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TerminSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Termin' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+  /api/termine/{terminId}/absagen:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    post:
+      tags: [Termine]
+      operationId: terminAbsagen
+      summary: Termin absagen (TER-06, TER-12, Coach). Danach sind keine Antworten mehr möglich.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grund]
+              properties:
+                grund: { type: string, minLength: 1, maxLength: 200, examples: [Halle besetzt] }
+      responses:
+        '200':
+          description: Abgesagt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Termin' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+
+  /api/serien:
+    post:
+      tags: [Termine]
+      operationId: serieAnlegen
+      summary: Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SerieSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Serie' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+  /api/serien/{serieId}:
+    parameters:
+      - $ref: '#/components/parameters/serieId'
+    get:
+      tags: [Termine]
+      operationId: serieLesen
+      summary: Serie mit Ausnahmen
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Serie' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+    put:
+      tags: [Termine]
+      operationId: serieAendern
+      summary: Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SerieSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Serie' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/serien/{serieId}/ausnahmen:
+    parameters:
+      - $ref: '#/components/parameters/serieId'
+    post:
+      tags: [Termine]
+      operationId: ausnahmeAnlegen
+      summary: Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Ausnahme' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Serie' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+
+  # ---------------------------------------------------------------- Antworten
+  /api/termine/{terminId}/uebersicht:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    get:
+      tags: [Antworten]
+      operationId: uebersichtLesen
+      summary: Antworten nach Team und Gruppe, Coach-Block, Zähler (ANM-20 bis ANM-32)
+      description: |
+        Kommentare sind nur enthalten, wenn die anfragende Person Coach im jeweiligen Team ist
+        oder es um ihre eigene Antwort geht (ANM-07). Leere Gruppen fehlen.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Uebersicht' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/termine/{terminId}/antworten/ich:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    put:
+      tags: [Antworten]
+      operationId: eigeneAntwortSetzen
+      summary: Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)
+      description: |
+        `VIELLEICHT` verlangt einen Kommentar (sonst 422). Ein Wechsel von `DABEI` weg nach der
+        Antwortfrist ist eine kurzfristige Absage und benachrichtigt die Coaches (ANM-10, BEN-02).
+        Bei abgesagten Terminen 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AntwortSetzen' }
+      responses:
+        '200':
+          description: Gespeichert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Antwort' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+        '422': { $ref: '#/components/responses/Regelverletzung' }
+  /api/termine/{terminId}/antworten/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+      - $ref: '#/components/parameters/personId'
+    put:
+      tags: [Antworten]
+      operationId: antwortStellvertretendSetzen
+      summary: Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)
+      description: Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist. Sonst 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AntwortSetzen' }
+      responses:
+        '200':
+          description: Gespeichert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Antwort' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+        '422': { $ref: '#/components/responses/Regelverletzung' }
+
+  # ---------------------------------------------------------------- Spieltage
+  /api/termine/{terminId}/spiele:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    post:
+      tags: [Spieltage]
+      operationId: spielHinzufuegen
+      summary: Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpielSchreiben' }
+      responses:
+        '201':
+          description: Angelegt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Spiel' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+  /api/termine/{terminId}/spiele/{spielId}:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+      - $ref: '#/components/parameters/spielId'
+    put:
+      tags: [Spieltage]
+      operationId: spielAendern
+      summary: Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpielSchreiben' }
+      responses:
+        '200':
+          description: Geändert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Spiel' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+    delete:
+      tags: [Spieltage]
+      operationId: spielLoeschen
+      summary: Von Hand erfasstes Spiel löschen (Coach)
+      responses:
+        '204': { description: Gelöscht }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+  /api/termine/{terminId}/aufgebot:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    get:
+      tags: [Spieltage]
+      operationId: aufgebotLesen
+      summary: Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Aufgebot' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+    put:
+      tags: [Spieltage]
+      operationId: aufgebotSetzen
+      summary: Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personIds]
+              properties:
+                personIds:
+                  type: array
+                  uniqueItems: true
+                  items: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Gespeichert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Aufgebot' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '422': { $ref: '#/components/responses/Regelverletzung' }
+  /api/termine/{terminId}/aufgebot/veroeffentlichen:
+    parameters:
+      - $ref: '#/components/parameters/terminId'
+    post:
+      tags: [Spieltage]
+      operationId: aufgebotVeroeffentlichen
+      summary: Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
+      responses:
+        '200':
+          description: Veröffentlicht
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Aufgebot' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+
+  # ---------------------------------------------------------------- swiss unihockey
+  /api/teams/{teamId}/swiss-unihockey:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    put:
+      tags: [SwissUnihockey]
+      operationId: suVerknuepfen
+      summary: Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [suTeamId]
+              properties:
+                suTeamId:
+                  type: [integer, 'null']
+                  description: '`null` löst die Verknüpfung'
+                  examples: [900001]
+      responses:
+        '200':
+          description: Gespeichert
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Team' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/teams/{teamId}/swiss-unihockey/abgleich:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [SwissUnihockey]
+      operationId: suAbgleichen
+      summary: Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
+      responses:
+        '200':
+          description: Ergebnis des Abgleichs
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AbgleichErgebnis' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
+        '502':
+          description: swiss unihockey nicht erreichbar oder unerwartete Antwort (SUH-09)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+
+  # ---------------------------------------------------------------- Benachrichtigungen
+  /api/benachrichtigungen:
+    get:
+      tags: [Benachrichtigungen]
+      operationId: benachrichtigungenLesen
+      summary: Eigene Benachrichtigungen, neueste zuerst (BEN-12)
+      parameters:
+        - name: ungelesen
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Benachrichtigung' }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+  /api/benachrichtigungen/{benachrichtigungId}/gelesen:
+    parameters:
+      - name: benachrichtigungId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Benachrichtigungen]
+      operationId: benachrichtigungGelesen
+      summary: Als gelesen markieren
+      responses:
+        '204': { description: Markiert }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+
+  # ---------------------------------------------------------------- Test
+  /api/test/reset:
+    post:
+      tags: [Test]
+      operationId: testReset
+      summary: Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen
+      description: Seed siehe docs/testdaten.md. Nur Profile dev und test.
+      security: []
+      responses:
+        '204': { description: Zurückgesetzt }
+  /api/test/uhr:
+    put:
+      tags: [Test]
+      operationId: testUhrSetzen
+      summary: Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jetzt]
+              properties:
+                jetzt:
+                  type: string
+                  format: date-time
+                  examples: ['2026-11-16T19:00:00+01:00']
+      responses:
+        '204': { description: Gesetzt }
+    get:
+      tags: [Test]
+      operationId: testUhrLesen
+      summary: Aktuelle Backend-Zeit
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [jetzt, fest]
+                properties:
+                  jetzt: { type: string, format: date-time }
+                  fest: { type: boolean }
+    delete:
+      tags: [Test]
+      operationId: testUhrLoesen
+      summary: Wieder die echte Zeit verwenden
+      security: []
+      responses:
+        '204': { description: Gelöst }
+  /api/test/anmelden:
+    post:
+      tags: [Test]
+      operationId: testAnmelden
+      summary: Ohne Passwort als Seed-Person anmelden. Setzt das Sitzungs-Cookie.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [schluessel]
+              properties:
+                schluessel:
+                  type: string
+                  description: Schlüssel aus docs/testdaten.md
+                  examples: [petra]
+      responses:
+        '204':
+          description: Angemeldet
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+  /api/test/benachrichtigungen:
+    get:
+      tags: [Test]
+      operationId: testBenachrichtigungenLesen
+      summary: Alle seit dem letzten Reset erzeugten Benachrichtigungen aller Personen
+      security: []
+      responses:
+        '200':
+          description: Chronologisch
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Benachrichtigung' }
+  /api/test/swiss-unihockey/spiele:
+    put:
+      tags: [Test]
+      operationId: testSuSpieleSetzen
+      summary: Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [suTeamId, spiele]
+              properties:
+                suTeamId: { type: integer, examples: [900001] }
+                nichtErreichbar:
+                  type: boolean
+                  default: false
+                  description: Simuliert einen Ausfall (SUH-09)
+                spiele:
+                  type: array
+                  items: { $ref: '#/components/schemas/SuSpiel' }
+      responses:
+        '204': { description: Gesetzt }
+
+components:
+  securitySchemes:
+    sitzung:
+      type: apiKey
+      in: cookie
+      name: stv_sitzung
+      description: Sitzungs-Cookie. Das produktive Anmeldeverfahren ist offen (O-01).
+
+  parameters:
+    saison:
+      name: saison
+      in: query
+      description: Saison-ID. Standard ist die aktuelle Saison.
+      schema: { type: string, format: uuid }
+    saisonId:
+      name: saisonId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    teamId:
+      name: teamId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    personId:
+      name: personId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    gruppeId:
+      name: gruppeId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    terminId:
+      name: terminId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    serieId:
+      name: serieId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    spielId:
+      name: spielId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    NichtAngemeldet:
+      description: Nicht angemeldet
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+    KeineBerechtigung:
+      description: Keine Berechtigung (RR-07)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+    NichtGefunden:
+      description: Nicht gefunden
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+    Ungueltig:
+      description: Anfrage formal ungültig
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+    Konflikt:
+      description: Widerspricht dem aktuellen Zustand (z.B. Termin abgesagt, schon Mitglied)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+    Regelverletzung:
+      description: Fachliche Regel verletzt (z.B. «vielleicht» ohne Kommentar)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Fehler' }
+
+  schemas:
+    Fehler:
+      type: object
+      description: RFC 9457 Problem Details. `detail` ist ein deutscher Text, der direkt angezeigt werden kann.
+      required: [status, title]
+      properties:
+        type: { type: string, format: uri, examples: ['urn:stv:fehler:kommentar-pflicht'] }
+        title: { type: string, examples: [Kommentar fehlt] }
+        status: { type: integer, examples: [422] }
+        detail: { type: string, examples: ['Bei «vielleicht» ist ein Kommentar Pflicht.'] }
+        regel: { type: string, description: Verletzte Anforderung, examples: [ANM-04] }
+        felder:
+          type: array
+          items:
+            type: object
+            required: [feld, meldung]
+            properties:
+              feld: { type: string, examples: [kommentar] }
+              meldung: { type: string }
+
+    Funktion:
+      type: string
+      enum: [SPIELERIN, COACH]
+      description: Erweiterbar (PTF-06). Clients behandeln unbekannte Werte wie ein Mitglied ohne Sonderrechte.
+    TerminTyp:
+      type: string
+      enum: [TRAINING, SPIELTAG, ANLASS]
+    TerminStatus:
+      type: string
+      enum: [GEPLANT, ABGESAGT]
+      description: Ob ein Termin vorbei ist, ergibt sich aus `ende` und der Backend-Uhr.
+    AntwortStatus:
+      type: string
+      enum: [OFFEN, DABEI, NICHT_DABEI, VIELLEICHT]
+    GruppenArt:
+      type: string
+      enum: [LINIE, GOALIES]
+    AufgebotStatus:
+      type: string
+      enum: [KEINES, ENTWURF, VEROEFFENTLICHT]
+    MeinAufgebot:
+      type: string
+      enum: [NOCH_KEIN_AUFGEBOT, AUFGEBOTEN, NICHT_AUFGEBOTEN]
+    Quelle:
+      type: string
+      enum: [MANUELL, SWISS_UNIHOCKEY]
+
+    PersonKurz:
+      type: object
+      required: [id, vorname, nachname]
+      properties:
+        id: { type: string, format: uuid }
+        vorname: { type: string, examples: [Anna] }
+        nachname: { type: string, examples: [Muster] }
+    Person:
+      allOf:
+        - $ref: '#/components/schemas/PersonKurz'
+        - type: object
+          required: [admin]
+          properties:
+            email: { type: [string, 'null'], format: email }
+            admin: { type: boolean }
+    PersonSchreiben:
+      type: object
+      required: [vorname, nachname]
+      properties:
+        vorname: { type: string, minLength: 1, maxLength: 60 }
+        nachname: { type: string, minLength: 1, maxLength: 60 }
+        email: { type: [string, 'null'], format: email }
+        admin: { type: boolean, default: false }
+    PersonDetail:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          required: [zugehoerigkeiten]
+          properties:
+            zugehoerigkeiten:
+              type: array
+              items: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+    Ich:
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          required: [saison, zugehoerigkeiten]
+          properties:
+            saison: { $ref: '#/components/schemas/Saison' }
+            zugehoerigkeiten:
+              type: array
+              items: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+    Kachel:
+      type: object
+      required: [id, titel, icon, route, farbe]
+      properties:
+        id: { type: string, examples: [anwesenheit] }
+        titel: { type: string, examples: [Anwesenheit] }
+        icon: { type: string, description: Lucide-Icon-Name, examples: [calendar-check] }
+        route: { type: string, examples: [/termine] }
+        farbe:
+          type: string
+          enum: [primary, blue, mustard, coral]
+        hinweis: { type: [string, 'null'], description: 'Kurzer Status, z.B. «2 offen»' }
+
+    Saison:
+      type: object
+      required: [id, name, von, bis, aktuell]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: [2026/27] }
+        von: { type: string, format: date }
+        bis: { type: string, format: date }
+        aktuell: { type: boolean }
+    SaisonAnlegen:
+      type: object
+      required: [name, von, bis]
+      properties:
+        name: { type: string }
+        von: { type: string, format: date }
+        bis: { type: string, format: date }
+        uebernehmenAus:
+          type: [string, 'null']
+          format: uuid
+          description: Saison, deren Teams, Zugehörigkeiten und Linien übernommen werden (SAI-04)
+
+    Team:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: [Team 1] }
+        suTeamId: { type: [integer, 'null'], examples: [900001] }
+        meineFunktion:
+          oneOf:
+            - $ref: '#/components/schemas/Funktion'
+            - type: 'null'
+    TeamSchreiben:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+    TeamDetail:
+      allOf:
+        - $ref: '#/components/schemas/Team'
+        - type: object
+          required: [coaches, einteilung]
+          properties:
+            coaches:
+              type: array
+              items: { $ref: '#/components/schemas/PersonKurz' }
+            einteilung: { $ref: '#/components/schemas/Gruppeneinteilung' }
+    Teamzugehoerigkeit:
+      type: object
+      required: [team, person, funktion, saisonId]
+      properties:
+        team:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        person: { $ref: '#/components/schemas/PersonKurz' }
+        funktion: { $ref: '#/components/schemas/Funktion' }
+        saisonId: { type: string, format: uuid }
+        gruppeId:
+          type: [string, 'null']
+          format: uuid
+          description: Nur bei Funktion SPIELERIN
+    MitgliedSchreiben:
+      type: object
+      required: [personId, funktion]
+      properties:
+        personId: { type: string, format: uuid }
+        funktion: { $ref: '#/components/schemas/Funktion' }
+
+    Gruppe:
+      type: object
+      required: [id, art, name]
+      properties:
+        id: { type: string, format: uuid }
+        art: { $ref: '#/components/schemas/GruppenArt' }
+        name: { type: string, examples: [Linie 1] }
+        reihenfolge: { type: [integer, 'null'], description: Nur bei LINIE }
+    LinieSchreiben:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 30 }
+        reihenfolge: { type: integer, minimum: 1 }
+    Gruppeneinteilung:
+      type: object
+      description: Alle Gruppen eines Teams in Anzeigereihenfolge, auch leere
+      required: [gruppen, ohneLinie]
+      properties:
+        gruppen:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Gruppe'
+              - type: object
+                required: [spielerinnen]
+                properties:
+                  spielerinnen:
+                    type: array
+                    items: { $ref: '#/components/schemas/PersonKurz' }
+        ohneLinie:
+          type: array
+          items: { $ref: '#/components/schemas/PersonKurz' }
+
+    Ort:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, examples: [Sporthalle Seefeld, Musterdorf] }
+        adresse: { type: [string, 'null'] }
+        mapsUrl:
+          type: [string, 'null']
+          format: uri
+          description: Google-Maps-Link (AUF-10). Muss mit https:// beginnen.
+        breite: { type: [number, 'null'] }
+        laenge: { type: [number, 'null'] }
+    Treffpunkt:
+      type: object
+      required: [zeit, ort]
+      properties:
+        zeit: { type: string, format: date-time }
+        ort: { type: string, examples: [Parkplatz Sporthalle Nord] }
+    Zaehler:
+      type: object
+      required: [dabei, nichtDabei, vielleicht, offen]
+      properties:
+        dabei: { type: integer, minimum: 0 }
+        nichtDabei: { type: integer, minimum: 0 }
+        vielleicht: { type: integer, minimum: 0 }
+        offen: { type: integer, minimum: 0 }
+
+    TerminKurz:
+      type: object
+      required: [id, typ, titel, beginn, ende, status, teams, antwortfrist, meineAntwort]
+      properties:
+        id: { type: string, format: uuid }
+        typ: { $ref: '#/components/schemas/TerminTyp' }
+        titel: { type: string, examples: [Training] }
+        beginn: { type: string, format: date-time }
+        ende: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/TerminStatus' }
+        absagegrund: { type: [string, 'null'] }
+        verschoben: { type: boolean, default: false }
+        teams:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Team' }
+        ort:
+          oneOf:
+            - $ref: '#/components/schemas/Ort'
+            - type: 'null'
+        antwortfrist: { type: string, format: date-time }
+        meineAntwort: { $ref: '#/components/schemas/Antwort' }
+        zaehler:
+          $ref: '#/components/schemas/Zaehler'
+          description: Gesamtzähler Spielerinnen
+        serieId: { type: [string, 'null'], format: uuid }
+    Termin:
+      allOf:
+        - $ref: '#/components/schemas/TerminKurz'
+        - type: object
+          properties:
+            hinweise: { type: [string, 'null'], examples: [Weisse Trikots mitnehmen] }
+            antwortfristStunden: { type: integer, minimum: 0 }
+            treffpunkt:
+              oneOf:
+                - $ref: '#/components/schemas/Treffpunkt'
+                - type: 'null'
+            spiele:
+              type: array
+              description: Nur bei SPIELTAG, nach Anspielzeit sortiert
+              items: { $ref: '#/components/schemas/Spiel' }
+            aufgebotStatus: { $ref: '#/components/schemas/AufgebotStatus' }
+            meinAufgebot:
+              oneOf:
+                - $ref: '#/components/schemas/MeinAufgebot'
+                - type: 'null'
+              description: Nur bei SPIELTAG und Funktion SPIELERIN
+            darfBearbeiten: { type: boolean, description: Für die Anzeige von Coach-Aktionen }
+    TerminSchreiben:
+      type: object
+      required: [typ, titel, beginn, ende, teamIds]
+      properties:
+        typ: { $ref: '#/components/schemas/TerminTyp' }
+        titel: { type: string, minLength: 1, maxLength: 80 }
+        beginn: { type: string, format: date-time }
+        ende: { type: string, format: date-time }
+        teamIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        ort:
+          oneOf:
+            - $ref: '#/components/schemas/Ort'
+            - type: 'null'
+        hinweise: { type: [string, 'null'], maxLength: 500 }
+        antwortfristStunden: { type: integer, minimum: 0, default: 24 }
+        treffpunkt:
+          oneOf:
+            - $ref: '#/components/schemas/Treffpunkt'
+            - type: 'null'
+
+    Serie:
+      allOf:
+        - $ref: '#/components/schemas/SerieSchreiben'
+        - type: object
+          required: [id, ausnahmen]
+          properties:
+            id: { type: string, format: uuid }
+            ausnahmen:
+              type: array
+              items: { $ref: '#/components/schemas/Ausnahme' }
+    SerieSchreiben:
+      type: object
+      required: [typ, titel, teamIds, wochentag, beginnZeit, endeZeit, gueltigVon, gueltigBis]
+      properties:
+        typ:
+          type: string
+          enum: [TRAINING, ANLASS]
+        titel: { type: string, examples: [Training] }
+        teamIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        wochentag:
+          type: string
+          enum: [MONTAG, DIENSTAG, MITTWOCH, DONNERSTAG, FREITAG, SAMSTAG, SONNTAG]
+        beginnZeit: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['18:30'] }
+        endeZeit: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['20:00'] }
+        gueltigVon: { type: string, format: date }
+        gueltigBis: { type: string, format: date }
+        ort:
+          oneOf:
+            - $ref: '#/components/schemas/Ort'
+            - type: 'null'
+        antwortfristStunden: { type: integer, minimum: 0, default: 24 }
+    Ausnahme:
+      type: object
+      required: [von, bis, grund]
+      properties:
+        von: { type: string, format: date }
+        bis: { type: string, format: date }
+        grund: { type: string, examples: [Weihnachtsferien] }
+
+    Antwort:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/AntwortStatus' }
+        kommentar:
+          type: [string, 'null']
+          description: Nur für die Person selbst und Coaches des Teams sichtbar (ANM-07), sonst nicht enthalten
+        geaendertAm: { type: [string, 'null'], format: date-time }
+        eingetragenVon:
+          oneOf:
+            - $ref: '#/components/schemas/PersonKurz'
+            - type: 'null'
+          description: Gesetzt, wenn stellvertretend eingetragen (ANM-12)
+        kurzfristig:
+          type: boolean
+          default: false
+          description: Abgesagt oder auf «vielleicht» nach der Antwortfrist (ANM-10)
+    AntwortSetzen:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [DABEI, NICHT_DABEI, VIELLEICHT]
+        kommentar:
+          type: [string, 'null']
+          maxLength: 200
+          description: Pflicht bei VIELLEICHT (ANM-04), freiwillig bei NICHT_DABEI (ANM-05)
+
+    Uebersicht:
+      type: object
+      required: [terminId, total, teams, coaches]
+      properties:
+        terminId: { type: string, format: uuid }
+        total:
+          $ref: '#/components/schemas/Zaehler'
+          description: Jede Spielerin einmal, auch wenn sie in mehreren Teams ist (ANM-32)
+        teams:
+          type: array
+          description: Nach Teamname sortiert
+          items: { $ref: '#/components/schemas/UebersichtTeam' }
+        coaches:
+          type: array
+          description: Coach-Block (ANM-22)
+          items:
+            type: object
+            required: [person, team, antwort]
+            properties:
+              person: { $ref: '#/components/schemas/PersonKurz' }
+              team:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+              antwort: { $ref: '#/components/schemas/Antwort' }
+    UebersichtTeam:
+      type: object
+      required: [team, zaehler, gruppen]
+      properties:
+        team:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        zaehler: { $ref: '#/components/schemas/Zaehler' }
+        gruppen:
+          type: array
+          description: Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie». Leere Gruppen fehlen.
+          items:
+            type: object
+            required: [art, name, eintraege]
+            properties:
+              gruppeId:
+                type: [string, 'null']
+                format: uuid
+                description: '`null` bei «Ohne Linie»'
+              art:
+                type: string
+                enum: [LINIE, GOALIES, OHNE_LINIE]
+              name: { type: string, examples: [Linie 1, Goalies, Ohne Linie] }
+              eintraege:
+                type: array
+                description: Nach Nachname, dann Vorname
+                items:
+                  type: object
+                  required: [person, antwort]
+                  properties:
+                    person: { $ref: '#/components/schemas/PersonKurz' }
+                    antwort: { $ref: '#/components/schemas/Antwort' }
+
+    Spiel:
+      type: object
+      required: [id, gegner, anspielzeit, heim, quelle]
+      properties:
+        id: { type: string, format: uuid }
+        gegner: { type: string, examples: [UHC Musterdorf] }
+        anspielzeit: { type: string, format: date-time }
+        heim: { type: boolean }
+        resultat: { type: [string, 'null'], pattern: '^\d{1,2}:\d{1,2}$', examples: ['5:3'] }
+        quelle: { $ref: '#/components/schemas/Quelle' }
+        suSpielId: { type: [integer, 'null'] }
+        beiSuNichtMehrVorhanden:
+          type: boolean
+          default: false
+          description: swiss unihockey liefert das Spiel nicht mehr. Wird nicht automatisch gelöscht.
+    SpielSchreiben:
+      type: object
+      required: [gegner, anspielzeit, heim]
+      properties:
+        gegner: { type: string, minLength: 1, maxLength: 80 }
+        anspielzeit: { type: string, format: date-time }
+        heim: { type: boolean }
+        resultat: { type: [string, 'null'], pattern: '^\d{1,2}:\d{1,2}$' }
+
+    Aufgebot:
+      type: object
+      required: [terminId, status, gruppen]
+      properties:
+        terminId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/AufgebotStatus' }
+        veroeffentlichtAm: { type: [string, 'null'], format: date-time }
+        anzahlAufgeboten: { type: integer, minimum: 0 }
+        gruppen:
+          type: array
+          description: Alle Spielerinnen des Teams, gruppiert wie in der Übersicht, auch ohne Antwort (AUF-21, AUF-22)
+          items:
+            type: object
+            required: [art, name, eintraege]
+            properties:
+              gruppeId: { type: [string, 'null'], format: uuid }
+              art:
+                type: string
+                enum: [LINIE, GOALIES, OHNE_LINIE]
+              name: { type: string }
+              eintraege:
+                type: array
+                items:
+                  type: object
+                  required: [person, antwort, aufgeboten]
+                  properties:
+                    person: { $ref: '#/components/schemas/PersonKurz' }
+                    antwort: { $ref: '#/components/schemas/Antwort' }
+                    aufgeboten: { type: boolean }
+
+    AbgleichErgebnis:
+      type: object
+      required: [neu, geaendert, nichtMehrVorhanden, unveraendert]
+      properties:
+        neu: { type: integer, description: Neu angelegte Spiele }
+        geaendert: { type: integer }
+        nichtMehrVorhanden: { type: integer }
+        unveraendert: { type: integer }
+        betroffeneTermine:
+          type: array
+          items: { type: string, format: uuid }
+    SuSpiel:
+      type: object
+      description: Vereinfachte Form eines Spiels, wie sie der Simulator liefert
+      required: [suSpielId, anspielzeit, heimteam, gastteam, halle]
+      properties:
+        suSpielId: { type: integer, examples: [5000002] }
+        anspielzeit: { type: string, format: date-time }
+        heimteam: { type: string }
+        gastteam: { type: string }
+        halle: { type: string }
+        mapsUrl: { type: [string, 'null'], format: uri }
+        breite: { type: [number, 'null'] }
+        laenge: { type: [number, 'null'] }
+        resultat: { type: [string, 'null'] }
+
+    Benachrichtigung:
+      type: object
+      required: [id, art, empfaenger, text, erstelltAm, gelesen]
+      properties:
+        id: { type: string, format: uuid }
+        art:
+          type: string
+          enum:
+            - ERINNERUNG
+            - KURZFRISTIGE_ABSAGE
+            - AUFGEBOT_VEROEFFENTLICHT
+            - AUFGEBOT_GEAENDERT
+            - AUFGEBOTENE_ABGEMELDET
+            - SPIEL_GEAENDERT
+            - TERMIN_ABGESAGT
+            - TERMIN_VERSCHOBEN
+          description: Entspricht BEN-01 bis BEN-07
+        empfaenger: { $ref: '#/components/schemas/PersonKurz' }
+        text: { type: string, examples: ['Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.'] }
+        terminId: { type: [string, 'null'], format: uuid }
+        erstelltAm: { type: string, format: date-time }
+        gelesen: { type: boolean }

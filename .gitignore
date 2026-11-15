@@ -1,0 +1,28 @@
+# Lokale Laufzeitdaten (PostgreSQL-Cluster, Logs)
+.local/
+
+# Playwright / Test-Artefakte
+.playwright-mcp/
+test-results/
+playwright-report/
+blob-report/
+
+# Build-Ausgaben
+target/
+build/
+dist/
+node_modules/
+.angular/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+
+# Lokale Claude-Einstellungen
+.claude/settings.local.json
+
+# Betriebssystem
+.DS_Store
+Thumbs.db

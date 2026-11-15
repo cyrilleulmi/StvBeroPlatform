@@ -44,3 +44,15 @@ Protokoll der getroffenen Entscheide, neueste zuletzt. Wer eine Anforderung änd
 | Nr. | Entscheid | Art |
 |---|---|---|
 | E-40 | Das Repo heisst `StvBeroPlatform`. Zuerst kommen alle Anforderungen als Dateien hinein. Implementiert wird noch nichts. | Entschieden |
+
+## 15.11.2026 · Produktionspipeline
+
+| Nr. | Entscheid | Art |
+|---|---|---|
+| E-50 | Features entstehen in einer Pipeline aus drei Agenten in der Claude-Cloud: Entwicklung, Review, Test. | Entschieden |
+| E-51 | Testbarkeit des Frontends für Agenten ist bei der Entwicklung wichtig. Dazu gehören API-Doku und Zustandsdiagramme. | Entschieden |
+| E-52 | Die Agenten sind Claude-Cloud-Aufgaben mit GitHub-Triggern. Der Zustand steht in Labels. Die Anleitungen sind Skills im Repo. | Angenommen |
+| E-53 | Gemergt wird nur von Cyrille. Nach Nacharbeit geht es immer zurück ins Review. Nach 3 Runden ist der PR blockiert. | Angenommen |
+| E-54 | API contract first mit OpenAPI 3.1 in `docs/api/openapi.yaml`. | Angenommen |
+| E-55 | Testbarkeit über den Accessibility-Tree (Playwright MCP), ergänzt durch `data-testid`, feste Seed-IDs, Test-Endpunkte (Reset, Uhr, Anmelden) nur in dev/test. | Angenommen |
+| E-56 | Benachrichtigungen gibt es immer in der App. E-Mail oder Push kommen als Kanal dazu. | Angenommen |
