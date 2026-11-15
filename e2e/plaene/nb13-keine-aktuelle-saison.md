@@ -52,3 +52,13 @@ Allgemein für jeden Fall:
 
 - K2.14 behoben: `keineSaisonGuard` (`frontend/src/app/kern/keine-saison.guard.ts`) auf `/keine-saison`. E2E: `nb13-keine-aktuelle-saison.spec.ts`, Block «mit aktueller Saison».
 - K2.15 bleibt ausserhalb dieses PRs (Nachbesserung #26).
+
+## Ergebnis Runde 1 (Stand `0eb25ed`)
+
+- Automatisch: Redocly-Lint ohne Befund, Backend 67 grün, E2E 74 grün (37 mobil, 37 desktop, mit axe).
+- K1.1–K1.6 bestanden (409 als Problem Details für `anna` und `alex`, 401 ohne Sitzung, Laufzeit-Vertrag 200/401/409).
+- K2.1–K2.14 bestanden, mobil; K2.1 und K2.3 zusätzlich Desktop; Hinweis hell (Desktop) und dunkel (mobil) gut lesbar.
+- K2.14 (Befund Runde 0) behoben: Direktaufruf ohne Anmeldung → `/dev-login?ziel=%2Fteams`, mit Saison → Ziel bzw. Startseite.
+- Zusatz: `?ziel=https://…` und `?ziel=//…` führen auf `/`, keine Weiterleitung nach aussen.
+- Konsole: nur die erwartete Meldung «409» zu `GET /api/ich`, keine weiteren 4xx/5xx.
+- K2.15 ausserhalb dieses PRs (#26).
