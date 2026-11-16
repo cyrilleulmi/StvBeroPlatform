@@ -1,33 +1,33 @@
-# Testplan Nachbesserung #40 · Spiele-Liste in F-05-Tests wartet auf geladene Spiele
+# Test plan follow-up fix #40 · Match list in F-05 tests waits for loaded matches
 
-Issue #40 · PR #41 · Datei `e2e/tests/f05-spieltage.spec.ts` · Anforderungen AUF-10, AUF-12, AUF-14, AUF-16, AUF-24 (nur Tests)
+Issue #40 · PR #41 · File `e2e/tests/f05-spieltage.spec.ts` · Requirements AUF-10, AUF-12, AUF-14, AUF-16, AUF-24 (tests only)
 
-Allgemein:
+General:
 
-- Die Kriterien betreffen die Testdatei selbst, keine Oberfläche und keine API.
-- Ausgangslage für alle Browser-Fälle: Datenbank läuft (`scripts/db-start.sh`), Backend Profil `test`, Frontend auf Port 4200,
-  `POST /api/test/reset`, Standard-«Jetzt» Mo 16.11.2026 06:00.
+- The criteria concern the test file itself, no UI and no API.
+- Starting point for all browser cases: database running (`scripts/db-start.sh`), backend profile `test`, frontend on port 4200,
+  `POST /api/test/reset`, default "now" Mon 16.11.2026 06:00.
 
-## K1 · Alle Prüfungen der Spiel-Liste warten automatisch (Kriterium 1)
+## K1 · All checks of the match list wait automatically (criterion 1)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Statisch | `grep -n "spiele(page)" e2e/tests/f05-spieltage.spec.ts` | Jeder Aufruf steht in `await expect.poll(() => spiele(page))`, kein `expect(await spiele(page))` mehr |
-| K1.2 Kein Warten mit fester Zeit | `grep -n waitForTimeout e2e/tests/f05-spieltage.spec.ts` | Kein Treffer |
-| K1.3 Gegenprobe verzögerte Antwort | Lokal (nicht committen) im Test «F-05 K2» vor dem Speichern `page.route('**/api/termine/*', …)` mit 2 s Verzögerung für GET einfügen, Test ausführen | Test grün in `mobil` und `desktop` (die Prüfung wartet, bis beide Spiele da sind) |
-| K1.4 Gegenprobe alter Stand | Wie K1.3, aber Zeile 109 zurück auf `expect(await spiele(page)).toEqual(…)` | Test rot mit `Received []` – beweist, dass K1.3 den ursprünglichen Fehler auslöst |
-| K1.5 Aufräumen | Änderungen aus K1.3/K1.4 verwerfen | `git status` sauber |
+| K1.1 Static | `grep -n "spiele(page)" e2e/tests/f05-spieltage.spec.ts` | Every call is inside `await expect.poll(() => spiele(page))`, no `expect(await spiele(page))` anymore |
+| K1.2 No fixed-time waits | `grep -n waitForTimeout e2e/tests/f05-spieltage.spec.ts` | No match |
+| K1.3 Counter-check delayed response | Locally (do not commit) in the test «F-05 K2», before saving, insert `page.route('**/api/termine/*', …)` with a 2 s delay for GET, run the test | Test green in `mobil` and `desktop` (the check waits until both matches are there) |
+| K1.4 Counter-check old state | As K1.3, but line 109 back to `expect(await spiele(page)).toEqual(…)` | Test red with `Received []` – proves that K1.3 triggers the original failure |
+| K1.5 Clean up | Discard the changes from K1.3/K1.4 | `git status` clean |
 
-## K2 · Wiederholungslauf besteht (Kriterium 2)
+## K2 · Repeated run passes (criterion 2)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Wiederholung | `cd e2e && npx playwright test tests/f05-spieltage.spec.ts --repeat-each 20 --trace off` | 560 bestanden (14 Tests × 20 × 2 Projekte), 0 fehlgeschlagen |
+| K2.1 Repetition | `cd e2e && npx playwright test tests/f05-spieltage.spec.ts --repeat-each 20 --trace off` | 560 passed (14 tests × 20 × 2 projects), 0 failed |
 
 ## Regression
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| R1 Backend | `cd backend && mvn test` | Alle grün |
-| R2 E2E gesamt | `cd e2e && npx playwright test --trace off` (beide Projekte, inkl. axe) | Alle grün, nur die bekannten Projekt-Skips |
-| R3 Spieltag im Browser | Reset → als `petra` über `/dev-login` → `/termine/40000000-0000-4000-8000-000000000004`, mobil 375×812 und Desktop 1280×800 | Liste «Spiele» zeigt «09:30 Team 1 – UHC Musterdorf» vor «11:45 Unihockey Beispielstadt – Team 1»; keine Konsolenfehler |
+| R1 Backend | `cd backend && mvn test` | All green |
+| R2 E2E overall | `cd e2e && npx playwright test --trace off` (both projects, incl. axe) | All green, only the known project skips |
+| R3 Match day in the browser | Reset → as `petra` via `/dev-login` → `/termine/40000000-0000-4000-8000-000000000004`, mobile 375×812 and desktop 1280×800 | List «Spiele» shows «09:30 Team 1 – UHC Musterdorf» before «11:45 Unihockey Beispielstadt – Team 1»; no console errors |
