@@ -35,12 +35,12 @@ export class Start implements OnInit {
   protected readonly terminLaedt = signal(true);
   protected readonly terminFehler = signal<string | null>(null);
 
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.jetzt));
+  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
 
   async ngOnInit(): Promise<void> {
     void this.terminLaden();
     try {
-      this.kacheln.set(await firstValueFrom(this.http.get<Kachel[]>('/api/kacheln')));
+      this.kacheln.set(await firstValueFrom(this.http.get<Kachel[]>('/api/tiles')));
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {
@@ -50,17 +50,17 @@ export class Start implements OnInit {
 
   /** «Training Di 17.11. 18:30–20:00 · Team 1 + Team 2» */
   protected beschreibung(t: TerminKurz): string {
-    return `${terminDatum(t.beginn, this.jahr())} · ${TEXTE.termine.zeitraum(uhrzeit(t.beginn), uhrzeit(t.ende))} · ${TEXTE.termine.teamsVerbinden(t.teams.map((x) => x.name))}`;
+    return `${terminDatum(t.start, this.jahr())} · ${TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end))} · ${TEXTE.termine.teamsVerbinden(t.teams.map((x) => x.name))}`;
   }
 
   protected kartenName(t: TerminKurz): string {
-    return TEXTE.termine.karte(t.titel, terminDatum(t.beginn, this.jahr()), uhrzeit(t.beginn));
+    return TEXTE.termine.karte(t.title, terminDatum(t.start, this.jahr()), uhrzeit(t.start));
   }
 
   /** Nach einer Antwort: Zähler nachladen, ohne die Seite neu zu laden. */
   protected async nachladen(id: string): Promise<void> {
     try {
-      this.naechster.set(await firstValueFrom(this.http.get<TerminKurz>(`/api/termine/${id}`)));
+      this.naechster.set(await firstValueFrom(this.http.get<TerminKurz>(`/api/events/${id}`)));
     } catch (e) {
       this.terminFehler.set(fehlertext(e));
     }
@@ -68,8 +68,8 @@ export class Start implements OnInit {
 
   private async terminLaden(): Promise<void> {
     try {
-      const termine = await firstValueFrom(this.http.get<TerminKurz[]>('/api/termine'));
-      this.naechster.set(termine.find((t) => t.status !== 'ABGESAGT') ?? null);
+      const termine = await firstValueFrom(this.http.get<TerminKurz[]>('/api/events'));
+      this.naechster.set(termine.find((t) => t.status !== 'CANCELLED') ?? null);
     } catch (e) {
       this.terminFehler.set(fehlertext(e));
     } finally {

@@ -12,9 +12,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
-         * @description Ist keine Saison als aktuell festgelegt (SAI-03), antwortet die API mit 409, Titel «Keine
-         *     aktuelle Saison», Regel SAI-03. Die Oberfläche zeigt dann einen Hinweis statt der Startseite.
+         * Signed-in person with the team memberships of the current season
+         * @description If no season is set as current (SAI-03), the API responds with 409, title «Keine
+         *     aktuelle Saison», rule SAI-03. The user interface then shows a notice instead of the start page.
          */
         get: operations["getMe"];
         put?: never;
@@ -32,7 +32,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Kacheln, die die angemeldete Person sehen darf (NF-11, NF-12) */
+        /** Tiles the signed-in person may see (NF-11, NF-12) */
         get: operations["listTiles"];
         put?: never;
         post?: never;
@@ -50,9 +50,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Ob eine gültige Sitzung besteht
-         * @description Öffentlich und immer 200, damit die Oberfläche ohne Fehlerantwort prüfen kann, ob sie zur
-         *     Anmeldung weiterleiten muss. Die Daten der Person liefert `GET /api/ich`.
+         * Whether a valid session exists
+         * @description Public and always 200, so the user interface can check without an error response whether it
+         *     has to redirect to the login. The person's data comes from `GET /api/me`.
          */
         get: operations["getSession"];
         put?: never;
@@ -73,8 +73,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Sitzung beenden und Sitzungs-Cookie löschen
-         * @description Auch ohne gültige Sitzung erfolgreich, damit das Abmelden immer funktioniert.
+         * End the session and delete the session cookie
+         * @description Succeeds even without a valid session, so logging out always works.
          */
         post: operations["logout"];
         delete?: never;
@@ -90,14 +90,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Alle Saisons, neueste zuerst */
+        /** All seasons, newest first */
         get: operations["listSeasons"];
         put?: never;
         /**
-         * Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
-         * @description Die neue Saison ist noch nicht aktuell. Mit `uebernehmenAus` werden die Teams und
-         *     Teamzugehörigkeiten dieser Saison übernommen. Name schon vergeben oder Zeitraum überschneidet
-         *     sich mit einer anderen Saison: 409.
+         * Create a season, optionally with carry-over from the previous season (SAI-04, admin)
+         * @description The new season is not current yet. With `copyFrom`, the teams and team memberships of that
+         *     season are carried over. Name already taken or period overlaps with another season: 409.
          */
         post: operations["createSeason"];
         delete?: never;
@@ -117,7 +116,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Saison zur aktuellen Saison machen (SAI-03, SAI-06, Admin) */
+        /** Make a season the current season (SAI-03, SAI-06, admin) */
         post: operations["activateSeason"];
         delete?: never;
         options?: never;
@@ -132,12 +131,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Teams einer Saison. Ohne Admin-Rechte nur die eigenen. */
+        /** Teams of a season. Without admin permission only the person's own teams. */
         get: operations["listTeams"];
         put?: never;
         /**
-         * Team anlegen (Admin)
-         * @description Das Team gehört ab sofort zur angegebenen Saison. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Create a team (admin)
+         * @description The team belongs to the given season from now on. Archived seasons are read-only (409, SAI-02).
          */
         post: operations["createTeam"];
         delete?: never;
@@ -155,12 +154,12 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Team mit Coaches und Spielerinnen nach Gruppe */
+        /** Team with coaches and players by group */
         get: operations["getTeam"];
         /**
-         * Team umbenennen (Admin)
-         * @description Der Name gilt pro Saison. Umbenannt wird nur in der angegebenen Saison (Standard: aktuelle),
-         *     alte Saisons behalten den damaligen Namen. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Rename a team (admin)
+         * @description The name applies per season. Only the given season is renamed (default: current); older
+         *     seasons keep the name they had. Archived seasons are read-only (409, SAI-02).
          */
         put: operations["renameTeam"];
         post?: never;
@@ -182,9 +181,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
-         * @description Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die
-         *     API mit 409 (Regel PTF-04). Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Add a person with a team role to the team (PTF-03, PTF-04, admin)
+         * @description A person has exactly one team role per team and season. If the person is already a member, the
+         *     API responds with 409 (rule PTF-04). Archived seasons are read-only (409, SAI-02).
          */
         post: operations["addMember"];
         delete?: never;
@@ -205,15 +204,15 @@ export interface paths {
         };
         get?: never;
         /**
-         * Funktion im Team ändern (Admin)
-         * @description Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
-         *     Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Change the team role (admin)
+         * @description If a player becomes a coach, she loses her line assignment in this team.
+         *     Archived seasons are read-only (409, SAI-02).
          */
         put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
-         * @description Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Remove a person from the team (admin). Existing responses are kept.
+         * @description Archived seasons are read-only (409, SAI-02).
          */
         delete: operations["removeMember"];
         options?: never;
@@ -231,15 +230,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»
-         * @description Aktuelle Saison. Für Mitglieder des Teams (jede Funktion) und Admins, sonst 403.
+         * Lines and goalies of a team with their players, plus «Ohne Linie» (no line)
+         * @description Current season. For members of the team (any team role) and admins, otherwise 403.
          */
         get: operations["getLineup"];
         put?: never;
         /**
-         * Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.
-         * @description Gilt für die aktuelle Saison (LIN-11). Ohne `reihenfolge` kommt die Linie ans Ende, sonst an
-         *     diese Position (die übrigen rücken nach). Namen sind pro Team eindeutig, sonst 409 (LIN-09).
+         * Create a line (LIN-07, coach). Each team automatically has exactly one goalies group.
+         * @description Applies to the current season (LIN-11). Without `sortOrder` the line goes to the end, otherwise to
+         *     that position (the others move down). Names are unique per team, otherwise 409 (LIN-09).
          */
         post: operations["createLine"];
         delete?: never;
@@ -260,13 +259,13 @@ export interface paths {
         };
         get?: never;
         /**
-         * Linie umbenennen oder Reihenfolge ändern (Coach)
-         * @description Mit `reihenfolge` rückt die Linie an diese Position, die übrigen werden neu nummeriert (1, 2, …).
-         *     Goalies lassen sich weder umbenennen noch verschieben (409, LIN-05).
+         * Rename a line or change its order (coach)
+         * @description With `sortOrder` the line moves to that position and the others are renumbered (1, 2, …).
+         *     Goalies can neither be renamed nor moved (409, LIN-05).
          */
         put: operations["updateLine"];
         post?: never;
-        /** Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409). */
+        /** Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409). */
         delete: operations["deleteLine"];
         options?: never;
         head?: never;
@@ -285,9 +284,9 @@ export interface paths {
         };
         get?: never;
         /**
-         * Spielerin einer Gruppe zuweisen oder auf «ohne Linie» setzen (LIN-02, LIN-07, LIN-10)
-         * @description Ersetzt eine bestehende Zuweisung im selben Team (höchstens eine Gruppe pro Team).
-         *     Nur Personen mit Funktion `PLAYER` in diesem Team, sonst 409.
+         * Assign a player to a group or set her to no line (LIN-02, LIN-07, LIN-10)
+         * @description Replaces an existing assignment in the same team (at most one group per team).
+         *     Only persons with team role `PLAYER` in this team, otherwise 409.
          */
         put: operations["setAssignment"];
         post?: never;
@@ -304,10 +303,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Alle Personen (Admin) */
+        /** All persons (admin) */
         get: operations["listPersons"];
         put?: never;
-        /** Person anlegen (Admin) */
+        /** Create a person (admin) */
         post: operations["createPerson"];
         delete?: never;
         options?: never;
@@ -324,11 +323,11 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Person mit allen Teamzugehörigkeiten (Admin) */
+        /** Person with all team memberships (admin) */
         get: operations["getPerson"];
         /**
-         * Person ändern (Admin)
-         * @description Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, RR-04).
+         * Update a person (admin)
+         * @description The admin permission cannot be taken away from the last person who has it (409, RR-04).
          */
         put: operations["updatePerson"];
         post?: never;
@@ -345,14 +344,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Termine der eigenen Teams mit eigener Antwort (TER-13) */
+        /** Events of the person's own teams with the person's own response (TER-13) */
         get: operations["listEvents"];
         put?: never;
         /**
-         * Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
-         * @description Die Person muss Admin oder Coach in mindestens einem der angegebenen Teams sein (TER-01, RR-06), sonst 403.
-         *     Ein Spieltag hat genau ein Team (AUF-03). Ein Termin in der Vergangenheit ergibt 400, einer in einer
-         *     Saison im Archiv 409 (SAI-02). Ohne `antwortfristStunden` gelten 24 Stunden (TER-10).
+         * Create a single event, match day or other event (TER-11, AUF-16, coach)
+         * @description The person must be an admin or a coach in at least one of the given teams (TER-01, RR-06), otherwise 403.
+         *     A match day has exactly one team (AUF-03). An event in the past gives 400, one in an archived
+         *     season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
          */
         post: operations["createEvent"];
         delete?: never;
@@ -370,15 +369,15 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Termin mit eigener Antwort, bei Spieltag mit Spielen, Treffpunkt und eigenem Aufgebotsstatus */
+        /** Event with the person's own response; for a match day with matches, meeting point and own call-up status */
         get: operations["getEvent"];
         /**
-         * Termin ändern oder verschieben (TER-06, TER-12, Coach)
-         * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
-         *     Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
-         *     Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
-         *     Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
-         *     lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05, Annahme O-48).
+         * Update or reschedule an event (TER-06, TER-12, coach)
+         * @description A changed start time counts as rescheduling (`rescheduled`) and notifies all members of the teams involved (BEN-07).
+         *     Responses are kept. For an event of a series, the change applies only to this event; it no longer takes over
+         *     later changes to the series (TER-06). Cancelled or past events: 409.
+         *     Match day moved to another day: manually entered matches move with it. If it has matches from swiss unihockey,
+         *     it can only be rescheduled on the same day (422 on field `start`, rule SUH-05, assumption O-48).
          */
         put: operations["updateEvent"];
         post?: never;
@@ -399,7 +398,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Termin absagen (TER-06, TER-12, Coach). Danach sind keine Antworten mehr möglich. */
+        /** Cancel an event (TER-06, TER-12, coach). After that, no more responses are possible. */
         post: operations["cancelEvent"];
         delete?: never;
         options?: never;
@@ -417,9 +416,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
-         * @description Erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Rechte wie bei
-         *     `terminAnlegen`. Der Zeitraum dauert höchstens ein Jahr (400).
+         * Create a series; creates the events in the validity period (TER-05, coach)
+         * @description Creates an event for each matching weekday in the validity period that has not started yet. Permissions as for
+         *     `createEvent`. The period lasts at most one year (400).
          */
         post: operations["createSeries"];
         delete?: never;
@@ -437,13 +436,13 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Serie mit Ausnahmen */
+        /** Series with its series exceptions */
         get: operations["getSeries"];
         /**
-         * Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
-         * @description Künftige Termine übernehmen die neuen Angaben. Einzeln geänderte und abgesagte Termine bleiben unverändert.
-         *     Termine, die nicht mehr zur Serie passen, werden entfernt bzw. abgesagt («Serie geändert»), wenn schon
-         *     jemand geantwortet hat.
+         * Update a series. Applies to future events; given responses are kept (TER-08, coach).
+         * @description Future events take over the new data. Individually changed and cancelled events stay unchanged.
+         *     Events that no longer fit the series are removed, or cancelled («Serie geändert») if someone
+         *     has already responded.
          */
         put: operations["updateSeries"];
         post?: never;
@@ -465,9 +464,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
-         * @description Künftige geplante Termine der Serie im Zeitraum werden entfernt. Hat schon jemand geantwortet, wird der
-         *     Termin stattdessen abgesagt, Grund = Grund der Ausnahme (O-19).
+         * Exclude a period from the series, e.g. holidays (TER-07, coach)
+         * @description Future planned events of the series in the period are removed. If someone has already responded, the
+         *     event is cancelled instead, with the reason of the series exception as cancellation reason (O-19).
          */
         post: operations["createSeriesException"];
         delete?: never;
@@ -486,9 +485,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Antworten nach Team und Gruppe, Coach-Block, Zähler (ANM-20 bis ANM-32)
-         * @description Kommentare sind nur enthalten, wenn die anfragende Person Coach im jeweiligen Team ist
-         *     oder es um ihre eigene Antwort geht (ANM-07). Leere Gruppen fehlen.
+         * Responses by team and group, coach block, counts (ANM-20 to ANM-32)
+         * @description Comments are only included if the requesting person is a coach in the respective team
+         *     or it is their own response (ANM-07). Empty groups are left out.
          */
         get: operations["getOverview"];
         put?: never;
@@ -510,11 +509,11 @@ export interface paths {
         };
         get?: never;
         /**
-         * Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)
-         * @description Nur Mitglieder eines beteiligten Teams (jede Funktion), sonst 403. `MAYBE` verlangt einen
-         *     Kommentar (sonst 422, Feld `kommentar`). Ein Wechsel von `ATTENDING` weg nach der Antwortfrist ist eine
-         *     kurzfristige Absage (`kurzfristig`) und benachrichtigt die Coaches (ANM-10, BEN-02). Die Markierung
-         *     bleibt bis zum nächsten «dabei». Bei abgesagten und vergangenen Terminen 409 (TER-06).
+         * Set or change the person's own response (ANM-01 to ANM-10)
+         * @description Only members of a team involved (any team role), otherwise 403. `MAYBE` requires a
+         *     comment (otherwise 422, field `comment`). A change away from `ATTENDING` after the response deadline is a
+         *     late cancellation (`lateCancellation`) and notifies the coaches (ANM-10, BEN-02). The flag
+         *     stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06).
          */
         put: operations["setOwnResponse"];
         post?: never;
@@ -536,10 +535,10 @@ export interface paths {
         };
         get?: never;
         /**
-         * Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)
-         * @description Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist, und Admins (für jedes Mitglied
-         *     eines beteiligten Teams). Sonst 403. Gehört die Person zu keinem beteiligten Team, 404. Es gelten
-         *     dieselben Regeln wie bei der eigenen Antwort; `eingetragenVon` ist die anfragende Person (ANM-12).
+         * Respond on behalf of a person (ANM-11, ANM-12, RR-06)
+         * @description Only coaches of a team in which the person is a player for the event, and admins (for every member
+         *     of a team involved). Otherwise 403. If the person belongs to no team involved, 404. The same rules
+         *     apply as for the person's own response; `enteredBy` is the requesting person (ANM-12).
          */
         put: operations["setResponseOnBehalf"];
         post?: never;
@@ -561,9 +560,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
-         * @description Nur bei Spieltagen (sonst 409, Regel AUF-01), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
-         *     Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
+         * Add a match to a match day (AUF-14, coach)
+         * @description Only for match days (otherwise 409, rule AUF-01), as long as the match day is neither cancelled nor over (409, TER-06).
+         *     The start time lies on the day of the match day (otherwise 400 on field `startTime`).
          */
         post: operations["addMatch"];
         delete?: never;
@@ -584,16 +583,16 @@ export interface paths {
         };
         get?: never;
         /**
-         * Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
-         * @description Das Resultat (Heim:Gast) lässt sich auch nach dem Spieltag erfassen; nur ein abgesagter Spieltag ergibt 409 (TER-06).
-         *     Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409, Regel SUH-06).
+         * Update a match, e.g. enter the result (AUF-15, coach). Imported fields are read-only (409).
+         * @description The result (home:away) can also be entered after the match day; only a cancelled match day gives 409 (TER-06).
+         *     For matches from swiss unihockey, opponent, start time and home/away are read-only (409, rule SUH-06).
          */
         put: operations["updateMatch"];
         post?: never;
         /**
-         * Von Hand erfasstes Spiel löschen (Coach)
-         * @description Spiele aus swiss unihockey nur, wenn swiss unihockey sie nicht mehr liefert (sonst 409, Regel SUH-06).
-         *     Abgesagte oder vergangene Spieltage: 409 (TER-06).
+         * Delete a manually entered match (coach)
+         * @description Matches from swiss unihockey only if swiss unihockey no longer delivers them (otherwise 409, rule SUH-06).
+         *     Cancelled or past match days: 409 (TER-06).
          */
         delete: operations["deleteMatch"];
         options?: never;
@@ -611,16 +610,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
-         * @description Nur Coaches des Teams und Admins (sonst 403). Kein Spieltag: 409 (Regel AUF-02). Coaches stehen nicht in der
-         *     Auswahl (AUF-28). Gruppen wie in der Übersicht, leere Gruppen fehlen.
+         * Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)
+         * @description Only coaches of the team and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
+         *     the selection (AUF-28). Groups as in the overview; empty groups are left out.
          */
         get: operations["getCallUp"];
         /**
-         * Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
-         * @description Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
-         *     Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
-         *     Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Wer neu dazukommt oder herausfällt, wird benachrichtigt (BEN-05).
+         * Save the selection (coach). If the call-up is published, the players affected are notified (AUF-27).
+         * @description Replaces the whole selection. Every player of the team can be called up, regardless of her response (AUF-22).
+         *     Coaches or persons outside the team: 422 (rule AUF-28). Not a match day, cancelled or over: 409.
+         *     A published call-up stays published. Players who are added or removed are notified (BEN-05).
          */
         put: operations["setCallUp"];
         post?: never;
@@ -642,9 +641,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
-         * @description Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
-         *     Spielerinnen `meinAufgebot`. Sie werden benachrichtigt (BEN-03).
+         * Publish the call-up and notify all players of the team (AUF-23, AUF-24, coach)
+         * @description Only a draft with at least one player (otherwise 409, rule AUF-23), only once. After that the
+         *     players see `myCallUp`. They are notified (BEN-03).
          */
         post: operations["publishCallUp"];
         delete?: never;
@@ -664,9 +663,9 @@ export interface paths {
         };
         get?: never;
         /**
-         * Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
-         * @description Die Team-ID findet man auf swissunihockey.ch in der Adresse der Team-Seite. Eine Team-ID gehört zu
-         *     höchstens einem Team (sonst 409). Das Lösen lässt bereits importierte Spieltage unverändert.
+         * Link a team to swiss unihockey or remove the link (SUH-02, admin)
+         * @description The team ID can be found on swissunihockey.ch in the address of the team page. A team ID belongs to
+         *     at most one team (otherwise 409). Removing the link leaves already imported match days unchanged.
          */
         put: operations["linkSu"];
         post?: never;
@@ -688,14 +687,14 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
-         * @description Gleicht die Spiele des Teams in der aktuellen Saison ab. Spiele am selben Tag in derselben Halle werden
-         *     ein Spieltag (SUH-04). Geänderte Spiele werden übernommen, Treffpunkt, Hinweise, Antworten und Aufgebot
-         *     bleiben (SUH-05, SUH-06), alle Mitglieder des Teams werden benachrichtigt (BEN-06). Spiele, die swiss
-         *     unihockey nicht mehr liefert, werden markiert, nicht gelöscht. Von Hand erfasste Spieltage bleiben
-         *     unberührt (SUH-10). 409, wenn das Team nicht verknüpft ist oder nicht zur aktuellen Saison gehört.
-         *     502, wenn swiss unihockey nicht erreichbar ist oder Unerwartetes liefert: Dann ändert sich nichts (SUH-09).
-         *     Derselbe Abgleich läuft täglich für alle verknüpften Teams.
+         * Run the sync now instead of waiting for the daily run (SUH-03, admin)
+         * @description Syncs the team's matches in the current season. Matches on the same day in the same hall become
+         *     one match day (SUH-04). Changed matches are taken over; meeting point, notes, responses and call-up
+         *     are kept (SUH-05, SUH-06), and all members of the team are notified (BEN-06). Matches that swiss
+         *     unihockey no longer delivers are marked, not deleted. Manually entered match days stay
+         *     untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
+         *     502 if swiss unihockey is unavailable or delivers something unexpected: then nothing changes (SUH-09).
+         *     The same sync runs daily for all linked teams.
          */
         post: operations["syncSu"];
         delete?: never;
@@ -712,14 +711,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Eigene Benachrichtigungen, neueste zuerst (BEN-12)
-         * @description Nur die eigenen. `ungelesen=true` liefert nur ungelesene (Zähler in der Navigation).
-         *     Benachrichtigt wird bei: Erinnerung 12 Stunden vor der Antwortfrist an alle ohne Antwort, einmal pro
-         *     Person und Termin (BEN-01, BEN-13); kurzfristiger Absage an die Coaches der Teams, in denen die Person
-         *     Spielerin ist (BEN-02, O-17); Abmeldung einer Aufgebotenen an dieselben Coaches (BEN-04);
-         *     Veröffentlichung an alle Spielerinnen des Teams (BEN-03); Änderung eines veröffentlichten Aufgebots an
-         *     neu Aufgebotene und nicht mehr Aufgebotene (BEN-05); Absage und Verschiebung an alle Mitglieder der
-         *     beteiligten Teams (BEN-07). Wer etwas auslöst, wird darüber nicht benachrichtigt.
+         * The person's own notifications, newest first (BEN-12)
+         * @description Only the person's own. `unread=true` returns only unread ones (counter in the navigation).
+         *     Notifications are sent for: a reminder 12 hours before the response deadline to everyone without a response,
+         *     once per person and event (BEN-01, BEN-13); a late cancellation to the coaches of the teams in which the
+         *     person is a player (BEN-02, O-17); a called-up player declining, to the same coaches (BEN-04);
+         *     publishing a call-up to all players of the team (BEN-03); a change to a published call-up to newly
+         *     called-up players and players no longer called up (BEN-05); cancellation and rescheduling to all members
+         *     of the teams involved (BEN-07). Whoever triggers something is not notified about it.
          */
         get: operations["listNotifications"];
         put?: never;
@@ -742,8 +741,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Als gelesen markieren
-         * @description Mehrfach markieren ändert nichts (204). Die Benachrichtigung einer anderen Person: 403 (RR-07).
+         * Mark as read
+         * @description Marking more than once changes nothing (204). Another person's notification: 403 (RR-07).
          */
         post: operations["markNotificationRead"];
         delete?: never;
@@ -762,8 +761,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen
-         * @description Seed siehe docs/testdaten.md. Nur Profile dev und test.
+         * Reset the database to the seed, the clock to default and the simulator
+         * @description For the seed see docs/test-data.md. Only profiles dev and test.
          */
         post: operations["testReset"];
         delete?: never;
@@ -779,12 +778,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Aktuelle Backend-Zeit */
+        /** Current backend time */
         get: operations["testGetClock"];
-        /** Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus. */
+        /** Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately. */
         put: operations["testSetClock"];
         post?: never;
-        /** Wieder die echte Zeit verwenden */
+        /** Use the real time again */
         delete: operations["testReleaseClock"];
         options?: never;
         head?: never;
@@ -801,7 +800,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her. */
+        /** Mark no season as current any more (state «no current season»). Reset restores the seed. */
         delete: operations["testRemoveCurrentSeason"];
         options?: never;
         head?: never;
@@ -817,7 +816,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ohne Passwort als Seed-Person anmelden. Setzt das Sitzungs-Cookie. */
+        /** Log in as a seed person without a password. Sets the session cookie. */
         post: operations["testLogin"];
         delete?: never;
         options?: never;
@@ -832,7 +831,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Personen mit Schlüssel für die Testmodus-Anmeldung (/dev-login) */
+        /** Persons with their key for the test mode login (/dev-login) */
         get: operations["testListPersons"];
         put?: never;
         post?: never;
@@ -849,7 +848,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed */
+        /** All notifications of all persons since the last reset, including the seed */
         get: operations["testListNotifications"];
         put?: never;
         post?: never;
@@ -867,7 +866,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert */
+        /** Set the data the simulator delivers for a swiss unihockey team ID */
         put: operations["testSetSuMatches"];
         post?: never;
         delete?: never;
@@ -880,11 +879,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description RFC 9457 Problem Details. `detail` ist ein deutscher Text, der direkt angezeigt werden kann. */
+        /** @description RFC 9457 Problem Details. `title`, `detail` and `fields[].message` are German texts that can be shown to users directly. `type`, `rule` and `fields[].field` are machine-readable and English. */
         Problem: {
             /**
              * Format: uri
-             * @example urn:stv:fehler:kommentar-pflicht
+             * @example urn:stv:problem:comment-required
              */
             type?: string;
             /** @example Kommentar fehlt */
@@ -894,25 +893,25 @@ export interface components {
             /** @example Bei «vielleicht» ist ein Kommentar Pflicht. */
             detail?: string;
             /**
-             * @description Verletzte Anforderung
+             * @description Violated requirement
              * @example ANM-04
              */
             rule?: string;
             fields?: {
-                /** @example kommentar */
+                /** @example comment */
                 field: string;
                 message: string;
             }[];
         };
         /**
-         * @description Erweiterbar (PTF-06). Clients behandeln unbekannte Werte wie ein Mitglied ohne Sonderrechte.
+         * @description Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
          * @enum {string}
          */
         TeamRole: "PLAYER" | "COACH";
         /** @enum {string} */
         EventType: "PRACTICE" | "MATCH_DAY" | "OTHER";
         /**
-         * @description Ob ein Termin vorbei ist, ergibt sich aus `end` und der Backend-Uhr.
+         * @description Whether an event is over follows from `end` and the backend clock.
          * @enum {string}
          */
         EventStatus: "PLANNED" | "CANCELLED";
@@ -955,7 +954,7 @@ export interface components {
             memberships: components["schemas"]["TeamMembership"][];
             /**
              * Format: date-time
-             * @description Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
+             * @description Time of the backend clock when loading, e.g. for «show the year only if it is not the current one» (F-03)
              */
             now: string;
         };
@@ -968,7 +967,7 @@ export interface components {
             /** @example Anwesenheit */
             title: string;
             /**
-             * @description Lucide-Icon-Name
+             * @description Lucide icon name
              * @example calendar-check
              */
             icon: string;
@@ -976,10 +975,10 @@ export interface components {
             route: string;
             /** @enum {string} */
             color: "primary" | "blue" | "mustard" | "coral";
-            /** @description Kurzer Status, z.B. «2 offen» */
+            /** @description Short status, e.g. «2 offen» */
             hint?: string | null;
         };
-        /** @description Seed-Person mit Schlüssel aus docs/testdaten.md. Nur Profile dev und test. */
+        /** @description Seed person with key from docs/test-data.md. Only profiles dev and test. */
         TestPerson: {
             /** @example petra */
             loginKey: string;
@@ -999,7 +998,7 @@ export interface components {
             /** Format: date */
             endDate: string;
             current: boolean;
-            /** @description Saison vor der aktuellen. Nur lesbar (SAI-02). */
+            /** @description Season before the current one. Read-only (SAI-02). */
             archived: boolean;
         };
         NewSeason: {
@@ -1011,7 +1010,7 @@ export interface components {
             endDate: string;
             /**
              * Format: uuid
-             * @description Saison, deren Teams, Zugehörigkeiten und Linien übernommen werden (SAI-04)
+             * @description Season whose teams, memberships and lines are carried over (SAI-04)
              */
             copyFrom?: string | null;
         };
@@ -1043,7 +1042,7 @@ export interface components {
             seasonId: string;
             /**
              * Format: uuid
-             * @description Nur bei Funktion PLAYER
+             * @description Only for team role PLAYER
              */
             groupId?: string | null;
         };
@@ -1058,14 +1057,14 @@ export interface components {
             type: components["schemas"]["GroupType"];
             /** @example Linie 1 */
             name: string;
-            /** @description Nur bei LINE */
+            /** @description Only for LINE */
             sortOrder?: number | null;
         };
         LineInput: {
             name: string;
             sortOrder?: number;
         };
-        /** @description Alle Gruppen eines Teams in Anzeigereihenfolge, auch leere */
+        /** @description All groups of a team in display order, including empty ones */
         Lineup: {
             groups: (components["schemas"]["Group"] & {
                 players: components["schemas"]["PersonSummary"][];
@@ -1081,7 +1080,7 @@ export interface components {
             address?: string | null;
             /**
              * Format: uri
-             * @description Google-Maps-Link (AUF-10). Muss mit https:// beginnen.
+             * @description Google Maps link (AUF-10). Must start with https://.
              */
             mapsUrl?: string | null;
             latitude?: number | null;
@@ -1118,7 +1117,7 @@ export interface components {
             /** Format: date-time */
             responseDeadline: string;
             myResponse: components["schemas"]["Response"];
-            /** @description Gesamtzähler Spielerinnen */
+            /** @description Total counts of players */
             counts?: components["schemas"]["Counts"];
             /** Format: uuid */
             seriesId?: string | null;
@@ -1128,13 +1127,13 @@ export interface components {
             notes?: string | null;
             responseDeadlineHours?: number;
             meetingPoint?: components["schemas"]["MeetingPoint"] | null;
-            /** @description Nur bei MATCH_DAY, nach Anspielzeit sortiert */
+            /** @description Only for MATCH_DAY, sorted by start time */
             matches?: components["schemas"]["Match"][];
-            /** @description Nur bei MATCH_DAY. Wer nicht Coach des Teams oder Admin ist, sieht vor der Veröffentlichung NONE (AUF-23). */
+            /** @description Only for MATCH_DAY. Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23). */
             callUpStatus?: components["schemas"]["CallUpStatus"];
-            /** @description Nur bei MATCH_DAY und Funktion PLAYER */
+            /** @description Only for MATCH_DAY and team role PLAYER */
             myCallUp?: components["schemas"]["MyCallUp"] | null;
-            /** @description Für die Anzeige von Coach-Aktionen */
+            /** @description For showing coach actions */
             canEdit?: boolean;
         };
         EventInput: {
@@ -1148,7 +1147,7 @@ export interface components {
             location?: components["schemas"]["Location"] | null;
             notes?: string | null;
             /**
-             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @description Hours before the start (TER-09, TER-10)
              * @default 24
              */
             responseDeadlineHours: number;
@@ -1157,7 +1156,7 @@ export interface components {
         Series: components["schemas"]["SeriesInput"] & {
             /** Format: uuid */
             id: string;
-            /** @description Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (TER-11) */
+            /** @description All teams of the series by name, with the name in the season of the series (TER-11) */
             teams: components["schemas"]["Team"][];
             exceptions: components["schemas"]["SeriesException"][];
         };
@@ -1179,7 +1178,7 @@ export interface components {
             validUntil: string;
             location?: components["schemas"]["Location"] | null;
             /**
-             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @description Hours before the start (TER-09, TER-10)
              * @default 24
              */
             responseDeadlineHours: number;
@@ -1194,14 +1193,14 @@ export interface components {
         };
         Response: {
             status: components["schemas"]["ResponseStatus"];
-            /** @description Nur für die Person selbst und Coaches des Teams sichtbar (ANM-07), sonst nicht enthalten */
+            /** @description Only visible to the person themselves and the coaches of the team (ANM-07), otherwise not included */
             comment?: string | null;
             /** Format: date-time */
             changedAt?: string | null;
-            /** @description Gesetzt, wenn stellvertretend eingetragen (ANM-12) */
+            /** @description Set if entered on behalf of the person (ANM-12) */
             enteredBy?: components["schemas"]["PersonSummary"] | null;
             /**
-             * @description Abgesagt oder auf «vielleicht» nach der Antwortfrist (ANM-10)
+             * @description Changed to `DECLINED` or `MAYBE` after the response deadline (ANM-10)
              * @default false
              */
             lateCancellation: boolean;
@@ -1209,17 +1208,17 @@ export interface components {
         ResponseInput: {
             /** @enum {string} */
             status: "ATTENDING" | "DECLINED" | "MAYBE";
-            /** @description Pflicht bei MAYBE (ANM-04), freiwillig bei DECLINED (ANM-05) */
+            /** @description Required for MAYBE (ANM-04), optional for DECLINED (ANM-05) */
             comment?: string | null;
         };
         Overview: {
             /** Format: uuid */
             eventId: string;
-            /** @description Jede Spielerin einmal, auch wenn sie in mehreren Teams ist (ANM-32) */
+            /** @description Each player once, even if she is in several teams (ANM-32) */
             total: components["schemas"]["Counts"];
-            /** @description Nach Teamname sortiert */
+            /** @description Sorted by team name */
             teams: components["schemas"]["OverviewTeam"][];
-            /** @description Coach-Block (ANM-22) */
+            /** @description Coach block (ANM-22) */
             coaches: {
                 person: components["schemas"]["PersonSummary"];
                 team: {
@@ -1237,11 +1236,11 @@ export interface components {
                 name: string;
             };
             counts: components["schemas"]["Counts"];
-            /** @description Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie». Leere Gruppen fehlen. */
+            /** @description Lines by sort order, then goalies, then «Ohne Linie» (no line). Empty groups are left out. */
             groups: {
                 /**
                  * Format: uuid
-                 * @description `null` bei «Ohne Linie»
+                 * @description `null` for «Ohne Linie» (no line)
                  */
                 groupId?: string | null;
                 /** @enum {string} */
@@ -1252,7 +1251,7 @@ export interface components {
                  * @example Ohne Linie
                  */
                 name: string;
-                /** @description Nach Nachname, dann Vorname */
+                /** @description By last name, then first name */
                 entries: {
                     person: components["schemas"]["PersonSummary"];
                     response: components["schemas"]["Response"];
@@ -1272,7 +1271,7 @@ export interface components {
             source: components["schemas"]["MatchSource"];
             suMatchId?: number | null;
             /**
-             * @description swiss unihockey liefert das Spiel nicht mehr. Wird nicht automatisch gelöscht.
+             * @description swiss unihockey no longer delivers the match. It is not deleted automatically.
              * @default false
              */
             missingAtSu: boolean;
@@ -1291,7 +1290,7 @@ export interface components {
             /** Format: date-time */
             publishedAt?: string | null;
             calledUpCount?: number;
-            /** @description Alle Spielerinnen des Teams, gruppiert wie in der Übersicht, auch ohne Antwort (AUF-21, AUF-22) */
+            /** @description All players of the team, grouped as in the overview, including those without a response (AUF-21, AUF-22) */
             groups: {
                 /** Format: uuid */
                 groupId?: string | null;
@@ -1306,14 +1305,14 @@ export interface components {
             }[];
         };
         SyncResult: {
-            /** @description Neu angelegte Spiele */
+            /** @description Newly created matches */
             created: number;
             changed: number;
             missing: number;
             unchanged: number;
             affectedEvents?: string[];
         };
-        /** @description Vereinfachte Form eines Spiels, wie sie der Simulator liefert */
+        /** @description Simplified form of a match as the simulator delivers it */
         SuMatch: {
             /** @example 5000002 */
             suMatchId: number;
@@ -1335,7 +1334,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /**
-             * @description Entspricht BEN-01 bis BEN-07
+             * @description Corresponds to BEN-01 to BEN-07
              * @enum {string}
              */
             type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED";
@@ -1350,7 +1349,7 @@ export interface components {
         };
     };
     responses: {
-        /** @description Nicht angemeldet */
+        /** @description Not logged in */
         Unauthenticated: {
             headers: {
                 [name: string]: unknown;
@@ -1359,7 +1358,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Keine Berechtigung (RR-07) */
+        /** @description No permission (RR-07) */
         Forbidden: {
             headers: {
                 [name: string]: unknown;
@@ -1368,7 +1367,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Nicht gefunden */
+        /** @description Not found */
         NotFound: {
             headers: {
                 [name: string]: unknown;
@@ -1377,7 +1376,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Anfrage formal ungültig */
+        /** @description Request formally invalid */
         BadRequest: {
             headers: {
                 [name: string]: unknown;
@@ -1386,7 +1385,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Widerspricht dem aktuellen Zustand (z.B. Termin abgesagt, schon Mitglied) */
+        /** @description Conflicts with the current state (e.g. event cancelled, already a member) */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -1395,7 +1394,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Fachliche Regel verletzt (z.B. «vielleicht» ohne Kommentar) */
+        /** @description Domain rule violated (e.g. `MAYBE` without a comment) */
         RuleViolation: {
             headers: {
                 [name: string]: unknown;
@@ -1406,7 +1405,7 @@ export interface components {
         };
     };
     parameters: {
-        /** @description Saison-ID. Standard ist die aktuelle Saison. */
+        /** @description Season ID. Default is the current season. */
         season: string;
         seasonId: string;
         teamId: string;
@@ -1494,7 +1493,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Abgemeldet */
+            /** @description Logged out */
             204: {
                 headers: {
                     "Set-Cookie"?: string;
@@ -1538,7 +1537,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1564,7 +1563,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Aktiviert */
+            /** @description Activated */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1578,7 +1577,7 @@ export interface operations {
     listTeams: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1602,7 +1601,7 @@ export interface operations {
     createTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1615,7 +1614,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1633,7 +1632,7 @@ export interface operations {
     getTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1660,7 +1659,7 @@ export interface operations {
     renameTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1675,7 +1674,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1693,7 +1692,7 @@ export interface operations {
     addMember: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1708,7 +1707,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Aufgenommen */
+            /** @description Added */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1726,7 +1725,7 @@ export interface operations {
     changeTeamRole: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1744,7 +1743,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1762,7 +1761,7 @@ export interface operations {
     removeMember: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
+                /** @description Season ID. Default is the current season. */
                 season?: components["parameters"]["season"];
             };
             header?: never;
@@ -1774,7 +1773,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entfernt */
+            /** @description Removed */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1825,7 +1824,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1856,7 +1855,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1883,7 +1882,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöscht */
+            /** @description Deleted */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1910,14 +1909,14 @@ export interface operations {
                 "application/json": {
                     /**
                      * Format: uuid
-                     * @description `null` = ohne Linie
+                     * @description `null` = no line
                      */
                     groupId: string | null;
                 };
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1933,7 +1932,7 @@ export interface operations {
     listPersons: {
         parameters: {
             query?: {
-                /** @description Teil von Vor- oder Nachname */
+                /** @description Part of the first or last name */
                 search?: string;
             };
             header?: never;
@@ -1967,7 +1966,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2019,7 +2018,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2037,7 +2036,7 @@ export interface operations {
     listEvents: {
         parameters: {
             query?: {
-                /** @description Standard ist «jetzt» (Backend-Uhr) */
+                /** @description Default is «now» (backend clock) */
                 from?: string;
                 to?: string;
                 team?: string;
@@ -2050,7 +2049,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chronologisch sortiert (vergangene absteigend) */
+            /** @description Sorted chronologically (past events descending) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2075,7 +2074,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2128,7 +2127,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2162,7 +2161,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Abgesagt */
+            /** @description Cancelled */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2190,7 +2189,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2243,7 +2242,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2273,7 +2272,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2327,7 +2326,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2359,7 +2358,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2390,7 +2389,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2421,7 +2420,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2448,7 +2447,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöscht */
+            /** @description Deleted */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2502,7 +2501,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2529,7 +2528,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Veröffentlicht */
+            /** @description Published */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2556,7 +2555,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description `null` löst die Verknüpfung
+                     * @description `null` removes the link
                      * @example 900001
                      */
                     suTeamId: number | null;
@@ -2564,7 +2563,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2590,7 +2589,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Ergebnis des Abgleichs */
+            /** @description Result of the sync */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2602,7 +2601,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
-            /** @description swiss unihockey nicht erreichbar oder unerwartete Antwort (SUH-09) */
+            /** @description swiss unihockey unavailable or unexpected answer (SUH-09) */
             502: {
                 headers: {
                     [name: string]: unknown;
@@ -2647,7 +2646,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Markiert */
+            /** @description Marked */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2668,7 +2667,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Zurückgesetzt */
+            /** @description Reset */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2720,7 +2719,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2739,7 +2738,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöst */
+            /** @description Released */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2757,7 +2756,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entfernt */
+            /** @description Removed */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2777,7 +2776,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Schlüssel aus docs/testdaten.md
+                     * @description Key from docs/test-data.md
                      * @example petra
                      */
                     loginKey: string;
@@ -2785,7 +2784,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Angemeldet */
+            /** @description Logged in */
             204: {
                 headers: {
                     "Set-Cookie"?: string;
@@ -2806,7 +2805,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Nach Nachname, dann Vorname */
+            /** @description By last name, then first name */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2826,7 +2825,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chronologisch */
+            /** @description Chronological */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2850,7 +2849,7 @@ export interface operations {
                     /** @example 900001 */
                     suTeamId: number;
                     /**
-                     * @description Simuliert einen Ausfall (SUH-09)
+                     * @description Simulates an outage (SUH-09)
                      * @default false
                      */
                     unavailable?: boolean;
@@ -2859,7 +2858,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;

@@ -36,7 +36,7 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
       <h1>{{ t.titel }}</h1>
       @if (termin(); as tm) {
         <p class="nebentext">
-          {{ tm.titel }} {{ datum(tm.beginn) }} · {{ zeit(tm.beginn) }} · {{ teamName() }}
+          {{ tm.title }} {{ datum(tm.start) }} · {{ zeit(tm.start) }} · {{ teamName() }}
         </p>
       }
     </div>
@@ -56,11 +56,11 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
             <span class="chip" [attr.data-art]="a.status.toLowerCase()" data-testid="aufgebot-status">{{
               statusText(a)
             }}</span>
-            <span class="anzahl-text" data-testid="aufgebot-anzahl">{{ t.anzahl(a.anzahlAufgeboten ?? 0) }}</span>
+            <span class="anzahl-text" data-testid="aufgebot-anzahl">{{ t.anzahl(a.calledUpCount ?? 0) }}</span>
           </p>
           @if (!aenderbar()) {
             <p class="meldung-hinweis">{{ t.nichtAenderbar }}</p>
-          } @else if (a.status === 'VEROEFFENTLICHT') {
+          } @else if (a.status === 'PUBLISHED') {
             <p class="nebentext">{{ t.veroeffentlichtHinweis }}</p>
           } @else {
             <p class="nebentext">{{ t.entwurfHinweis }}</p>
@@ -69,13 +69,13 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
                 type="button"
                 class="button button-primaer"
                 data-testid="aufgebot-veroeffentlichen"
-                [disabled]="laeuft() || (a.anzahlAufgeboten ?? 0) === 0"
-                [attr.aria-describedby]="(a.anzahlAufgeboten ?? 0) === 0 ? 'aufgebot-leer' : null"
+                [disabled]="laeuft() || (a.calledUpCount ?? 0) === 0"
+                [attr.aria-describedby]="(a.calledUpCount ?? 0) === 0 ? 'aufgebot-leer' : null"
                 (click)="dialogOeffnen()"
               >
                 {{ t.veroeffentlichen }}
               </button>
-              @if ((a.anzahlAufgeboten ?? 0) === 0) {
+              @if ((a.calledUpCount ?? 0) === 0) {
                 <p class="nebentext" id="aufgebot-leer">{{ t.leer }}</p>
               }
             </div>
@@ -85,21 +85,21 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
         <section class="karte auswahl" data-testid="aufgebot-auswahl" aria-labelledby="aufgebot-auswahl-titel">
           <h2 id="aufgebot-auswahl-titel" class="abschnitt-titel">{{ t.auswahl }}</h2>
           <p class="nebentext">{{ t.auswahlHinweis }}</p>
-          @for (g of a.gruppen; track g.gruppeId ?? 'ohne-linie') {
+          @for (g of a.groups; track g.groupId ?? 'ohne-linie') {
             <fieldset class="gruppe">
               <legend>{{ g.name }}</legend>
               <ul class="personen">
-                @for (e of g.eintraege; track e.person.id) {
+                @for (e of g.entries; track e.person.id) {
                   <li
                     class="person"
                     [attr.data-testid]="'aufgebot-person-' + e.person.id"
-                    [attr.data-antwort]="e.antwort.status"
-                    [attr.data-aufgeboten]="e.aufgeboten"
+                    [attr.data-antwort]="e.response.status"
+                    [attr.data-aufgeboten]="e.calledUp"
                   >
                     <label class="auswahl-zeile">
                       <input
                         type="checkbox"
-                        [checked]="e.aufgeboten"
+                        [checked]="e.calledUp"
                         [disabled]="laeuft() || !aenderbar()"
                         [attr.aria-busy]="laufendePerson() === e.person.id ? 'true' : null"
                         [attr.aria-describedby]="'aufgebot-antwort-' + e.person.id"
@@ -108,11 +108,11 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
                       <span class="person-name">{{ name(e.person) }}</span>
                     </label>
                     <span class="antwort" [id]="'aufgebot-antwort-' + e.person.id">
-                      <span class="symbol" [attr.data-art]="schluessel(e.antwort.status)" aria-hidden="true">
-                        <app-icon [name]="icon[e.antwort.status]" [groesse]="14" />
+                      <span class="symbol" [attr.data-art]="schluessel(e.response.status)" aria-hidden="true">
+                        <app-icon [name]="icon[e.response.status]" [groesse]="14" />
                       </span>
-                      <span class="status-text">{{ texte.antwort.status[e.antwort.status] }}</span>
-                      @if (e.antwort.kommentar; as k) {
+                      <span class="status-text">{{ texte.antwort.status[e.response.status] }}</span>
+                      @if (e.response.comment; as k) {
                         <span class="nebentext kommentar">«{{ k }}»</span>
                       }
                     </span>
@@ -136,7 +136,7 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
     >
       <div class="formular">
         <h2 id="aufgebot-dialog-titel">{{ t.dialogTitel }}</h2>
-        <p id="aufgebot-dialog-text">{{ t.dialogText(aufgebot()?.anzahlAufgeboten ?? 0, teamName()) }}</p>
+        <p id="aufgebot-dialog-text">{{ t.dialogText(aufgebot()?.calledUpCount ?? 0, teamName()) }}</p>
         <div class="dialog-knoepfe">
           <button
             type="button"
@@ -182,12 +182,12 @@ export class Aufgebot {
   protected readonly fehler = signal<string | null>(null);
 
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.jetzt));
+  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
 
   protected readonly teamName = computed(() => this.termin()?.teams[0]?.name ?? '');
 
   /** Geplant und nicht vorbei (TER-06); `darfBearbeiten` gilt für Coaches und Admins genau dann. */
-  protected readonly aenderbar = computed(() => this.termin()?.darfBearbeiten === true);
+  protected readonly aenderbar = computed(() => this.termin()?.canEdit === true);
 
   constructor() {
     effect(() => {
@@ -201,12 +201,12 @@ export class Aufgebot {
   }
 
   protected name(p: PersonKurz): string {
-    return `${p.vorname} ${p.nachname}`;
+    return `${p.firstName} ${p.lastName}`;
   }
 
   protected statusText(a: AufgebotDaten): string {
-    if (a.status === 'VEROEFFENTLICHT' && a.veroeffentlichtAm) {
-      return this.t.veroeffentlichtAm(this.datum(a.veroeffentlichtAm), uhrzeit(a.veroeffentlichtAm));
+    if (a.status === 'PUBLISHED' && a.publishedAt) {
+      return this.t.veroeffentlichtAm(this.datum(a.publishedAt), uhrzeit(a.publishedAt));
     }
     return this.t.status[a.status];
   }
@@ -219,9 +219,9 @@ export class Aufgebot {
       return;
     }
     const ja = feld.checked;
-    const ids = a.gruppen
-      .flatMap((g) => g.eintraege)
-      .filter((e) => (e.person.id === person.id ? ja : e.aufgeboten))
+    const ids = a.groups
+      .flatMap((g) => g.entries)
+      .filter((e) => (e.person.id === person.id ? ja : e.calledUp))
       .map((e) => e.person.id);
     this.laeuft.set(true);
     this.laufendePerson.set(person.id);
@@ -229,7 +229,7 @@ export class Aufgebot {
     this.fehler.set(null);
     try {
       const neu = await firstValueFrom(
-        this.http.put<AufgebotDaten>(`/api/termine/${this.terminId()}/aufgebot`, {
+        this.http.put<AufgebotDaten>(`/api/events/${this.terminId()}/call-up`, {
           personIds: [...new Set(ids)],
         }),
       );
@@ -261,7 +261,7 @@ export class Aufgebot {
     this.fehler.set(null);
     try {
       const neu = await firstValueFrom(
-        this.http.post<AufgebotDaten>(`/api/termine/${this.terminId()}/aufgebot/veroeffentlichen`, null),
+        this.http.post<AufgebotDaten>(`/api/events/${this.terminId()}/call-up/publish`, null),
       );
       this.aufgebot.set(neu);
       this.dialogSchliessen();
@@ -280,20 +280,20 @@ export class Aufgebot {
     this.termin.set(null);
     this.aufgebot.set(null);
     try {
-      const termin = await firstValueFrom(this.http.get<Termin>(`/api/termine/${id}`));
+      const termin = await firstValueFrom(this.http.get<Termin>(`/api/events/${id}`));
       this.termin.set(termin);
       // Rechte und Art zuerst aus dem Termin: so entsteht ohne Berechtigung keine 403-Anfrage.
-      if (termin.typ !== 'SPIELTAG') {
+      if (termin.type !== 'MATCH_DAY') {
         this.fehler.set(this.t.nurSpieltag);
         return;
       }
-      const coach = termin.teams.some((t) => t.meineFunktion === 'COACH');
+      const coach = termin.teams.some((t) => t.myTeamRole === 'COACH');
       if (!coach && !this.anmeldung.istAdmin()) {
         this.fehler.set(TEXTE.allgemein.keineBerechtigung);
         return;
       }
       this.aufgebot.set(
-        await firstValueFrom(this.http.get<AufgebotDaten>(`/api/termine/${id}/aufgebot`)),
+        await firstValueFrom(this.http.get<AufgebotDaten>(`/api/events/${id}/call-up`)),
       );
     } catch (e) {
       const status = fehlerstatus(e);

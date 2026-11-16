@@ -26,7 +26,7 @@ type Wahl = AntwortSetzen['status'];
 
 interface Ziel {
   person: PersonKurz;
-  antwort: Antwort;
+  response: Antwort;
 }
 
 /**
@@ -44,13 +44,13 @@ interface Ziel {
       <p class="zaehler total" data-testid="uebersicht-total">
         <span class="zaehler-name">{{ t.total }}</span>
         <span class="zahlen">
-          <span data-zaehler="dabei">{{ t.dabei(daten().total.dabei) }}</span>
+          <span data-zaehler="dabei">{{ t.dabei(daten().total.attending) }}</span>
           <span class="trenner"> · </span>
-          <span data-zaehler="nicht-dabei">{{ t.nichtDabei(daten().total.nichtDabei) }}</span>
+          <span data-zaehler="nicht-dabei">{{ t.nichtDabei(daten().total.declined) }}</span>
           <span class="trenner"> · </span>
-          <span data-zaehler="vielleicht">{{ t.vielleicht(daten().total.vielleicht) }}</span>
+          <span data-zaehler="vielleicht">{{ t.vielleicht(daten().total.maybe) }}</span>
           <span class="trenner"> · </span>
-          <span data-zaehler="offen">{{ t.offen(daten().total.offen) }}</span>
+          <span data-zaehler="offen">{{ t.offen(daten().total.pending) }}</span>
         </span>
       </p>
 
@@ -73,25 +73,25 @@ interface Ziel {
               class="zaehler"
               [attr.data-testid]="'uebersicht-team-' + block.team.id + '-zaehler'"
             >
-              <span data-zaehler="dabei">{{ t.dabei(block.zaehler.dabei) }}</span>
+              <span data-zaehler="dabei">{{ t.dabei(block.counts.attending) }}</span>
               <span class="trenner"> · </span>
-              <span data-zaehler="nicht-dabei">{{ t.nichtDabei(block.zaehler.nichtDabei) }}</span>
+              <span data-zaehler="nicht-dabei">{{ t.nichtDabei(block.counts.declined) }}</span>
               <span class="trenner"> · </span>
-              <span data-zaehler="vielleicht">{{ t.vielleicht(block.zaehler.vielleicht) }}</span>
+              <span data-zaehler="vielleicht">{{ t.vielleicht(block.counts.maybe) }}</span>
               <span class="trenner"> · </span>
-              <span data-zaehler="offen">{{ t.offen(block.zaehler.offen) }}</span>
+              <span data-zaehler="offen">{{ t.offen(block.counts.pending) }}</span>
             </p>
           </div>
-          @for (g of block.gruppen; track g.gruppeId ?? 'ohne-linie') {
-            @let gruppenId = g.gruppeId ? 'uebersicht-gruppe-' + g.gruppeId : 'uebersicht-ohne-linie-' + block.team.id;
+          @for (g of block.groups; track g.groupId ?? 'ohne-linie') {
+            @let gruppenId = g.groupId ? 'uebersicht-gruppe-' + g.groupId : 'uebersicht-ohne-linie-' + block.team.id;
             <section class="gruppe" [attr.data-testid]="gruppenId" [attr.aria-labelledby]="gruppenId + '-titel'">
               <h4 [id]="gruppenId + '-titel'">{{ g.name }}</h4>
               <ul class="personen" [attr.aria-labelledby]="gruppenId + '-titel'">
-                @for (e of g.eintraege; track e.person.id) {
+                @for (e of g.entries; track e.person.id) {
                   <li
                     class="person"
                     [attr.data-testid]="'uebersicht-person-' + e.person.id"
-                    [attr.data-antwort]="e.antwort.status"
+                    [attr.data-antwort]="e.response.status"
                   >
                     <ng-container
                       [ngTemplateOutlet]="personTpl"
@@ -124,7 +124,7 @@ interface Ziel {
               <li
                 class="person"
                 [attr.data-testid]="'uebersicht-person-' + c.person.id"
-                [attr.data-antwort]="c.antwort.status"
+                [attr.data-antwort]="c.response.status"
               >
                 <ng-container
                   [ngTemplateOutlet]="personTpl"
@@ -148,8 +148,8 @@ interface Ziel {
       }
 
       <ng-template #personTpl let-e let-zusatz="zusatz">
-        <span class="symbol" [attr.data-art]="schluessel(e.antwort.status)" aria-hidden="true">
-          <app-icon [name]="icon[status(e.antwort)]" [groesse]="16" />
+        <span class="symbol" [attr.data-art]="schluessel(e.response.status)" aria-hidden="true">
+          <app-icon [name]="icon[status(e.response)]" [groesse]="16" />
         </span>
         <span class="person-text">
           <span class="person-name">
@@ -158,16 +158,16 @@ interface Ziel {
               <span class="nebentext">{{ zusatz }}</span>
             }
           </span>
-          <span class="status-text" [attr.data-art]="schluessel(e.antwort.status)">{{
-            a.status[status(e.antwort)]
+          <span class="status-text" [attr.data-art]="schluessel(e.response.status)">{{
+            a.status[status(e.response)]
           }}</span>
-          @if (e.antwort.kurzfristig) {
+          @if (e.response.kurzfristig) {
             <span class="chip" data-art="kurzfristig">{{ a.kurzfristig }}</span>
           }
-          @if (e.antwort.kommentar; as k) {
+          @if (e.response.kommentar; as k) {
             <span class="nebentext kommentar">«{{ k }}»</span>
           }
-          @if (e.antwort.eingetragenVon; as von) {
+          @if (e.response.eingetragenVon; as von) {
             <span class="nebentext">{{ a.eingetragenVon(name(von)) }}</span>
           }
         </span>
@@ -185,7 +185,7 @@ interface Ziel {
       @if (ziel(); as z) {
         <form class="formular" (submit)="speichern($event)" novalidate>
           <h2 id="stellvertretend-titel">{{ a.stellvertretend(name(z.person)) }}</h2>
-          <p class="nebentext" id="stellvertretend-text">{{ a.stellvertretendText(z.person.vorname) }}</p>
+          <p class="nebentext" id="stellvertretend-text">{{ a.stellvertretendText(z.person.firstName) }}</p>
           <fieldset class="wahl">
             <legend class="label">{{ a.antwort }}</legend>
             @for (w of wahlen; track w) {
@@ -247,7 +247,7 @@ export class Uebersicht {
   protected readonly a = TEXTE.antwort;
   protected readonly icon = ANTWORT_ICON;
   protected readonly schluessel = antwortSchluessel;
-  protected readonly wahlen: Wahl[] = ['DABEI', 'NICHT_DABEI', 'VIELLEICHT'];
+  protected readonly wahlen: Wahl[] = ['ATTENDING', 'DECLINED', 'MAYBE'];
 
   readonly terminId = input.required<string>();
   readonly daten = input.required<UebersichtDaten>();
@@ -261,7 +261,7 @@ export class Uebersicht {
   readonly geaendert = output<void>();
 
   protected readonly ziel = signal<Ziel | null>(null);
-  protected readonly wahl = signal<Wahl>('DABEI');
+  protected readonly wahl = signal<Wahl>('ATTENDING');
   protected readonly kommentar = signal('');
   protected readonly kommentarFehler = signal<string | null>(null);
   protected readonly laeuft = signal(false);
@@ -272,7 +272,7 @@ export class Uebersicht {
   private readonly coachTeams = computed(() => new Set(this.coachIn()));
 
   protected name(p: PersonKurz): string {
-    return `${p.vorname} ${p.nachname}`;
+    return `${p.firstName} ${p.lastName}`;
   }
 
   protected status(a: Antwort): AntwortStatus {
@@ -295,8 +295,8 @@ export class Uebersicht {
 
   protected oeffnen(z: Ziel): void {
     this.ziel.set(z);
-    this.wahl.set(z.antwort.status === 'OFFEN' ? 'DABEI' : (z.antwort.status as Wahl));
-    this.kommentar.set(z.antwort.kommentar ?? '');
+    this.wahl.set(z.response.status === 'PENDING' ? 'ATTENDING' : (z.response.status as Wahl));
+    this.kommentar.set(z.response.comment ?? '');
     this.kommentarFehler.set(null);
     this.meldung.set(null);
     this.fehler.set(null);
@@ -317,7 +317,7 @@ export class Uebersicht {
     const z = this.ziel();
     if (!z || this.laeuft()) return;
     const kommentar = this.kommentar().trim();
-    if (this.wahl() === 'VIELLEICHT' && !kommentar) {
+    if (this.wahl() === 'MAYBE' && !kommentar) {
       this.kommentarFehler.set(this.a.kommentarPflicht);
       document.getElementById('stellvertretend-kommentar')?.focus();
       return;
@@ -327,7 +327,7 @@ export class Uebersicht {
     try {
       const neu = await this.antworten.setzen(
         this.terminId(),
-        { status: this.wahl(), kommentar: kommentar || null },
+        { status: this.wahl(), comment: kommentar || null },
         z.person.id,
       );
       this.schliessen();

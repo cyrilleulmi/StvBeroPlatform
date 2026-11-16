@@ -14,7 +14,7 @@
 } @else if (hinweis(); as h) {
   <p class="meldung-fehler" role="alert">{{ h }}</p>
 } @else if (!fehler() || termin() || serie() || modus() === 'neu') {
-  @if (modus() === 'termin' && termin()?.serieId) {
+  @if (modus() === 'termin' && termin()?.seriesId) {
     <p class="meldung-hinweis">{{ texte.terminFormular.nurDieserTermin }}</p>
   }
   @if (modus() === 'serie') {
@@ -256,7 +256,7 @@
         @for (z of spiele(); track z.schluessel; let i = $index) {
           <fieldset class="spiel">
             <legend>{{ texte.terminFormular.spiel(i + 1) }}</legend>
-            @if (z.quelle !== 'MANUELL') {
+            @if (z.quelle !== 'MANUAL') {
               <p class="nebentext">
                 {{ z.zeit }} · {{ z.gegner }} ·
                 {{ z.heim ? texte.terminFormular.heim : texte.terminFormular.auswaerts }}

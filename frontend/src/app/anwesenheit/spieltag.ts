@@ -28,10 +28,10 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    @if (termin().meinAufgebot || darfAufgebot()) {
+    @if (termin().myCallUp || darfAufgebot()) {
       <section class="karte aufgebot" aria-labelledby="spieltag-aufgebot-titel">
         <h2 id="spieltag-aufgebot-titel" class="abschnitt-titel">{{ s.aufgebot }}</h2>
-        @if (termin().meinAufgebot; as mein) {
+        @if (termin().myCallUp; as mein) {
           <p class="mein">
             <span class="chip" [attr.data-art]="mein.toLowerCase()" data-testid="mein-aufgebot">{{
               s.mein[mein]
@@ -40,7 +40,7 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
           <p class="nebentext">{{ s.meinText[mein] }}</p>
         }
         @if (darfAufgebot()) {
-          <p class="stand">{{ s.stand[termin().aufgebotStatus ?? 'KEINES'] }}</p>
+          <p class="stand">{{ s.stand[termin().callUpStatus ?? 'NONE'] }}</p>
           <a class="button button-sekundaer button-klein" [routerLink]="['/termine', termin().id, 'aufgebot']">{{
             s.aufgebotBearbeiten
           }}</a>
@@ -56,20 +56,20 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
       @if (fehler(); as m) {
         <p class="meldung-fehler" role="alert">{{ m }}</p>
       }
-      @if ((termin().spiele ?? []).length === 0) {
+      @if ((termin().matches ?? []).length === 0) {
         <p class="leer">{{ s.keineSpiele }}</p>
       } @else {
         <ol class="liste" data-testid="spiele" aria-labelledby="spieltag-spiele-titel">
-          @for (sp of termin().spiele ?? []; track sp.id) {
+          @for (sp of termin().matches ?? []; track sp.id) {
             <li class="spiel" [attr.data-testid]="'spiel-' + sp.id" [attr.aria-label]="beschreibung(sp)">
-              <span class="anspielzeit">{{ zeit(sp.anspielzeit) }}</span>
+              <span class="anspielzeit">{{ zeit(sp.startTime) }}</span>
               <span class="spiel-text">
                 <span class="paarung">{{ paarung(sp) }}</span>
-                <span class="nebentext">{{ sp.heim ? s.heim : s.auswaerts }}</span>
-                @if (sp.resultat) {
-                  <span class="resultat">{{ s.resultat(sp.resultat) }}</span>
+                <span class="nebentext">{{ sp.home ? s.heim : s.auswaerts }}</span>
+                @if (sp.result) {
+                  <span class="resultat">{{ s.resultat(sp.result) }}</span>
                 }
-                @if (sp.beiSuNichtMehrVorhanden) {
+                @if (sp.missingAtSu) {
                   <span class="nebentext">{{ s.nichtMehrBeiSu }}</span>
                 }
               </span>
@@ -171,16 +171,16 @@ export class Spieltag {
 
   /** «Team 1 – UHC Musterdorf» (Heim zuerst). */
   protected paarung(sp: Spiel): string {
-    return sp.heim ? this.s.paarung(this.team(), sp.gegner) : this.s.paarung(sp.gegner, this.team());
+    return sp.home ? this.s.paarung(this.team(), sp.opponent) : this.s.paarung(sp.opponent, this.team());
   }
 
   protected beschreibung(sp: Spiel): string {
-    return `${uhrzeit(sp.anspielzeit)} ${this.paarung(sp)}`;
+    return `${uhrzeit(sp.startTime)} ${this.paarung(sp)}`;
   }
 
   protected oeffnen(sp: Spiel): void {
     this.ziel.set(sp);
-    this.resultat.set(sp.resultat ?? '');
+    this.resultat.set(sp.result ?? '');
     this.resultatFehler.set(null);
     this.meldung.set(null);
     this.fehler.set(null);
@@ -205,20 +205,20 @@ export class Spieltag {
     this.laeuft.set(true);
     this.resultatFehler.set(null);
     const eingabe: SpielSchreiben = {
-      gegner: sp.gegner,
-      anspielzeit: sp.anspielzeit,
-      heim: sp.heim,
-      resultat: wert || null,
+      opponent: sp.opponent,
+      startTime: sp.startTime,
+      home: sp.home,
+      result: wert || null,
     };
     try {
-      await firstValueFrom(this.http.put<Spiel>(`/api/termine/${this.termin().id}/spiele/${sp.id}`, eingabe));
+      await firstValueFrom(this.http.put<Spiel>(`/api/events/${this.termin().id}/matches/${sp.id}`, eingabe));
       this.schliessen();
       this.meldung.set(this.s.resultatGespeichert(this.paarung(sp)));
       this.geaendert.emit();
     } catch (e) {
       const felder = feldfehler(e);
-      if (felder['resultat']) {
-        this.resultatFehler.set(felder['resultat']);
+      if (felder['result']) {
+        this.resultatFehler.set(felder['result']);
       } else {
         this.schliessen();
         this.fehler.set(fehlertext(e));

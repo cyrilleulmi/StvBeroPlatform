@@ -103,55 +103,55 @@ interface Monat {
               >
                 <a class="zeile-link termin" [routerLink]="['/termine', t.id]">
                   <span class="datum" aria-hidden="true">
-                    <span class="wochentag">{{ datum(t.beginn).slice(0, 2) }}</span>
-                    <span class="tag">{{ datum(t.beginn).slice(3, 9) }}</span>
+                    <span class="wochentag">{{ datum(t.start).slice(0, 2) }}</span>
+                    <span class="tag">{{ datum(t.start).slice(3, 9) }}</span>
                   </span>
                   <span class="inhalt">
-                    <span class="zeile-titel" [class.durchgestrichen]="t.status === 'ABGESAGT'">
-                      {{ t.titel }}
+                    <span class="zeile-titel" [class.durchgestrichen]="t.status === 'CANCELLED'">
+                      {{ t.title }}
                     </span>
                     <span class="nebentext">
                       {{ zeitraum(t) }} · {{ teams(t) }}
-                      @if (t.ort) {
-                        · {{ t.ort.name }}
+                      @if (t.location) {
+                        · {{ t.location.name }}
                       }
                     </span>
-                    @if (t.status === 'ABGESAGT') {
+                    @if (t.status === 'CANCELLED') {
                       <span class="status-zeile">
                         <span class="chip" data-art="abgesagt" data-testid="termin-status">{{
                           texte.termine.abgesagt
                         }}</span>
-                        @if (t.absagegrund) {
-                          <span class="nebentext">{{ t.absagegrund }}</span>
+                        @if (t.cancellationReason) {
+                          <span class="nebentext">{{ t.cancellationReason }}</span>
                         }
                       </span>
                     } @else {
-                      @if (t.verschoben) {
+                      @if (t.rescheduled) {
                         <span class="status-zeile">
                           <span class="chip" data-art="verschoben" data-testid="termin-status">{{
                             texte.termine.verschoben
                           }}</span>
                         </span>
                       }
-                      @if (t.zaehler; as z) {
+                      @if (t.counts; as z) {
                         <span class="nebentext zaehler" data-testid="termin-zaehler">
-                          <span data-zaehler="dabei">{{ texte.uebersicht.dabei(z.dabei) }}</span>
+                          <span data-zaehler="dabei">{{ texte.uebersicht.dabei(z.attending) }}</span>
                           ·
                           <span data-zaehler="nicht-dabei">{{
-                            texte.uebersicht.nichtDabei(z.nichtDabei)
+                            texte.uebersicht.nichtDabei(z.declined)
                           }}</span>
                           ·
                           <span data-zaehler="vielleicht">{{
-                            texte.uebersicht.vielleicht(z.vielleicht)
+                            texte.uebersicht.vielleicht(z.maybe)
                           }}</span>
                           ·
-                          <span data-zaehler="offen">{{ texte.uebersicht.offen(z.offen) }}</span>
+                          <span data-zaehler="offen">{{ texte.uebersicht.offen(z.pending) }}</span>
                         </span>
                       }
                     }
                     @if (vergangen()) {
-                      <span class="nebentext" [attr.data-antwort]="t.meineAntwort.status">{{
-                        texte.antwort.deineAntwort(texte.antwort.status[t.meineAntwort.status])
+                      <span class="nebentext" [attr.data-antwort]="t.myResponse.status">{{
+                        texte.antwort.deineAntwort(texte.antwort.status[t.myResponse.status])
                       }}</span>
                     }
                   </span>
@@ -161,9 +161,9 @@ interface Monat {
                   <app-meine-antwort
                     class="karten-antwort"
                     [terminId]="t.id"
-                    [antwort]="t.meineAntwort"
+                    [antwort]="t.myResponse"
                     [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
-                    [gesperrt]="t.status === 'ABGESAGT' ? texte.antwort.abgesagt : null"
+                    [gesperrt]="t.status === 'CANCELLED' ? texte.antwort.abgesagt : null"
                     (geaendert)="nachladen(t.id)"
                   />
                 }
@@ -192,11 +192,11 @@ export class Termine {
   protected readonly fehler = signal<string | null>(null);
 
   protected readonly vergangen = computed(() => this.ansicht() === 'vergangen');
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.jetzt));
+  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
 
   /** Eigene Teams der aktuellen Saison, nach Name. */
   protected readonly meineTeams = computed(() =>
-    (this.anmeldung.ich()?.zugehoerigkeiten ?? [])
+    (this.anmeldung.ich()?.memberships ?? [])
       .map((z) => z.team)
       .sort((a, b) => a.name.localeCompare(b.name, 'de-CH')),
   );
@@ -219,17 +219,17 @@ export class Termine {
   /** Termine erfassen: Coaches (in irgendeinem Team) und Admins (TER-11, RR-05). */
   protected readonly darfErfassen = computed(() => {
     const ich = this.anmeldung.ich();
-    return !!ich && (ich.admin || ich.zugehoerigkeiten.some((z) => z.funktion === 'COACH'));
+    return !!ich && (ich.admin || ich.memberships.some((z) => z.teamRole === 'COACH'));
   });
 
   /** Termine nach Monat gruppiert, in der Reihenfolge der API. */
   protected readonly monate = computed<Monat[]>(() => {
     const monate: Monat[] = [];
     for (const t of this.termine()) {
-      const schluessel = monatSchluessel(t.beginn);
+      const schluessel = monatSchluessel(t.start);
       let m = monate.at(-1);
       if (!m || m.schluessel !== schluessel) {
-        m = { schluessel, name: monat(t.beginn), termine: [] };
+        m = { schluessel, name: monat(t.start), termine: [] };
         monate.push(m);
       }
       m.termine.push(t);
@@ -250,7 +250,7 @@ export class Termine {
   }
 
   protected zeitraum(t: TerminKurz): string {
-    return TEXTE.termine.zeitraum(uhrzeit(t.beginn), uhrzeit(t.ende));
+    return TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end));
   }
 
   protected teams(t: TerminKurz): string {
@@ -259,7 +259,7 @@ export class Termine {
 
   /** Name des Listeneintrags, z.B. «Training Di 17.11. 18:30». */
   protected kartenName(t: TerminKurz): string {
-    return TEXTE.termine.karte(t.titel, this.datum(t.beginn), uhrzeit(t.beginn));
+    return TEXTE.termine.karte(t.title, this.datum(t.start), uhrzeit(t.start));
   }
 
   protected teamWaehlen(teamId: string): void {
@@ -272,7 +272,7 @@ export class Termine {
   /** Nach einer Antwort: eigene Antwort und Zähler dieses Termins neu holen (ohne Neuladen der Seite). */
   protected async nachladen(id: string): Promise<void> {
     try {
-      const neu = await firstValueFrom(this.http.get<TerminKurz>(`/api/termine/${id}`));
+      const neu = await firstValueFrom(this.http.get<TerminKurz>(`/api/events/${id}`));
       this.termine.update((liste) => liste.map((t) => (t.id === id ? neu : t)));
     } catch (e) {
       this.fehler.set(fehlertext(e));
@@ -285,9 +285,9 @@ export class Termine {
     try {
       const params: Record<string, string> = {};
       if (team) params['team'] = team;
-      if (ansicht === 'vergangen') params['ansicht'] = 'vergangen';
+      if (ansicht === 'vergangen') params['view'] = 'past';
       this.termine.set(
-        await firstValueFrom(this.http.get<TerminKurz[]>('/api/termine', { params })),
+        await firstValueFrom(this.http.get<TerminKurz[]>('/api/events', { params })),
       );
     } catch (e) {
       this.termine.set([]);

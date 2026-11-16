@@ -2,55 +2,58 @@ openapi: 3.1.0
 info:
   title: StvBeroPlatform API
   version: 0.1.0
-  summary: REST-API des Kerns (Personen, Teams, Linien, Termine, An-/Abmeldung, Spieltage, Aufgebot).
+  summary: REST API of the core (persons, teams, lines, events, responses, match days, call-up).
   description: |
-    Vertrag zwischen Frontend, Backend und Test-Agenten. **Contract first:** Änderungen an der API
-    werden zuerst hier gemacht, dann umgesetzt. Konventionen: [README.md](README.md).
+    Contract between frontend, backend and test agents. **Contract first:** changes to the API
+    are made here first, then implemented. Conventions: [README.md](README.md).
 
-    Anforderungs-IDs (z.B. `ANM-04`) verweisen auf `docs/anforderungen/`.
-    Endpunkte mit dem Tag `Test` existieren nur in den Quarkus-Profilen `dev` und `test`.
+    Requirement IDs (e.g. `ANM-04`) refer to `docs/requirements/`.
+    Endpoints with the tag `Test` exist only in the Quarkus profiles `dev` and `test`.
+
+    Machine-readable parts (paths, fields, enum values, problem types) are English. Texts shown to
+    users (`title` and `detail` of problems, notification texts, seed names) stay German (NF-40, E-68).
   license:
-    name: Proprietär
+    name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
   - url: http://localhost:8080
-    description: Lokal (Quarkus dev/test)
+    description: Local (Quarkus dev/test)
 security:
   - session: []
 tags:
   - name: Me
-    description: Angemeldete Person, Kacheln
+    description: Signed-in person, tiles
   - name: Seasons
-    description: Saisons und Archiv (SAI)
+    description: Seasons and archive (SAI)
   - name: Teams
-    description: Teams und Teamzugehörigkeiten (PTF)
+    description: Teams and team memberships (PTF)
   - name: Lines
-    description: Linien und Goalies (LIN)
+    description: Lines and goalies (LIN)
   - name: Persons
-    description: Personenverwaltung (Admin)
+    description: Person administration (admin)
   - name: Events
-    description: Termine, Serien (TER)
+    description: Events, series (TER)
   - name: Responses
-    description: An- und Abmeldung, Übersicht (ANM)
+    description: Responses, overview (ANM)
   - name: MatchDays
-    description: Spiele und Aufgebot (AUF)
+    description: Matches and call-up (AUF)
   - name: SwissUnihockey
-    description: Anbindung swiss unihockey (SUH)
+    description: swiss unihockey integration (SUH)
   - name: Notifications
-    description: In-App-Benachrichtigungen (BEN)
+    description: In-app notifications (BEN)
   - name: Test
-    description: Nur in den Profilen dev und test. Siehe docs/testbarkeit.md.
+    description: Only in the profiles dev and test. See docs/testability.md.
 
 paths:
-  # ---------------------------------------------------------------- Ich
+  # ---------------------------------------------------------------- Me
   /api/me:
     get:
       tags: [Me]
       operationId: getMe
-      summary: Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
+      summary: Signed-in person with the team memberships of the current season
       description: |
-        Ist keine Saison als aktuell festgelegt (SAI-03), antwortet die API mit 409, Titel «Keine
-        aktuelle Saison», Regel SAI-03. Die Oberfläche zeigt dann einen Hinweis statt der Startseite.
+        If no season is set as current (SAI-03), the API responds with 409, title «Keine
+        aktuelle Saison», rule SAI-03. The user interface then shows a notice instead of the start page.
       responses:
         '200':
           description: OK
@@ -63,7 +66,7 @@ paths:
     get:
       tags: [Me]
       operationId: listTiles
-      summary: Kacheln, die die angemeldete Person sehen darf (NF-11, NF-12)
+      summary: Tiles the signed-in person may see (NF-11, NF-12)
       responses:
         '200':
           description: OK
@@ -77,10 +80,10 @@ paths:
     get:
       tags: [Me]
       operationId: getSession
-      summary: Ob eine gültige Sitzung besteht
+      summary: Whether a valid session exists
       description: |
-        Öffentlich und immer 200, damit die Oberfläche ohne Fehlerantwort prüfen kann, ob sie zur
-        Anmeldung weiterleiten muss. Die Daten der Person liefert `GET /api/ich`.
+        Public and always 200, so the user interface can check without an error response whether it
+        has to redirect to the login. The person's data comes from `GET /api/me`.
       security: []
       responses:
         '200':
@@ -92,22 +95,22 @@ paths:
     post:
       tags: [Me]
       operationId: logout
-      summary: Sitzung beenden und Sitzungs-Cookie löschen
-      description: Auch ohne gültige Sitzung erfolgreich, damit das Abmelden immer funktioniert.
+      summary: End the session and delete the session cookie
+      description: Succeeds even without a valid session, so logging out always works.
       security: []
       responses:
         '204':
-          description: Abgemeldet
+          description: Logged out
           headers:
             Set-Cookie:
               schema: { type: string }
 
-  # ---------------------------------------------------------------- Saisons
+  # ---------------------------------------------------------------- Seasons
   /api/seasons:
     get:
       tags: [Seasons]
       operationId: listSeasons
-      summary: Alle Saisons, neueste zuerst
+      summary: All seasons, newest first
       responses:
         '200':
           description: OK
@@ -120,11 +123,10 @@ paths:
     post:
       tags: [Seasons]
       operationId: createSeason
-      summary: Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
+      summary: Create a season, optionally with carry-over from the previous season (SAI-04, admin)
       description: |
-        Die neue Saison ist noch nicht aktuell. Mit `uebernehmenAus` werden die Teams und
-        Teamzugehörigkeiten dieser Saison übernommen. Name schon vergeben oder Zeitraum überschneidet
-        sich mit einer anderen Saison: 409.
+        The new season is not current yet. With `copyFrom`, the teams and team memberships of that
+        season are carried over. Name already taken or period overlaps with another season: 409.
       requestBody:
         required: true
         content:
@@ -132,7 +134,7 @@ paths:
             schema: { $ref: '#/components/schemas/NewSeason' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Season' }
@@ -146,9 +148,9 @@ paths:
     post:
       tags: [Seasons]
       operationId: activateSeason
-      summary: Saison zur aktuellen Saison machen (SAI-03, SAI-06, Admin)
+      summary: Make a season the current season (SAI-03, SAI-06, admin)
       responses:
-        '204': { description: Aktiviert }
+        '204': { description: Activated }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
@@ -157,7 +159,7 @@ paths:
     get:
       tags: [Teams]
       operationId: listTeams
-      summary: Teams einer Saison. Ohne Admin-Rechte nur die eigenen.
+      summary: Teams of a season. Without admin permission only the person's own teams.
       parameters:
         - $ref: '#/components/parameters/season'
       responses:
@@ -172,8 +174,8 @@ paths:
     post:
       tags: [Teams]
       operationId: createTeam
-      summary: Team anlegen (Admin)
-      description: Das Team gehört ab sofort zur angegebenen Saison. Archivierte Saisons sind nur lesbar (409, SAI-02).
+      summary: Create a team (admin)
+      description: The team belongs to the given season from now on. Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
       requestBody:
@@ -183,7 +185,7 @@ paths:
             schema: { $ref: '#/components/schemas/TeamInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Team' }
@@ -197,7 +199,7 @@ paths:
     get:
       tags: [Teams]
       operationId: getTeam
-      summary: Team mit Coaches und Spielerinnen nach Gruppe
+      summary: Team with coaches and players by group
       parameters:
         - $ref: '#/components/parameters/season'
       responses:
@@ -211,10 +213,10 @@ paths:
     put:
       tags: [Teams]
       operationId: renameTeam
-      summary: Team umbenennen (Admin)
+      summary: Rename a team (admin)
       description: |
-        Der Name gilt pro Saison. Umbenannt wird nur in der angegebenen Saison (Standard: aktuelle),
-        alte Saisons behalten den damaligen Namen. Archivierte Saisons sind nur lesbar (409, SAI-02).
+        The name applies per season. Only the given season is renamed (default: current); older
+        seasons keep the name they had. Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
       requestBody:
@@ -224,7 +226,7 @@ paths:
             schema: { $ref: '#/components/schemas/TeamInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Team' }
@@ -238,10 +240,10 @@ paths:
     post:
       tags: [Teams]
       operationId: addMember
-      summary: Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
+      summary: Add a person with a team role to the team (PTF-03, PTF-04, admin)
       description: |
-        Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die
-        API mit 409 (Regel PTF-04). Archivierte Saisons sind nur lesbar (409, SAI-02).
+        A person has exactly one team role per team and season. If the person is already a member, the
+        API responds with 409 (rule PTF-04). Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
       requestBody:
@@ -251,7 +253,7 @@ paths:
             schema: { $ref: '#/components/schemas/MemberInput' }
       responses:
         '201':
-          description: Aufgenommen
+          description: Added
           content:
             application/json:
               schema: { $ref: '#/components/schemas/TeamMembership' }
@@ -266,10 +268,10 @@ paths:
     put:
       tags: [Teams]
       operationId: changeTeamRole
-      summary: Funktion im Team ändern (Admin)
+      summary: Change the team role (admin)
       description: |
-        Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
-        Archivierte Saisons sind nur lesbar (409, SAI-02).
+        If a player becomes a coach, she loses her line assignment in this team.
+        Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
       requestBody:
@@ -283,7 +285,7 @@ paths:
                 teamRole: { $ref: '#/components/schemas/TeamRole' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/TeamMembership' }
@@ -294,25 +296,25 @@ paths:
     delete:
       tags: [Teams]
       operationId: removeMember
-      summary: Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
-      description: Archivierte Saisons sind nur lesbar (409, SAI-02).
+      summary: Remove a person from the team (admin). Existing responses are kept.
+      description: Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
       responses:
-        '204': { description: Entfernt }
+        '204': { description: Removed }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  # ---------------------------------------------------------------- Linien
+  # ---------------------------------------------------------------- Lines
   /api/teams/{teamId}/groups:
     parameters:
       - $ref: '#/components/parameters/teamId'
     get:
       tags: [Lines]
       operationId: getLineup
-      summary: Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»
-      description: Aktuelle Saison. Für Mitglieder des Teams (jede Funktion) und Admins, sonst 403.
+      summary: Lines and goalies of a team with their players, plus «Ohne Linie» (no line)
+      description: Current season. For members of the team (any team role) and admins, otherwise 403.
       responses:
         '200':
           description: OK
@@ -324,10 +326,10 @@ paths:
     post:
       tags: [Lines]
       operationId: createLine
-      summary: Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.
+      summary: Create a line (LIN-07, coach). Each team automatically has exactly one goalies group.
       description: |
-        Gilt für die aktuelle Saison (LIN-11). Ohne `reihenfolge` kommt die Linie ans Ende, sonst an
-        diese Position (die übrigen rücken nach). Namen sind pro Team eindeutig, sonst 409 (LIN-09).
+        Applies to the current season (LIN-11). Without `sortOrder` the line goes to the end, otherwise to
+        that position (the others move down). Names are unique per team, otherwise 409 (LIN-09).
       requestBody:
         required: true
         content:
@@ -335,7 +337,7 @@ paths:
             schema: { $ref: '#/components/schemas/LineInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Group' }
@@ -350,10 +352,10 @@ paths:
     put:
       tags: [Lines]
       operationId: updateLine
-      summary: Linie umbenennen oder Reihenfolge ändern (Coach)
+      summary: Rename a line or change its order (coach)
       description: |
-        Mit `reihenfolge` rückt die Linie an diese Position, die übrigen werden neu nummeriert (1, 2, …).
-        Goalies lassen sich weder umbenennen noch verschieben (409, LIN-05).
+        With `sortOrder` the line moves to that position and the others are renumbered (1, 2, …).
+        Goalies can neither be renamed nor moved (409, LIN-05).
       requestBody:
         required: true
         content:
@@ -361,7 +363,7 @@ paths:
             schema: { $ref: '#/components/schemas/LineInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Group' }
@@ -372,9 +374,9 @@ paths:
     delete:
       tags: [Lines]
       operationId: deleteLine
-      summary: Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409).
+      summary: Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409).
       responses:
-        '204': { description: Gelöscht }
+        '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -385,10 +387,10 @@ paths:
     put:
       tags: [Lines]
       operationId: setAssignment
-      summary: Spielerin einer Gruppe zuweisen oder auf «ohne Linie» setzen (LIN-02, LIN-07, LIN-10)
+      summary: Assign a player to a group or set her to no line (LIN-02, LIN-07, LIN-10)
       description: |
-        Ersetzt eine bestehende Zuweisung im selben Team (höchstens eine Gruppe pro Team).
-        Nur Personen mit Funktion `PLAYER` in diesem Team, sonst 409.
+        Replaces an existing assignment in the same team (at most one group per team).
+        Only persons with team role `PLAYER` in this team, otherwise 409.
       requestBody:
         required: true
         content:
@@ -400,25 +402,25 @@ paths:
                 groupId:
                   type: [string, 'null']
                   format: uuid
-                  description: '`null` = ohne Linie'
+                  description: '`null` = no line'
       responses:
-        '204': { description: Gesetzt }
+        '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  # ---------------------------------------------------------------- Personen
+  # ---------------------------------------------------------------- Persons
   /api/persons:
     get:
       tags: [Persons]
       operationId: listPersons
-      summary: Alle Personen (Admin)
+      summary: All persons (admin)
       parameters:
         - name: search
           in: query
           schema: { type: string }
-          description: Teil von Vor- oder Nachname
+          description: Part of the first or last name
       responses:
         '200':
           description: OK
@@ -431,7 +433,7 @@ paths:
     post:
       tags: [Persons]
       operationId: createPerson
-      summary: Person anlegen (Admin)
+      summary: Create a person (admin)
       requestBody:
         required: true
         content:
@@ -439,7 +441,7 @@ paths:
             schema: { $ref: '#/components/schemas/PersonInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Person' }
@@ -451,7 +453,7 @@ paths:
     get:
       tags: [Persons]
       operationId: getPerson
-      summary: Person mit allen Teamzugehörigkeiten (Admin)
+      summary: Person with all team memberships (admin)
       responses:
         '200':
           description: OK
@@ -463,8 +465,8 @@ paths:
     put:
       tags: [Persons]
       operationId: updatePerson
-      summary: Person ändern (Admin)
-      description: Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, RR-04).
+      summary: Update a person (admin)
+      description: The admin permission cannot be taken away from the last person who has it (409, RR-04).
       requestBody:
         required: true
         content:
@@ -472,7 +474,7 @@ paths:
             schema: { $ref: '#/components/schemas/PersonInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Person' }
@@ -481,16 +483,16 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  # ---------------------------------------------------------------- Termine
+  # ---------------------------------------------------------------- Events
   /api/events:
     get:
       tags: [Events]
       operationId: listEvents
-      summary: Termine der eigenen Teams mit eigener Antwort (TER-13)
+      summary: Events of the person's own teams with the person's own response (TER-13)
       parameters:
         - name: from
           in: query
-          description: Standard ist «jetzt» (Backend-Uhr)
+          description: Default is «now» (backend clock)
           schema: { type: string, format: date }
         - name: to
           in: query
@@ -509,7 +511,7 @@ paths:
             default: upcoming
       responses:
         '200':
-          description: Chronologisch sortiert (vergangene absteigend)
+          description: Sorted chronologically (past events descending)
           content:
             application/json:
               schema:
@@ -519,11 +521,11 @@ paths:
     post:
       tags: [Events]
       operationId: createEvent
-      summary: Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
+      summary: Create a single event, match day or other event (TER-11, AUF-16, coach)
       description: |
-        Die Person muss Admin oder Coach in mindestens einem der angegebenen Teams sein (TER-01, RR-06), sonst 403.
-        Ein Spieltag hat genau ein Team (AUF-03). Ein Termin in der Vergangenheit ergibt 400, einer in einer
-        Saison im Archiv 409 (SAI-02). Ohne `antwortfristStunden` gelten 24 Stunden (TER-10).
+        The person must be an admin or a coach in at least one of the given teams (TER-01, RR-06), otherwise 403.
+        A match day has exactly one team (AUF-03). An event in the past gives 400, one in an archived
+        season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
       requestBody:
         required: true
         content:
@@ -531,7 +533,7 @@ paths:
             schema: { $ref: '#/components/schemas/EventInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
@@ -544,7 +546,7 @@ paths:
     get:
       tags: [Events]
       operationId: getEvent
-      summary: Termin mit eigener Antwort, bei Spieltag mit Spielen, Treffpunkt und eigenem Aufgebotsstatus
+      summary: Event with the person's own response; for a match day with matches, meeting point and own call-up status
       responses:
         '200':
           description: OK
@@ -556,13 +558,13 @@ paths:
     put:
       tags: [Events]
       operationId: updateEvent
-      summary: Termin ändern oder verschieben (TER-06, TER-12, Coach)
+      summary: Update or reschedule an event (TER-06, TER-12, coach)
       description: |
-        Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
-        Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
-        Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
-        Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
-        lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05, Annahme O-48).
+        A changed start time counts as rescheduling (`rescheduled`) and notifies all members of the teams involved (BEN-07).
+        Responses are kept. For an event of a series, the change applies only to this event; it no longer takes over
+        later changes to the series (TER-06). Cancelled or past events: 409.
+        Match day moved to another day: manually entered matches move with it. If it has matches from swiss unihockey,
+        it can only be rescheduled on the same day (422 on field `start`, rule SUH-05, assumption O-48).
       requestBody:
         required: true
         content:
@@ -570,7 +572,7 @@ paths:
             schema: { $ref: '#/components/schemas/EventInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
@@ -585,7 +587,7 @@ paths:
     post:
       tags: [Events]
       operationId: cancelEvent
-      summary: Termin absagen (TER-06, TER-12, Coach). Danach sind keine Antworten mehr möglich.
+      summary: Cancel an event (TER-06, TER-12, coach). After that, no more responses are possible.
       requestBody:
         required: true
         content:
@@ -597,7 +599,7 @@ paths:
                 reason: { type: string, minLength: 1, maxLength: 200, examples: [Halle besetzt] }
       responses:
         '200':
-          description: Abgesagt
+          description: Cancelled
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
@@ -610,10 +612,10 @@ paths:
     post:
       tags: [Events]
       operationId: createSeries
-      summary: Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
+      summary: Create a series; creates the events in the validity period (TER-05, coach)
       description: |
-        Erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Rechte wie bei
-        `terminAnlegen`. Der Zeitraum dauert höchstens ein Jahr (400).
+        Creates an event for each matching weekday in the validity period that has not started yet. Permissions as for
+        `createEvent`. The period lasts at most one year (400).
       requestBody:
         required: true
         content:
@@ -621,7 +623,7 @@ paths:
             schema: { $ref: '#/components/schemas/SeriesInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Series' }
@@ -634,7 +636,7 @@ paths:
     get:
       tags: [Events]
       operationId: getSeries
-      summary: Serie mit Ausnahmen
+      summary: Series with its series exceptions
       responses:
         '200':
           description: OK
@@ -646,11 +648,11 @@ paths:
     put:
       tags: [Events]
       operationId: updateSeries
-      summary: Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
+      summary: Update a series. Applies to future events; given responses are kept (TER-08, coach).
       description: |
-        Künftige Termine übernehmen die neuen Angaben. Einzeln geänderte und abgesagte Termine bleiben unverändert.
-        Termine, die nicht mehr zur Serie passen, werden entfernt bzw. abgesagt («Serie geändert»), wenn schon
-        jemand geantwortet hat.
+        Future events take over the new data. Individually changed and cancelled events stay unchanged.
+        Events that no longer fit the series are removed, or cancelled («Serie geändert») if someone
+        has already responded.
       requestBody:
         required: true
         content:
@@ -658,7 +660,7 @@ paths:
             schema: { $ref: '#/components/schemas/SeriesInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Series' }
@@ -672,10 +674,10 @@ paths:
     post:
       tags: [Events]
       operationId: createSeriesException
-      summary: Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
+      summary: Exclude a period from the series, e.g. holidays (TER-07, coach)
       description: |
-        Künftige geplante Termine der Serie im Zeitraum werden entfernt. Hat schon jemand geantwortet, wird der
-        Termin stattdessen abgesagt, Grund = Grund der Ausnahme (O-19).
+        Future planned events of the series in the period are removed. If someone has already responded, the
+        event is cancelled instead, with the reason of the series exception as cancellation reason (O-19).
       requestBody:
         required: true
         content:
@@ -683,7 +685,7 @@ paths:
             schema: { $ref: '#/components/schemas/SeriesException' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Series' }
@@ -692,17 +694,17 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  # ---------------------------------------------------------------- Antworten
+  # ---------------------------------------------------------------- Responses
   /api/events/{eventId}/overview:
     parameters:
       - $ref: '#/components/parameters/eventId'
     get:
       tags: [Responses]
       operationId: getOverview
-      summary: Antworten nach Team und Gruppe, Coach-Block, Zähler (ANM-20 bis ANM-32)
+      summary: Responses by team and group, coach block, counts (ANM-20 to ANM-32)
       description: |
-        Kommentare sind nur enthalten, wenn die anfragende Person Coach im jeweiligen Team ist
-        oder es um ihre eigene Antwort geht (ANM-07). Leere Gruppen fehlen.
+        Comments are only included if the requesting person is a coach in the respective team
+        or it is their own response (ANM-07). Empty groups are left out.
       responses:
         '200':
           description: OK
@@ -717,12 +719,12 @@ paths:
     put:
       tags: [Responses]
       operationId: setOwnResponse
-      summary: Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)
+      summary: Set or change the person's own response (ANM-01 to ANM-10)
       description: |
-        Nur Mitglieder eines beteiligten Teams (jede Funktion), sonst 403. `MAYBE` verlangt einen
-        Kommentar (sonst 422, Feld `kommentar`). Ein Wechsel von `ATTENDING` weg nach der Antwortfrist ist eine
-        kurzfristige Absage (`kurzfristig`) und benachrichtigt die Coaches (ANM-10, BEN-02). Die Markierung
-        bleibt bis zum nächsten «dabei». Bei abgesagten und vergangenen Terminen 409 (TER-06).
+        Only members of a team involved (any team role), otherwise 403. `MAYBE` requires a
+        comment (otherwise 422, field `comment`). A change away from `ATTENDING` after the response deadline is a
+        late cancellation (`lateCancellation`) and notifies the coaches (ANM-10, BEN-02). The flag
+        stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06).
       requestBody:
         required: true
         content:
@@ -730,7 +732,7 @@ paths:
             schema: { $ref: '#/components/schemas/ResponseInput' }
       responses:
         '200':
-          description: Gespeichert
+          description: Saved
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Response' }
@@ -746,11 +748,11 @@ paths:
     put:
       tags: [Responses]
       operationId: setResponseOnBehalf
-      summary: Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)
+      summary: Respond on behalf of a person (ANM-11, ANM-12, RR-06)
       description: |
-        Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist, und Admins (für jedes Mitglied
-        eines beteiligten Teams). Sonst 403. Gehört die Person zu keinem beteiligten Team, 404. Es gelten
-        dieselben Regeln wie bei der eigenen Antwort; `eingetragenVon` ist die anfragende Person (ANM-12).
+        Only coaches of a team in which the person is a player for the event, and admins (for every member
+        of a team involved). Otherwise 403. If the person belongs to no team involved, 404. The same rules
+        apply as for the person's own response; `enteredBy` is the requesting person (ANM-12).
       requestBody:
         required: true
         content:
@@ -758,7 +760,7 @@ paths:
             schema: { $ref: '#/components/schemas/ResponseInput' }
       responses:
         '200':
-          description: Gespeichert
+          description: Saved
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Response' }
@@ -768,17 +770,17 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/RuleViolation' }
 
-  # ---------------------------------------------------------------- Spieltage
+  # ---------------------------------------------------------------- Match days
   /api/events/{eventId}/matches:
     parameters:
       - $ref: '#/components/parameters/eventId'
     post:
       tags: [MatchDays]
       operationId: addMatch
-      summary: Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
+      summary: Add a match to a match day (AUF-14, coach)
       description: |
-        Nur bei Spieltagen (sonst 409, Regel AUF-01), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
-        Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
+        Only for match days (otherwise 409, rule AUF-01), as long as the match day is neither cancelled nor over (409, TER-06).
+        The start time lies on the day of the match day (otherwise 400 on field `startTime`).
       requestBody:
         required: true
         content:
@@ -786,7 +788,7 @@ paths:
             schema: { $ref: '#/components/schemas/MatchInput' }
       responses:
         '201':
-          description: Angelegt
+          description: Created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Match' }
@@ -801,10 +803,10 @@ paths:
     put:
       tags: [MatchDays]
       operationId: updateMatch
-      summary: Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
+      summary: Update a match, e.g. enter the result (AUF-15, coach). Imported fields are read-only (409).
       description: |
-        Das Resultat (Heim:Gast) lässt sich auch nach dem Spieltag erfassen; nur ein abgesagter Spieltag ergibt 409 (TER-06).
-        Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409, Regel SUH-06).
+        The result (home:away) can also be entered after the match day; only a cancelled match day gives 409 (TER-06).
+        For matches from swiss unihockey, opponent, start time and home/away are read-only (409, rule SUH-06).
       requestBody:
         required: true
         content:
@@ -812,7 +814,7 @@ paths:
             schema: { $ref: '#/components/schemas/MatchInput' }
       responses:
         '200':
-          description: Geändert
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Match' }
@@ -823,12 +825,12 @@ paths:
     delete:
       tags: [MatchDays]
       operationId: deleteMatch
-      summary: Von Hand erfasstes Spiel löschen (Coach)
+      summary: Delete a manually entered match (coach)
       description: |
-        Spiele aus swiss unihockey nur, wenn swiss unihockey sie nicht mehr liefert (sonst 409, Regel SUH-06).
-        Abgesagte oder vergangene Spieltage: 409 (TER-06).
+        Matches from swiss unihockey only if swiss unihockey no longer delivers them (otherwise 409, rule SUH-06).
+        Cancelled or past match days: 409 (TER-06).
       responses:
-        '204': { description: Gelöscht }
+        '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -838,10 +840,10 @@ paths:
     get:
       tags: [MatchDays]
       operationId: getCallUp
-      summary: Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
+      summary: Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)
       description: |
-        Nur Coaches des Teams und Admins (sonst 403). Kein Spieltag: 409 (Regel AUF-02). Coaches stehen nicht in der
-        Auswahl (AUF-28). Gruppen wie in der Übersicht, leere Gruppen fehlen.
+        Only coaches of the team and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
+        the selection (AUF-28). Groups as in the overview; empty groups are left out.
       responses:
         '200':
           description: OK
@@ -854,11 +856,11 @@ paths:
     put:
       tags: [MatchDays]
       operationId: setCallUp
-      summary: Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
+      summary: Save the selection (coach). If the call-up is published, the players affected are notified (AUF-27).
       description: |
-        Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
-        Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
-        Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Wer neu dazukommt oder herausfällt, wird benachrichtigt (BEN-05).
+        Replaces the whole selection. Every player of the team can be called up, regardless of her response (AUF-22).
+        Coaches or persons outside the team: 422 (rule AUF-28). Not a match day, cancelled or over: 409.
+        A published call-up stays published. Players who are added or removed are notified (BEN-05).
       requestBody:
         required: true
         content:
@@ -873,7 +875,7 @@ paths:
                   items: { type: string, format: uuid }
       responses:
         '200':
-          description: Gespeichert
+          description: Saved
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CallUp' }
@@ -888,13 +890,13 @@ paths:
     post:
       tags: [MatchDays]
       operationId: publishCallUp
-      summary: Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
+      summary: Publish the call-up and notify all players of the team (AUF-23, AUF-24, coach)
       description: |
-        Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
-        Spielerinnen `meinAufgebot`. Sie werden benachrichtigt (BEN-03).
+        Only a draft with at least one player (otherwise 409, rule AUF-23), only once. After that the
+        players see `myCallUp`. They are notified (BEN-03).
       responses:
         '200':
-          description: Veröffentlicht
+          description: Published
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CallUp' }
@@ -909,10 +911,10 @@ paths:
     put:
       tags: [SwissUnihockey]
       operationId: linkSu
-      summary: Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
+      summary: Link a team to swiss unihockey or remove the link (SUH-02, admin)
       description: |
-        Die Team-ID findet man auf swissunihockey.ch in der Adresse der Team-Seite. Eine Team-ID gehört zu
-        höchstens einem Team (sonst 409). Das Lösen lässt bereits importierte Spieltage unverändert.
+        The team ID can be found on swissunihockey.ch in the address of the team page. A team ID belongs to
+        at most one team (otherwise 409). Removing the link leaves already imported match days unchanged.
       requestBody:
         required: true
         content:
@@ -923,12 +925,12 @@ paths:
               properties:
                 suTeamId:
                   type: [integer, 'null']
-                  description: '`null` löst die Verknüpfung'
+                  description: '`null` removes the link'
                   minimum: 1
                   examples: [900001]
       responses:
         '200':
-          description: Gespeichert
+          description: Saved
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Team' }
@@ -942,18 +944,18 @@ paths:
     post:
       tags: [SwissUnihockey]
       operationId: syncSu
-      summary: Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
+      summary: Run the sync now instead of waiting for the daily run (SUH-03, admin)
       description: |
-        Gleicht die Spiele des Teams in der aktuellen Saison ab. Spiele am selben Tag in derselben Halle werden
-        ein Spieltag (SUH-04). Geänderte Spiele werden übernommen, Treffpunkt, Hinweise, Antworten und Aufgebot
-        bleiben (SUH-05, SUH-06), alle Mitglieder des Teams werden benachrichtigt (BEN-06). Spiele, die swiss
-        unihockey nicht mehr liefert, werden markiert, nicht gelöscht. Von Hand erfasste Spieltage bleiben
-        unberührt (SUH-10). 409, wenn das Team nicht verknüpft ist oder nicht zur aktuellen Saison gehört.
-        502, wenn swiss unihockey nicht erreichbar ist oder Unerwartetes liefert: Dann ändert sich nichts (SUH-09).
-        Derselbe Abgleich läuft täglich für alle verknüpften Teams.
+        Syncs the team's matches in the current season. Matches on the same day in the same hall become
+        one match day (SUH-04). Changed matches are taken over; meeting point, notes, responses and call-up
+        are kept (SUH-05, SUH-06), and all members of the team are notified (BEN-06). Matches that swiss
+        unihockey no longer delivers are marked, not deleted. Manually entered match days stay
+        untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
+        502 if swiss unihockey is unavailable or delivers something unexpected: then nothing changes (SUH-09).
+        The same sync runs daily for all linked teams.
       responses:
         '200':
-          description: Ergebnis des Abgleichs
+          description: Result of the sync
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SyncResult' }
@@ -961,25 +963,25 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '502':
-          description: swiss unihockey nicht erreichbar oder unerwartete Antwort (SUH-09)
+          description: swiss unihockey unavailable or unexpected answer (SUH-09)
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
 
-  # ---------------------------------------------------------------- Benachrichtigungen
+  # ---------------------------------------------------------------- Notifications
   /api/notifications:
     get:
       tags: [Notifications]
       operationId: listNotifications
-      summary: Eigene Benachrichtigungen, neueste zuerst (BEN-12)
+      summary: The person's own notifications, newest first (BEN-12)
       description: |
-        Nur die eigenen. `ungelesen=true` liefert nur ungelesene (Zähler in der Navigation).
-        Benachrichtigt wird bei: Erinnerung 12 Stunden vor der Antwortfrist an alle ohne Antwort, einmal pro
-        Person und Termin (BEN-01, BEN-13); kurzfristiger Absage an die Coaches der Teams, in denen die Person
-        Spielerin ist (BEN-02, O-17); Abmeldung einer Aufgebotenen an dieselben Coaches (BEN-04);
-        Veröffentlichung an alle Spielerinnen des Teams (BEN-03); Änderung eines veröffentlichten Aufgebots an
-        neu Aufgebotene und nicht mehr Aufgebotene (BEN-05); Absage und Verschiebung an alle Mitglieder der
-        beteiligten Teams (BEN-07). Wer etwas auslöst, wird darüber nicht benachrichtigt.
+        Only the person's own. `unread=true` returns only unread ones (counter in the navigation).
+        Notifications are sent for: a reminder 12 hours before the response deadline to everyone without a response,
+        once per person and event (BEN-01, BEN-13); a late cancellation to the coaches of the teams in which the
+        person is a player (BEN-02, O-17); a called-up player declining, to the same coaches (BEN-04);
+        publishing a call-up to all players of the team (BEN-03); a change to a published call-up to newly
+        called-up players and players no longer called up (BEN-05); cancellation and rescheduling to all members
+        of the teams involved (BEN-07). Whoever triggers something is not notified about it.
       parameters:
         - name: unread
           in: query
@@ -1002,11 +1004,11 @@ paths:
     post:
       tags: [Notifications]
       operationId: markNotificationRead
-      summary: Als gelesen markieren
+      summary: Mark as read
       description: |
-        Mehrfach markieren ändert nichts (204). Die Benachrichtigung einer anderen Person: 403 (RR-07).
+        Marking more than once changes nothing (204). Another person's notification: 403 (RR-07).
       responses:
-        '204': { description: Markiert }
+        '204': { description: Marked }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -1016,16 +1018,16 @@ paths:
     post:
       tags: [Test]
       operationId: testReset
-      summary: Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen
-      description: Seed siehe docs/testdaten.md. Nur Profile dev und test.
+      summary: Reset the database to the seed, the clock to default and the simulator
+      description: For the seed see docs/test-data.md. Only profiles dev and test.
       security: []
       responses:
-        '204': { description: Zurückgesetzt }
+        '204': { description: Reset }
   /api/test/clock:
     put:
       tags: [Test]
       operationId: testSetClock
-      summary: Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus.
+      summary: Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately.
       security: []
       requestBody:
         required: true
@@ -1040,12 +1042,12 @@ paths:
                   format: date-time
                   examples: ['2026-11-16T19:00:00+01:00']
       responses:
-        '204': { description: Gesetzt }
+        '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
     get:
       tags: [Test]
       operationId: testGetClock
-      summary: Aktuelle Backend-Zeit
+      summary: Current backend time
       security: []
       responses:
         '200':
@@ -1061,23 +1063,23 @@ paths:
     delete:
       tags: [Test]
       operationId: testReleaseClock
-      summary: Wieder die echte Zeit verwenden
+      summary: Use the real time again
       security: []
       responses:
-        '204': { description: Gelöst }
+        '204': { description: Released }
   /api/test/current-season:
     delete:
       tags: [Test]
       operationId: testRemoveCurrentSeason
-      summary: Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her.
+      summary: Mark no season as current any more (state «no current season»). Reset restores the seed.
       security: []
       responses:
-        '204': { description: Entfernt }
+        '204': { description: Removed }
   /api/test/login:
     post:
       tags: [Test]
       operationId: testLogin
-      summary: Ohne Passwort als Seed-Person anmelden. Setzt das Sitzungs-Cookie.
+      summary: Log in as a seed person without a password. Sets the session cookie.
       security: []
       requestBody:
         required: true
@@ -1089,11 +1091,11 @@ paths:
               properties:
                 loginKey:
                   type: string
-                  description: Schlüssel aus docs/testdaten.md
+                  description: Key from docs/test-data.md
                   examples: [petra]
       responses:
         '204':
-          description: Angemeldet
+          description: Logged in
           headers:
             Set-Cookie:
               schema: { type: string }
@@ -1103,11 +1105,11 @@ paths:
     get:
       tags: [Test]
       operationId: testListPersons
-      summary: Personen mit Schlüssel für die Testmodus-Anmeldung (/dev-login)
+      summary: Persons with their key for the test mode login (/dev-login)
       security: []
       responses:
         '200':
-          description: Nach Nachname, dann Vorname
+          description: By last name, then first name
           content:
             application/json:
               schema:
@@ -1117,11 +1119,11 @@ paths:
     get:
       tags: [Test]
       operationId: testListNotifications
-      summary: Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed
+      summary: All notifications of all persons since the last reset, including the seed
       security: []
       responses:
         '200':
-          description: Chronologisch
+          description: Chronological
           content:
             application/json:
               schema:
@@ -1131,7 +1133,7 @@ paths:
     put:
       tags: [Test]
       operationId: testSetSuMatches
-      summary: Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert
+      summary: Set the data the simulator delivers for a swiss unihockey team ID
       security: []
       requestBody:
         required: true
@@ -1145,12 +1147,12 @@ paths:
                 unavailable:
                   type: boolean
                   default: false
-                  description: Simuliert einen Ausfall (SUH-09)
+                  description: Simulates an outage (SUH-09)
                 matches:
                   type: array
                   items: { $ref: '#/components/schemas/SuMatch' }
       responses:
-        '204': { description: Gesetzt }
+        '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
 
 components:
@@ -1159,13 +1161,13 @@ components:
       type: apiKey
       in: cookie
       name: stv_session
-      description: Sitzungs-Cookie. Das produktive Anmeldeverfahren ist offen (O-01).
+      description: Session cookie. The production login method is open (O-01).
 
   parameters:
     season:
       name: season
       in: query
-      description: Saison-ID. Standard ist die aktuelle Saison.
+      description: Season ID. Default is the current season.
       schema: { type: string, format: uuid }
     seasonId:
       name: seasonId
@@ -1205,32 +1207,32 @@ components:
 
   responses:
     Unauthenticated:
-      description: Nicht angemeldet
+      description: Not logged in
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Forbidden:
-      description: Keine Berechtigung (RR-07)
+      description: No permission (RR-07)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     NotFound:
-      description: Nicht gefunden
+      description: Not found
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     BadRequest:
-      description: Anfrage formal ungültig
+      description: Request formally invalid
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
-      description: Widerspricht dem aktuellen Zustand (z.B. Termin abgesagt, schon Mitglied)
+      description: Conflicts with the current state (e.g. event cancelled, already a member)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     RuleViolation:
-      description: Fachliche Regel verletzt (z.B. «vielleicht» ohne Kommentar)
+      description: Domain rule violated (e.g. `MAYBE` without a comment)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -1238,34 +1240,34 @@ components:
   schemas:
     Problem:
       type: object
-      description: RFC 9457 Problem Details. `detail` ist ein deutscher Text, der direkt angezeigt werden kann.
+      description: RFC 9457 Problem Details. `title`, `detail` and `fields[].message` are German texts that can be shown to users directly. `type`, `rule` and `fields[].field` are machine-readable and English.
       required: [status, title]
       properties:
-        type: { type: string, format: uri, examples: ['urn:stv:fehler:kommentar-pflicht'] }
+        type: { type: string, format: uri, examples: ['urn:stv:problem:comment-required'] }
         title: { type: string, examples: [Kommentar fehlt] }
         status: { type: integer, examples: [422] }
         detail: { type: string, examples: ['Bei «vielleicht» ist ein Kommentar Pflicht.'] }
-        rule: { type: string, description: Verletzte Anforderung, examples: [ANM-04] }
+        rule: { type: string, description: Violated requirement, examples: [ANM-04] }
         fields:
           type: array
           items:
             type: object
             required: [field, message]
             properties:
-              field: { type: string, examples: [kommentar] }
+              field: { type: string, examples: [comment] }
               message: { type: string }
 
     TeamRole:
       type: string
       enum: [PLAYER, COACH]
-      description: Erweiterbar (PTF-06). Clients behandeln unbekannte Werte wie ein Mitglied ohne Sonderrechte.
+      description: Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
     EventType:
       type: string
       enum: [PRACTICE, MATCH_DAY, OTHER]
     EventStatus:
       type: string
       enum: [PLANNED, CANCELLED]
-      description: Ob ein Termin vorbei ist, ergibt sich aus `end` und der Backend-Uhr.
+      description: Whether an event is over follows from `end` and the backend clock.
     ResponseStatus:
       type: string
       enum: [PENDING, ATTENDING, DECLINED, MAYBE]
@@ -1327,7 +1329,7 @@ components:
             now:
               type: string
               format: date-time
-              description: Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
+              description: Time of the backend clock when loading, e.g. for «show the year only if it is not the current one» (F-03)
     Session:
       type: object
       required: [signedIn]
@@ -1339,16 +1341,16 @@ components:
       properties:
         id: { type: string, examples: [anwesenheit] }
         title: { type: string, examples: [Anwesenheit] }
-        icon: { type: string, description: Lucide-Icon-Name, examples: [calendar-check] }
+        icon: { type: string, description: Lucide icon name, examples: [calendar-check] }
         route: { type: string, examples: [/termine] }
         color:
           type: string
           enum: [primary, blue, mustard, coral]
-        hint: { type: [string, 'null'], description: 'Kurzer Status, z.B. «2 offen»' }
+        hint: { type: [string, 'null'], description: 'Short status, e.g. «2 offen»' }
 
     TestPerson:
       type: object
-      description: Seed-Person mit Schlüssel aus docs/testdaten.md. Nur Profile dev und test.
+      description: Seed person with key from docs/test-data.md. Only profiles dev and test.
       required: [loginKey, id, firstName, lastName, admin]
       properties:
         loginKey: { type: string, examples: [petra] }
@@ -1368,7 +1370,7 @@ components:
         current: { type: boolean }
         archived:
           type: boolean
-          description: Saison vor der aktuellen. Nur lesbar (SAI-02).
+          description: Season before the current one. Read-only (SAI-02).
     NewSeason:
       type: object
       required: [name, startDate, endDate]
@@ -1379,7 +1381,7 @@ components:
         copyFrom:
           type: [string, 'null']
           format: uuid
-          description: Saison, deren Teams, Zugehörigkeiten und Linien übernommen werden (SAI-04)
+          description: Season whose teams, memberships and lines are carried over (SAI-04)
 
     Team:
       type: object
@@ -1423,7 +1425,7 @@ components:
         groupId:
           type: [string, 'null']
           format: uuid
-          description: Nur bei Funktion PLAYER
+          description: Only for team role PLAYER
     MemberInput:
       type: object
       required: [personId, teamRole]
@@ -1438,7 +1440,7 @@ components:
         id: { type: string, format: uuid }
         type: { $ref: '#/components/schemas/GroupType' }
         name: { type: string, examples: [Linie 1] }
-        sortOrder: { type: [integer, 'null'], description: Nur bei LINE }
+        sortOrder: { type: [integer, 'null'], description: Only for LINE }
     LineInput:
       type: object
       required: [name]
@@ -1447,7 +1449,7 @@ components:
         sortOrder: { type: integer, minimum: 1 }
     Lineup:
       type: object
-      description: Alle Gruppen eines Teams in Anzeigereihenfolge, auch leere
+      description: All groups of a team in display order, including empty ones
       required: [groups, noLine]
       properties:
         groups:
@@ -1474,7 +1476,7 @@ components:
         mapsUrl:
           type: [string, 'null']
           format: uri
-          description: Google-Maps-Link (AUF-10). Muss mit https:// beginnen.
+          description: Google Maps link (AUF-10). Must start with https://.
         latitude: { type: [number, 'null'] }
         longitude: { type: [number, 'null'] }
     MeetingPoint:
@@ -1516,7 +1518,7 @@ components:
         myResponse: { $ref: '#/components/schemas/Response' }
         counts:
           $ref: '#/components/schemas/Counts'
-          description: Gesamtzähler Spielerinnen
+          description: Total counts of players
         seriesId: { type: [string, 'null'], format: uuid }
     Event:
       allOf:
@@ -1531,17 +1533,17 @@ components:
                 - type: 'null'
             matches:
               type: array
-              description: Nur bei MATCH_DAY, nach Anspielzeit sortiert
+              description: Only for MATCH_DAY, sorted by start time
               items: { $ref: '#/components/schemas/Match' }
             callUpStatus:
               $ref: '#/components/schemas/CallUpStatus'
-              description: Nur bei MATCH_DAY. Wer nicht Coach des Teams oder Admin ist, sieht vor der Veröffentlichung NONE (AUF-23).
+              description: Only for MATCH_DAY. Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23).
             myCallUp:
               oneOf:
                 - $ref: '#/components/schemas/MyCallUp'
                 - type: 'null'
-              description: Nur bei MATCH_DAY und Funktion PLAYER
-            canEdit: { type: boolean, description: Für die Anzeige von Coach-Aktionen }
+              description: Only for MATCH_DAY and team role PLAYER
+            canEdit: { type: boolean, description: For showing coach actions }
     EventInput:
       type: object
       required: [type, title, start, end, teamIds]
@@ -1560,7 +1562,7 @@ components:
             - $ref: '#/components/schemas/Location'
             - type: 'null'
         notes: { type: [string, 'null'], maxLength: 500 }
-        responseDeadlineHours: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Stunden vor Beginn (TER-09, TER-10)' }
+        responseDeadlineHours: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Hours before the start (TER-09, TER-10)' }
         meetingPoint:
           oneOf:
             - $ref: '#/components/schemas/MeetingPoint'
@@ -1576,7 +1578,7 @@ components:
             teams:
               type: array
               minItems: 1
-              description: Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (TER-11)
+              description: All teams of the series by name, with the name in the season of the series (TER-11)
               items: { $ref: '#/components/schemas/Team' }
             exceptions:
               type: array
@@ -1605,7 +1607,7 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Location'
             - type: 'null'
-        responseDeadlineHours: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Stunden vor Beginn (TER-09, TER-10)' }
+        responseDeadlineHours: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Hours before the start (TER-09, TER-10)' }
     SeriesException:
       type: object
       required: [startDate, endDate, reason]
@@ -1621,17 +1623,17 @@ components:
         status: { $ref: '#/components/schemas/ResponseStatus' }
         comment:
           type: [string, 'null']
-          description: Nur für die Person selbst und Coaches des Teams sichtbar (ANM-07), sonst nicht enthalten
+          description: Only visible to the person themselves and the coaches of the team (ANM-07), otherwise not included
         changedAt: { type: [string, 'null'], format: date-time }
         enteredBy:
           oneOf:
             - $ref: '#/components/schemas/PersonSummary'
             - type: 'null'
-          description: Gesetzt, wenn stellvertretend eingetragen (ANM-12)
+          description: Set if entered on behalf of the person (ANM-12)
         lateCancellation:
           type: boolean
           default: false
-          description: Abgesagt oder auf «vielleicht» nach der Antwortfrist (ANM-10)
+          description: Changed to `DECLINED` or `MAYBE` after the response deadline (ANM-10)
     ResponseInput:
       type: object
       required: [status]
@@ -1642,7 +1644,7 @@ components:
         comment:
           type: [string, 'null']
           maxLength: 200
-          description: Pflicht bei MAYBE (ANM-04), freiwillig bei DECLINED (ANM-05)
+          description: Required for MAYBE (ANM-04), optional for DECLINED (ANM-05)
 
     Overview:
       type: object
@@ -1651,14 +1653,14 @@ components:
         eventId: { type: string, format: uuid }
         total:
           $ref: '#/components/schemas/Counts'
-          description: Jede Spielerin einmal, auch wenn sie in mehreren Teams ist (ANM-32)
+          description: Each player once, even if she is in several teams (ANM-32)
         teams:
           type: array
-          description: Nach Teamname sortiert
+          description: Sorted by team name
           items: { $ref: '#/components/schemas/OverviewTeam' }
         coaches:
           type: array
-          description: Coach-Block (ANM-22)
+          description: Coach block (ANM-22)
           items:
             type: object
             required: [person, team, response]
@@ -1684,7 +1686,7 @@ components:
         counts: { $ref: '#/components/schemas/Counts' }
         groups:
           type: array
-          description: Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie». Leere Gruppen fehlen.
+          description: Lines by sort order, then goalies, then «Ohne Linie» (no line). Empty groups are left out.
           items:
             type: object
             required: [type, name, entries]
@@ -1692,14 +1694,14 @@ components:
               groupId:
                 type: [string, 'null']
                 format: uuid
-                description: '`null` bei «Ohne Linie»'
+                description: '`null` for «Ohne Linie» (no line)'
               type:
                 type: string
                 enum: [LINE, GOALIES, NO_LINE]
               name: { type: string, examples: [Linie 1, Goalies, Ohne Linie] }
               entries:
                 type: array
-                description: Nach Nachname, dann Vorname
+                description: By last name, then first name
                 items:
                   type: object
                   required: [person, response]
@@ -1721,7 +1723,7 @@ components:
         missingAtSu:
           type: boolean
           default: false
-          description: swiss unihockey liefert das Spiel nicht mehr. Wird nicht automatisch gelöscht.
+          description: swiss unihockey no longer delivers the match. It is not deleted automatically.
     MatchInput:
       type: object
       required: [opponent, startTime, home]
@@ -1741,7 +1743,7 @@ components:
         calledUpCount: { type: integer, minimum: 0 }
         groups:
           type: array
-          description: Alle Spielerinnen des Teams, gruppiert wie in der Übersicht, auch ohne Antwort (AUF-21, AUF-22)
+          description: All players of the team, grouped as in the overview, including those without a response (AUF-21, AUF-22)
           items:
             type: object
             required: [type, name, entries]
@@ -1765,7 +1767,7 @@ components:
       type: object
       required: [created, changed, missing, unchanged]
       properties:
-        created: { type: integer, description: Neu angelegte Spiele }
+        created: { type: integer, description: Newly created matches }
         changed: { type: integer }
         missing: { type: integer }
         unchanged: { type: integer }
@@ -1774,7 +1776,7 @@ components:
           items: { type: string, format: uuid }
     SuMatch:
       type: object
-      description: Vereinfachte Form eines Spiels, wie sie der Simulator liefert
+      description: Simplified form of a match as the simulator delivers it
       required: [suMatchId, startTime, homeTeam, awayTeam, hall]
       properties:
         suMatchId: { type: integer, examples: [5000002] }
@@ -1804,7 +1806,7 @@ components:
             - MATCH_CHANGED
             - EVENT_CANCELLED
             - EVENT_RESCHEDULED
-          description: Entspricht BEN-01 bis BEN-07
+          description: Corresponds to BEN-01 to BEN-07
         recipient: { $ref: '#/components/schemas/PersonSummary' }
         text: { type: string, examples: ['Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.'] }
         eventId: { type: [string, 'null'], format: uuid }

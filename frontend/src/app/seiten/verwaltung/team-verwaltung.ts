@@ -30,7 +30,7 @@ interface Mitglied {
   funktion: Funktion;
 }
 
-const FUNKTIONEN: Funktion[] = ['SPIELERIN', 'COACH'];
+const FUNKTIONEN: Funktion[] = ['PLAYER', 'COACH'];
 
 /**
  * Team verwalten (Admin, PTF-11): umbenennen, Personen mit Funktion aufnehmen (PTF-03, PTF-04),
@@ -90,12 +90,12 @@ export class TeamVerwaltung {
   protected readonly speichert = computed(() => this.laufendeAktion() !== null);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
-  protected readonly nurLesen = computed(() => this.saisonDaten()?.archiv === true);
+  protected readonly nurLesen = computed(() => this.saisonDaten()?.archived === true);
 
   protected readonly teamname = signal('');
   protected readonly teamnameFehler = signal<string | null>(null);
   protected readonly neuePerson = signal('');
-  protected readonly neueFunktion = signal<Funktion>('SPIELERIN');
+  protected readonly neueFunktion = signal<Funktion>('PLAYER');
   protected readonly personFehler = signal<string | null>(null);
   protected readonly suTeamId = signal('');
   protected readonly suTeamIdFehler = signal<string | null>(null);
@@ -107,10 +107,10 @@ export class TeamVerwaltung {
   protected readonly spielerinnen = computed<Mitglied[]>(() => {
     const t = this.team();
     if (!t) return [];
-    return [...t.einteilung.gruppen.flatMap((g) => g.spielerinnen), ...t.einteilung.ohneLinie].map(
+    return [...t.lineup.groups.flatMap((g) => g.players), ...t.lineup.noLine].map(
       (person) => ({
         person,
-        funktion: 'SPIELERIN',
+        funktion: 'PLAYER',
       }),
     );
   });
@@ -134,20 +134,20 @@ export class TeamVerwaltung {
 
   private params(): Record<string, string> {
     const id = this.saisonDaten()?.id ?? this.saison();
-    return id ? { saison: id } : {};
+    return id ? { season: id } : {};
   }
 
   private async laden(teamId: string, saisonId: string | undefined): Promise<void> {
     this.laedt.set(true);
     this.fehler.set(null);
     try {
-      const params: Record<string, string> = saisonId ? { saison: saisonId } : {};
+      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
       const [saisons, team, personen] = await Promise.all([
-        firstValueFrom(this.http.get<Saison[]>('/api/saisons')),
+        firstValueFrom(this.http.get<Saison[]>('/api/seasons')),
         firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
-        firstValueFrom(this.http.get<Person[]>('/api/personen')),
+        firstValueFrom(this.http.get<Person[]>('/api/persons')),
       ]);
-      this.saisonDaten.set(saisons.find((s) => (saisonId ? s.id === saisonId : s.aktuell)) ?? null);
+      this.saisonDaten.set(saisons.find((s) => (saisonId ? s.id === saisonId : s.current)) ?? null);
       this.team.set(team);
       this.teamname.set(team.name);
       this.suTeamId.set(team.suTeamId != null ? String(team.suTeamId) : '');
@@ -215,16 +215,16 @@ export class TeamVerwaltung {
     void this.ausfuehren('aufnehmen', async () => {
       const z = await firstValueFrom(
         this.http.post<Teamzugehoerigkeit>(
-          `/api/teams/${this.teamId()}/mitglieder`,
-          { personId, funktion },
+          `/api/teams/${this.teamId()}/members`,
+          { personId, teamRole: funktion },
           { params: this.params() },
         ),
       );
       this.neuePerson.set('');
-      this.neueFunktion.set('SPIELERIN');
+      this.neueFunktion.set('PLAYER');
       return TEXTE.teamVerwaltung.aufgenommen(
         name(z.person),
-        funktionText(z.funktion),
+        funktionText(z.teamRole),
         z.team.name,
       );
     });
@@ -234,8 +234,8 @@ export class TeamVerwaltung {
     void this.ausfuehren(`funktion:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.put(
-          `/api/teams/${this.teamId()}/mitglieder/${m.person.id}`,
-          { funktion },
+          `/api/teams/${this.teamId()}/members/${m.person.id}`,
+          { teamRole: funktion },
           { params: this.params() },
         ),
       );
@@ -246,7 +246,7 @@ export class TeamVerwaltung {
   protected entfernen(m: Mitglied): void {
     void this.ausfuehren(`entfernen:${m.person.id}`, async () => {
       await firstValueFrom(
-        this.http.delete(`/api/teams/${this.teamId()}/mitglieder/${m.person.id}`, {
+        this.http.delete(`/api/teams/${this.teamId()}/members/${m.person.id}`, {
           params: this.params(),
         }),
       );
@@ -288,7 +288,7 @@ export class TeamVerwaltung {
     void this.ausfuehren('abgleichen', async () => {
       const ergebnis = await firstValueFrom(
         this.http.post<AbgleichErgebnis>(
-          `/api/teams/${this.teamId()}/swiss-unihockey/abgleich`,
+          `/api/teams/${this.teamId()}/swiss-unihockey/sync`,
           null,
         ),
       );

@@ -97,22 +97,22 @@ type Feld = 'vorname' | 'nachname' | 'email';
             <h2 id="person-zugehoerigkeiten" class="abschnitt-titel">
               {{ texte.personen.zugehoerigkeiten }}
             </h2>
-            @if (d.zugehoerigkeiten.length === 0) {
+            @if (d.memberships.length === 0) {
               <p class="leer">{{ texte.personen.keineZugehoerigkeiten }}</p>
             } @else {
               <ul class="liste" [attr.aria-label]="texte.personen.zugehoerigkeiten">
-                @for (z of d.zugehoerigkeiten; track z.team.id + z.saisonId) {
+                @for (z of d.memberships; track z.team.id + z.seasonId) {
                   <li class="zeile">
                     <a
                       class="zeile-titel"
                       [routerLink]="['/verwaltung/teams', z.team.id]"
-                      [queryParams]="{ saison: z.saisonId }"
+                      [queryParams]="{ saison: z.seasonId }"
                       >{{ z.team.name }}</a
                     >
-                    <span class="chip" [attr.data-art]="z.funktion === 'COACH' ? 'coach' : null">{{
-                      funktion(z.funktion)
+                    <span class="chip" [attr.data-art]="z.teamRole === 'COACH' ? 'coach' : null">{{
+                      funktion(z.teamRole)
                     }}</span>
-                    <span class="nebentext">{{ saisonName(z.saisonId) }}</span>
+                    <span class="nebentext">{{ saisonName(z.seasonId) }}</span>
                   </li>
                 }
               </ul>
@@ -187,14 +187,14 @@ export class PersonFormular {
     this.laedt.set(true);
     try {
       const [person, saisons] = await Promise.all([
-        firstValueFrom(this.http.get<PersonDetail>(`/api/personen/${id}`)),
-        firstValueFrom(this.http.get<Saison[]>('/api/saisons')),
+        firstValueFrom(this.http.get<PersonDetail>(`/api/persons/${id}`)),
+        firstValueFrom(this.http.get<Saison[]>('/api/seasons')),
       ]);
       this.saisons.set(saisons);
       this.detail.set(person);
       this.formular.setValue({
-        vorname: person.vorname,
-        nachname: person.nachname,
+        vorname: person.firstName,
+        nachname: person.lastName,
         email: person.email ?? '',
         admin: person.admin,
       });
@@ -226,8 +226,8 @@ export class PersonFormular {
     }
 
     const eingabe: PersonSchreiben = {
-      vorname: f.vorname.trim(),
-      nachname: f.nachname.trim(),
+      firstName: f.vorname.trim(),
+      lastName: f.nachname.trim(),
       email: f.email.trim() || null,
       admin: f.admin,
     };
@@ -235,7 +235,7 @@ export class PersonFormular {
     try {
       const id = this.personId();
       if (id) {
-        await firstValueFrom(this.http.put<Person>(`/api/personen/${id}`, eingabe));
+        await firstValueFrom(this.http.put<Person>(`/api/persons/${id}`, eingabe));
         this.erfolg.set(TEXTE.personen.gespeichert);
         await this.laden(id);
         this.erfolg.set(TEXTE.personen.gespeichert);
@@ -243,12 +243,12 @@ export class PersonFormular {
           await this.anmeldung.laden();
         }
       } else {
-        const neu = await firstValueFrom(this.http.post<Person>('/api/personen', eingabe));
+        const neu = await firstValueFrom(this.http.post<Person>('/api/persons', eingabe));
         this.rueckmeldung.setzen(TEXTE.personen.erfasst(name(neu)));
         await this.router.navigate(['/verwaltung/personen', neu.id]);
       }
     } catch (e) {
-      this.feldFehler.set(feldfehler(e));
+      this.feldFehler.set(feldfehler(e, { firstName: 'vorname', lastName: 'nachname' }));
       this.fehler.set(fehlertext(e));
     } finally {
       this.speichert.set(false);

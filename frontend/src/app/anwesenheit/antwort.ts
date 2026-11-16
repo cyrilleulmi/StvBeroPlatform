@@ -11,20 +11,30 @@ export class AntwortService {
   /** `personId` leer: eigene Antwort (`/antworten/ich`). */
   setzen(terminId: string, eingabe: AntwortSetzen, personId?: string): Promise<Antwort> {
     return firstValueFrom(
-      this.http.put<Antwort>(`/api/termine/${terminId}/antworten/${personId ?? 'ich'}`, eingabe),
+      this.http.put<Antwort>(`/api/events/${terminId}/responses/${personId ?? 'me'}`, eingabe),
     );
   }
 }
 
 /** Icon pro Antwortstatus (O-16, docs/design-grundlagen.md): Farbe allein trägt keine Information. */
 export const ANTWORT_ICON: Record<AntwortStatus, string> = {
-  DABEI: 'check',
-  NICHT_DABEI: 'x',
-  VIELLEICHT: 'circle-help',
-  OFFEN: 'circle-dashed',
+  ATTENDING: 'check',
+  DECLINED: 'x',
+  MAYBE: 'circle-help',
+  PENDING: 'circle-dashed',
 };
 
-/** Wert für `data-antwort`/Test-IDs in kebab-case, z.B. `nicht-dabei`. */
+/**
+ * Wert für `data-art`/Test-IDs in kebab-case, z.B. `nicht-dabei`. Die Test-IDs bleiben deutsch
+ * (docs/ui/navigation.md), auch wenn die API die Antworten englisch nennt (F-10).
+ */
+const ANTWORT_SCHLUESSEL: Record<AntwortStatus, string> = {
+  ATTENDING: 'dabei',
+  DECLINED: 'nicht-dabei',
+  MAYBE: 'vielleicht',
+  PENDING: 'offen',
+};
+
 export function antwortSchluessel(status: AntwortStatus): string {
-  return status.toLowerCase().replace('_', '-');
+  return ANTWORT_SCHLUESSEL[status];
 }

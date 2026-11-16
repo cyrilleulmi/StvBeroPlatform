@@ -35,12 +35,12 @@ export const TEXTE = {
     meineAntwort: 'Meine Antwort',
     meineAntwortFuer: (termin: string) => `Meine Antwort für ${termin}`,
     status: {
-      DABEI: 'dabei',
-      NICHT_DABEI: 'nicht dabei',
-      VIELLEICHT: 'vielleicht',
-      OFFEN: 'offen',
+      ATTENDING: 'dabei',
+      DECLINED: 'nicht dabei',
+      MAYBE: 'vielleicht',
+      PENDING: 'offen',
     },
-    knopf: { DABEI: 'Dabei', NICHT_DABEI: 'Nicht dabei', VIELLEICHT: 'Vielleicht' },
+    knopf: { ATTENDING: 'Dabei', DECLINED: 'Nicht dabei', MAYBE: 'Vielleicht' },
     gespeichert: (status: string) => `Gespeichert: ${status}.`,
     grundGespeichert: 'Grund gespeichert.',
     abgesagt: 'Der Termin ist abgesagt. Antworten sind nicht mehr möglich.',
@@ -121,7 +121,7 @@ export const TEXTE = {
     teilEinerSerie: 'Gehört zu einer Serie',
     serieAnsehen: 'Serie ansehen',
     bearbeiten: 'Termin bearbeiten',
-    typ: { TRAINING: 'Training', SPIELTAG: 'Spieltag', ANLASS: 'Anlass' },
+    typ: { PRACTICE: 'Training', MATCH_DAY: 'Spieltag', OTHER: 'Anlass' },
   },
   spieltag: {
     spiele: 'Spiele',
@@ -142,19 +142,19 @@ export const TEXTE = {
     resultatGespeichert: (paarung: string) => `Resultat für ${paarung} gespeichert.`,
     aufgebot: 'Aufgebot',
     mein: {
-      NOCH_KEIN_AUFGEBOT: 'noch kein Aufgebot',
-      AUFGEBOTEN: 'aufgeboten',
-      NICHT_AUFGEBOTEN: 'nicht aufgeboten',
+      NO_CALL_UP_YET: 'noch kein Aufgebot',
+      CALLED_UP: 'aufgeboten',
+      NOT_CALLED_UP: 'nicht aufgeboten',
     },
     meinText: {
-      NOCH_KEIN_AUFGEBOT: 'Die Coach hat das Aufgebot noch nicht veröffentlicht.',
-      AUFGEBOTEN: 'Du spielst. Kannst du doch nicht, melde dich ab.',
-      NICHT_AUFGEBOTEN: 'Du bist für diesen Spieltag nicht aufgeboten.',
+      NO_CALL_UP_YET: 'Die Coach hat das Aufgebot noch nicht veröffentlicht.',
+      CALLED_UP: 'Du spielst. Kannst du doch nicht, melde dich ab.',
+      NOT_CALLED_UP: 'Du bist für diesen Spieltag nicht aufgeboten.',
     },
     stand: {
-      KEINES: 'Noch kein Aufgebot',
-      ENTWURF: 'Entwurf, für die Spielerinnen noch nicht sichtbar',
-      VEROEFFENTLICHT: 'Veröffentlicht',
+      NONE: 'Noch kein Aufgebot',
+      DRAFT: 'Entwurf, für die Spielerinnen noch nicht sichtbar',
+      PUBLISHED: 'Veröffentlicht',
     },
     aufgebotBearbeiten: 'Aufgebot bearbeiten',
   },
@@ -165,9 +165,9 @@ export const TEXTE = {
     auswahlHinweis:
       'Alle Spielerinnen des Teams, nach Linien. Du kannst auch Spielerinnen aufbieten, die «vielleicht» oder noch nicht geantwortet haben. Jede Änderung wird sofort gespeichert.',
     status: {
-      KEINES: 'Entwurf: noch niemand ausgewählt',
-      ENTWURF: 'Entwurf',
-      VEROEFFENTLICHT: 'veröffentlicht',
+      NONE: 'Entwurf: noch niemand ausgewählt',
+      DRAFT: 'Entwurf',
+      PUBLISHED: 'veröffentlicht',
     },
     veroeffentlichtAm: (datum: string, zeit: string) => `veröffentlicht am ${datum} ${zeit}`,
     entwurfHinweis: 'Die Spielerinnen sehen das Aufgebot erst, wenn du es veröffentlichst.',
@@ -261,13 +261,13 @@ export const TEXTE = {
     grundPflicht: 'Bitte einen Grund angeben.',
     endeNachBeginn: 'Das Ende muss nach dem Beginn liegen.',
     wochentage: {
-      MONTAG: 'Montag',
-      DIENSTAG: 'Dienstag',
-      MITTWOCH: 'Mittwoch',
-      DONNERSTAG: 'Donnerstag',
-      FREITAG: 'Freitag',
-      SAMSTAG: 'Samstag',
-      SONNTAG: 'Sonntag',
+      MONDAY: 'Montag',
+      TUESDAY: 'Dienstag',
+      WEDNESDAY: 'Mittwoch',
+      THURSDAY: 'Donnerstag',
+      FRIDAY: 'Freitag',
+      SATURDAY: 'Samstag',
+      SUNDAY: 'Sonntag',
     },
   },
   serie: {
@@ -334,7 +334,7 @@ export const TEXTE = {
       'Spielerinnen in eine andere Gruppe ziehen oder bei jeder Spielerin die Linie wählen.',
   },
   funktion: {
-    SPIELERIN: 'Spielerin',
+    PLAYER: 'Spielerin',
     COACH: 'Coach',
     unbekannt: 'Mitglied',
   },
@@ -429,13 +429,13 @@ export const TEXTE = {
     geloest: 'Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.',
     abgleichen: 'Jetzt abgleichen',
     abgeglichen: (e: {
-      neu: number;
-      geaendert: number;
-      nichtMehrVorhanden: number;
-      unveraendert: number;
+      created: number;
+      changed: number;
+      missing: number;
+      unchanged: number;
     }) =>
-      `Abgleich fertig: ${e.neu} neu, ${e.geaendert} geändert, ` +
-      `${e.nichtMehrVorhanden} nicht mehr bei swiss unihockey, ${e.unveraendert} unverändert.`,
+      `Abgleich fertig: ${e.created} neu, ${e.changed} geändert, ` +
+      `${e.missing} nicht mehr bei swiss unihockey, ${e.unchanged} unverändert.`,
   },
   saisons: {
     titel: 'Saisons',

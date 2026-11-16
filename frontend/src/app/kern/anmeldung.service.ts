@@ -29,13 +29,13 @@ export class AnmeldungService {
    * Zuerst `GET /api/sitzung` (immer 200), damit ohne Anmeldung kein 401 in der Konsole landet.
    */
   async laden(): Promise<Ich | null> {
-    const sitzung = await firstValueFrom(this.http.get<Sitzung>('/api/sitzung'));
-    if (!sitzung.angemeldet) {
+    const sitzung = await firstValueFrom(this.http.get<Sitzung>('/api/session'));
+    if (!sitzung.signedIn) {
       this.ich.set(null);
       return null;
     }
     try {
-      const ich = await firstValueFrom(this.http.get<Ich>('/api/ich'));
+      const ich = await firstValueFrom(this.http.get<Ich>('/api/me'));
       this.ich.set(ich);
       return ich;
     } catch (fehler) {
@@ -52,7 +52,7 @@ export class AnmeldungService {
   }
 
   async alsTestpersonAnmelden(schluessel: string): Promise<void> {
-    await firstValueFrom(this.http.post<void>('/api/test/anmelden', { schluessel }));
+    await firstValueFrom(this.http.post<void>('/api/test/login', { loginKey: schluessel }));
     try {
       await this.laden();
     } catch (fehler) {
@@ -64,7 +64,7 @@ export class AnmeldungService {
   }
 
   async abmelden(): Promise<void> {
-    await firstValueFrom(this.http.post<void>('/api/abmelden', null));
+    await firstValueFrom(this.http.post<void>('/api/logout', null));
     this.ich.set(null);
   }
 

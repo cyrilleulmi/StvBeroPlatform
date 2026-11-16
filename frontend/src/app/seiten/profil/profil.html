@@ -2,7 +2,7 @@
 
 @if (anmeldung.ich(); as ich) {
   <section class="karte person" aria-labelledby="profil-name">
-    <h2 id="profil-name">{{ ich.vorname }} {{ ich.nachname }}</h2>
+    <h2 id="profil-name">{{ ich.firstName }} {{ ich.lastName }}</h2>
     @if (ich.email) {
       <p class="nebentext">{{ ich.email }}</p>
     }
