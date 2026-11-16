@@ -1,42 +1,48 @@
-# 10 · Nichtfunktionale Anforderungen
+# 10 · Non-functional requirements
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Bedienung
+## Usability
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| NF-01 | Die App ist ohne Anleitung nutzbar: wenige Klicks, klare Sprache, keine Fachbegriffe. | Entschieden |
-| NF-02 | Die Oberfläche ist auf Deutsch. | Entschieden |
-| NF-03 | Mobile first: Die App ist für das Handy in der Halle gebaut. Auf dem Desktop ist sie vollwertig nutzbar. | Entschieden |
-| NF-04 | Touch-Ziele sind mindestens 44px gross. | Entschieden |
-| NF-05 | Die App ist als PWA installierbar. | Entschieden |
-| NF-06 | Light- und Darkmode sind Pflicht. Der Modus folgt der Systemeinstellung und lässt sich von Hand umschalten. | Entschieden |
-| NF-07 | Das Grunddesign «Salbei frisch» ist für alle Kacheln verbindlich (siehe [design-principles.md](../design-principles.md)). Form, Schrift und Abstände gelten für alle Darstellungen; die Farben von «Salbei frisch» sind die Darstellung «Hell» (NF-08). | Entschieden |
-| NF-08 | Es gibt drei Darstellungen: «Hell», «Düne» und «GitHub Dark» (E-67). Sie unterscheiden sich nur in den Farben und lassen sich im Profil wählen, dazu «System»: im Hellen gilt «Hell», im Dunkeln «GitHub Dark». Die Wahl bleibt im Browser gespeichert. Farben und Regeln: [design-principles.md](../design-principles.md#darstellungen). | Entschieden (Auswahl), Angenommen («System») |
+| NF-01 | The app can be used without instructions: few clicks, plain language, no jargon. | Decided |
+| NF-02 | The user interface is German. Everything else in the repository is English (NF-40). | Decided |
+| NF-03 | Mobile first: the app is built for the phone in the hall. On the desktop it is fully usable. | Decided |
+| NF-04 | Touch targets are at least 44px. | Decided |
+| NF-05 | The app can be installed as a PWA. | Decided |
+| NF-06 | Light and dark mode are mandatory. The mode follows the system setting and can be switched by hand. | Decided |
+| NF-07 | The basic design «Salbei frisch» is binding for all tiles (see [design-principles.md](../design-principles.md)). Shape, font and spacing apply to all themes; the colors of «Salbei frisch» are the theme «Hell» (NF-08). | Decided |
+| NF-08 | There are three themes: «Hell», «Düne» and «GitHub Dark» (E-67). They differ only in their colors and can be chosen in the profile, plus «System»: in light mode «Hell» applies, in dark mode «GitHub Dark». The choice is stored in the browser. Colors and rules: [design-principles.md](../design-principles.md#themes). | Decided (selection), Accepted («System») |
 
-## Aufbau
+## Structure
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| NF-10 | Jede Funktion ist eine eigenständige Kachel. Neue Kacheln kommen dazu, ohne bestehende anzupassen. | Entschieden |
-| NF-11 | Eine Kachel liefert ihre Metadaten (Titel, Icon, Route, benötigte Rolle) und registriert sich zentral. Das Dashboard rendert daraus die Übersicht. | Entschieden |
-| NF-12 | Das Dashboard zeigt die Kacheln je nach Rolle. | Entschieden |
+| NF-10 | Every function is a self-contained tile. New tiles are added without changing existing ones. | Decided |
+| NF-11 | A tile provides its metadata (title, icon, route, required role) and registers centrally. The dashboard renders the overview from it. | Decided |
+| NF-12 | The dashboard shows the tiles depending on the role. | Decided |
 
-## Qualität und Lieferung
+## Quality and delivery
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| NF-20 | Jedes Ergebnis ist lauffähig und direkt aufrufbar (URL bzw. Startbefehl). | Entschieden |
-| NF-21 | Jedes Ergebnis ist auf Desktop und Mobile geprüft. | Entschieden |
-| NF-22 | Es gibt Seed-Daten zum Ausprobieren. | Entschieden |
-| NF-23 | Backend-Logik ist mit Tests abgedeckt. | Entschieden |
-| NF-24 | Schema-Änderungen an der Datenbank sind als versionierte Migrationen abgelegt. | Entschieden |
+| NF-20 | Every result runs and can be opened directly (URL or start command). | Decided |
+| NF-21 | Every result is checked on desktop and mobile. | Decided |
+| NF-22 | There is seed data to try things out. | Decided |
+| NF-23 | Backend logic is covered by tests. | Decided |
+| NF-24 | Schema changes to the database are stored as versioned migrations. | Decided |
 
-## Datenschutz
+## Data protection
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| NF-30 | Es werden nur die Personendaten gespeichert, die für die Funktionen nötig sind. | Annahme |
-| NF-31 | Kommentare und Absagegründe sind nur für Coaches und die Person selbst sichtbar ([ANM-07](04-responses.md)). | Angenommen |
-| NF-32 | Welche Daten genau gespeichert werden und wer was sieht (nDSG), ist nicht abschliessend geklärt. Die App ist momentan für Erwachsene gedacht. Kommen später Minderjährige dazu, muss der Punkt neu beurteilt werden. | Offen |
+| NF-30 | Only the personal data needed for the functions is stored. | Assumption |
+| NF-31 | Comments and reasons for declining are only visible to coaches and the person themselves ([ANM-07](04-responses.md)). | Accepted |
+| NF-32 | Exactly which data is stored and who sees what (Swiss nFADP) is not fully clarified. The app is currently intended for adults. If minors are added later, the point must be reassessed. | Open |
+
+## Language
+
+| ID | Requirement | Status |
+|---|---|---|
+| NF-40 | The repository is English: code, API, database, documents, skills, scripts, tests, commit messages, PR descriptions and agent comments use the terms from [glossary.md](../glossary.md) (E-68). German stays: (1) all text users see in the app (labels, messages, e-mails, notifications) and the status page text, German (Switzerland) with «ss» instead of «ß»; (2) the browser addresses of the app (`/termine`, `/teams`, `/profil`, `/verwaltung`, `/benachrichtigungen`, …); (3) requirement, decision, open-point, scenario and feature IDs (`ANM-03`, `E-65`, `O-12`, `S19`, `F-04`); (4) GitHub labels (`status:bereit`, `pipeline:review`, `typ:nachbesserung`, …), skill names (`pipeline-entwicklung`, `pipeline-review`, `pipeline-test`, `pipeline-waechter`), the subcommands of `scripts/pipeline.sh` and the comment markers (`<!-- pipeline:entwicklung -->`, …); (5) the keyword `Voraussetzung:` in issue bodies; (6) seed person keys (`alex`, `petra`, `anna`, …) and seed names; (7) closed issues, merged PRs and git history, which are not rewritten. Proper names stay as they are. | Decided |

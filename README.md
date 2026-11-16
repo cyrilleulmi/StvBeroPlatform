@@ -1,80 +1,84 @@
 # StvBeroPlatform
 
-Zentrale Web-Plattform für das Unihockey des STV Beromünster. Sie bündelt die organisatorischen Werkzeuge, die heute verstreut sind (Listen, Chats, Tabellen), an einem Ort – einfach genug, dass Spielerinnen, Coaches und Helfer sie ohne Anleitung nutzen können.
+Central web platform for floorball (unihockey) at STV Beromünster. It brings together the organizational tools that are scattered today (lists, chats, spreadsheets) in one place – simple enough that players, coaches and helpers can use it without instructions.
 
-> **Stand 15.11.2026:** Anforderungen und [Produktionspipeline](docs/pipeline/README.md) stehen. Das Grundgerüst (F-00) ist gebaut. Weitere Features entstehen über die Pipeline, sobald ein Issue `status:bereit` bekommt.
+> **Status 16.11.2026:** Requirements and the [production pipeline](docs/pipeline/README.md) are in place. The foundation (F-00) and the core features are built. More features are created through the pipeline as soon as an issue gets `status:bereit`. Since F-09 the repository is written in English; the user interface stays German (NF-02, NF-40).
 
-## Starten und testen
+## Start and test
 
 ```bash
-scripts/start.sh   # Datenbank, Backend (Quarkus, Profil dev) und Frontend starten
-scripts/test.sh    # API-Lint, Backend-Tests, Frontend-Lint/Build, E2E-Tests (mobil + desktop)
+scripts/start.sh   # start database, backend (Quarkus, profile dev) and frontend
+scripts/test.sh    # API lint, backend tests, frontend lint/build, E2E tests (mobile + desktop)
+python3 scripts/check-links.py   # check relative links in all Markdown files
 ```
 
-Danach: http://localhost:4200 – im Testmodus über http://localhost:4200/dev-login als Seed-Person anmelden ([test-data.md](docs/test-data.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
+Then: http://localhost:4200 – in test mode, log in as a seed person via http://localhost:4200/dev-login ([test-data.md](docs/test-data.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
 
-Voraussetzungen: Java 21, Maven, Node 22, PostgreSQL-Binaries (oder eine Datenbank `stv` auf `localhost:5432`, Benutzer/Passwort `stv`), Google Chrome für die E2E-Tests.
+Prerequisites: Java 21, Maven, Node 22, PostgreSQL binaries (or a database `stv` on `localhost:5432`, user/password `stv`), Google Chrome for the E2E tests.
 
-| Ordner | Inhalt |
+| Folder | Content |
 |---|---|
-| `backend/` | Quarkus, Java 21. Package pro Kachel unter `ch.stvbero.platform.<kachel>`, gemeinsamer Kern unter `ch.stvbero.platform.kern`. Migrationen: `src/main/resources/db/migration` (Flyway) |
-| `frontend/` | Angular (Standalone, Signals). Eine Kachel = ein lazy geladenes Feature |
-| `e2e/` | Playwright Test (`tests/`, `plans/`), Projekte `mobil` und `desktop` |
-| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh` |
+| `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.kern`. Migrations: `src/main/resources/db/migration` (Flyway) |
+| `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
+| `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobil` and `desktop` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py` |
 
-## Warum eine eigene App?
+## Why our own app?
 
-Standard-Apps decken zwei Dinge nicht ab, die für uns zentral sind:
+Standard apps do not cover two things that are central for us:
 
-1. **Trainings mit mehreren Teams.** Ein Training kann gleichzeitig zu mehreren Teams gehören. Die An- und Abmeldung zeigt die Mitglieder direkt nach Team gruppiert.
-2. **Linien.** Spielerinnen sind Linien zugewiesen. Bei An- und Abmeldungen werden sie direkt nach Linie gruppiert angezeigt.
+1. **Practices with several teams.** A practice can belong to several teams at the same time. The responses show the members grouped by team right away.
+2. **Lines.** Players are assigned to lines. Responses are shown grouped by line right away.
 
-Dazu kommt: Coaches melden sich ebenfalls an und ab, erscheinen aber nicht als Spielerinnen. Und eine Person kann mehreren Teams angehören, mit je einer eigenen Funktion (z.B. Team 1 Coach, Team 2 Spielerin).
+In addition: coaches respond as well, but do not appear as players. And a person can belong to several teams, each with its own team role (e.g. coach in team 1, player in team 2).
 
-## Inhalt
+## Contents
 
-| Dokument | Inhalt |
+| Document | Content |
 |---|---|
-| [docs/project-context.md](docs/project-context.md) | Ziel, Grundprinzipien, Kacheln, Arbeitsweise |
-| [docs/domain-model.md](docs/domain-model.md) | Begriffe und wie sie zusammenhängen |
-| [docs/requirements/](docs/requirements/) | Anforderungen an den Kern, pro Thema eine Datei |
-| [docs/more-tiles.md](docs/more-tiles.md) | Geplante Kacheln ausserhalb des Kerns |
-| [docs/later-features.md](docs/later-features.md) | Bewusst zurückgestellte und gestrichene Funktionen |
-| [docs/design-principles.md](docs/design-principles.md) | Grunddesign «Salbei frisch»: Farben, Formen, Typografie |
-| [docs/technology.md](docs/technology.md) | Technologie-Entscheide und Architektur-Leitplanken |
-| [docs/open-points.md](docs/open-points.md) | Ungeklärte Fragen |
-| [docs/decisions.md](docs/decisions.md) | Protokoll der getroffenen Entscheide |
-| [docs/pipeline/](docs/pipeline/README.md) | Produktionspipeline: Ablauf, Einrichtung, Backlog, Definition of Done |
-| [docs/api/](docs/api/README.md) | API-Vertrag (OpenAPI 3.1) und Konventionen |
-| [docs/states.md](docs/states.md) | Zustands- und Sequenzdiagramme |
-| [docs/ui/navigation.md](docs/ui/navigation.md) | Routen, Screens, feste Test-IDs |
-| [docs/testability.md](docs/testability.md) | Regeln, damit Test-Agenten das Frontend bedienen können |
-| [docs/test-data.md](docs/test-data.md) | Seed-Daten mit festen IDs und Testszenarien |
-| [AGENTS.md](AGENTS.md) | Hinweise für KI-Coding-Agenten, die in diesem Repo arbeiten |
+| [docs/glossary.md](docs/glossary.md) | Binding vocabulary German → English |
+| [docs/project-context.md](docs/project-context.md) | Goal, basic principles, tiles, way of working |
+| [docs/domain-model.md](docs/domain-model.md) | Terms and how they relate |
+| [docs/requirements/](docs/requirements/) | Requirements for the core, one file per topic |
+| [docs/more-tiles.md](docs/more-tiles.md) | Planned tiles outside the core |
+| [docs/later-features.md](docs/later-features.md) | Deliberately postponed and dropped features |
+| [docs/design-principles.md](docs/design-principles.md) | Basic design «Salbei frisch»: colors, shapes, typography |
+| [docs/technology.md](docs/technology.md) | Technology decisions and architecture guard rails |
+| [docs/open-points.md](docs/open-points.md) | Unresolved questions |
+| [docs/decisions.md](docs/decisions.md) | Log of the decisions made |
+| [docs/pipeline/](docs/pipeline/README.md) | Production pipeline: flow, setup, backlog, definition of done |
+| [docs/api/](docs/api/README.md) | API contract (OpenAPI 3.1) and conventions |
+| [docs/states.md](docs/states.md) | State and sequence diagrams |
+| [docs/ui/navigation.md](docs/ui/navigation.md) | Routes, screens, fixed test IDs |
+| [docs/testability.md](docs/testability.md) | Rules so that test agents can operate the frontend |
+| [docs/test-data.md](docs/test-data.md) | Seed data with fixed IDs and test scenarios |
+| [AGENTS.md](AGENTS.md) | Notes for AI coding agents working in this repository |
 
-### Anforderungen an den Kern
+### Requirements for the core
 
-| Nr. | Thema | Kürzel |
+| No. | Topic | Prefix |
 |---|---|---|
-| 01 | [Personen, Teams, Funktionen](docs/requirements/01-people-teams-roles.md) | PTF |
-| 02 | [Linien](docs/requirements/02-lines.md) | LIN |
-| 03 | [Termine](docs/requirements/03-events.md) | TER |
-| 04 | [An- und Abmeldung](docs/requirements/04-responses.md) | ANM |
-| 05 | [Spieltage und Aufgebot](docs/requirements/05-match-days-call-up.md) | AUF |
-| 06 | [Anbindung swiss unihockey](docs/requirements/06-swiss-unihockey.md) | SUH |
-| 07 | [Rollen und Rechte](docs/requirements/07-roles-permissions.md) | RR |
-| 08 | [Benachrichtigungen](docs/requirements/08-notifications.md) | BEN |
-| 09 | [Saisons](docs/requirements/09-seasons.md) | SAI |
-| 10 | [Nichtfunktionale Anforderungen](docs/requirements/10-non-functional.md) | NF |
+| 01 | [People, teams, team roles](docs/requirements/01-people-teams-roles.md) | PTF |
+| 02 | [Lines](docs/requirements/02-lines.md) | LIN |
+| 03 | [Events](docs/requirements/03-events.md) | TER |
+| 04 | [Responses](docs/requirements/04-responses.md) | ANM |
+| 05 | [Match days and call-up](docs/requirements/05-match-days-call-up.md) | AUF |
+| 06 | [swiss unihockey integration](docs/requirements/06-swiss-unihockey.md) | SUH |
+| 07 | [Roles and permissions](docs/requirements/07-roles-permissions.md) | RR |
+| 08 | [Notifications](docs/requirements/08-notifications.md) | BEN |
+| 09 | [Seasons](docs/requirements/09-seasons.md) | SAI |
+| 10 | [Non-functional requirements](docs/requirements/10-non-functional.md) | NF |
 
-## Status der Anforderungen
+The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 
-Jede Anforderung trägt einen Status. Er zeigt, wie verbindlich sie ist.
+## Requirement status
 
-| Status | Bedeutung |
-|---|---|
-| **Entschieden** | Von Cyrille ausdrücklich so festgelegt. |
-| **Angenommen** | Vorschlag aus der gemeinsamen Erarbeitung, dem nicht widersprochen wurde. Gilt bis auf Widerruf. |
-| **Annahme** | Noch nicht besprochen. Sinnvolle Annahme, damit die Umsetzung nicht blockiert ist. Darf hinterfragt werden. |
-| **Offen** | Muss vor oder während der Umsetzung geklärt werden. |
-| **Später** | Bewusst zurückgestellt. Nicht umsetzen, aber das Modell nicht dagegen verbauen. |
+Every requirement has a status. It shows how binding it is. Until F-09 the German values were used; they mean the same.
+
+| Status | German (until F-09) | Meaning |
+|---|---|---|
+| **Decided** | Entschieden | Explicitly set this way by Cyrille. |
+| **Accepted** | Angenommen | Proposal from the joint elaboration that was not contradicted. Applies until revoked. |
+| **Assumption** | Annahme | Not discussed yet. A sensible assumption so that implementation is not blocked. May be questioned. |
+| **Open** | Offen | Must be clarified before or during implementation. |
+| **Later** | Später | Deliberately postponed. Do not implement, but do not build the model against it. |
