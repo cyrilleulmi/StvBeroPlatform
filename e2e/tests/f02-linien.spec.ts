@@ -215,10 +215,10 @@ test('F-02 K6 LIN-05: Goalies gibt es genau einmal, sie lassen sich nicht lösch
   await expect(page.getByRole('heading', { level: 2, name: /^Goalies/ })).toHaveCount(1);
   await expect(goalies.getByRole('button', { name: /löschen|umbenennen|nach/ })).toHaveCount(0);
 
-  const antwort = await page.request.delete(`/api/teams/${TEAM_1}/gruppen/${T1_GOALIES}`);
+  const antwort = await page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_GOALIES}`);
   expect(antwort.status()).toBe(409);
-  expect((await antwort.json()).regel).toBe('LIN-05');
-  const neu = await page.request.post(`/api/teams/${TEAM_1}/gruppen`, { data: { name: 'Goalies' } });
+  expect((await antwort.json()).rule).toBe('LIN-05');
+  const neu = await page.request.post(`/api/teams/${TEAM_1}/groups`, { data: { name: 'Goalies' } });
   expect(neu.status()).toBe(409);
   await page.reload();
   await expect(page.getByRole('heading', { level: 2, name: /^Goalies/ })).toHaveCount(1);
@@ -236,8 +236,8 @@ test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ä
   await page.goto(`/teams/${TEAM_1}`);
   await expect(page.getByTestId('team-spielerinnen').getByRole('list', { name: 'Linie 1' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Linien einteilen' })).toHaveCount(0);
-  const annaAendert = await page.request.put(`/api/teams/${TEAM_1}/zuweisungen/${ANNA}`, {
-    data: { gruppeId: T1_LINIE_2 },
+  const annaAendert = await page.request.put(`/api/teams/${TEAM_1}/assignments/${ANNA}`, {
+    data: { groupId: T1_LINIE_2 },
   });
   expect(annaAendert.status()).toBe(403);
 
@@ -253,10 +253,10 @@ test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ä
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   await expect(page.getByTestId('linien-verwaltung')).toHaveCount(0);
   for (const anfrage of [
-    page.request.put(`/api/teams/${TEAM_1}/zuweisungen/${ANNA}`, { data: { gruppeId: T1_LINIE_2 } }),
-    page.request.post(`/api/teams/${TEAM_1}/gruppen`, { data: { name: 'Linie 3' } }),
-    page.request.put(`/api/teams/${TEAM_1}/gruppen/${T1_LINIE_1}`, { data: { name: 'X' } }),
-    page.request.delete(`/api/teams/${TEAM_1}/gruppen/${T1_LINIE_1}`),
+    page.request.put(`/api/teams/${TEAM_1}/assignments/${ANNA}`, { data: { groupId: T1_LINIE_2 } }),
+    page.request.post(`/api/teams/${TEAM_1}/groups`, { data: { name: 'Linie 3' } }),
+    page.request.put(`/api/teams/${TEAM_1}/groups/${T1_LINIE_1}`, { data: { name: 'X' } }),
+    page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_LINIE_1}`),
   ]) {
     expect((await anfrage).status()).toBe(403);
   }

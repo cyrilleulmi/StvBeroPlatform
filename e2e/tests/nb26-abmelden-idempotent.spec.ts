@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { anmelden, expect, reset, test } from './hilfen';
 
 /**
- * Nachbesserung #26 · Abmelden ist idempotent. Zwei (auch gleichzeitige) `POST /api/abmelden`
+ * Nachbesserung #26 · Abmelden ist idempotent. Zwei (auch gleichzeitige) `POST /api/logout`
  * mit demselben Sitzungs-Cookie antworten beide mit 204 und löschen das Cookie, nie mit 500.
  * Die Browser-Konsole prüft `hilfen.ts` nach jedem Test.
  */
@@ -34,14 +34,14 @@ test('Nachbesserung #26 K1: zwei gleichzeitige Abmeldungen mit demselben Cookie 
   await anmelden(page, 'anna');
 
   const antworten = await Promise.all(
-    Array.from({ length: 4 }, () => page.request.post('/api/abmelden')),
+    Array.from({ length: 4 }, () => page.request.post('/api/logout')),
   );
 
   for (const antwort of antworten) {
     expect(antwort.status()).toBe(204);
     expect(antwort.headers()['set-cookie']).toContain('stv_sitzung=;');
   }
-  expect((await (await page.request.get('/api/sitzung')).json()).angemeldet).toBe(false);
+  expect((await (await page.request.get('/api/session')).json()).signedIn).toBe(false);
 });
 
 test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Profil führt zur Anmeldung, ohne 5xx', async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe('ohne aktuelle Saison', () => {
   test.use({ erwarteteKonsolenfehler: [/status of 409/] });
 
   test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» führt zur Anmeldung, ohne 5xx', async ({ page, request }) => {
-    expect((await request.delete('/api/test/aktuelle-saison')).status()).toBe(204);
+    expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     const fehler = serverfehler(page);
     await anmelden(page, 'anna');
     await page.goto('/');
@@ -93,7 +93,7 @@ test.describe('ohne aktuelle Saison', () => {
   });
 
   test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs vom Hinweis «keine Saison» abmelden, ohne 5xx', async ({ page, context, request }) => {
-    expect((await request.delete('/api/test/aktuelle-saison')).status()).toBe(204);
+    expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     await anmelden(page, 'anna');
     const zweiter = await context.newPage();
     const fehler = [page, zweiter].map(serverfehler);

@@ -4,7 +4,7 @@ import { AnmeldungService, KeineAktuelleSaison } from './anmeldung.service';
 
 /**
  * Ohne Anmeldung auf die Anmeldung umleiten, mit dem Ziel als `?ziel=` (danach zurück).
- * Ohne aktuelle Saison (409 von `GET /api/ich`, SAI-03) auf den Hinweis `/keine-saison`.
+ * Ohne aktuelle Saison (409 von `GET /api/me`, SAI-03) auf den Hinweis `/keine-saison`.
  */
 export const anmeldeGuard: CanActivateFn = async (_route, state) => {
   const anmeldung = inject(AnmeldungService);

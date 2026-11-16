@@ -5,7 +5,7 @@ import { umgebung } from '../../umgebung/umgebung';
 import type { Ich, Sitzung } from '../api/typen';
 
 /**
- * `GET /api/ich` antwortet mit 409, wenn keine Saison als aktuell festgelegt ist (SAI-03).
+ * `GET /api/me` antwortet mit 409, wenn keine Saison als aktuell festgelegt ist (SAI-03).
  * Der Anmelde-Guard leitet dann auf `/keine-saison` um.
  */
 export class KeineAktuelleSaison extends Error {
@@ -15,7 +15,7 @@ export class KeineAktuelleSaison extends Error {
   }
 }
 
-/** Wer angemeldet ist. Quelle ist immer das Backend (`GET /api/ich`). */
+/** Wer angemeldet ist. Quelle ist immer das Backend (`GET /api/me`). */
 @Injectable({ providedIn: 'root' })
 export class AnmeldungService {
   private readonly http = inject(HttpClient);
@@ -26,7 +26,7 @@ export class AnmeldungService {
   /**
    * Lädt die angemeldete Person. Liefert `null`, wenn niemand angemeldet ist, und wirft
    * `KeineAktuelleSaison`, wenn keine Saison als aktuell festgelegt ist (409).
-   * Zuerst `GET /api/sitzung` (immer 200), damit ohne Anmeldung kein 401 in der Konsole landet.
+   * Zuerst `GET /api/session` (immer 200), damit ohne Anmeldung kein 401 in der Konsole landet.
    */
   async laden(): Promise<Ich | null> {
     const sitzung = await firstValueFrom(this.http.get<Sitzung>('/api/session'));

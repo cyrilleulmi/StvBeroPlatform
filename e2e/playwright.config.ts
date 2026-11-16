@@ -38,7 +38,7 @@ export default defineConfig({
     {
       command: 'mvn -B -q quarkus:dev -Dquarkus.console.enabled=false',
       cwd: '../backend',
-      url: 'http://localhost:8080/api/test/uhr',
+      url: 'http://localhost:8080/api/test/clock',
       reuseExistingServer: true,
       timeout: 300_000,
       stdout: 'ignore',

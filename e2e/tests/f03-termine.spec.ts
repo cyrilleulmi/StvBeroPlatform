@@ -114,12 +114,12 @@ test('F-03 K3 TER-01 TER-11: Petra erfasst einen Termin für Team 1 + Team 2', a
 
 test('F-03 K3 RR-07: Marc darf nicht für Team 1 erfassen (403)', async ({ page }) => {
   await anmelden(page, 'marc');
-  const antwort = await page.request.post('/api/termine', {
+  const antwort = await page.request.post('/api/events', {
     data: {
-      typ: 'TRAINING',
-      titel: 'Training',
-      beginn: '2026-11-20T18:00:00+01:00',
-      ende: '2026-11-20T19:30:00+01:00',
+      type: 'PRACTICE',
+      title: 'Training',
+      start: '2026-11-20T18:00:00+01:00',
+      end: '2026-11-20T19:30:00+01:00',
       teamIds: [TEAM_1],
     },
   });

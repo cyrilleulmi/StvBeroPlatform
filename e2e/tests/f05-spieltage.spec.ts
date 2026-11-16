@@ -145,10 +145,10 @@ test('F-05 K4 AUF-21 AUF-22: Aufgebot nach Linien, Antwortstatus daneben, auch o
   await expect(auswahl.getByRole('group', { name: 'Linie 1' }).getByRole('checkbox')).toHaveCount(3);
 
   // Antwortstatus steht daneben
-  await expect(eintrag(page, MIA)).toHaveAttribute('data-antwort', 'VIELLEICHT');
+  await expect(eintrag(page, MIA)).toHaveAttribute('data-antwort', 'MAYBE');
   await expect(eintrag(page, MIA)).toContainText('vielleicht');
   await expect(eintrag(page, MIA)).toContainText('«Muss evtl. arbeiten»');
-  await expect(eintrag(page, NINA)).toHaveAttribute('data-antwort', 'OFFEN');
+  await expect(eintrag(page, NINA)).toHaveAttribute('data-antwort', 'PENDING');
   await expect(eintrag(page, NINA)).toContainText('offen');
   await expect(eintrag(page, MIA).getByRole('checkbox', { name: 'Mia Frei' })).toBeChecked();
 
@@ -212,7 +212,7 @@ test('F-05 K5 S9 AUF-23 AUF-24: Veröffentlichen mit Bestätigung, danach sehen 
 
 test('F-05 K5 AUF-23: Ohne Auswahl lässt sich nichts veröffentlichen', async ({ page }) => {
   await anmelden(page, 'petra');
-  const antwort = await page.request.put(`/api/termine/${T04}/aufgebot`, { data: { personIds: [] } });
+  const antwort = await page.request.put(`/api/events/${T04}/call-up`, { data: { personIds: [] } });
   expect(antwort.status()).toBe(200);
   await page.goto(`/termine/${T04}/aufgebot`);
   await expect(page.getByTestId('aufgebot-veroeffentlichen')).toBeDisabled();
@@ -225,16 +225,16 @@ test('F-05 K6 S11 RR-03: Aufgebot-Screen nur für Coaches', async ({ page }) => 
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   await expect(page.getByTestId('aufgebot-auswahl')).toHaveCount(0);
   for (const anfrage of [
-    page.request.get(`/api/termine/${T04}/aufgebot`),
-    page.request.put(`/api/termine/${T04}/aufgebot`, { data: { personIds: [ANNA] } }),
-    page.request.post(`/api/termine/${T04}/aufgebot/veroeffentlichen`),
+    page.request.get(`/api/events/${T04}/call-up`),
+    page.request.put(`/api/events/${T04}/call-up`, { data: { personIds: [ANNA] } }),
+    page.request.post(`/api/events/${T04}/call-up/publish`),
   ]) {
     expect((await anfrage).status()).toBe(403);
   }
 
   // Marc ist Coach von Team 2, nicht von Team 1
   await anmelden(page, 'marc');
-  expect((await page.request.get(`/api/termine/${T04}/aufgebot`)).status()).toBe(403);
+  expect((await page.request.get(`/api/events/${T04}/call-up`)).status()).toBe(403);
 });
 
 test('F-05 AUF-02: Ein Training hat kein Aufgebot', async ({ page }) => {

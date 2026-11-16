@@ -12,7 +12,7 @@ import { TEXTE } from '../../kern/texte';
 
 /**
  * Start: Begrüssung, nächster eigener Termin mit Antwort-Buttons (F-04, ANM-08) und Kacheln aus
- * `GET /api/kacheln` (NF-11, NF-12, RR-05).
+ * `GET /api/tiles` (NF-11, NF-12, RR-05).
  */
 @Component({
   selector: 'app-start',

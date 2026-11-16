@@ -87,7 +87,7 @@ test.describe('fehlerhafte Anmeldung', () => {
   test('Nachbesserung #14 K1: Nach einem Fehler ist die Anmeldung unter /dev-login wieder möglich', async ({ page }) => {
     await page.goto('/dev-login');
     let erster = true;
-    await page.route('**/api/test/anmelden', async (route) => {
+    await page.route('**/api/test/login', async (route) => {
       if (erster) {
         erster = false;
         await route.fulfill({ status: 503, body: '' });
@@ -122,7 +122,7 @@ test.describe('ohne aktuelle Saison', () => {
   test.use({ erwarteteKonsolenfehler: [/status of 409/] });
 
   test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» meldet einmal ab', async ({ page, request }) => {
-    expect((await request.delete('/api/test/aktuelle-saison')).status()).toBe(204);
+    expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     await anmelden(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
@@ -176,7 +176,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Speichern einer Person speichert ein
   await anmelden(page, 'alex');
   await page.goto(`/verwaltung/personen/${ANNA}`);
   await expect(page.getByLabel('Vorname')).toHaveValue('Anna');
-  const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/personen/${ANNA}$`));
+  const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/persons/${ANNA}$`));
   await page.getByLabel('Vorname').fill('Annina');
 
   await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Speichern' }), bremse);

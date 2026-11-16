@@ -14,32 +14,32 @@ const SPIEL_01 = '50000000-0000-4000-8000-000000000001';
 const SPIEL_02 = '50000000-0000-4000-8000-000000000002';
 
 interface SuSpiel {
-  suSpielId: number;
-  anspielzeit: string;
-  heimteam: string;
-  gastteam: string;
-  halle: string;
-  ort?: string;
-  resultat?: string | null;
+  suMatchId: number;
+  startTime: string;
+  homeTeam: string;
+  awayTeam: string;
+  hall: string;
+  location?: string;
+  result?: string | null;
 }
 
 const SPIEL_01_SU: SuSpiel = {
-  suSpielId: 5000001,
-  anspielzeit: '2026-11-22T09:30:00+01:00',
-  heimteam: 'Team 1',
-  gastteam: 'UHC Musterdorf',
-  halle: 'Sporthalle Seefeld',
-  ort: 'Musterdorf',
+  suMatchId: 5000001,
+  startTime: '2026-11-22T09:30:00+01:00',
+  homeTeam: 'Team 1',
+  awayTeam: 'UHC Musterdorf',
+  hall: 'Sporthalle Seefeld',
+  location: 'Musterdorf',
 };
 
 function spiel02(zeit: string): SuSpiel {
   return {
-    suSpielId: 5000002,
-    anspielzeit: `2026-11-22T${zeit}:00+01:00`,
-    heimteam: 'Unihockey Beispielstadt',
-    gastteam: 'Team 1',
-    halle: 'Sporthalle Seefeld',
-    ort: 'Musterdorf',
+    suMatchId: 5000002,
+    startTime: `2026-11-22T${zeit}:00+01:00`,
+    homeTeam: 'Unihockey Beispielstadt',
+    awayTeam: 'Team 1',
+    hall: 'Sporthalle Seefeld',
+    location: 'Musterdorf',
   };
 }
 
@@ -50,8 +50,8 @@ async function simulator(
   spiele: SuSpiel[],
   nichtErreichbar = false,
 ): Promise<void> {
-  const antwort = await request.put('/api/test/swiss-unihockey/spiele', {
-    data: { suTeamId, spiele, nichtErreichbar },
+  const antwort = await request.put('/api/test/swiss-unihockey/matches', {
+    data: { suTeamId, matches: spiele, unavailable: nichtErreichbar },
   });
   expect(antwort.status()).toBe(204);
 }
@@ -75,12 +75,12 @@ test.beforeEach(async ({ request }) => {
 test('F-07 K1 SUH-02: Als alex Team mit swiss unihockey verknüpfen und den Abgleich auslösen', async ({ page }) => {
   await simulator(page.request, 900002, [
     {
-      suSpielId: 6000001,
-      anspielzeit: '2026-12-05T13:00:00+01:00',
-      heimteam: 'UHC Fünf',
-      gastteam: 'Team 2',
-      halle: 'Turnhalle Weid',
-      ort: 'Beispielstadt',
+      suMatchId: 6000001,
+      startTime: '2026-12-05T13:00:00+01:00',
+      homeTeam: 'UHC Fünf',
+      awayTeam: 'Team 2',
+      hall: 'Turnhalle Weid',
+      location: 'Beispielstadt',
     },
   ]);
   await anmelden(page, 'alex');
@@ -135,7 +135,7 @@ test('F-07 K1 RR-07: Nur Admins verknüpfen und gleichen ab', async ({ page }) =
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   await expect(abschnitt(page)).toHaveCount(0);
-  const antwort = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/abgleich`);
+  const antwort = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`);
   expect(antwort.status()).toBe(403);
 });
 
@@ -151,20 +151,20 @@ test('F-07 K3 SUH-04 SUH-07: Spiele am selben Tag in derselben Halle werden ein 
     SPIEL_01_SU,
     spiel02('11:45'),
     {
-      suSpielId: 5000020,
-      anspielzeit: '2026-12-06T10:00:00+01:00',
-      heimteam: 'Team 1',
-      gastteam: 'UHC Drei',
-      halle: 'Sporthalle Nord',
-      ort: 'Beromünster',
+      suMatchId: 5000020,
+      startTime: '2026-12-06T10:00:00+01:00',
+      homeTeam: 'Team 1',
+      awayTeam: 'UHC Drei',
+      hall: 'Sporthalle Nord',
+      location: 'Beromünster',
     },
     {
-      suSpielId: 5000021,
-      anspielzeit: '2026-12-06T12:30:00+01:00',
-      heimteam: 'UHC Vier',
-      gastteam: 'Team 1',
-      halle: 'Sporthalle Nord',
-      ort: 'Beromünster',
+      suMatchId: 5000021,
+      startTime: '2026-12-06T12:30:00+01:00',
+      homeTeam: 'UHC Vier',
+      awayTeam: 'Team 1',
+      hall: 'Sporthalle Nord',
+      location: 'Beromünster',
     },
   ]);
   await abgleichenAlsAlex(page);
@@ -208,19 +208,19 @@ test('F-07 K4 S12 SUH-05 SUH-06 BEN-06: Verschiebung wird übernommen, eigene Da
   await expect(page.getByText('Weisse Trikots mitnehmen')).toBeVisible();
 
   // Aufgebot (Entwurf) unverändert: Anna, Lea, Mia, Sara, Jana
-  const aufgebot = await page.request.get(`/api/termine/${T04}/aufgebot`);
+  const aufgebot = await page.request.get(`/api/events/${T04}/call-up`);
   const daten = (await aufgebot.json()) as {
     status: string;
-    gruppen: {
-      eintraege: { person: { vorname: string }; aufgeboten: boolean }[];
+    groups: {
+      entries: { person: { firstName: string }; calledUp: boolean }[];
     }[];
   };
-  expect(daten.status).toBe('ENTWURF');
+  expect(daten.status).toBe('DRAFT');
   expect(
-    daten.gruppen
-      .flatMap((g) => g.eintraege)
-      .filter((e) => e.aufgeboten)
-      .map((e) => e.person.vorname)
+    daten.groups
+      .flatMap((g) => g.entries)
+      .filter((e) => e.calledUp)
+      .map((e) => e.person.firstName)
       .sort(),
   ).toEqual(['Anna', 'Jana', 'Lea', 'Mia', 'Sara']);
 

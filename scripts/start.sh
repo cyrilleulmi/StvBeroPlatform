@@ -40,7 +40,7 @@ warten() { # url name seconds
   done
 }
 
-if curl -fsS -o /dev/null http://localhost:8080/api/sitzung 2>/dev/null; then
+if curl -fsS -o /dev/null http://localhost:8080/api/session 2>/dev/null; then
   echo "Backend is already running on :8080."
 else
   echo "Starting backend (dev profile) …"
@@ -56,7 +56,7 @@ else
   PIDS+=($!)
 fi
 
-warten http://localhost:8080/api/sitzung Backend 300
+warten http://localhost:8080/api/session Backend 300
 warten http://localhost:4200 Frontend 300
 
 cat <<TEXT

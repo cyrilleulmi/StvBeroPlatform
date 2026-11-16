@@ -5,7 +5,7 @@ import { fehlertext } from '../../kern/fehlertext';
 import { TEXTE } from '../../kern/texte';
 
 /**
- * Hinweis, wenn keine Saison als aktuell festgelegt ist (409 von `GET /api/ich`, SAI-03).
+ * Hinweis, wenn keine Saison als aktuell festgelegt ist (409 von `GET /api/me`, SAI-03).
  * Ausserhalb der Shell, weil Navigation und Seiten die aktuelle Saison voraussetzen.
  */
 @Component({

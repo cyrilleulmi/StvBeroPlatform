@@ -93,11 +93,11 @@ test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme ab
 
   // Die Oberfläche bietet die zweite Aufnahme nicht an, das Backend lehnt sie ab (PTF-04).
   await expect(page.getByRole('option', { name: 'Anna Muster (schon im Team)' })).toBeDisabled();
-  const zweite = await page.request.post(`/api/teams/${TEAM_3}/mitglieder`, {
-    data: { personId: ANNA, funktion: 'SPIELERIN' },
+  const zweite = await page.request.post(`/api/teams/${TEAM_3}/members`, {
+    data: { personId: ANNA, teamRole: 'PLAYER' },
   });
   expect(zweite.status()).toBe(409);
-  expect((await zweite.json()).regel).toBe('PTF-04');
+  expect((await zweite.json()).rule).toBe('PTF-04');
 
   // Funktion ändern und entfernen
   await page.getByLabel('Funktion von Tina Bucher').selectOption({ label: 'Coach' });
@@ -204,8 +204,8 @@ test('F-01 K7 S16 SAI-02: Archiv ist lesend sichtbar', async ({ page }) => {
   await expect(page.getByRole('combobox')).toHaveCount(0);
   await barrierefrei(page);
 
-  const aendern = await page.request.post(`/api/teams/${TEAM_1}/mitglieder?saison=${SAISON_2025}`, {
-    data: { personId: ANNA, funktion: 'SPIELERIN' },
+  const aendern = await page.request.post(`/api/teams/${TEAM_1}/members?season=${SAISON_2025}`, {
+    data: { personId: ANNA, teamRole: 'PLAYER' },
   });
   expect(aendern.status()).toBe(409);
 });
@@ -229,11 +229,11 @@ test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ 
   await barrierefrei(page);
 
   const anfragen = [
-    page.request.get('/api/personen'),
-    page.request.post('/api/personen', { data: { vorname: 'X', nachname: 'Y' } }),
+    page.request.get('/api/persons'),
+    page.request.post('/api/persons', { data: { firstName: 'X', lastName: 'Y' } }),
     page.request.post('/api/teams', { data: { name: 'Team 9' } }),
-    page.request.post(`/api/teams/${TEAM_1}/mitglieder`, { data: { personId: TINA, funktion: 'SPIELERIN' } }),
-    page.request.post(`/api/saisons/${SAISON_2025}/aktivieren`),
+    page.request.post(`/api/teams/${TEAM_1}/members`, { data: { personId: TINA, teamRole: 'PLAYER' } }),
+    page.request.post(`/api/seasons/${SAISON_2025}/activate`),
   ];
   for (const antwort of await Promise.all(anfragen)) {
     expect(antwort.status()).toBe(403);
@@ -325,8 +325,8 @@ test('F-01 K7: Team ohne Coach zeigt «noch keinen Coach»', async ({ page }) =>
 test('F-01 K2 PTF-11: Langer Name ohne Leerzeichen bricht in der Liste um', async ({ page }) => {
   await anmelden(page, 'alex');
   const lang = ('Maximiliane'.repeat(6)).slice(0, 60); // Maximum, ohne Leerzeichen
-  const antwort = await page.request.post('/api/personen', {
-    data: { vorname: lang, nachname: 'Lang', email: null, admin: false },
+  const antwort = await page.request.post('/api/persons', {
+    data: { firstName: lang, lastName: 'Lang', email: null, admin: false },
   });
   expect(antwort.status()).toBe(201);
   await page.goto('/verwaltung/personen');
