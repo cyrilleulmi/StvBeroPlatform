@@ -18,6 +18,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -114,6 +115,7 @@ class TermineTest {
                 .body("gueltigVon", equalTo("2026-08-18"))
                 .body("gueltigBis", equalTo("2027-04-27"))
                 .body("teamIds", contains(TEAM_1, TEAM_2))
+                .body("teams.name", contains("Team 1", "Team 2"))
                 .body("ausnahmen[0].grund", equalTo("Weihnachtsferien"))
                 .body("ausnahmen[0].von", equalTo("2026-12-21"))
                 .body("ausnahmen[0].bis", equalTo("2027-01-03"));
@@ -143,6 +145,18 @@ class TermineTest {
                 .body("teams.id", everyItem(hasItem(TEAM_3)));
         // Alex ist in keinem Team: keine Termine
         liste(anmelden("alex"), "").body("$", empty());
+    }
+
+    /** Test-Befund F-03: Die Serie zeigte nur die eigenen Teams (TER-11). */
+    @Test
+    void ter11SerieNenntAlleTeamsAuchFremde() {
+        given().cookie("stv_sitzung", anmelden("anna")).get("/api/serien/" + SERIE_1).then().statusCode(200)
+                .body("teams.id", contains(TEAM_1, TEAM_2))
+                .body("teams.name", contains("Team 1", "Team 2"))
+                .body("teams[0].meineFunktion", equalTo("SPIELERIN"))
+                .body("teams[1].meineFunktion", nullValue());
+        given().cookie("stv_sitzung", anmelden("marc")).get("/api/serien/" + SERIE_1).then().statusCode(200)
+                .body("teams.name", contains("Team 1", "Team 2"));
     }
 
     @Test
@@ -401,7 +415,31 @@ class TermineTest {
         liste(petra, "?bis=2026-11-16").body("find { it.serieId == '" + serie + "' }.antwortfrist",
                 equalTo("2026-11-16T17:30:00+01:00"));
         given().cookie("stv_sitzung", petra).contentType(ContentType.JSON)
-                .body(body.replace("48", "-1")).post("/api/termine").then().statusCode(400);
+                .body(body.replace("48", "-1")).post("/api/termine").then().statusCode(400)
+                .body("felder[0].feld", equalTo("antwortfristStunden"))
+                .body("felder[0].meldung", equalTo("Mindestens 0 Stunden."));
+    }
+
+    /** Test-Befund F-03: Bean Validation lieferte englische Meldungen («must be less than or equal to 336»). */
+    @Test
+    void ter10AntwortfristHoechstensZweiWochenMitDeutscherMeldung() {
+        String body = termin("2026-11-21T18:00:00+01:00", "2026-11-21T19:30:00+01:00", TEAM_1)
+                .replace("\"hinweise\"", "\"antwortfristStunden\":337,\"hinweise\"");
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON).body(body)
+                .post("/api/termine").then().statusCode(400)
+                .body("felder[0].feld", equalTo("antwortfristStunden"))
+                .body("felder[0].meldung", equalTo("Höchstens 336 Stunden (14 Tage)."));
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON)
+                .body(serie("MONTAG", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
+                        .replace("\"ort\"", "\"antwortfristStunden\":337,\"ort\""))
+                .put("/api/serien/" + SERIE_1).then().statusCode(400)
+                .body("felder[0].meldung", equalTo("Höchstens 336 Stunden (14 Tage)."));
+        // Andere Felder: deutsche Standardtexte statt «must not be null»
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON)
+                .body(body.replace("\"titel\":\"Zusatztraining\",", "").replace("337", "24"))
+                .post("/api/termine").then().statusCode(400)
+                .body("felder[0].feld", equalTo("titel"))
+                .body("felder[0].meldung", not(containsString("must")));
     }
 
     // ------------------------------------------------------------------ Kriterium 9

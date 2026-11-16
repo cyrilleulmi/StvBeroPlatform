@@ -52,13 +52,13 @@ public class SerieService {
                 erzeugen(s, tag).persist();
             }
         }
-        return SerieDto.von(s);
+        return SerieDto.von(s, wer);
     }
 
     public SerieDto lesen(Angemeldet wer, UUID serieId) {
         Serie s = finden(serieId);
         TerminRegeln.pruefeDarfLesen(wer.admin(), TerminService.funktionen(wer, s.teams, s.saison));
-        return SerieDto.von(s);
+        return SerieDto.von(s, wer);
     }
 
     /**
@@ -99,7 +99,7 @@ public class SerieService {
         for (LocalDate tag : abgleich.erzeugen()) {
             erzeugen(s, tag).persist();
         }
-        return SerieDto.von(s);
+        return SerieDto.von(s, wer);
     }
 
     /**
@@ -128,7 +128,7 @@ public class SerieService {
                 wegfallen(t, a.grund);
             }
         }
-        return SerieDto.von(s);
+        return SerieDto.von(s, wer);
     }
 
     private static Serie finden(UUID id) {

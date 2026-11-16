@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Ausnahme, Serie as SerieDaten, Team } from '../api/typen';
+import type { Ausnahme, Serie as SerieDaten } from '../api/typen';
 import { AnmeldungService } from '../kern/anmeldung.service';
 import { feldfehler, fehlerstatus, fehlertext } from '../kern/fehlertext';
 import { datum } from '../kern/format';
@@ -180,8 +180,6 @@ export class Serie {
   readonly serieId = input.required<string>();
 
   protected readonly serie = signal<SerieDaten | null>(null);
-  /** Namen der eigenen Teams (bzw. aller für Admins), um die Teams der Serie zu benennen. */
-  private readonly teamNamen = signal<Team[]>([]);
   protected readonly laedt = signal(true);
   protected readonly speichert = signal(false);
   protected readonly fehler = signal<string | null>(null);
@@ -199,11 +197,8 @@ export class Serie {
   protected readonly teams = computed(() => {
     const s = this.serie();
     if (!s) return '';
-    const namen = s.teamIds
-      .map((id) => this.teamNamen().find((t) => t.id === id)?.name)
-      .filter((n): n is string => !!n)
-      .sort((a, b) => a.localeCompare(b, 'de-CH'));
-    return TEXTE.termine.teamsVerbinden(namen);
+    // Alle Teams der Serie mit Namen aus der API, auch die, in denen ich nicht bin (TER-11).
+    return TEXTE.termine.teamsVerbinden(s.teams.map((t) => t.name));
   });
 
   /** Admins und Coaches eines Teams der Serie (TER-11, RR-06). */
@@ -282,12 +277,6 @@ export class Serie {
     this.fehler.set(null);
     this.serie.set(null);
     try {
-      const ich = this.anmeldung.ich();
-      this.teamNamen.set(
-        ich?.admin
-          ? await firstValueFrom(this.http.get<Team[]>('/api/teams'))
-          : (ich?.zugehoerigkeiten ?? []).map((z) => z.team),
-      );
       this.serie.set(await firstValueFrom(this.http.get<SerieDaten>(`/api/serien/${id}`)));
     } catch (e) {
       const status = fehlerstatus(e);

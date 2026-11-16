@@ -1101,6 +1101,8 @@ export interface components {
         Serie: components["schemas"]["SerieSchreiben"] & {
             /** Format: uuid */
             id: string;
+            /** @description Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (TER-11) */
+            teams: components["schemas"]["Team"][];
             ausnahmen: components["schemas"]["Ausnahme"][];
         };
         SerieSchreiben: {

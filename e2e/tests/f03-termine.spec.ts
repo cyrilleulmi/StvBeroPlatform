@@ -309,4 +309,74 @@ test('F-03 K9: Filter ?team= und Ansicht ?ansicht=vergangen stehen in der URL', 
 
   await page.goto(`/termine?team=${TEAM_3}`);
   await expect.poll(() => eintraege(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
+  // Test-Befund F-03: Auswahl und Liste stimmen überein, auch für ein Team, in dem Petra nicht ist
+  await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
+  await expect
+    .poll(() =>
+      page
+        .getByLabel('Team', { exact: true })
+        .evaluate((e) => (e as HTMLSelectElement).selectedOptions[0]?.text.trim()),
+    )
+    .toBe('Team 3');
+});
+
+// ------------------------------------------------------------------ Befunde aus dem Test (Runde 1)
+
+test('F-03 TER-11: Serie nennt alle ihre Teams, auch für Personen aus nur einem Team', async ({
+  page,
+}) => {
+  for (const schluessel of ['anna', 'marc']) {
+    await anmelden(page, schluessel);
+    await page.goto(`/serien/${SERIE_1}`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Training');
+    await expect(page.getByText('Team 1 + Team 2', { exact: true })).toBeVisible();
+  }
+});
+
+test('F-03 TER-09 TER-10: Antwortfrist ausserhalb 0 bis 336 Stunden mit deutscher Meldung', async ({
+  page,
+}) => {
+  await anmelden(page, 'petra');
+  await page.goto('/termine/neu');
+  await page.getByLabel('Datum', { exact: true }).fill('2026-11-21');
+  await page.getByLabel('Beginn', { exact: true }).fill('10:00');
+  await page.getByLabel('Ende', { exact: true }).fill('12:00');
+  const frist = page.getByLabel('Antwortfrist: Stunden vor Beginn');
+  await frist.fill('337');
+  await page.getByRole('button', { name: 'Termin speichern' }).click();
+  await expect(page.getByText('Höchstens 336 Stunden (14 Tage).')).toBeVisible();
+  await expect(frist).toBeFocused();
+  await expect(frist).toHaveAttribute('aria-invalid', 'true');
+  await frist.fill('-1');
+  await page.getByRole('button', { name: 'Termin speichern' }).click();
+  await expect(page.getByText('Mindestens 0 Stunden.')).toBeVisible();
+  await expect(page).toHaveURL(/\/termine\/neu$/);
+
+  await page.goto(`/serien/${SERIE_1}/bearbeiten`);
+  await page.getByLabel('Antwortfrist: Stunden vor Beginn').fill('400');
+  await page.getByRole('button', { name: 'Änderungen speichern' }).click();
+  await expect(page.getByText('Höchstens 336 Stunden (14 Tage).')).toBeVisible();
+  await expect(page).toHaveURL(`/serien/${SERIE_1}/bearbeiten`);
+});
+
+test('F-03: Lange Wörter in Titel, Ort und Hinweisen brechen auf der Termin-Seite um', async ({
+  page,
+}) => {
+  const lang = 'https://example.ch/' + 'sehr-langer-link-ohne-leerzeichen-'.repeat(5);
+  await anmelden(page, 'petra');
+  await page.goto('/termine/neu');
+  await page.getByLabel('Titel', { exact: true }).fill('Zusatztraining' + 'X'.repeat(60));
+  await page.getByLabel('Datum', { exact: true }).fill('2026-11-20');
+  await page.getByLabel('Beginn', { exact: true }).fill('18:00');
+  await page.getByLabel('Ende', { exact: true }).fill('19:30');
+  await page.getByLabel('Ort (freiwillig)').fill(lang);
+  await page.getByLabel(/^Hinweise/).fill(lang);
+  await page.getByRole('button', { name: 'Termin speichern' }).click();
+  await expect(page).toHaveURL(/\/termine\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Zusatztraining');
+  const breiten = await page.evaluate(() => ({
+    seite: document.documentElement.scrollWidth,
+    fenster: document.documentElement.clientWidth,
+  }));
+  expect(breiten.seite).toBeLessThanOrEqual(breiten.fenster);
 });

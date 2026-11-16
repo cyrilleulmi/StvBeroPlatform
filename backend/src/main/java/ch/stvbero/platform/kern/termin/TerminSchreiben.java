@@ -23,6 +23,7 @@ public record TerminSchreiben(
         @NotEmpty List<@NotNull UUID> teamIds,
         @Valid OrtDto ort,
         @Size(max = 500) String hinweise,
-        @Min(0) @Max(TerminRegeln.ANTWORTFRIST_HOECHSTENS) Integer antwortfristStunden,
+        @Min(value = 0, message = TerminRegeln.ANTWORTFRIST_MINDESTENS_TEXT)
+        @Max(value = TerminRegeln.ANTWORTFRIST_HOECHSTENS, message = TerminRegeln.ANTWORTFRIST_HOECHSTENS_TEXT) Integer antwortfristStunden,
         @Valid TreffpunktDto treffpunkt) {
 }

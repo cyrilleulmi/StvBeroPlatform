@@ -64,7 +64,7 @@ interface Monat {
           <label for="termine-team">{{ texte.termine.team }}</label>
           <select id="termine-team" (change)="teamWaehlen($any($event.target).value)">
             <option value="" [selected]="!team()">{{ texte.termine.alleTeams }}</option>
-            @for (t of meineTeams(); track t.id) {
+            @for (t of teamAuswahl(); track t.id) {
               <option [value]="t.id" [selected]="team() === t.id">{{ t.name }}</option>
             }
           </select>
@@ -165,6 +165,21 @@ export class Termine {
       .map((z) => z.team)
       .sort((a, b) => a.name.localeCompare(b.name, 'de-CH')),
   );
+
+  /**
+   * Auswahl «Team»: die eigenen Teams. Zeigt `?team=` auf ein anderes Team (z.B. ein geteilter Link),
+   * erscheint es zusätzlich, damit Auswahl und Liste übereinstimmen (Test-Befund F-03).
+   */
+  protected readonly teamAuswahl = computed(() => {
+    const eigene = this.meineTeams();
+    const id = this.team();
+    if (!id || eigene.some((t) => t.id === id)) return eigene;
+    const name =
+      this.termine()
+        .flatMap((t) => t.teams)
+        .find((t) => t.id === id)?.name ?? TEXTE.termine.anderesTeam;
+    return [...eigene, { id, name }];
+  });
 
   /** Termine erfassen: Coaches (in irgendeinem Team) und Admins (TER-11, RR-05). */
   protected readonly darfErfassen = computed(() => {

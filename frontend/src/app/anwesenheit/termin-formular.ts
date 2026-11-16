@@ -382,7 +382,10 @@ export class TerminFormular {
     if (!w.ende) f.ende = pflicht('eine Zeit');
     else if (w.beginn && w.ende <= w.beginn) f.ende = TEXTE.terminFormular.endeNachBeginn;
     if (w.teamIds.length === 0) f.teamIds = TEXTE.terminFormular.teamPflicht;
-    if (w.antwortfrist === '' || Number(w.antwortfrist) < 0) f.antwortfrist = pflicht('eine Zahl');
+    const frist = Number(w.antwortfrist);
+    if (w.antwortfrist.trim() === '' || !Number.isInteger(frist)) f.antwortfrist = pflicht('eine ganze Zahl');
+    else if (frist < 0) f.antwortfrist = TEXTE.terminFormular.antwortfristMindestens;
+    else if (frist > 336) f.antwortfrist = TEXTE.terminFormular.antwortfristHoechstens;
     this.feldFehler.set(f);
     const erstes = Object.keys(f)[0];
     if (erstes) {

@@ -27,6 +27,8 @@ public final class TerminRegeln {
 
     /** Längste Antwortfrist: zwei Wochen. */
     public static final int ANTWORTFRIST_HOECHSTENS = 336;
+    public static final String ANTWORTFRIST_MINDESTENS_TEXT = "Mindestens 0 Stunden.";
+    public static final String ANTWORTFRIST_HOECHSTENS_TEXT = "Höchstens 336 Stunden (14 Tage).";
 
     /** Längster Gültigkeitszeitraum einer Serie in Tagen, damit nicht versehentlich Jahre erzeugt werden. */
     public static final int SERIE_HOECHSTENS_TAGE = 366;

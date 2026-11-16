@@ -58,3 +58,16 @@
 .bearbeiten {
   justify-self: start;
 }
+
+/* Lange Wörter ohne Leerzeichen (z.B. eingefügte Links) dürfen die Seite mobil nicht verbreitern. */
+:host,
+.abschnitte {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+h1,
+.kopf .nebentext,
+.status,
+.hinweise {
+  overflow-wrap: anywhere;
+}
