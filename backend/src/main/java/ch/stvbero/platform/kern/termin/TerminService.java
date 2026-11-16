@@ -40,6 +40,9 @@ public class TerminService {
     @Inject
     Uhr uhr;
 
+    @Inject
+    TerminBenachrichtigungen benachrichtigungen;
+
     /**
      * Termine der eigenen Teams (TER-13). Kommende aufsteigend ab «jetzt», vergangene absteigend.
      * Eigene Teams heisst: Mitglied eines beteiligten Teams in der Saison des Termins.
@@ -128,6 +131,9 @@ public class TerminService {
         TerminRegeln.pruefeTypWechsel(t.typ, eingabe.typ(), !spiele.isEmpty() || Aufgebot.findById(t.id) != null);
         SpielRegeln.pruefeVerschiebbar(spiele.stream().anyMatch(s -> s.quelle == Quelle.SWISS_UNIHOCKEY),
                 t.beginn, beginn);
+        Instant alterBeginn = t.beginn;
+        String alteBezeichnung = TerminBenachrichtigungen.bezeichnung(t);
+        List<UUID> bisherigeMitglieder = TerminBenachrichtigungen.mitglieder(t);
         long tage = ChronoUnit.DAYS.between(TerminRegeln.datum(t.beginn), TerminRegeln.datum(beginn));
         if (tage != 0) {
             // Von Hand erfasste Spiele ziehen mit, wenn der Spieltag auf einen anderen Tag verschoben wird (AUF-01).
@@ -140,10 +146,16 @@ public class TerminService {
         if (t.serie != null) {
             t.einzelnGeaendert = true;
         }
+        if (BenachrichtigungsRegeln.verschoben(alterBeginn, t.beginn)) {
+            benachrichtigungen.verschoben(wer, t, alteBezeichnung, bisherigeMitglieder);
+        }
         return lesen(wer, t.id);
     }
 
-    /** Termin absagen (TER-06). Danach sind keine Änderungen und keine Antworten mehr möglich. */
+    /**
+     * Termin absagen (TER-06). Danach sind keine Änderungen und keine Antworten mehr möglich. Alle Mitglieder
+     * der beteiligten Teams werden benachrichtigt (BEN-07).
+     */
     @Transactional
     public TerminDto absagen(Angemeldet wer, UUID terminId, String grund) {
         Termin t = finden(terminId);
@@ -152,6 +164,7 @@ public class TerminService {
         t.saison.pruefeBeschreibbar();
         t.status = TerminStatus.ABGESAGT;
         t.absagegrund = grund.strip();
+        benachrichtigungen.abgesagt(wer, t);
         return lesen(wer, t.id);
     }
 

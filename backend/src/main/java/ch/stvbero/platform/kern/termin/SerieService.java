@@ -25,6 +25,9 @@ import java.util.UUID;
 @ApplicationScoped
 public class SerieService {
 
+    @Inject
+    TerminBenachrichtigungen benachrichtigungen;
+
     /** Grund, mit dem ein Termin abgesagt wird, der nach einer Änderung nicht mehr zur Serie passt. */
     static final String GRUND_SERIE_GEAENDERT = "Serie geändert";
 
@@ -93,7 +96,7 @@ public class SerieService {
             angleichen(alle.get(tag), s, tag);
         }
         for (LocalDate tag : abgleich.wegfallen()) {
-            wegfallen(alle.get(tag), GRUND_SERIE_GEAENDERT);
+            wegfallen(wer, alle.get(tag), GRUND_SERIE_GEAENDERT);
         }
         em.flush();
         for (LocalDate tag : abgleich.erzeugen()) {
@@ -125,7 +128,7 @@ public class SerieService {
         for (Termin t : termine(s)) {
             if (t.status == TerminStatus.GEPLANT && t.beginn.isAfter(jetzt)
                     && zeitraum.enthaelt(TerminRegeln.datum(t.beginn))) {
-                wegfallen(t, a.grund);
+                wegfallen(wer, t, a.grund);
             }
         }
         return SerieDto.von(s, wer);
@@ -186,8 +189,11 @@ public class SerieService {
         t.teams.addAll(s.teams);
     }
 
-    /** Termin entfernen oder, wenn schon jemand geantwortet hat, absagen (TER-07, zustaende.md). */
-    private void wegfallen(Termin t, String grund) {
+    /**
+     * Termin entfernen oder, wenn schon jemand geantwortet hat, absagen (TER-07, zustaende.md). Eine Absage
+     * benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
+     */
+    private void wegfallen(Angemeldet wer, Termin t, String grund) {
         Number antworten = (Number) em.createNativeQuery("select count(*) from antwort where termin_id = ?1")
                 .setParameter(1, t.id).getSingleResult();
         switch (TerminRegeln.beiAusnahme(antworten.longValue() > 0)) {
@@ -195,6 +201,7 @@ public class SerieService {
             case ABSAGEN -> {
                 t.status = TerminStatus.ABGESAGT;
                 t.absagegrund = grund;
+                benachrichtigungen.abgesagt(wer, t);
             }
         }
     }

@@ -1,11 +1,14 @@
 package ch.stvbero.platform.kern.testhilfen;
 
 import ch.stvbero.platform.kern.anmeldung.Oeffentlich;
+import ch.stvbero.platform.kern.benachrichtigung.BenachrichtigungDto;
+import ch.stvbero.platform.kern.benachrichtigung.Benachrichtigungen;
 import ch.stvbero.platform.kern.anmeldung.SitzungService;
 import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.fehler.Fehler;
 import ch.stvbero.platform.kern.person.Konto;
 import ch.stvbero.platform.kern.saison.Saison;
+import ch.stvbero.platform.kern.termin.Erinnerungen;
 import ch.stvbero.platform.kern.uhr.Uhr;
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.inject.Inject;
@@ -51,6 +54,12 @@ public class TestResource {
     @Inject
     SitzungService sitzungen;
 
+    @Inject
+    Erinnerungen erinnerungen;
+
+    @Inject
+    Benachrichtigungen benachrichtigungen;
+
     public record UhrSetzen(@NotNull OffsetDateTime jetzt) {
     }
 
@@ -71,12 +80,14 @@ public class TestResource {
     @PUT
     @Path("/uhr")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "testUhrSetzen", summary = "Backend-Uhr auf einen festen Zeitpunkt setzen")
+    @Operation(operationId = "testUhrSetzen",
+            summary = "Backend-Uhr auf einen festen Zeitpunkt setzen. Fällige Erinnerungen (BEN-01) gehen sofort raus.")
     @APIResponse(responseCode = "204", description = "Gesetzt")
     @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
     public void uhrSetzen(@Valid @NotNull UhrSetzen eingabe) {
         uhr.festsetzen(eingabe.jetzt().toInstant());
+        erinnerungen.pruefen();
     }
 
     @GET
@@ -95,6 +106,18 @@ public class TestResource {
     @APIResponse(responseCode = "204", description = "Gelöst")
     public void uhrLoesen() {
         uhr.loesen();
+    }
+
+    @GET
+    @Path("/benachrichtigungen")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testBenachrichtigungenLesen",
+            summary = "Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed")
+    @APIResponse(responseCode = "200", description = "Chronologisch",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(type = SchemaType.ARRAY, implementation = BenachrichtigungDto.class)))
+    public List<BenachrichtigungDto> benachrichtigungen() {
+        return benachrichtigungen.alle();
     }
 
     @DELETE

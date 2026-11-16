@@ -1,5 +1,6 @@
 package ch.stvbero.platform.kern.testhilfen;
 
+import ch.stvbero.platform.kern.termin.BenachrichtigungsRegeln;
 import ch.stvbero.platform.kern.termin.TerminRegeln;
 import ch.stvbero.platform.kern.uhr.Uhr;
 import io.quarkus.arc.properties.IfBuildProperty;
@@ -10,11 +11,13 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -224,6 +227,40 @@ public class Seed {
             // Termin 05: veröffentlicht mit Petra, Eva, Lara, Ella (Lea nicht aufgeboten)
             new SeedAufgebot(5, List.of(2, 12, 13, 15), LocalDateTime.of(2026, 11, 15, 21, 0)));
 
+    /**
+     * Benachrichtigung (F-06): Nummer, Art, Empfänger, Termin, erstellt am, gelesen am ({@code null} = ungelesen),
+     * bei Aufgeboten: aufgeboten ja/nein.
+     */
+    record SeedBenachrichtigung(int nr, String art, int empfaenger, int termin, LocalDateTime erstelltAm,
+                                LocalDateTime gelesenAm, boolean aufgeboten) {
+    }
+
+    private static final LocalDateTime ABSAGE_AM = LocalDateTime.of(2026, 11, 14, 10, 0);
+    private static final LocalDateTime VEROEFFENTLICHT_AM = LocalDateTime.of(2026, 11, 15, 21, 0);
+
+    static final List<SeedBenachrichtigung> BENACHRICHTIGUNGEN = List.of(
+            // Termin 03 von Petra abgesagt: alle Mitglieder von Team 1 und Team 2 ausser Petra. Mia hat sie gelesen.
+            new SeedBenachrichtigung(1, "TERMIN_ABGESAGT", 3, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(2, "TERMIN_ABGESAGT", 5, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(3, "TERMIN_ABGESAGT", 6, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(4, "TERMIN_ABGESAGT", 7, 3, ABSAGE_AM, LocalDateTime.of(2026, 11, 14, 12, 0), false),
+            new SeedBenachrichtigung(5, "TERMIN_ABGESAGT", 8, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(6, "TERMIN_ABGESAGT", 9, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(7, "TERMIN_ABGESAGT", 10, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(8, "TERMIN_ABGESAGT", 11, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(9, "TERMIN_ABGESAGT", 12, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(10, "TERMIN_ABGESAGT", 13, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(11, "TERMIN_ABGESAGT", 14, 3, ABSAGE_AM, null, false),
+            new SeedBenachrichtigung(12, "TERMIN_ABGESAGT", 15, 3, ABSAGE_AM, null, false),
+            // Aufgebot Termin 05 von Marc veröffentlicht: alle Spielerinnen von Team 2. Petra hat sie gelesen.
+            new SeedBenachrichtigung(13, "AUFGEBOT_VEROEFFENTLICHT", 2, 5, VEROEFFENTLICHT_AM,
+                    LocalDateTime.of(2026, 11, 15, 21, 30), true),
+            new SeedBenachrichtigung(14, "AUFGEBOT_VEROEFFENTLICHT", 6, 5, VEROEFFENTLICHT_AM, null, false),
+            new SeedBenachrichtigung(15, "AUFGEBOT_VEROEFFENTLICHT", 12, 5, VEROEFFENTLICHT_AM, null, true),
+            new SeedBenachrichtigung(16, "AUFGEBOT_VEROEFFENTLICHT", 13, 5, VEROEFFENTLICHT_AM, null, true),
+            new SeedBenachrichtigung(17, "AUFGEBOT_VEROEFFENTLICHT", 14, 5, VEROEFFENTLICHT_AM, null, false),
+            new SeedBenachrichtigung(18, "AUFGEBOT_VEROEFFENTLICHT", 15, 5, VEROEFFENTLICHT_AM, null, true));
+
     @Inject
     EntityManager em;
 
@@ -306,6 +343,7 @@ public class Seed {
                     .executeUpdate();
         }
         spieleUndAufgebote();
+        benachrichtigungen();
         em.clear();
 
         uhr.festsetzen(STANDARD_JETZT.atZone(Uhr.ZONE).toInstant());
@@ -395,6 +433,36 @@ public class Seed {
         }
     }
 
+    /** Benachrichtigungen zu Termin 03 (Absage) und Termin 05 (Aufgebot), Texte wie im Betrieb (F-06). */
+    private void benachrichtigungen() {
+        for (SeedBenachrichtigung b : BENACHRICHTIGUNGEN) {
+            Object[] termin = (Object[]) em.createNativeQuery("select titel, beginn, absagegrund from termin where id = ?")
+                    .setParameter(1, terminId(b.termin())).getSingleResult();
+            String bezeichnung = BenachrichtigungsRegeln.bezeichnung((String) termin[0], instant(termin[1]));
+            String text = "TERMIN_ABGESAGT".equals(b.art())
+                    ? BenachrichtigungsRegeln.textAbgesagt(bezeichnung, (String) termin[2])
+                    : BenachrichtigungsRegeln.textVeroeffentlicht(bezeichnung, b.aufgeboten());
+            em.createNativeQuery("""
+                            insert into benachrichtigung (id, art, empfaenger_id, text, termin_id, erstellt_am, gelesen_am)
+                            values (?, ?, ?, ?, ?, ?, ?)""")
+                    .setParameter(1, benachrichtigungId(b.nr())).setParameter(2, b.art())
+                    .setParameter(3, personId(b.empfaenger())).setParameter(4, text)
+                    .setParameter(5, terminId(b.termin())).setParameter(6, zurich(b.erstelltAm()))
+                    .setParameter(7, b.gelesenAm() == null ? null : zurich(b.gelesenAm()))
+                    .executeUpdate();
+        }
+    }
+
+    private static Instant instant(Object wert) {
+        if (wert instanceof Instant i) {
+            return i;
+        }
+        if (wert instanceof OffsetDateTime o) {
+            return o.toInstant();
+        }
+        return ((Timestamp) wert).toInstant();
+    }
+
     private void teamsZuordnen(UUID terminId, List<Integer> teams) {
         for (int team : teams) {
             em.createNativeQuery("insert into termin_team (termin_id, team_id) values (?, ?)")
@@ -432,6 +500,10 @@ public class Seed {
 
     public static UUID saisonId(int nr) {
         return id("6", nr);
+    }
+
+    public static UUID benachrichtigungId(int nr) {
+        return id("9", nr);
     }
 
     public static UUID kontoId(int nr) {
