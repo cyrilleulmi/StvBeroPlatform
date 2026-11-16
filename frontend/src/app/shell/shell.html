@@ -1,6 +1,20 @@
 <div class="rahmen">
   <nav class="navigation" [attr.aria-label]="texte.navigation.name" data-testid="hauptnavigation">
     <p class="marke" aria-hidden="true">{{ texte.appName }}</p>
+    <!-- Benachrichtigungen: mobil als Glocke oben rechts, ab 1024px als Eintrag über der Liste (F-06) -->
+    <a
+      class="glocke"
+      routerLink="/benachrichtigungen"
+      routerLinkActive="aktiv"
+      ariaCurrentWhenActive="page"
+    >
+      <app-icon name="bell" />
+      <span class="glocke-text">{{ texte.navigation.benachrichtigungen }}</span>
+      @if (ungelesen() > 0) {
+        <span class="zaehler" data-testid="benachrichtigungen-zaehler">{{ ungelesen() }}</span>
+        <span class="visuell-versteckt">{{ texte.navigation.ungelesen }}</span>
+      }
+    </a>
     <ul>
       @for (eintrag of eintraege(); track eintrag.route) {
         <li>

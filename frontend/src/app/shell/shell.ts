@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AnmeldungService } from '../kern/anmeldung.service';
+import { BenachrichtigungenService } from '../kern/benachrichtigungen.service';
 import { Icon } from '../kern/icon';
 import { TEXTE } from '../kern/texte';
 
@@ -11,7 +14,10 @@ interface NavEintrag {
   exakt: boolean;
 }
 
-/** Rahmen für angemeldete Personen: Navigation (mobil unten, ab 1024px links) und Inhalt. */
+/**
+ * Rahmen für angemeldete Personen: Navigation (mobil unten, ab 1024px links) und Inhalt. Die Anzahl
+ * ungelesener Benachrichtigungen wird bei jedem Seitenwechsel neu geladen.
+ */
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,7 +27,19 @@ interface NavEintrag {
 })
 export class Shell {
   private readonly anmeldung = inject(AnmeldungService);
+  private readonly benachrichtigungen = inject(BenachrichtigungenService);
   protected readonly texte = TEXTE;
+  protected readonly ungelesen = this.benachrichtigungen.ungelesen;
+
+  constructor() {
+    // Der Rahmen entsteht vor dem ersten NavigationEnd, deshalb lädt auch der erste Aufruf den Zähler.
+    inject(Router)
+      .events.pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(inject(DestroyRef)),
+      )
+      .subscribe(() => void this.benachrichtigungen.zaehlerAktualisieren());
+  }
 
   protected readonly eintraege = computed<NavEintrag[]>(() => {
     const n = TEXTE.navigation;

@@ -374,7 +374,7 @@ export interface paths {
         get: operations["terminLesen"];
         /**
          * Termin ändern oder verschieben (TER-06, TER-12, Coach)
-         * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Betroffenen (ab F-06).
+         * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
          *     Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
          *     Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
          *     Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
@@ -620,7 +620,7 @@ export interface paths {
          * Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
          * @description Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
          *     Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
-         *     Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Die Benachrichtigung der Betroffenen kommt mit F-06.
+         *     Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Wer neu dazukommt oder herausfällt, wird benachrichtigt (BEN-05).
          */
         put: operations["aufgebotSetzen"];
         post?: never;
@@ -644,7 +644,7 @@ export interface paths {
         /**
          * Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
          * @description Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
-         *     Spielerinnen `meinAufgebot`. Die Benachrichtigung (BEN-03) kommt mit F-06.
+         *     Spielerinnen `meinAufgebot`. Sie werden benachrichtigt (BEN-03).
          */
         post: operations["aufgebotVeroeffentlichen"];
         delete?: never;
@@ -698,7 +698,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Eigene Benachrichtigungen, neueste zuerst (BEN-12) */
+        /**
+         * Eigene Benachrichtigungen, neueste zuerst (BEN-12)
+         * @description Nur die eigenen. `ungelesen=true` liefert nur ungelesene (Zähler in der Navigation).
+         *     Benachrichtigt wird bei: Erinnerung 12 Stunden vor der Antwortfrist an alle ohne Antwort, einmal pro
+         *     Person und Termin (BEN-01, BEN-13); kurzfristiger Absage an die Coaches der Teams, in denen die Person
+         *     Spielerin ist (BEN-02, O-17); Abmeldung einer Aufgebotenen an dieselben Coaches (BEN-04);
+         *     Veröffentlichung an alle Spielerinnen des Teams (BEN-03); Änderung eines veröffentlichten Aufgebots an
+         *     neu Aufgebotene und nicht mehr Aufgebotene (BEN-05); Absage und Verschiebung an alle Mitglieder der
+         *     beteiligten Teams (BEN-07). Wer etwas auslöst, wird darüber nicht benachrichtigt.
+         */
         get: operations["benachrichtigungenLesen"];
         put?: never;
         post?: never;
@@ -719,7 +728,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Als gelesen markieren */
+        /**
+         * Als gelesen markieren
+         * @description Mehrfach markieren ändert nichts (204). Die Benachrichtigung einer anderen Person: 403 (RR-07).
+         */
         post: operations["benachrichtigungGelesen"];
         delete?: never;
         options?: never;
@@ -824,7 +836,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Alle seit dem letzten Reset erzeugten Benachrichtigungen aller Personen */
+        /** Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed */
         get: operations["testBenachrichtigungenLesen"];
         put?: never;
         post?: never;
@@ -2624,6 +2636,8 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["NichtAngemeldet"];
+            403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
         };
     };

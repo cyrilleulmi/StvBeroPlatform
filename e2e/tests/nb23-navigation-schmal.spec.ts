@@ -23,7 +23,7 @@ for (const breite of [375, 320]) {
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Verwaltung');
 
       const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
-      await expect(nav.getByRole('link')).toHaveText(ADMIN_EINTRAEGE);
+      await expect(nav.getByRole('list').getByRole('link')).toHaveText(ADMIN_EINTRAEGE);
 
       for (const text of ADMIN_EINTRAEGE) {
         const link = nav.getByRole('link', { name: text });
