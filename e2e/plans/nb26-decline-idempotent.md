@@ -1,42 +1,42 @@
-# Testplan Nachbesserung #26 · Abmelden ist idempotent
+# Test plan follow-up fix #26 · Logging out is idempotent
 
-Issue #26 · PR #60 · Regel «Abmelden» in `docs/states.md` (F-00)
+Issue #26 · PR #60 · Rule "Logging out" in `docs/states.md` (F-00)
 
-Allgemein für jeden Fall:
+General, for every case:
 
-- Vorbereitung: `POST /api/test/reset`, Cookies leeren, anmelden über `/dev-login` (Klick auf die Person)
-  oder `POST /api/test/anmelden` mit `{ "schluessel": "<person>" }`. Uhr: Standard, spielt keine Rolle.
-- «Ohne Saison»: zusätzlich `DELETE /api/test/aktuelle-saison`, danach `/teams` → leitet auf `/keine-saison`.
-- Gezählt werden alle Antworten von `POST /api/abmelden` (Status) und alle Antworten ≥ 500.
-- Nach jedem Fall: Konsolenfehler und `pageerror` prüfen. Erlaubt ist nur der Browser-Eintrag
-  «Failed to load resource … 409» von `GET /api/ich` ohne aktuelle Saison (Nachbesserung #13).
-- Ansichten: mobil 375×812 (alle Fälle), Desktop 1280×800 (K2.1–K2.6). Darkmode einmal mobil (K2.7).
+- Setup: `POST /api/test/reset`, clear cookies, log in via `/dev-login` (click on the person)
+  or `POST /api/test/anmelden` with `{ "schluessel": "<person>" }`. Clock: default, does not matter.
+- "Without season": additionally `DELETE /api/test/aktuelle-saison`, then `/teams` → redirects to `/keine-saison`.
+- Counted are all responses of `POST /api/abmelden` (status) and all responses ≥ 500.
+- After each case: check console errors and `pageerror`. The only allowed entry is the browser entry
+  «Failed to load resource … 409» from `GET /api/ich` without a current season (follow-up fix #13).
+- Views: mobile 375×812 (all cases), desktop 1280×800 (K2.1–K2.6). Dark mode once on mobile (K2.7).
 
-## K1 · `POST /api/abmelden` ist idempotent (Kriterium 1)
+## K1 · `POST /api/abmelden` is idempotent (criterion 1)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Nacheinander | Als `anna` anmelden, zweimal `POST /api/abmelden` mit demselben Cookie | Beide 204, beide `Set-Cookie: stv_sitzung=;…Max-Age=0`. Danach `GET /api/ich` → 401 |
-| K1.2 Gleichzeitig | Als `anna` anmelden, 20 gleichzeitige `POST /api/abmelden` mit demselben Cookie | Alle 204, kein 500, kein `OptimisticLockException` im Backend-Log. Danach `GET /api/ich` → 401 |
-| K1.3 Nur eigene Sitzung | Zwei Sitzungen `anna` (A, B) und eine `petra`; mit A zweimal abmelden | `GET /api/ich`: A → 401, B → 200, petra → 200 |
-| K1.4 Ungültiges Cookie | `POST /api/abmelden` mit leerem Cookie, mit 3000 Zeichen langem Token, mit `x' OR '1'='1` | Jeweils 204. Andere Sitzungen bleiben gültig |
+| K1.1 One after the other | Log in as `anna`, `POST /api/abmelden` twice with the same cookie | Both 204, both `Set-Cookie: stv_sitzung=;…Max-Age=0`. Then `GET /api/ich` → 401 |
+| K1.2 At the same time | Log in as `anna`, 20 simultaneous `POST /api/abmelden` with the same cookie | All 204, no 500, no `OptimisticLockException` in the backend log. Then `GET /api/ich` → 401 |
+| K1.3 Own session only | Two sessions `anna` (A, B) and one `petra`; log out twice with A | `GET /api/ich`: A → 401, B → 200, petra → 200 |
+| K1.4 Invalid cookie | `POST /api/abmelden` with an empty cookie, with a 3000-character token, with `x' OR '1'='1` | 204 each. Other sessions stay valid |
 
-## K2 · Abmelden in der Oberfläche (Kriterium 2)
+## K2 · Logging out in the UI (criterion 2)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Profil Doppelklick | Als `anna` `/profil`, Doppelklick «Abmelden» | `/dev-login`, genau 1 `POST /api/abmelden` (204), keine 5xx, keine Konsolenfehler |
-| K2.2 Profil schnell zweimal | Wie K2.1, Klick und sofort zweiter Klick (erzwungen) | Wie K2.1 |
-| K2.3 Profil zwei Tabs | Als `anna` `/profil` in zwei Tabs, in beiden gleichzeitig «Abmelden» | Beide Tabs `/dev-login`, 2 × 204, keine 5xx, keine Konsolenfehler in beiden Tabs |
-| K2.4 Ohne Saison Doppelklick | Ohne Saison, als `anna` `/teams` → `/keine-saison`, Doppelklick «Abmelden» | Wie K2.1 (409 von `/api/ich` erlaubt) |
-| K2.5 Ohne Saison schnell | Wie K2.4 mit zwei schnellen Klicks | Wie K2.4 |
-| K2.6 Ohne Saison zwei Tabs | Wie K2.3, auf `/keine-saison` | Wie K2.3 (409 von `/api/ich` erlaubt) |
-| K2.7 Darkmode | K2.1 und K2.4 mit `prefers-color-scheme: dark`, Bildschirmfoto nach dem Abmelden | `/dev-login` lesbar, nichts Weisses auf Weiss |
-| K2.8 Neuladen, Zurück | Nach K2.1–K2.6 neu laden, dann Zurück-Taste | Bleibt bzw. landet auf `/dev-login`, `GET /api/sitzung` → `angemeldet: false` |
-| K2.9 Rollen | K2.1 als `alex` und `petra`, K2.4 als `alex` | Wie K2.1 (Abmelden ist für alle gleich, öffentlicher Endpunkt) |
+| K2.1 Profile double click | As `anna` `/profil`, double click «Abmelden» | `/dev-login`, exactly 1 `POST /api/abmelden` (204), no 5xx, no console errors |
+| K2.2 Profile twice quickly | As K2.1, click and immediately a second click (forced) | As K2.1 |
+| K2.3 Profile two tabs | As `anna` `/profil` in two tabs, «Abmelden» in both at the same time | Both tabs `/dev-login`, 2 × 204, no 5xx, no console errors in either tab |
+| K2.4 Without season double click | Without season, as `anna` `/teams` → `/keine-saison`, double click «Abmelden» | As K2.1 (409 from `/api/ich` allowed) |
+| K2.5 Without season quickly | As K2.4 with two quick clicks | As K2.4 |
+| K2.6 Without season two tabs | As K2.3, on `/keine-saison` | As K2.3 (409 from `/api/ich` allowed) |
+| K2.7 Dark mode | K2.1 and K2.4 with `prefers-color-scheme: dark`, screenshot after logging out | `/dev-login` readable, nothing white on white |
+| K2.8 Reload, back | After K2.1–K2.6 reload, then back button | Stays on or lands on `/dev-login`, `GET /api/sitzung` → `angemeldet: false` |
+| K2.9 Roles | K2.1 as `alex` and `petra`, K2.4 as `alex` | As K2.1 (logging out is the same for everyone, public endpoint) |
 
-## Ergebnis (Runde 0, PR #60, Stand 101e672)
+## Result (round 0, PR #60, at 101e672)
 
-- Automatisch: Backend 267 ✅ (inkl. `AnmeldungTest` gleichzeitig/zweimal), E2E 286 ✅ (6 übersprungen wie bisher).
-- K1.1–K1.4 bestanden: 20 × 204 gleichzeitig, danach 401; nur die eigene Sitzung gelöscht; ungültige Cookies 204.
-- K2.1–K2.9 bestanden mobil und Desktop: immer `/dev-login`, keine 5xx, keine Konsolenfehler ausser dem erlaubten 409 von `/api/ich`.
+- Automated: backend 267 ✅ (incl. `AnmeldungTest` simultaneous/twice), E2E 286 ✅ (6 skipped as before).
+- K1.1–K1.4 passed: 20 × 204 simultaneously, then 401; only the own session deleted; invalid cookies 204.
+- K2.1–K2.9 passed on mobile and desktop: always `/dev-login`, no 5xx, no console errors except the allowed 409 from `/api/ich`.

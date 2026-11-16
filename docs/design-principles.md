@@ -119,9 +119,9 @@ The responses for signing up and out need a color and symbol mapping. The obviou
 
 | Response | Proposal |
 |---|---|
-| dabei | `primary` |
-| nicht dabei | `accent-coral` (already intended for «Absage») |
-| vielleicht | `accent-mustard` |
-| offen | `muted` |
+| «dabei» | `primary` |
+| «nicht dabei» | `accent-coral` (already intended for «Absage») |
+| «vielleicht» | `accent-mustard` |
+| «offen» | `muted` |
 
 The status must not be recognizable by color alone. Each response also gets its own symbol.

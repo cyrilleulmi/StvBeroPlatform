@@ -1,46 +1,46 @@
-# Projektkontext
+# Project context
 
-## Ziel
+## Goal
 
-Eine zentrale Web-Plattform für das Unihockey des STV Beromünster. Sie bündelt die organisatorischen Werkzeuge, die heute verstreut sind (Listen, Chats, Tabellen), an einem Ort – einfach genug, dass Spielerinnen, Coaches und Helfer sie ohne Anleitung nutzen können.
+One central web platform for the unihockey section of STV Beromünster. It brings together the organisational tools that are scattered today (lists, chats, spreadsheets) in one place – simple enough that players, coaches and helpers can use it without instructions.
 
-Die App ist momentan für Erwachsene gedacht. Funktionen für Eltern (ein Login antwortet für mehrere Kinder) sind eine mögliche spätere Erweiterung und sollen nicht verbaut werden.
+For now the app is meant for adults. Features for parents (one login responds for several children) are a possible later extension and must not be ruled out by the design.
 
-## Grundprinzipien
+## Principles
 
-1. **Erweiterbar:** Jede Funktion ist ein eigenständiges Modul («Kachel»). Neue Kacheln kommen dazu, ohne bestehende anzupassen.
-2. **Nutzerfreundlich:** Wenige Klicks, klare Sprache (Deutsch), keine Fachbegriffe. Die häufigste Aktion («Ich bin dabei / nicht dabei») ist mit einem Tap erledigt.
-3. **Mobile first, Desktop vollwertig:** Spielerinnen nutzen die App auf dem Handy in der Halle, Coaches und Verantwortliche auch am Desktop. Responsives Layout, grosse Touch-Ziele, als PWA installierbar.
-4. **Ergebnisse statt Zwischenstände:** Funktionen werden vollständig umgesetzt und direkt aufrufbar gemacht. Anhand der Ergebnisse werden Folgeentscheide getroffen.
+1. **Extensible:** Each feature is a self-contained module («Kachel», tile). New tiles are added without changing existing ones.
+2. **User-friendly:** Few clicks, clear language (German), no technical terms. The most common action («Ich bin dabei / nicht dabei», I'm attending / not attending) takes one tap.
+3. **Mobile first, desktop fully featured:** Players use the app on their phone in the hall, coaches and organisers also on the desktop. Responsive layout, large touch targets, installable as a PWA.
+4. **Results, not interim states:** Features are implemented completely and made directly accessible. Follow-up decisions are taken based on the results.
 
-## Kacheln (Module)
+## Tiles (modules)
 
-| Kachel | Zweck | Hauptnutzer | Stand |
+| Tile | Purpose | Main users | State |
 |---|---|---|---|
-| Anwesenheit Spielerinnen | Zu- und Absagen für Trainings und Spieltage, Übersicht pro Termin, Aufgebot | Spielerinnen, Coaches | Anforderungen erarbeitet, siehe [requirements/](requirements/) |
-| Anwesenheit Coaches | Einsatz und Präsenz der Coaches pro Training und Spieltag, Stellvertretungen | Coaches, Verantwortliche | An-/Abmeldung im Kern erarbeitet, Rest offen |
-| Übungssammlung | Trainingsübungen mit Beschreibung, Skizze/Video, Tags, Trainingsplanung | Coaches | Noch nicht ausgearbeitet |
-| Helfereinsatzplanung | Schichten für Turniere und Anlässe, Eintragen und Erinnerungen | Mitglieder, Organisatoren | Noch nicht ausgearbeitet |
-| Ressourcen | Hilfsvideos, Regeln, Technik-Tipps, Dokumente | Spielerinnen | Noch nicht ausgearbeitet |
+| Player attendance | Responses for practices and match days, overview per event, call-up | Players, coaches | Requirements worked out, see [requirements/](requirements/) |
+| Coach attendance | Assignment and attendance of coaches per practice and match day, substitutes | Coaches, organisers | Responding worked out in the core, rest open |
+| Drill library | Practice drills with description, sketch/video, tags, practice planning | Coaches | Not worked out yet |
+| Helper scheduling | Shifts for tournaments and events, signing up and reminders | Members, organisers | Not worked out yet |
+| Resources | Help videos, rules, technique tips, documents | Players | Not worked out yet |
 
-Details zu den noch nicht ausgearbeiteten Kacheln: [more-tiles.md](more-tiles.md).
+Details on the tiles not yet worked out: [more-tiles.md](more-tiles.md).
 
-Weitere Kacheln können später ergänzt werden (z.B. Kalender, News, Material/Ausrüstung).
+More tiles can be added later (e.g. calendar, news, material/equipment).
 
-## Der Kern
+## The core
 
-Der Kern ist das, was als Erstes gebaut wird und weshalb es die App überhaupt gibt:
+The core is what gets built first and why the app exists at all:
 
-- Personen, Teams und Funktionen
-- Linien
-- Termine (Trainings, Spieltage, Anlässe), auch für mehrere Teams gleichzeitig
-- An- und Abmeldung mit Ansicht nach Team und Linie
-- Spieltage mit Aufgebot, wenn möglich mit Spieldaten von swiss unihockey
+- People, teams and team roles
+- Lines
+- Events (practices, match days, other events), also for several teams at once
+- Responses with a view by team and line
+- Match days with call-up, where possible with match data from swiss unihockey
 
-## Arbeitsweise
+## Way of working
 
-- Pläne werden nur gemeinsam erarbeitet, wenn das ausdrücklich gewünscht ist.
-- Sonst: sinnvolle Annahmen treffen und nach bestem Wissen vollständig implementieren, ohne Rückfragen oder Zwischenstopps.
-- Getroffene Annahmen werden beim Ergebnis kurz aufgelistet, damit darauf basierend entschieden werden kann.
-- Jedes Ergebnis ist lauffähig und direkt aufrufbar (URL bzw. Startbefehl), auf Desktop und Mobile geprüft, mit Seed-Daten zum Ausprobieren.
-- Tests für Backend-Logik.
+- Plans are only worked out together when this is explicitly requested.
+- Otherwise: make sensible assumptions and implement completely to the best of one's knowledge, without questions or intermediate stops.
+- Assumptions made are listed briefly with the result, so that decisions can be based on them.
+- Every result runs and is directly accessible (URL or start command), checked on desktop and mobile, with seed data to try it out.
+- Tests for backend logic.

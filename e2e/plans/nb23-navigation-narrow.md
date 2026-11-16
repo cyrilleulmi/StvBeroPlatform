@@ -1,45 +1,45 @@
-# Testplan Nachbesserung #23 · «Verwaltung» in der mobilen Navigation vollständig
+# Test plan follow-up fix #23 · «Verwaltung» complete in the mobile navigation
 
-Issue #23 · PR #34 · Hauptnavigation (`data-testid="hauptnavigation"`, `docs/ui/navigation.md`)
+Issue #23 · PR #34 · Main navigation (`data-testid="hauptnavigation"`, `docs/ui/navigation.md`)
 
-Allgemein für jeden Fall:
+General, for every case:
 
-- Vorbereitung: `POST /api/test/reset`, dann `POST /api/test/anmelden` mit `{ "schluessel": "<person>" }`
-  (oder `/dev-login`). Uhr: Standard, spielt keine Rolle.
-- Gemessen wird pro Link der Hauptnavigation: Beschriftung (`a span`) mit `scrollWidth <= clientWidth`,
-  Begrenzungsrechteck der Beschriftung innerhalb der Inhaltsfläche des Links (Link minus Innenabstand),
-  Link innerhalb des Bildschirms, Link mindestens 44×44 px. Seite und Navigation ohne waagrechtes Scrollen
+- Setup: `POST /api/test/reset`, then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }`
+  (or `/dev-login`). Clock: default, does not matter.
+- Measured per link of the main navigation: label (`a span`) with `scrollWidth <= clientWidth`,
+  bounding box of the label inside the content area of the link (link minus padding),
+  link inside the screen, link at least 44×44 px. Page and navigation without horizontal scrolling
   (`document.documentElement.scrollWidth <= innerWidth`).
-- Nach jedem Fall: keine Konsolenfehler, keine unerwarteten 4xx/5xx.
+- After each case: no console errors, no unexpected 4xx/5xx.
 
-## K1 · 375×812 als `alex`, hell und dunkel (Kriterium 1)
+## K1 · 375×812 as `alex`, light and dark (criterion 1)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Hell | `alex`, 375×812, `/verwaltung` | 5 Links «Start», «Termine», «Teams», «Profil», «Verwaltung» vollständig, kein «…», je ≥ 44×44 px (erwartet 72×56) |
-| K1.2 Dunkel | wie K1.1, `prefers-color-scheme: dark`, Bildschirmfoto | wie K1.1; Beschriftungen gut lesbar, aktiver Eintrag hervorgehoben, nichts Weisses auf Weiss |
-| K1.3 Accessibility-Tree | `alex`, 375×812, Schnappschuss `navigation "Hauptnavigation"` | 5 Links mit vollständigem Namen |
+| K1.1 Light | `alex`, 375×812, `/verwaltung` | 5 links «Start», «Termine», «Teams», «Profil», «Verwaltung» complete, no «…», each ≥ 44×44 px (expected 72×56) |
+| K1.2 Dark | as K1.1, `prefers-color-scheme: dark`, screenshot | as K1.1; labels easy to read, active entry highlighted, nothing white on white |
+| K1.3 Accessibility tree | `alex`, 375×812, snapshot `navigation "Hauptnavigation"` | 5 links with complete name |
 
-## K2 · 320 px ohne waagrechtes Scrollen (Kriterium 2)
+## K2 · 320 px without horizontal scrolling (criterion 2)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Admin hell | `alex`, 320×640, `/verwaltung` | Alle fünf Beschriftungen vollständig in der Inhaltsfläche, Links ≥ 44×44 px (erwartet 63×56), `scrollWidth` = 320 |
-| K2.2 Admin dunkel | wie K2.1, dunkel, Bildschirmfoto | wie K2.1, lesbar |
-| K2.3 Alle Routen | `alex`, 320×640, über die Navigation nacheinander «Start», «Termine», «Teams», «Profil», «Verwaltung» | In jeder Route (aktiver Eintrag wechselt) alle Beschriftungen vollständig, kein waagrechtes Scrollen |
-| K2.4 Vier Einträge | `anna`, 320×640 | 4 Links vollständig (erwartet 79×56) |
-| K2.5 Umschaltpunkt | `alex`, 359 px und 360 px Breite | Beide Breiten: alle Beschriftungen vollständig (ab 360 px gilt wieder die normale Darstellung, Link 68.8 px) |
-| K2.6 Desktop unverändert | `alex`, 1280×800 | Seitennavigation 240 px breit, Schrift 15 px, kein `letter-spacing`, Abstand 2 px |
+| K2.1 Admin light | `alex`, 320×640, `/verwaltung` | All five labels complete inside the content area, links ≥ 44×44 px (expected 63×56), `scrollWidth` = 320 |
+| K2.2 Admin dark | as K2.1, dark, screenshot | as K2.1, readable |
+| K2.3 All routes | `alex`, 320×640, via the navigation one after the other «Start», «Termine», «Teams», «Profil», «Verwaltung» | On every route (active entry changes) all labels complete, no horizontal scrolling |
+| K2.4 Four entries | `anna`, 320×640 | 4 links complete (expected 79×56) |
+| K2.5 Breakpoint | `alex`, 359 px and 360 px width | Both widths: all labels complete (from 360 px the normal layout applies again, link 68.8 px) |
+| K2.6 Desktop unchanged | `alex`, 1280×800 | Side navigation 240 px wide, font 15 px, no `letter-spacing`, gap 2 px |
 
-## K3 · Automatischer Test (Kriterium 3)
+## K3 · Automated test (criterion 3)
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| K3.1 | `e2e/tests/nb23-navigation-schmal.spec.ts` im Projekt `mobil` ausführen | 4 Tests grün (375/320, hell/dunkel); im Projekt `desktop` übersprungen |
+| K3.1 | Run `e2e/tests/nb23-navigation-schmal.spec.ts` in project `mobil` | 4 tests green (375/320, light/dark); skipped in project `desktop` |
 
-## Robustheit und Rollen
+## Robustness and roles
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| R1 Zurück · Neuladen | `alex` 320, durch alle Routen klicken → Zurück → `/verwaltung` neu laden | Richtige Route, Beschriftungen weiterhin vollständig |
-| R2 Rollen | `anna` öffnet `/verwaltung` per Deep Link | «Keine Berechtigung», kein Eintrag «Verwaltung» in der Navigation (unverändert) |
+| R1 Back · reload | `alex` 320, click through all routes → back → reload `/verwaltung` | Correct route, labels still complete |
+| R2 Roles | `anna` opens `/verwaltung` via deep link | «Keine Berechtigung», no entry «Verwaltung» in the navigation (unchanged) |

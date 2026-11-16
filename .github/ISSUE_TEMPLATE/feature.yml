@@ -1,45 +1,46 @@
 name: Feature
-description: Ein Feature für die Pipeline. Freigabe zur Entwicklung mit dem Label status:bereit.
+description: A feature for the pipeline. Released for development with the label status:bereit.
 title: "F-xx · "
 labels: ["typ:feature"]
 body:
   - type: markdown
     attributes:
       value: |
-        Der Entwicklungs-Agent setzt dieses Issue um, sobald Cyrille das Label `status:bereit` setzt.
-        Der Test-Agent prüft genau die Akzeptanzkriterien. Je konkreter sie sind, desto besser das Ergebnis.
-        Hilfe: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Testdaten und Szenarien](../blob/main/docs/test-data.md)
+        The development agent implements this issue as soon as Cyrille sets the label `status:bereit`.
+        The test agent checks exactly the acceptance criteria. The more concrete they are, the better the result.
+        Help: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Test data and scenarios](../blob/main/docs/test-data.md)
   - type: textarea
     id: ziel
     attributes:
-      label: Ziel
-      description: Ein, zwei Sätze. Wer kann danach was?
+      label: Goal
+      description: One or two sentences. Who can do what afterwards?
     validations:
       required: true
   - type: input
     id: anforderungen
     attributes:
-      label: Anforderungen
-      description: IDs aus docs/requirements/, z.B. ANM-01–ANM-12, RR-06
+      label: Requirements
+      description: IDs from docs/requirements/, e.g. ANM-01–ANM-12, RR-06
     validations:
       required: true
   - type: input
     id: voraussetzung
     attributes:
+      # The German keyword «Voraussetzung» (prerequisite) stays: scripts/pipeline.sh and the status page look for it.
       label: Voraussetzung
-      description: Features, die vorher auf main sein müssen, z.B. F-02, F-03
+      description: Prerequisite. Features that must be on main first, e.g. F-02, F-03
   - type: textarea
     id: kriterien
     attributes:
-      label: Akzeptanzkriterien
-      description: Nummeriert. Wenn möglich mit Seed-Personen und Szenarien aus docs/test-data.md.
+      label: Acceptance criteria
+      description: Numbered. If possible with seed persons and scenarios from docs/test-data.md.
       placeholder: |
-        1. Szenario S2: Als `nina` bei Termin 01 «dabei» tippen → Team 1 zeigt 6 dabei, 0 offen.
+        1. Scenario S2: As `nina`, tap «dabei» on event 01 → Team 1 shows 6 dabei, 0 offen.
         2. …
     validations:
       required: true
   - type: textarea
     id: hinweise
     attributes:
-      label: Hinweise und Annahmen
-      description: Was sonst noch gilt. Was nicht dazugehört.
+      label: Notes and assumptions
+      description: What else applies. What is not part of it.

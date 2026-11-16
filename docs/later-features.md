@@ -1,28 +1,28 @@
-# Spätere Funktionen
+# Later features
 
-Diese Funktionen sind bewusst zurückgestellt. Sie werden jetzt nicht umgesetzt. Das Modell soll aber so gebaut sein, dass sie später ohne Umbau dazukommen können.
+These features are deliberately postponed. They are not implemented now. But the model should be built so that they can be added later without rebuilding it.
 
-## Zurückgestellt
+## Postponed
 
-| Funktion | Beschreibung | Was das Modell heute schon berücksichtigt | Status |
+| Feature | Description | What the model already takes into account | Status |
 |---|---|---|---|
-| **Präsenzkontrolle** | Die Coach hakt nach dem Training ab, wer wirklich da war. Daraus entsteht eine Saisonstatistik pro Spielerin. | Antwort (Absicht) und Präsenz (Tatsache) sind getrennte Dinge. Die Antwort wird nicht zur Präsenz umgedeutet. | Später (entschieden) |
-| **Fahrerliste mit automatischer Fahrzeit** | Für Spieltage: wer fährt, wer fährt mit. Die Fahrzeit zum Spielort wird automatisch berechnet. | Spieltage haben Treffpunkt und Spielort mit Google-Maps-Link bzw. Koordinaten. | Später (entschieden) |
-| **Elternfunktionen** | Ein Login antwortet für mehrere Kinder. | Konto und Person sind getrennt ([PTF-09](requirements/01-people-teams-roles.md)). | Später (entschieden) |
-| **Gäste und Probetrainings** | Eine Spielerin aus einem anderen Team trainiert oder spielt einmalig mit. Oder jemand kommt zum Probetraining. | – | Später (angenommen) |
-| **Warnungen** | Hinweise wie «kein Goalie angemeldet» oder «Linie 2 nur zu dritt». | Linien und Goalies sind eigene Gruppen, die Zähler pro Gruppe sind ableitbar. | Später (angenommen) |
-| **Kalender-Abo** | Termine per iCal im eigenen Handykalender. | – | Später (angenommen) |
-| **Mehrere Linien pro Spielerin** | Eine Spielerin gehört im selben Team mehreren Linien an. | Die Begrenzung auf eine Linie ist eine Regel, keine Struktur ([LIN-04](requirements/02-lines.md)). | Später (entschieden: «momentan nur eine Linie») |
-| **Weitere Funktionen im Team** | Assistenzcoach, Betreuerin und Ähnliches. | Funktionen sind erweiterbar ([PTF-06](requirements/01-people-teams-roles.md)). | Offen |
+| **Attendance check** | After practice the coach ticks off who was really there. This produces a season statistic per player. | Response (intention) and attendance (fact) are separate things. The response is not reinterpreted as attendance. | Later (decided) |
+| **Driver list with automatic travel time** | For match days: who drives, who rides along. The travel time to the venue is calculated automatically. | Match days have a meeting point and a venue with a Google Maps link or coordinates. | Later (decided) |
+| **Parent features** | One login responds for several children. | Account and person are separate ([PTF-09](requirements/01-people-teams-roles.md)). | Later (decided) |
+| **Guests and trial practices** | A player from another team practises or plays along once. Or someone comes for a trial practice. | – | Later (accepted) |
+| **Warnings** | Notes such as «kein Goalie angemeldet» (no goalie attending) or «Linie 2 nur zu dritt» (line 2 only three players). | Lines and goalies are groups of their own, the counts per group can be derived. | Later (accepted) |
+| **Calendar subscription** | Events via iCal in one's own phone calendar. | – | Later (accepted) |
+| **Several lines per player** | A player belongs to several lines in the same team. | The limit of one line is a rule, not a structure ([LIN-04](requirements/02-lines.md)). | Later (decided: «for now only one line») |
+| **More team roles** | Assistant coach, team manager and similar. | Team roles are extensible ([PTF-06](requirements/01-people-teams-roles.md)). | Open |
 
-## Ideen ohne Entscheid
+## Ideas without a decision
 
-| Idee | Beschreibung |
+| Idea | Description |
 |---|---|
-| Export der Präsenzen | Sobald es die Präsenzkontrolle gibt, liesse sich daraus eine Liste exportieren, z.B. für J+S. |
+| Export of attendance | Once the attendance check exists, a list could be exported from it, e.g. for J+S. |
 
-## Gestrichen
+## Dropped
 
-| Funktion | Entscheid |
+| Feature | Decision |
 |---|---|
-| **Linien pro Termin** | Abweichende Linien für ein einzelnes Training oder einen Spieltag werden nicht benötigt. Es gibt nur Standardlinien ([LIN-08](requirements/02-lines.md)). |
+| **Lines per event** | Different lines for a single practice or match day are not needed. There are only standard lines ([LIN-08](requirements/02-lines.md)). |

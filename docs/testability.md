@@ -47,7 +47,7 @@ Color alone carries no information (see also [design-principles.md](design-princ
 | Disabled | `disabled` or `aria-disabled="true"` with an explanation nearby |
 | Form error | `aria-invalid="true"` and error message via `aria-describedby` |
 
-Counters (dabei/nicht dabei/vielleicht/offen) also have `data-zaehler="dabei"` etc. and a text that contains the number and the word («10 dabei»).
+Counters («dabei»/«nicht dabei»/«vielleicht»/«offen») also have `data-zaehler="dabei"` etc. and a text that contains the number and the word («10 dabei»).
 
 ### 4. Test IDs where semantics are not enough
 

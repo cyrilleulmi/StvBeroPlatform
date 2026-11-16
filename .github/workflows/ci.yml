@@ -1,4 +1,4 @@
-# Build und alle Tests bei jedem PR (F-00, Kriterium 11).
+# Build and all tests on every PR (F-00, criterion 11).
 name: CI
 
 on:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-und-tests:
-    name: Build und Tests
+    name: Build and tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -51,15 +51,15 @@ jobs:
             frontend/package-lock.json
             e2e/package-lock.json
 
-      - name: Abhängigkeiten installieren
+      - name: Install dependencies
         run: |
           (cd frontend && npm ci --no-audit --no-fund)
           (cd e2e && npm ci --no-audit --no-fund && npx playwright install --with-deps chrome)
 
-      - name: Alle Tests (scripts/test.sh)
+      - name: All tests (scripts/test.sh)
         run: scripts/test.sh
 
-      - name: Playwright-Bericht
+      - name: Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:

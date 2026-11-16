@@ -1,33 +1,33 @@
-# Weitere Kacheln
+# More tiles
 
-Diese Kacheln sind geplant, aber noch nicht ausgearbeitet. Hier steht, was bisher dazu bekannt ist. Sie werden gemeinsam erarbeitet, bevor sie umgesetzt werden.
+These tiles are planned but not worked out yet. This page records what is known about them so far. They are worked out together before they are implemented.
 
-## Anwesenheit Coaches
+## Coach attendance
 
-- **Zweck:** Einsatz und Präsenz der Coaches pro Training und Spieltag, Stellvertretungen.
-- **Hauptnutzer:** Coaches, Verantwortliche.
-- **Schon im Kern:** Coaches melden sich für Termine an und ab und erscheinen in einem eigenen Block ([04 · An- und Abmeldung](requirements/04-responses.md)).
-- **Offen:** Wie Stellvertretungen organisiert werden und was Verantwortliche zusätzlich sehen wollen.
-- **Farbe:** `accent-blue`.
+- **Purpose:** Assignment and attendance of coaches per practice and match day, substitutes.
+- **Main users:** Coaches, organisers.
+- **Already in the core:** Coaches respond to events and appear in a block of their own ([04 · Responses](requirements/04-responses.md)).
+- **Open:** How substitutes are organised and what organisers additionally want to see.
+- **Colour:** `accent-blue`.
 
-## Übungssammlung
+## Drill library
 
-- **Zweck:** Trainingsübungen mit Beschreibung, Skizze oder Video und Tags (Stufe, Fokus, Dauer). Daraus lassen sich Trainings planen.
-- **Hauptnutzer:** Coaches.
-- **Farbe:** `accent-mustard`.
+- **Purpose:** Practice drills with description, sketch or video and tags (level, focus, duration). Practices can be planned from them.
+- **Main users:** Coaches.
+- **Colour:** `accent-mustard`.
 
-## Helfereinsatzplanung
+## Helper scheduling
 
-- **Zweck:** Schichten für Turniere und Anlässe (Kasse, Buffet, Schiri, Aufbau). Eintragen und Erinnerungen.
-- **Hauptnutzer:** Mitglieder, Organisatoren, später evtl. Eltern.
-- **Farbe:** `accent-coral`, Kachel mit `accent-coral-soft` hinterlegt.
+- **Purpose:** Shifts for tournaments and events (cash desk, buffet, referee, setup). Signing up and reminders.
+- **Main users:** Members, organisers, later possibly parents.
+- **Colour:** `accent-coral`, tile with `accent-coral-soft` background.
 
-## Ressourcen
+## Resources
 
-- **Zweck:** Hilfsvideos, Regeln, Technik-Tipps und Dokumente.
-- **Hauptnutzer:** Spielerinnen.
-- **Farbe:** `primary`.
+- **Purpose:** Help videos, rules, technique tips and documents.
+- **Main users:** Players.
+- **Colour:** `primary`.
 
-## Ideen für später
+## Ideas for later
 
-Kalender, News, Material/Ausrüstung.
+Calendar, news, material/equipment.

@@ -1,40 +1,40 @@
 Closes #
 
-## Was
+## What
 
-<!-- Ein, zwei Sätze: was kann man nach diesem PR? -->
+<!-- One or two sentences: what can you do after this PR? -->
 
-**Feature:** F-xx · **Anforderungen:** 
+**Feature:** F-xx · **Requirements:** 
 
-## Akzeptanzkriterien
+## Acceptance criteria
 
-| Nr. | Kriterium | Umsetzung | Test |
+| No. | Criterion | Implementation | Test |
 |---|---|---|---|
 | 1 | | | `e2e/tests/…` |
 
-## Annahmen
+## Assumptions
 
-<!-- Was nicht eindeutig war und wie entschieden wurde. Neue offene Fragen auch in docs/open-points.md. -->
+<!-- What was not clear and how it was decided. New open questions also in docs/open-points.md. -->
 
 - 
 
-## Ausprobieren
+## Try it out
 
 ```bash
 scripts/start.sh
 ```
 
-http://localhost:4200/dev-login → als `…` anmelden → …
+http://localhost:4200/dev-login → log in as `…` → …
 
 ## Definition of Done
 
-<!-- docs/pipeline/definition-of-done.md – abhaken oder begründen -->
+<!-- docs/pipeline/definition-of-done.md – tick or explain -->
 
-- [ ] Jedes Akzeptanzkriterium umgesetzt und automatisch getestet
-- [ ] API entspricht docs/api/openapi.yaml, Lint ohne Fehler und Warnungen
-- [ ] Rechte im Backend geprüft, mit 403-Tests
-- [ ] Testbarkeit nach docs/testability.md, navigation.md nachgeführt
-- [ ] Design-Tokens, Hell und Dunkel geprüft, mobil und Desktop geprüft
-- [ ] Backend-Tests und E2E-Tests (mobil, desktop, axe) grün
-- [ ] test-data.md und states.md nachgeführt
-- [ ] Startet aus frischem Klon
+- [ ] Every acceptance criterion implemented and tested automatically
+- [ ] API matches docs/api/openapi.yaml, lint without errors and warnings
+- [ ] Permissions checked in the backend, with 403 tests
+- [ ] Testability according to docs/testability.md, navigation.md updated
+- [ ] Design tokens, light and dark checked, mobile and desktop checked
+- [ ] Backend tests and E2E tests (mobil, desktop, axe) green
+- [ ] test-data.md and states.md updated
+- [ ] Starts from a fresh clone
