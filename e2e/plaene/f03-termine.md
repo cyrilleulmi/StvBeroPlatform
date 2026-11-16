@@ -25,3 +25,23 @@ Serien `70000000-0000-4000-8000-0000000000NN`.
 | K7.1 | Absagen | `petra` → T01 bearbeiten → «Termin absagen», ohne Grund, dann «Halle gesperrt» | Ohne Grund: Feldfehler. Danach «Der Termin ist abgesagt.», Status mit Grund |
 | K8 | Antwortfrist | T01; neuer Termin 21.11. 10:00 mit 48 Stunden; Serie 01 mit 12 Stunden | «Mo 16.11. 18:30 (24 Stunden vor Beginn)»; «Do 19.11. 10:00 (48 …)»; T01 danach «Di 17.11. 06:30 (12 …)» |
 | K9 | Filter | `petra` → Team «Team 2», dann «Vergangen», neu laden | URL `?team=<T2>&ansicht=vergangen`, T07 sichtbar, Auswahl bleibt nach Neuladen |
+
+## Ergänzung Test-Agent (Runde 0)
+
+Grenzfälle aus zustaende.md (verbotene Übergänge) und Robustheit. Ausgangslage wie oben (Reset, Jetzt = Mo 16.11.2026 06:00).
+
+| Nr. | Fall | Schritte | Erwartung |
+|---|---|---|---|
+| G1 | Rechte API | `anna`: `POST /api/termine` (Team 1), `PUT /api/termine/<T01>`, `POST /api/termine/<T01>/absagen`, `PUT /api/serien/<01>`, `POST /api/serien/<01>/ausnahmen`; `petra`: `POST /api/termine` nur Team 3; `tina`: `GET /api/termine/<T01>`, `GET /api/serien/<01>` | jeweils 403 mit `regel` RR-07 |
+| G2 | RR-06 | `marc` (Coach Team 2): `POST /api/termine/<T01>/absagen` `{ "grund": "Halle zu" }` | 200, T01 abgesagt |
+| G3 | Abgesagt ist endgültig | `petra`: T03 nochmals absagen bzw. ändern (API); `/termine/<T03>/bearbeiten` | 409 TER-06; Seite zeigt «Dieser Termin ist abgesagt oder vorbei und lässt sich nicht mehr ändern.», im Detail kein «Termin bearbeiten» |
+| G4 | Ungültige Eingaben Termin | `petra` → `/termine/neu`: Titel nur Leerzeichen; Ende 09:00 vor Beginn 10:00; Datum 10.11.2026; kein Team; Antwortfrist leer, -1, 337 | Feldfehler auf Deutsch beim Feld: «Bitte einen Titel angeben.», «Das Ende muss nach dem Beginn liegen.», «Der Termin liegt in der Vergangenheit.», «Bitte mindestens ein Team wählen.», «Bitte eine Zahl angeben.»; bei 337 eine deutsche Meldung (höchstens 336 Stunden). URL bleibt `/termine/neu` |
+| G5 | Ungültige Eingaben Serie | `/serien/<01>/bearbeiten` Antwortfrist 400; API Serie länger als ein Jahr; Ausnahme ohne Angaben und mit Bis vor Von | Deutsche Feldfehler; 400 «Eine Serie dauert höchstens ein Jahr.»; «Bitte ein Datum angeben.»/«Bitte einen Grund angeben.»; «Das Ende der Ausnahme muss nach ihrem Beginn liegen.» |
+| G6 | Ausnahme mit Antwort | Serie 01, Termin 08.12. bekommt eine Antwort (ab F-04 über die App, vorher direkt in der DB); Ausnahme 07.12.–13.12. «Turnier» | Liste: Di 08.12. «abgesagt · Turnier»; Detail «Abgesagt: Turnier» |
+| G7 | Doppelklick | «Termin speichern», «Absagen» im Dialog je doppelt klicken | Genau ein `POST` |
+| G8 | Neuladen | Nach Verschieben (K6) und Filter (K9) neu laden; Zurück-Taste nach «Vergangen» | Zustand bleibt; Zurück führt zu `?team=<T2>` |
+| G9 | Serie fremder Teams | `anna` (nur Team 1) und `marc` (nur Team 2) → `/serien/<01>` | «Teams: Team 1 + Team 2» (alle Teams der Serie, nicht nur die eigenen) |
+| G10 | Serie bearbeiten ohne Datenverlust | `marc` → `/serien/<01>/bearbeiten` → speichern ohne Änderung | Serie behält Team 1 + Team 2 |
+| G11 | Lange Eingaben | Titel, Ort, Hinweise mit 600 Zeichen ohne Leerzeichen (z.B. ein eingefügter Link) | Gekürzt auf die Maximallänge; Detailseite mobil ohne horizontales Scrollen |
+| G12 | Filter fremdes Team | `petra` → `/termine?team=<Team 3>` | Auswahl «Team» zeigt, was gefiltert ist (oder der Filter wird ignoriert); Anzeige und Liste stimmen überein |
+| G13 | Dark und Desktop | `/termine`, `/termine/<T03>`, `/termine/neu?art=serie`, `/serien/<01>`, Dialog «Termin absagen» dunkel, 375 und 1280 | Gut lesbar, nichts Weisses auf Weiss |
