@@ -12,6 +12,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type {
+  AbgleichErgebnis,
   Funktion,
   Person,
   PersonKurz,
@@ -45,6 +46,11 @@ const FUNKTIONEN: Funktion[] = ['SPIELERIN', 'COACH'];
     form .button {
       justify-self: start;
     }
+    .su-knoepfe {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
     .mitglied .zeile-titel {
       min-width: 10em;
     }
@@ -77,8 +83,8 @@ export class TeamVerwaltung {
   protected readonly personen = signal<Person[]>([]);
   protected readonly laedt = signal(true);
   /**
-   * Welche Aktion gerade läuft: `umbenennen`, `aufnehmen`, `funktion:<personId>` oder
-   * `entfernen:<personId>`. `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
+   * Welche Aktion gerade läuft: `umbenennen`, `aufnehmen`, `funktion:<personId>`,
+   * `entfernen:<personId>`, `verknuepfen`, `loesen` oder `abgleichen`. `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
    */
   protected readonly laufendeAktion = signal<string | null>(null);
   protected readonly speichert = computed(() => this.laufendeAktion() !== null);
@@ -91,6 +97,8 @@ export class TeamVerwaltung {
   protected readonly neuePerson = signal('');
   protected readonly neueFunktion = signal<Funktion>('SPIELERIN');
   protected readonly personFehler = signal<string | null>(null);
+  protected readonly suTeamId = signal('');
+  protected readonly suTeamIdFehler = signal<string | null>(null);
 
   /** Coaches und Spielerinnen getrennt (PTF-07). */
   protected readonly coaches = computed<Mitglied[]>(() =>
@@ -142,6 +150,7 @@ export class TeamVerwaltung {
       this.saisonDaten.set(saisons.find((s) => (saisonId ? s.id === saisonId : s.aktuell)) ?? null);
       this.team.set(team);
       this.teamname.set(team.name);
+      this.suTeamId.set(team.suTeamId != null ? String(team.suTeamId) : '');
       this.personen.set(personen);
     } catch (e) {
       this.team.set(null);
@@ -184,7 +193,11 @@ export class TeamVerwaltung {
     this.teamnameFehler.set(null);
     void this.ausfuehren('umbenennen', async () => {
       await firstValueFrom(
-        this.http.put(`/api/teams/${this.teamId()}`, { name: neuerName }, { params: this.params() }),
+        this.http.put(
+          `/api/teams/${this.teamId()}`,
+          { name: neuerName },
+          { params: this.params() },
+        ),
       );
       return TEXTE.teamVerwaltung.umbenannt;
     });
@@ -238,6 +251,48 @@ export class TeamVerwaltung {
         }),
       );
       return TEXTE.teamVerwaltung.entfernt(name(m.person));
+    });
+  }
+
+  /** Mit swiss unihockey verknüpfen (SUH-02). */
+  protected verknuepfen(ereignis: Event): void {
+    ereignis.preventDefault();
+    const eingabe = this.suTeamId().trim();
+    if (!/^[1-9]\d{0,8}$/.test(eingabe)) {
+      this.suTeamIdFehler.set(TEXTE.swissUnihockey.feldPflicht);
+      return;
+    }
+    this.suTeamIdFehler.set(null);
+    const id = Number(eingabe);
+    void this.ausfuehren('verknuepfen', async () => {
+      await firstValueFrom(
+        this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: id }),
+      );
+      return TEXTE.swissUnihockey.verknuepft(id);
+    });
+  }
+
+  protected verknuepfungLoesen(): void {
+    this.suTeamIdFehler.set(null);
+    void this.ausfuehren('loesen', async () => {
+      await firstValueFrom(
+        this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: null }),
+      );
+      this.suTeamId.set('');
+      return TEXTE.swissUnihockey.geloest;
+    });
+  }
+
+  /** Abgleich sofort auslösen (SUH-03). Bei einer Störung meldet das Backend den Grund (SUH-09). */
+  protected abgleichen(): void {
+    void this.ausfuehren('abgleichen', async () => {
+      const ergebnis = await firstValueFrom(
+        this.http.post<AbgleichErgebnis>(
+          `/api/teams/${this.teamId()}/swiss-unihockey/abgleich`,
+          null,
+        ),
+      );
+      return TEXTE.swissUnihockey.abgeglichen(ergebnis);
     });
   }
 }

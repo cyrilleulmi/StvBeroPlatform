@@ -663,7 +663,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin) */
+        /**
+         * Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
+         * @description Die Team-ID findet man auf swissunihockey.ch in der Adresse der Team-Seite. Eine Team-ID gehört zu
+         *     höchstens einem Team (sonst 409). Das Lösen lässt bereits importierte Spieltage unverändert.
+         */
         put: operations["suVerknuepfen"];
         post?: never;
         delete?: never;
@@ -683,7 +687,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin) */
+        /**
+         * Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
+         * @description Gleicht die Spiele des Teams in der aktuellen Saison ab. Spiele am selben Tag in derselben Halle werden
+         *     ein Spieltag (SUH-04). Geänderte Spiele werden übernommen, Treffpunkt, Hinweise, Antworten und Aufgebot
+         *     bleiben (SUH-05, SUH-06), alle Mitglieder des Teams werden benachrichtigt (BEN-06). Spiele, die swiss
+         *     unihockey nicht mehr liefert, werden markiert, nicht gelöscht. Von Hand erfasste Spieltage bleiben
+         *     unberührt (SUH-10). 409, wenn das Team nicht verknüpft ist oder nicht zur aktuellen Saison gehört.
+         *     502, wenn swiss unihockey nicht erreichbar ist oder Unerwartetes liefert: Dann ändert sich nichts (SUH-09).
+         *     Derselbe Abgleich läuft täglich für alle verknüpften Teams.
+         */
         post: operations["suAbgleichen"];
         delete?: never;
         options?: never;
@@ -1308,7 +1321,10 @@ export interface components {
             anspielzeit: string;
             heimteam: string;
             gastteam: string;
+            /** @example Sporthalle Seefeld */
             halle: string;
+            /** @example Musterdorf */
+            ort?: string | null;
             /** Format: uri */
             mapsUrl?: string | null;
             breite?: number | null;
@@ -2557,8 +2573,10 @@ export interface operations {
                     "application/json": components["schemas"]["Team"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     suAbgleichen: {
@@ -2848,6 +2866,7 @@ export interface operations {
                 };
                 content?: never;
             };
+            400: components["responses"]["Ungueltig"];
         };
     };
 }
