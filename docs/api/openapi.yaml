@@ -910,6 +910,9 @@ paths:
       tags: [SwissUnihockey]
       operationId: suVerknuepfen
       summary: Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
+      description: |
+        Die Team-ID findet man auf swissunihockey.ch in der Adresse der Team-Seite. Eine Team-ID gehört zu
+        höchstens einem Team (sonst 409). Das Lösen lässt bereits importierte Spieltage unverändert.
       requestBody:
         required: true
         content:
@@ -921,6 +924,7 @@ paths:
                 suTeamId:
                   type: [integer, 'null']
                   description: '`null` löst die Verknüpfung'
+                  minimum: 1
                   examples: [900001]
       responses:
         '200':
@@ -928,8 +932,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Team' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/teams/{teamId}/swiss-unihockey/abgleich:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -937,6 +943,14 @@ paths:
       tags: [SwissUnihockey]
       operationId: suAbgleichen
       summary: Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
+      description: |
+        Gleicht die Spiele des Teams in der aktuellen Saison ab. Spiele am selben Tag in derselben Halle werden
+        ein Spieltag (SUH-04). Geänderte Spiele werden übernommen, Treffpunkt, Hinweise, Antworten und Aufgebot
+        bleiben (SUH-05, SUH-06), alle Mitglieder des Teams werden benachrichtigt (BEN-06). Spiele, die swiss
+        unihockey nicht mehr liefert, werden markiert, nicht gelöscht. Von Hand erfasste Spieltage bleiben
+        unberührt (SUH-10). 409, wenn das Team nicht verknüpft ist oder nicht zur aktuellen Saison gehört.
+        502, wenn swiss unihockey nicht erreichbar ist oder Unerwartetes liefert: Dann ändert sich nichts (SUH-09).
+        Derselbe Abgleich läuft täglich für alle verknüpften Teams.
       responses:
         '200':
           description: Ergebnis des Abgleichs
@@ -1137,6 +1151,7 @@ paths:
                   items: { $ref: '#/components/schemas/SuSpiel' }
       responses:
         '204': { description: Gesetzt }
+        '400': { $ref: '#/components/responses/Ungueltig' }
 
 components:
   securitySchemes:
@@ -1766,7 +1781,8 @@ components:
         anspielzeit: { type: string, format: date-time }
         heimteam: { type: string }
         gastteam: { type: string }
-        halle: { type: string }
+        halle: { type: string, examples: [Sporthalle Seefeld] }
+        ort: { type: [string, 'null'], examples: [Musterdorf] }
         mapsUrl: { type: [string, 'null'], format: uri }
         breite: { type: [number, 'null'] }
         laenge: { type: [number, 'null'] }

@@ -35,6 +35,23 @@ class ProdOhneTesthilfenTest {
                 .post("/api/test/anmelden").then().statusCode(404);
         given().get("/api/test/personen").then().statusCode(404);
         given().delete("/api/test/aktuelle-saison").then().statusCode(404);
+        given().contentType("application/json").body("{\"suTeamId\":900001,\"spiele\":[]}")
+                .put("/api/test/swiss-unihockey/spiele").then().statusCode(404);
+    }
+
+    /** F-07, Kriterium 2: Im Profil prod spricht die App mit swiss unihockey, nicht mit dem Simulator. */
+    @Test
+    void ohneTesthilfenSprichtDieAppMitSwissUnihockey() {
+        Object quelle = io.quarkus.arc.ClientProxy.unwrap(io.quarkus.arc.Arc.container()
+                .instance(ch.stvbero.platform.kern.swissunihockey.SwissUnihockeyQuelle.class).get());
+        org.junit.jupiter.api.Assertions.assertInstanceOf(ch.stvbero.platform.kern.swissunihockey.SuApiQuelle.class,
+                quelle);
+        org.junit.jupiter.api.Assertions.assertEquals("https://api-v2.swissunihockey.ch/api",
+                org.eclipse.microprofile.config.ConfigProvider.getConfig()
+                        .getValue("stv.swiss-unihockey.url", String.class));
+        org.junit.jupiter.api.Assertions.assertTrue(io.quarkus.arc.Arc.container()
+                .select(ch.stvbero.platform.kern.swissunihockey.SuSimulator.class).isUnsatisfied(),
+                "Kein Simulator ohne Test-Hilfen");
     }
 
     @Test

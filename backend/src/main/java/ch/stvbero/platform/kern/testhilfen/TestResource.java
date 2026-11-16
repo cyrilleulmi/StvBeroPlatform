@@ -8,6 +8,8 @@ import ch.stvbero.platform.kern.fehler.FachFehler;
 import ch.stvbero.platform.kern.fehler.Fehler;
 import ch.stvbero.platform.kern.person.Konto;
 import ch.stvbero.platform.kern.saison.Saison;
+import ch.stvbero.platform.kern.swissunihockey.SuSimulator;
+import ch.stvbero.platform.kern.swissunihockey.SuSpielDto;
 import ch.stvbero.platform.kern.termin.Erinnerungen;
 import ch.stvbero.platform.kern.uhr.Uhr;
 import io.quarkus.arc.properties.IfBuildProperty;
@@ -16,6 +18,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -60,6 +63,9 @@ public class TestResource {
     @Inject
     Benachrichtigungen benachrichtigungen;
 
+    @Inject
+    SuSimulator simulator;
+
     public record UhrSetzen(@NotNull OffsetDateTime jetzt) {
     }
 
@@ -69,12 +75,32 @@ public class TestResource {
     public record Anmelden(@NotBlank String schluessel) {
     }
 
+    public record SuVorgabe(@NotNull @Positive Integer suTeamId,
+                            @Schema(defaultValue = "false", description = "Simuliert einen Ausfall (SUH-09)")
+                            Boolean nichtErreichbar,
+                            @NotNull List<@Valid @NotNull SuSpielDto> spiele) {
+    }
+
     @POST
     @Path("/reset")
     @Operation(operationId = "testReset", summary = "Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen")
     @APIResponse(responseCode = "204", description = "Zurückgesetzt")
     public void reset() {
         seed.zuruecksetzen();
+        simulator.zuruecksetzen();
+    }
+
+    @PUT
+    @Path("/swiss-unihockey/spiele")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testSuSpieleSetzen",
+            summary = "Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert")
+    @APIResponse(responseCode = "204", description = "Gesetzt")
+    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+            content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
+    public void suSpieleSetzen(@Valid @NotNull SuVorgabe vorgabe) {
+        simulator.setzen(vorgabe.suTeamId(), vorgabe.spiele().stream().map(SuSpielDto::alsSpiel).toList(),
+                Boolean.TRUE.equals(vorgabe.nichtErreichbar()));
     }
 
     @PUT
