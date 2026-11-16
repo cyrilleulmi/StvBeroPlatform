@@ -91,7 +91,7 @@ public class SeriesService {
                 .filter(day -> EventRules.instant(day, s.startTime).isAfter(now))
                 .filter(day -> !all.containsKey(day) || future.containsKey(day))
                 .toList();
-        EventRules.SuSync sync = EventRules.sync(future, target);
+        EventRules.SeriesSync sync = EventRules.syncSeries(future, target);
         for (LocalDate day : sync.apply()) {
             apply(all.get(day), s, day);
         }

@@ -64,7 +64,7 @@ public final class EventRules {
      * @param apply  dates whose event takes over the new details of the series
      * @param drop   dates whose event no longer fits the series (removed or cancelled, see {@link Outcome})
      */
-    public record SuSync(List<LocalDate> create, List<LocalDate> apply, List<LocalDate> drop) {
+    public record SeriesSync(List<LocalDate> create, List<LocalDate> apply, List<LocalDate> drop) {
     }
 
     private EventRules() {
@@ -206,7 +206,7 @@ public final class EventRules {
      * @param existing future events of the series by their series date
      * @param target   future dates of the changed series
      */
-    public static SuSync sync(Map<LocalDate, Existing> existing, Collection<LocalDate> target) {
+    public static SeriesSync syncSeries(Map<LocalDate, Existing> existing, Collection<LocalDate> target) {
         Set<LocalDate> targetDates = new TreeSet<>(target);
         List<LocalDate> create = new ArrayList<>();
         List<LocalDate> apply = new ArrayList<>();
@@ -225,7 +225,7 @@ public final class EventRules {
                 drop.add(d);
             }
         });
-        return new SuSync(create, apply, drop);
+        return new SeriesSync(create, apply, drop);
     }
 
     // ------------------------------------------------------------------ Display

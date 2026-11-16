@@ -141,7 +141,7 @@ class EventRulesTest {
                 b, new EventRules.Existing(false, false),   // cancelled
                 c, new EventRules.Existing(true, true),     // changed individually
                 e, new EventRules.Existing(true, false));
-        EventRules.SuSync sync = EventRules.sync(existing, List.of(a, b, c, f));
+        EventRules.SeriesSync sync = EventRules.syncSeries(existing, List.of(a, b, c, f));
         assertEquals(List.of(f), sync.create());
         assertEquals(List.of(a), sync.apply());
         assertEquals(List.of(e), sync.drop());
