@@ -8,7 +8,7 @@ body:
       value: |
         Der Entwicklungs-Agent setzt dieses Issue um, sobald Cyrille das Label `status:bereit` setzt.
         Der Test-Agent prüft genau die Akzeptanzkriterien. Je konkreter sie sind, desto besser das Ergebnis.
-        Hilfe: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Testdaten und Szenarien](../blob/main/docs/testdaten.md)
+        Hilfe: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Testdaten und Szenarien](../blob/main/docs/test-data.md)
   - type: textarea
     id: ziel
     attributes:
@@ -20,7 +20,7 @@ body:
     id: anforderungen
     attributes:
       label: Anforderungen
-      description: IDs aus docs/anforderungen/, z.B. ANM-01–ANM-12, RR-06
+      description: IDs aus docs/requirements/, z.B. ANM-01–ANM-12, RR-06
     validations:
       required: true
   - type: input
@@ -32,7 +32,7 @@ body:
     id: kriterien
     attributes:
       label: Akzeptanzkriterien
-      description: Nummeriert. Wenn möglich mit Seed-Personen und Szenarien aus docs/testdaten.md.
+      description: Nummeriert. Wenn möglich mit Seed-Personen und Szenarien aus docs/test-data.md.
       placeholder: |
         1. Szenario S2: Als `nina` bei Termin 01 «dabei» tippen → Team 1 zeigt 6 dabei, 0 offen.
         2. …

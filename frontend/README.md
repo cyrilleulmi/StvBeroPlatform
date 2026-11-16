@@ -10,7 +10,7 @@ npm run build
 npm run api-typen  # TypeScript-Typen aus docs/api/openapi.yaml erzeugen (läuft vor start/build)
 ```
 
-- Design-Tokens und Darstellungen (Hell, Düne, GitHub Dark): `src/styles.css` (docs/design-grundlagen.md). Auswahl im Profil: `src/app/kern/theme.service.ts`
+- Design-Tokens und Darstellungen (Hell, Düne, GitHub Dark): `src/styles.css` (docs/design-principles.md). Auswahl im Profil: `src/app/kern/theme.service.ts`
 - Texte der Oberfläche: `src/app/kern/texte.ts`
 - Icons (Lucide-Stil): `src/app/kern/icon.ts`
 - Testmodus (`/dev-login`): nur im Development-Build (`src/umgebung/umgebung.ts`)

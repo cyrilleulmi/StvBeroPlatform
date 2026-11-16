@@ -43,7 +43,7 @@ Nach einer Nacharbeit geht es immer zurück ins Review, nicht direkt in den Test
 |---|---|---|---|---|
 | **Entwicklung** (Aufgaben «Entwicklung» und «Nacharbeit») | [`pipeline-entwicklung`](../../.claude/skills/pipeline-entwicklung/SKILL.md) | Issue bekommt `status:bereit`, PR bekommt `pipeline:nacharbeit` | Branch `claude/…` anlegen, Code schreiben, PR eröffnen, Labels wechseln | auf `main` pushen, mergen, Anforderungen mit Status «Entschieden» ändern |
 | **Review** | [`pipeline-review`](../../.claude/skills/pipeline-review/SKILL.md) | PR bekommt `pipeline:review` | Code lesen, Build und Tests ausführen, kommentieren, Label wechseln | Code ändern |
-| **Test** | [`pipeline-test`](../../.claude/skills/pipeline-test/SKILL.md) | PR bekommt `pipeline:test` | App starten, durchtesten, Testplan unter `e2e/plaene/` committen, Label wechseln, **bestandenen PR mergen** | Produktivcode ändern, mergen ohne bestandenen Test |
+| **Test** | [`pipeline-test`](../../.claude/skills/pipeline-test/SKILL.md) | PR bekommt `pipeline:test` | App starten, durchtesten, Testplan unter `e2e/plans/` committen, Label wechseln, **bestandenen PR mergen** | Produktivcode ändern, mergen ohne bestandenen Test |
 | **Cyrille** | – | PR hat `pipeline:blockiert`; sonst nach Belieben | alles | – |
 
 ## Labels
@@ -115,7 +115,7 @@ Was man beim Einrichten wissen muss:
 
 «Letzter Besuch» wird pro Gerät im Browser gespeichert. Ohne Anmeldung erlaubt GitHub 60 Abfragen pro Stunde, die Seite braucht drei pro Aktualisierung.
 
-**Push-Nachrichten** kommen nur, wenn etwas schiefgegangen ist (E-64, Regeln in [agenten-regeln.md](agenten-regeln.md) Abschnitt 8).
+**Push-Nachrichten** kommen nur, wenn etwas schiefgegangen ist (E-64, Regeln in [agent-rules.md](agent-rules.md) Abschnitt 8).
 
 ## Ein Feature durch die Pipeline schicken
 
@@ -165,5 +165,5 @@ Nach einem Usage-Reset dauert es also höchstens gut 2 Stunden, bis die Pipeline
 
 - [Backlog](backlog.md) – Features in Umsetzungsreihenfolge mit Akzeptanzkriterien
 - [Definition of Done](definition-of-done.md) – was jeder PR erfüllen muss
-- [Testbarkeit](../testbarkeit.md), [Navigation](../oberflaeche/navigation.md), [Testdaten](../testdaten.md)
-- [API-Vertrag](../api/openapi.yaml), [Zustände](../zustaende.md)
+- [Testbarkeit](../testability.md), [Navigation](../ui/navigation.md), [Testdaten](../test-data.md)
+- [API-Vertrag](../api/openapi.yaml), [Zustände](../states.md)

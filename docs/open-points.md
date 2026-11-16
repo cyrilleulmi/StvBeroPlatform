@@ -1,0 +1,70 @@
+# Offene Punkte
+
+Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
+
+## Plattform
+
+| Nr. | Frage | Bemerkung |
+|---|---|---|
+| O-01 | **Login:** Wie melden sich Mitglieder an? | E-Mail und Passwort, Magic Link oder Keycloak/OIDC. |
+| O-02 | **Hosting:** Wo läuft die Plattform produktiv, wo die Vorschau zum Verifizieren? | |
+| O-03 | **Datenschutz:** Welche Daten werden gespeichert, wer sieht was (nDSG)? | Die App ist momentan für Erwachsene gedacht. Kommen Minderjährige dazu, neu beurteilen. |
+| O-04 | **Mandantenfähigkeit:** Braucht es mehrere Vereine in einer Installation? | Mehrere Teams innerhalb des Vereins sind Teil des Kerns. |
+| O-05 | ~~**Benachrichtigungen:** E-Mail, Push über die PWA oder beides?~~ | Entschieden: beides (E-71, F-19). |
+| O-06 | **Grösse:** Wie viele Teams und Mitglieder ungefähr? | |
+| O-07 | ~~**Backend-Sprache:** Java oder Kotlin?~~ | Entschieden: Java 21 (E-57). |
+| O-08 | ~~**Migrationen:** Flyway oder Liquibase?~~ | Entschieden: Flyway (E-57). |
+
+## Kern
+
+| Nr. | Frage | Bemerkung |
+|---|---|---|
+| O-10 | Welche Funktionen braucht es neben Spielerin und Coach? | Z.B. Assistenzcoach, Betreuerin. Siehe [PTF-06](requirements/01-people-teams-roles.md). |
+| O-11 | Wie viele Stunden vor dem Termin liegt die Antwortfrist standardmässig? | Siehe [TER-09](requirements/03-events.md). |
+| O-12 | Dürfen Antworten nach der Frist noch geändert werden? | Annahme: ja, mit Meldung an die Coach ([ANM-09](requirements/04-responses.md)). |
+| O-13 | Sehen Spielerinnen den Status der anderen? | Annahme: ja, aber keine Kommentare ([ANM-25](requirements/04-responses.md)). |
+| O-14 | Gehört ein Spieltag immer zu genau einem Team? | Annahme: ja ([AUF-03](requirements/05-match-days-call-up.md)). |
+| O-15 | Heisst es in der Oberfläche «Spielerin» oder «Spieler/in»? | In der Erarbeitung wurde «Spielerinnen» verwendet, in älteren Unterlagen «Spieler/innen». |
+| O-16 | Farben und Symbole für die vier Antwortstatus | Vorschlag in [design-principles.md](design-principles.md#noch-nicht-festgelegt). Umgesetzt mit F-04 als Annahme: dabei `primary` mit Häkchen, nicht dabei `coral` mit Kreuz, vielleicht `mustard` mit Fragezeichen, offen `muted` mit gestricheltem Kreis, immer zusätzlich als Text. |
+| O-17 | Wer wird bei einer kurzfristigen Absage benachrichtigt, wenn ein Termin mehrere Teams hat? | Annahme: nur die Coaches der Teams, in denen die Person Spielerin ist ([BEN-02](requirements/08-notifications.md)). |
+| O-18 | Wann geht die Erinnerung raus? | Annahme: 12 Stunden vor der Antwortfrist ([states.md](states.md#termin)). |
+| O-19 | Was passiert mit Serienterminen in einer neuen Ausnahme? | Annahme: ohne Antworten entfernt, mit Antworten abgesagt ([states.md](states.md#serie)). |
+| O-34 | Bekommt eine neu erfasste Person automatisch ein Konto? | Annahme F-01: nein. Das Konto entsteht mit dem Anmeldeverfahren (O-01). Neue Personen können sich im Testmodus nicht anmelden. |
+| O-35 | Dürfen alte Saisons nachträglich korrigiert werden? | Annahme F-01: nein, Saisons vor der aktuellen sind nur lesbar (SAI-02). Eine geplante Saison nach der aktuellen ist änderbar. |
+| O-36 | Wie entsteht in einer frischen Installation die erste aktuelle Saison? | Ohne aktuelle Saison zeigt die App allen, auch Admins, nur den Hinweis `/keine-saison` (Nachbesserung #13). Die Verwaltung der Saisons ist so nicht erreichbar. Annahme: Die erste Saison wird bei der Einrichtung angelegt (Seed bzw. Migration beim Produktivstart). Alternative: Admins sehen auf dem Hinweis einen Link zu `/verwaltung/saisons`. |
+| O-37 | Dürfen zwei Linien eines Teams gleich heissen? | Annahme F-02: nein, Namen sind pro Team eindeutig (ohne Gross-/Kleinschreibung), damit das Auswahlfeld eindeutig ist (409, LIN-09). |
+| O-38 | Lassen sich die Goalies umbenennen? | Annahme F-02: nein, «Goalies» ist fest (409, LIN-05). |
+| O-39 | Wer darf einen Termin für mehrere Teams erfassen? | Annahme F-03: Coach in mindestens einem der Teams (oder Admin). So kann Petra (Coach Team 1) das gemeinsame Training mit Team 2 erfassen, wie im Akzeptanzkriterium verlangt. Der Vertrag sagte vorher «Coach in jedem Team». Das Formular bietet die eigenen Teams an. |
+| O-40 | Werden beim Anlegen einer Serie auch vergangene Daten erzeugt? | Annahme F-03: nein, nur Termine, die noch nicht begonnen haben. Der Seed enthält dagegen alle Termine seit Serienbeginn. |
+| O-42 | Dürfen Admins ohne Team für sich antworten? | Annahme F-04: nein, für sich antwortet nur, wer in einem beteiligten Team ist (403). Stellvertretend dürfen Admins für jedes Mitglied der beteiligten Teams antworten, auch für Coaches (RR-04). |
+| O-43 | Wie lange gilt eine Antwort als «kurzfristig»? | Annahme F-04: Die Markierung entsteht beim Wechsel weg von «dabei» nach der Frist, bleibt bei Wechseln zwischen «nicht dabei» und «vielleicht» und fällt mit «dabei» weg. Ein erstes «nicht dabei» nach der Frist (vorher «offen») ist nicht kurzfristig. |
+| O-44 | Wer sieht, wer eine Antwort stellvertretend eingetragen hat? | Annahme F-04: alle, die den Termin sehen. Es ist kein Kommentar (ANM-07 gilt nicht), sondern macht die Antwort nachvollziehbar (ANM-12). |
+| O-45 | Sehen Spielerinnen, dass es einen Entwurf des Aufgebots gibt? | Annahme F-05: nein. Vor der Veröffentlichung zeigt die API Personen ohne Coach-Recht `aufgebotStatus: KEINES` und `meinAufgebot: NOCH_KEIN_AUFGEBOT` (AUF-23). |
+| O-46 | Lässt sich ein leeres Aufgebot veröffentlichen, und lässt sich eine Veröffentlichung zurücknehmen? | Annahme F-05: nein und nein. Veröffentlicht wird nur ein Entwurf mit mindestens einer Spielerin (409). Danach bleibt es veröffentlicht; Änderungen sehen die Spielerinnen sofort und Betroffene werden benachrichtigt (AUF-27, F-06). |
+| O-47 | Wann lässt sich das Resultat eines Spiels erfassen? | Annahme F-05: jederzeit, auch nach dem Spieltag, nur nicht bei einem abgesagten Spieltag. Format Heim:Gast (z.B. 5:3). Bei Spielen aus swiss unihockey ist nur das Resultat änderbar; der Abgleich (F-07) kann es überschreiben. |
+| O-48 | Was geschieht mit den Spielen, wenn ein Spieltag auf einen anderen Tag verschoben wird? | Annahme F-05: Von Hand erfasste Spiele ziehen mit (gleiche Uhrzeit am neuen Tag). Spiele müssen am Tag des Spieltags liegen (400). Ein Spieltag mit Spielen aus swiss unihockey lässt sich nur am selben Tag verschieben (422 beim Datum, SUH-05), weil Datum und Zeit dieser Spiele von swiss unihockey kommen. Der Beginn des Spieltags bleibt ein eigenes Feld. |
+| O-41 | Gilt eine Änderung der Seriezeit als Verschiebung (Hinweis, Benachrichtigung)? | Annahme F-03: nein, nur das Verschieben eines einzelnen Termins setzt «verschoben» und benachrichtigt (F-06, TER-12). |
+| O-49 | Was gilt als «Abmeldung» einer Aufgebotenen (BEN-04)? | Annahme F-06: nach der Veröffentlichung der Wechsel von «dabei» oder «offen» auf «nicht dabei» oder «vielleicht» und von «vielleicht» auf «nicht dabei». Ist es zugleich eine kurzfristige Absage, erhalten die Coaches nur eine Benachrichtigung. |
+| O-50 | Wird die Person benachrichtigt, die etwas selbst ausgelöst hat? | Annahme F-06: nein. Wer absagt, verschiebt, veröffentlicht oder stellvertretend antwortet, erhält dazu keine Benachrichtigung. Alle anderen Empfänger bleiben. |
+| O-51 | Wo steht die Anzahl ungelesener Benachrichtigungen? | Annahme F-06: In der Hauptnavigation als eigener Eintrag «Benachrichtigungen» ausserhalb der Liste der Haupteinträge. Mobil als runde Glocke oben rechts in einer festen Kopfzeile, unter der der Inhalt durchscrollt, damit die Glocke nie Bedienelemente verdeckt (die Bottom-Navigation bleibt bei fünf Einträgen lesbar, Nachbesserung #15/#23), ab 1024px als Eintrag über «Start». Ohne Ungelesene kein Zähler. |
+| O-53 | Was zeigt «System», und bleibt es wählbar? | Cyrille hat «Hell», «Düne» und «GitHub Dark» behalten (E-67). Annahme: «System» bleibt als vierter Eintrag und als Standard (NF-06) und zeigt im Hellen «Hell», im Dunkeln «GitHub Dark». Offen: Soll im Hellen stattdessen «Düne» gelten, weil «Hell» grün ist? Soll «System» ganz entfallen? Ebenfalls Annahme: Die Wahl ist pro Browser gespeichert, nicht pro Konto. |
+| O-52 | Wird jemand benachrichtigt, wenn eine Ausnahme oder Änderung der Serie einen Termin **ohne** Antworten entfernt? | Annahme F-06: nein. Ein solcher Termin wird gemäss TER-07 entfernt statt abgesagt, es gibt also keine Absage im Sinn von BEN-07. Nur Termine mit Antworten werden abgesagt und benachrichtigen alle Mitglieder der beteiligten Teams. |
+
+## Pipeline
+
+| Nr. | Frage | Bemerkung |
+|---|---|---|
+| O-30 | Vorschau-URL zum Ausprobieren | Hängt am Hosting (O-02). Bis dahin über eine Cloud-Sitzung auf dem PR-Branch. |
+| O-31 | ~~Java und Migrationswerkzeug für F-00~~ | Entschieden: Java 21 und Flyway (E-57). |
+| O-32 | Kontrast aktiver Navigationseintrag | `primary` auf `primary-soft` erreicht im Lightmode nur 3.97:1 (WCAG AA verlangt 4.5:1 für kleinen Text). Annahme F-00: Icon in `primary`, Text in `text`. Alternative: `primary` im Lightmode etwas dunkler. |
+| O-33 | Wie lange gilt eine Sitzung? | Annahme F-00: bis zum Abmelden, ohne Ablauf. Hängt am Anmeldeverfahren (O-01). |
+
+## swiss unihockey
+
+| Nr. | Frage | Bemerkung |
+|---|---|---|
+| O-20 | Braucht die Schnittstelle einen Schlüssel oder eine Registrierung? | Stand F-07 (Recherche in öffentlichen Clients, nicht live geprüft, weil die Cloud-Umgebung swiss unihockey nicht erreicht): `api-v2.swissunihockey.ch` verlangt inzwischen Zugangsdaten (Partner mit Schlüssel und Secret). Frei ist `https://wc.swissunihockey.ch`, die Schnittstelle der offiziellen Web-Komponenten von swiss unihockey, mit demselben Antwortformat (Pfade ohne `/api`, z.B. `/games`). Die App nimmt die Adresse aus `STV_SU_URL` (Standard laut Issue #8: `https://api-v2.swissunihockey.ch/api`). **Entscheid nötig:** für den Betrieb `STV_SU_URL=https://wc.swissunihockey.ch` setzen oder Partnerzugang beantragen. Ohne Zugang meldet der Abgleich «nicht erreichbar» und ändert nichts (SUH-09). |
+| O-21 | Welche Felder liefert die Spielliste genau, und wie sind Spieltage in Turnierform abgebildet? | Stand F-07: Die Spielliste (`/games?mode=team&team_id=…&season=…`) ist eine Tabelle; pro Zeile ein Spiel, Spiel-ID im Link der Zeile. Spalten: Datum und Zeit (bei nahen Spielen «heute», «gestern», «morgen»), Halle und Ort mit Kartenlink, Heimteam, Gastteam, Resultat. Turniere erscheinen als einzelne Spiele, eine Gruppierung liefert die Schnittstelle nicht; die App gruppiert nach Tag und Halle (SUH-04, Annahme). Die Testdaten in `backend/src/test/resources/swissunihockey` sind danach nachgebaut, nicht mitgeschnitten. Offen: eine echte Antwort aufzeichnen und den Test darauf richten. |
+| O-22 | Club-ID des STV Beromünster und Team-IDs | Stand F-07: ohne Zugang zur Schnittstelle nicht ermittelt. Die Team-ID steht in der Adresse der Team-Seite auf swissunihockey.ch; Admins tragen sie unter `/verwaltung/teams/<Team>` ein. Die Club-ID braucht die App nicht. |
+| O-23 | Erlauben die Nutzungsbedingungen den regelmässigen Abruf? | Stand F-07: keine Nutzungsbedingungen gefunden. Die freie Schnittstelle ist für Vereinsseiten gedacht (offizielle Web-Komponenten). Die App fragt einmal täglich pro verknüpftem Team ab (plus Abgleiche von Hand). Offen: bei swiss unihockey nachfragen. |
+| O-24 | Gibt es eine neuere Schnittstelle als `api-v2`? | Stand F-07: ja, siehe O-20. `wc.swissunihockey.ch` (frei) und die Partner-Schnittstelle mit Zugangsdaten. Das Antwortformat ist gleich, ein Wechsel ist nur Konfiguration. |

@@ -6,9 +6,9 @@ Ein PR ist fertig, wenn alle Punkte erfüllt sind. Der Entwicklungs-Agent hakt s
 
 - [ ] Jedes Akzeptanzkriterium des Issues ist umgesetzt und hat mindestens einen automatischen Test.
 - [ ] Die betroffenen Anforderungs-IDs sind im PR genannt.
-- [ ] Getroffene Annahmen sind im PR unter «Annahmen» aufgelistet. Neue offene Fragen stehen in [offene-punkte.md](../offene-punkte.md).
+- [ ] Getroffene Annahmen sind im PR unter «Annahmen» aufgelistet. Neue offene Fragen stehen in [open-points.md](../open-points.md).
 - [ ] Keine Anforderung mit Status «Entschieden» wurde geändert oder umgangen.
-- [ ] Begriffe aus dem [Fachmodell](../fachmodell.md) in Code, API und Oberfläche.
+- [ ] Begriffe aus dem [Fachmodell](../domain-model.md) in Code, API und Oberfläche.
 
 ## Backend
 
@@ -21,9 +21,9 @@ Ein PR ist fertig, wenn alle Punkte erfüllt sind. Der Entwicklungs-Agent hakt s
 
 ## Frontend
 
-- [ ] Regeln aus [testbarkeit.md](../testbarkeit.md) eingehalten: Semantik, Namen, Zustände, Test-IDs, URLs.
-- [ ] Neue Routen und feste Test-IDs in [navigation.md](../oberflaeche/navigation.md) eingetragen.
-- [ ] Design nach [design-grundlagen.md](../design-grundlagen.md): nur Tokens, keine fest codierten Farben. Light- und Darkmode geprüft.
+- [ ] Regeln aus [testability.md](../testability.md) eingehalten: Semantik, Namen, Zustände, Test-IDs, URLs.
+- [ ] Neue Routen und feste Test-IDs in [navigation.md](../ui/navigation.md) eingetragen.
+- [ ] Design nach [design-principles.md](../design-principles.md): nur Tokens, keine fest codierten Farben. Light- und Darkmode geprüft.
 - [ ] Mobil (375px) und Desktop (1280px) geprüft, Touch-Ziele mindestens 44px.
 - [ ] Keine Fehler in der Browser-Konsole.
 
@@ -31,8 +31,8 @@ Ein PR ist fertig, wenn alle Punkte erfüllt sind. Der Entwicklungs-Agent hakt s
 
 - [ ] Backend-Tests grün.
 - [ ] E2E-Tests (`e2e/`) grün in den Projekten `mobil` und `desktop`, inklusive axe-Check ohne kritische Befunde.
-- [ ] Seed-Daten decken das Feature ab. Änderungen am Seed sind in [testdaten.md](../testdaten.md) nachgeführt, neue Szenarien dort ergänzt.
-- [ ] Geändertes Verhalten ist in [zustaende.md](../zustaende.md) nachgeführt.
+- [ ] Seed-Daten decken das Feature ab. Änderungen am Seed sind in [test-data.md](../test-data.md) nachgeführt, neue Szenarien dort ergänzt.
+- [ ] Geändertes Verhalten ist in [states.md](../states.md) nachgeführt.
 
 ## Lauffähigkeit
 

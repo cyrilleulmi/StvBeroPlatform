@@ -22,10 +22,10 @@ Lokal laufend: Swagger UI unter `http://localhost:8080/q/swagger-ui`.
 
 | Thema | Regel |
 |---|---|
-| Sprache | Pfade, Felder und Enum-Werte auf Deutsch, aus dem [Fachmodell](../fachmodell.md). Umlaute umschreiben (`zugehoerigkeiten`, `veroeffentlichen`). |
+| Sprache | Pfade, Felder und Enum-Werte auf Deutsch, aus dem [Fachmodell](../domain-model.md). Umlaute umschreiben (`zugehoerigkeiten`, `veroeffentlichen`). |
 | Pfade | Kleinbuchstaben, Mehrzahl für Sammlungen (`/api/termine`), Aktionen als Verb-Unterpfad (`/absagen`, `/veroeffentlichen`). |
 | Felder | `camelCase`. Enum-Werte `GROSS_MIT_UNTERSTRICH`. |
-| IDs | UUID. Seed-IDs sind fest, siehe [testdaten.md](../testdaten.md#id-schema). |
+| IDs | UUID. Seed-IDs sind fest, siehe [test-data.md](../test-data.md#id-schema). |
 | Zeit | ISO 8601 mit Offset (`2026-11-17T18:30:00+01:00`). Zeitzone der Fachlogik: Europe/Zurich. Daten ohne Zeit als `date`. |
 | «Jetzt» | Kommt immer von der Backend-Uhr (im Testprofil festsetzbar), nie vom Browser. |
 | Fehler | RFC 9457 Problem Details (`application/problem+json`). `detail` ist ein deutscher Satz zum direkten Anzeigen, `regel` nennt die Anforderungs-ID. |
@@ -37,7 +37,7 @@ Lokal laufend: Swagger UI unter `http://localhost:8080/q/swagger-ui`.
 
 ## Test-Endpunkte
 
-Alles unter `/api/test/` existiert nur in den Profilen `dev` und `test`. Im Profil `prod` liefern diese Pfade 404, weil die Ressourcen nicht registriert werden (z.B. per `@IfBuildProfile`). Zweck und Gebrauch: [testbarkeit.md](../testbarkeit.md#test-hilfen-der-app).
+Alles unter `/api/test/` existiert nur in den Profilen `dev` und `test`. Im Profil `prod` liefern diese Pfade 404, weil die Ressourcen nicht registriert werden (z.B. per `@IfBuildProfile`). Zweck und Gebrauch: [testability.md](../testability.md#test-hilfen-der-app).
 
 ## Annahmen im Vertrag
 

@@ -11,7 +11,7 @@ scripts/start.sh   # Datenbank, Backend (Quarkus, Profil dev) und Frontend start
 scripts/test.sh    # API-Lint, Backend-Tests, Frontend-Lint/Build, E2E-Tests (mobil + desktop)
 ```
 
-Danach: http://localhost:4200 – im Testmodus über http://localhost:4200/dev-login als Seed-Person anmelden ([testdaten.md](docs/testdaten.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
+Danach: http://localhost:4200 – im Testmodus über http://localhost:4200/dev-login als Seed-Person anmelden ([test-data.md](docs/test-data.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
 
 Voraussetzungen: Java 21, Maven, Node 22, PostgreSQL-Binaries (oder eine Datenbank `stv` auf `localhost:5432`, Benutzer/Passwort `stv`), Google Chrome für die E2E-Tests.
 
@@ -19,7 +19,7 @@ Voraussetzungen: Java 21, Maven, Node 22, PostgreSQL-Binaries (oder eine Datenba
 |---|---|
 | `backend/` | Quarkus, Java 21. Package pro Kachel unter `ch.stvbero.platform.<kachel>`, gemeinsamer Kern unter `ch.stvbero.platform.kern`. Migrationen: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (Standalone, Signals). Eine Kachel = ein lazy geladenes Feature |
-| `e2e/` | Playwright Test (`tests/`, `plaene/`), Projekte `mobil` und `desktop` |
+| `e2e/` | Playwright Test (`tests/`, `plans/`), Projekte `mobil` und `desktop` |
 | `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh` |
 
 ## Warum eine eigene App?
@@ -35,37 +35,37 @@ Dazu kommt: Coaches melden sich ebenfalls an und ab, erscheinen aber nicht als S
 
 | Dokument | Inhalt |
 |---|---|
-| [docs/projektkontext.md](docs/projektkontext.md) | Ziel, Grundprinzipien, Kacheln, Arbeitsweise |
-| [docs/fachmodell.md](docs/fachmodell.md) | Begriffe und wie sie zusammenhängen |
-| [docs/anforderungen/](docs/anforderungen/) | Anforderungen an den Kern, pro Thema eine Datei |
-| [docs/weitere-kacheln.md](docs/weitere-kacheln.md) | Geplante Kacheln ausserhalb des Kerns |
-| [docs/spaetere-funktionen.md](docs/spaetere-funktionen.md) | Bewusst zurückgestellte und gestrichene Funktionen |
-| [docs/design-grundlagen.md](docs/design-grundlagen.md) | Grunddesign «Salbei frisch»: Farben, Formen, Typografie |
-| [docs/technik.md](docs/technik.md) | Technologie-Entscheide und Architektur-Leitplanken |
-| [docs/offene-punkte.md](docs/offene-punkte.md) | Ungeklärte Fragen |
-| [docs/entscheide.md](docs/entscheide.md) | Protokoll der getroffenen Entscheide |
+| [docs/project-context.md](docs/project-context.md) | Ziel, Grundprinzipien, Kacheln, Arbeitsweise |
+| [docs/domain-model.md](docs/domain-model.md) | Begriffe und wie sie zusammenhängen |
+| [docs/requirements/](docs/requirements/) | Anforderungen an den Kern, pro Thema eine Datei |
+| [docs/more-tiles.md](docs/more-tiles.md) | Geplante Kacheln ausserhalb des Kerns |
+| [docs/later-features.md](docs/later-features.md) | Bewusst zurückgestellte und gestrichene Funktionen |
+| [docs/design-principles.md](docs/design-principles.md) | Grunddesign «Salbei frisch»: Farben, Formen, Typografie |
+| [docs/technology.md](docs/technology.md) | Technologie-Entscheide und Architektur-Leitplanken |
+| [docs/open-points.md](docs/open-points.md) | Ungeklärte Fragen |
+| [docs/decisions.md](docs/decisions.md) | Protokoll der getroffenen Entscheide |
 | [docs/pipeline/](docs/pipeline/README.md) | Produktionspipeline: Ablauf, Einrichtung, Backlog, Definition of Done |
 | [docs/api/](docs/api/README.md) | API-Vertrag (OpenAPI 3.1) und Konventionen |
-| [docs/zustaende.md](docs/zustaende.md) | Zustands- und Sequenzdiagramme |
-| [docs/oberflaeche/navigation.md](docs/oberflaeche/navigation.md) | Routen, Screens, feste Test-IDs |
-| [docs/testbarkeit.md](docs/testbarkeit.md) | Regeln, damit Test-Agenten das Frontend bedienen können |
-| [docs/testdaten.md](docs/testdaten.md) | Seed-Daten mit festen IDs und Testszenarien |
+| [docs/states.md](docs/states.md) | Zustands- und Sequenzdiagramme |
+| [docs/ui/navigation.md](docs/ui/navigation.md) | Routen, Screens, feste Test-IDs |
+| [docs/testability.md](docs/testability.md) | Regeln, damit Test-Agenten das Frontend bedienen können |
+| [docs/test-data.md](docs/test-data.md) | Seed-Daten mit festen IDs und Testszenarien |
 | [AGENTS.md](AGENTS.md) | Hinweise für KI-Coding-Agenten, die in diesem Repo arbeiten |
 
 ### Anforderungen an den Kern
 
 | Nr. | Thema | Kürzel |
 |---|---|---|
-| 01 | [Personen, Teams, Funktionen](docs/anforderungen/01-personen-teams-funktionen.md) | PTF |
-| 02 | [Linien](docs/anforderungen/02-linien.md) | LIN |
-| 03 | [Termine](docs/anforderungen/03-termine.md) | TER |
-| 04 | [An- und Abmeldung](docs/anforderungen/04-an-und-abmeldung.md) | ANM |
-| 05 | [Spieltage und Aufgebot](docs/anforderungen/05-spieltage-aufgebot.md) | AUF |
-| 06 | [Anbindung swiss unihockey](docs/anforderungen/06-swiss-unihockey.md) | SUH |
-| 07 | [Rollen und Rechte](docs/anforderungen/07-rollen-rechte.md) | RR |
-| 08 | [Benachrichtigungen](docs/anforderungen/08-benachrichtigungen.md) | BEN |
-| 09 | [Saisons](docs/anforderungen/09-saisons.md) | SAI |
-| 10 | [Nichtfunktionale Anforderungen](docs/anforderungen/10-nichtfunktional.md) | NF |
+| 01 | [Personen, Teams, Funktionen](docs/requirements/01-people-teams-roles.md) | PTF |
+| 02 | [Linien](docs/requirements/02-lines.md) | LIN |
+| 03 | [Termine](docs/requirements/03-events.md) | TER |
+| 04 | [An- und Abmeldung](docs/requirements/04-responses.md) | ANM |
+| 05 | [Spieltage und Aufgebot](docs/requirements/05-match-days-call-up.md) | AUF |
+| 06 | [Anbindung swiss unihockey](docs/requirements/06-swiss-unihockey.md) | SUH |
+| 07 | [Rollen und Rechte](docs/requirements/07-roles-permissions.md) | RR |
+| 08 | [Benachrichtigungen](docs/requirements/08-notifications.md) | BEN |
+| 09 | [Saisons](docs/requirements/09-seasons.md) | SAI |
+| 10 | [Nichtfunktionale Anforderungen](docs/requirements/10-non-functional.md) | NF |
 
 ## Status der Anforderungen
 

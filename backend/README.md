@@ -9,5 +9,5 @@ mvn verify                    # alle Tests (Profil test, Datenbank localhost:543
 ```
 
 - Migrationen: `src/main/resources/db/migration` (bestehende nie ändern, immer neue Version)
-- Seed: `ch.stvbero.platform.kern.testhilfen.Seed` (docs/testdaten.md)
+- Seed: `ch.stvbero.platform.kern.testhilfen.Seed` (docs/test-data.md)
 - Swagger UI: http://localhost:8080/q/swagger-ui · OpenAPI: http://localhost:8080/q/openapi

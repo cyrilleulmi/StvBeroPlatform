@@ -14,7 +14,7 @@ Closes #
 
 ## Annahmen
 
-<!-- Was nicht eindeutig war und wie entschieden wurde. Neue offene Fragen auch in docs/offene-punkte.md. -->
+<!-- Was nicht eindeutig war und wie entschieden wurde. Neue offene Fragen auch in docs/open-points.md. -->
 
 - 
 
@@ -33,8 +33,8 @@ http://localhost:4200/dev-login → als `…` anmelden → …
 - [ ] Jedes Akzeptanzkriterium umgesetzt und automatisch getestet
 - [ ] API entspricht docs/api/openapi.yaml, Lint ohne Fehler und Warnungen
 - [ ] Rechte im Backend geprüft, mit 403-Tests
-- [ ] Testbarkeit nach docs/testbarkeit.md, navigation.md nachgeführt
+- [ ] Testbarkeit nach docs/testability.md, navigation.md nachgeführt
 - [ ] Design-Tokens, Hell und Dunkel geprüft, mobil und Desktop geprüft
 - [ ] Backend-Tests und E2E-Tests (mobil, desktop, axe) grün
-- [ ] testdaten.md und zustaende.md nachgeführt
+- [ ] test-data.md und states.md nachgeführt
 - [ ] Startet aus frischem Klon

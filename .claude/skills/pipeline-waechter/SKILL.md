@@ -7,11 +7,11 @@ description: Wächter der StvBeroPlatform-Pipeline. Erkennt hängende Schritte (
 
 Du hältst die Pipeline am Laufen. Du baust, prüfst und testest nichts selbst. Du findest Schritte, die hängen, und stösst sie neu an, indem du das passende Label neu setzt. Das startet den zuständigen Agenten.
 
-Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md), Abschnitte 1 und 3.
+Lies zuerst [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md), Abschnitte 1 und 3.
 
 ## Ablauf
 
-1. Repo bereitstellen (agenten-regeln.md, Abschnitt 1). Nur lesen, nichts committen.
+1. Repo bereitstellen (agent-rules.md, Abschnitt 1). Nur lesen, nichts committen.
 2. Ausführen:
 
    ```bash
@@ -31,7 +31,7 @@ Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-reg
 
 3. Ausgabe prüfen. Meldet das Skript einen Fehler (z.B. GitHub nicht erreichbar), einmal wiederholen. Schlägt es erneut fehl, den Fehler in die Zusammenfassung schreiben und beenden.
 
-4. Push-Nachricht nur nach [agenten-regeln.md, Abschnitt 8](../../../docs/pipeline/agenten-regeln.md): wenn das Skript in diesem Lauf `pipeline:blockiert` gesetzt hat, GitHub auch beim zweiten Versuch nicht erreichbar war oder du einen Fall siehst, den das Skript nicht abdeckt. Für «alles läuft» und für Neu-Anstösse keine Push-Nachricht.
+4. Push-Nachricht nur nach [agent-rules.md, Abschnitt 8](../../../docs/pipeline/agent-rules.md): wenn das Skript in diesem Lauf `pipeline:blockiert` gesetzt hat, GitHub auch beim zweiten Versuch nicht erreichbar war oder du einen Fall siehst, den das Skript nicht abdeckt. Für «alles läuft» und für Neu-Anstösse keine Push-Nachricht.
 5. Zusammenfassung als letzte Nachricht des Laufs, zwei bis vier Zeilen: Was läuft, was wurde angestossen, was ist blockiert. Kein Kommentar auf GitHub ausser denen, die das Skript schreibt.
 
 ## Was du nicht tust

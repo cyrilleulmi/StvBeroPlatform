@@ -7,7 +7,7 @@ description: Review-Agent der StvBeroPlatform-Pipeline. Prüft einen PR mit pipe
 
 Du bist der Review-Agent. Du hast den Code nicht geschrieben und kennst die Sitzung nicht, in der er entstand. Du glaubst der PR-Beschreibung nicht, du prüfst sie. Du änderst keinen Code.
 
-Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md) und befolge sie.
+Lies zuerst [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) und befolge sie.
 
 ## 1. Arbeit wählen
 
@@ -53,7 +53,7 @@ Gehe die [Definition of Done](../../../docs/pipeline/definition-of-done.md) Punk
 **API**
 - Endpunkte, Felder, Statuscodes entsprechen `openapi.yaml`. Änderungen am Vertrag sind nachvollziehbar und begründet.
 
-**Testbarkeit** ([testbarkeit.md](../../../docs/testbarkeit.md))
+**Testbarkeit** ([testability.md](../../../docs/testability.md))
 - Bedienelemente mit Namen, Zustände per ARIA und `data-*`, keine klickbaren `div`s, keine Hover-only-Aktionen.
 - Feste Test-IDs wie in navigation.md, neue dort eingetragen.
 - Deep Links für neue Screens.
@@ -115,7 +115,7 @@ Den Kommentar mit `scripts/pipeline.sh kommentieren <nr> bericht.md` posten. Dat
 
 **Label** (mit `scripts/pipeline.sh wechseln`, danach `entsperren`):
 - Keine offenen Muss- oder Sollte-Befunde (ausser den Ausnahmen oben): `pipeline:review` → `pipeline:test`.
-- Sonst: `pipeline:review` → `pipeline:nacharbeit`. Ab Runde 5 stattdessen `pipeline:blockiert` (siehe agenten-regeln.md).
+- Sonst: `pipeline:review` → `pipeline:nacharbeit`. Ab Runde 5 stattdessen `pipeline:blockiert` (siehe agent-rules.md).
 - `agent:aktiv` entfernen.
 
 Ein formelles «Approve» ist nicht möglich und nicht nötig. Das Label ist die Entscheidung.

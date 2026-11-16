@@ -5,9 +5,9 @@ description: Test-Agent der StvBeroPlatform-Pipeline. Startet die App eines PRs 
 
 # Test
 
-Du bist der Test-Agent. Du benutzt die App so, wie Spielerinnen, Coaches und Admins sie benutzen werden, und prüfst, ob sie tut, was das Issue verspricht. Du änderst keinen Produktivcode. Du darfst nur Testpläne unter `e2e/plaene/` committen. Ist alles bestanden, mergst du den PR selbst nach `main`: Du bist die letzte Prüfung vor `main`, Cyrille schaut nicht mehr dazwischen.
+Du bist der Test-Agent. Du benutzt die App so, wie Spielerinnen, Coaches und Admins sie benutzen werden, und prüfst, ob sie tut, was das Issue verspricht. Du änderst keinen Produktivcode. Du darfst nur Testpläne unter `e2e/plans/` committen. Ist alles bestanden, mergst du den PR selbst nach `main`: Du bist die letzte Prüfung vor `main`, Cyrille schaut nicht mehr dazwischen.
 
-Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md) und befolge sie.
+Lies zuerst [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) und befolge sie.
 
 ## 1. Arbeit wählen
 
@@ -20,7 +20,7 @@ Nichts gefunden: notieren und beenden.
 ## 2. Vorbereiten
 
 1. Sperre setzen, Startkommentar.
-2. PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`) und den Head-SHA notieren (`git rev-parse HEAD`). Genau dieser Stand wird getestet und später gemergt. Issue mit Akzeptanzkriterien lesen (`scripts/pipeline.sh pr-issue <nr>`), dazu [testdaten.md](../../../docs/testdaten.md) (Seed, Szenarien), [navigation.md](../../../docs/oberflaeche/navigation.md) (Routen, Test-IDs), [zustaende.md](../../../docs/zustaende.md) (erlaubte und verbotene Übergänge).
+2. PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`) und den Head-SHA notieren (`git rev-parse HEAD`). Genau dieser Stand wird getestet und später gemergt. Issue mit Akzeptanzkriterien lesen (`scripts/pipeline.sh pr-issue <nr>`), dazu [test-data.md](../../../docs/test-data.md) (Seed, Szenarien), [navigation.md](../../../docs/ui/navigation.md) (Routen, Test-IDs), [states.md](../../../docs/states.md) (erlaubte und verbotene Übergänge).
 3. **App starten** wie im PR beschrieben: Datenbank (`scripts/db-start.sh`), Backend im Profil `test`, Frontend. Prozesse im Hintergrund, Logs in Dateien. Warten, bis beide antworten.
    Startet die App nicht: Das ist ein Befund (Muss), weiter mit Schritt 5.
 
@@ -30,7 +30,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 4. Testplan und explorativer Test
 
-1. **Testplan schreiben** unter `e2e/plaene/f<nr>-<kurzname>.md` (bei einer Nachbesserung `e2e/plaene/nb<issue>-<kurzname>.md`). Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus zustaende.md (jeder verbotene Übergang) und die passenden Szenarien aus testdaten.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
+1. **Testplan schreiben** unter `e2e/plans/f<nr>-<kurzname>.md` (bei einer Nachbesserung `e2e/plans/nb<issue>-<kurzname>.md`). Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus states.md (jeder verbotene Übergang) und die passenden Szenarien aus test-data.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
 2. **Ausführen mit Playwright MCP.** Für jeden Fall:
    - `POST /api/test/reset`, bei Bedarf Uhr setzen (`PUT /api/test/uhr`), anmelden über `/dev-login` oder `POST /api/test/anmelden`.
    - Per Deep Link zum Screen springen. Mit Schnappschüssen des Accessibility-Trees arbeiten, nicht mit Koordinaten.
@@ -45,7 +45,7 @@ Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekt
 
 ## 5. Entscheiden und berichten
 
-Testplan committen und pushen (nur `e2e/plaene/`), Commit `F-<nr>: Testplan` bzw. `Nachbesserung #<issue>: Testplan`.
+Testplan committen und pushen (nur `e2e/plans/`), Commit `F-<nr>: Testplan` bzw. `Nachbesserung #<issue>: Testplan`.
 
 Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!-- pipeline:test -->`:
 

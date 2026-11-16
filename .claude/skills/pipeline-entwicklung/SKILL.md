@@ -7,7 +7,7 @@ description: Entwicklungs-Agent der StvBeroPlatform-Pipeline. Setzt ein freigege
 
 Du bist der Entwicklungs-Agent. Du lieferst ein vollständig umgesetztes, getestetes und testbares Feature als Pull Request. Danach prüfen es zwei andere Agenten, die deine Sitzung nicht kennen. Alles, was sie wissen müssen, steht im PR.
 
-Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md) und befolge sie.
+Lies zuerst [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) und befolge sie.
 
 ## 1. Arbeit wählen
 
@@ -25,16 +25,16 @@ Nichts gefunden: notieren und beenden.
 ## 2. Neues Feature umsetzen
 
 1. Die Sperre ist durch `beanspruchen` schon gesetzt.
-2. **Verstehen.** Issue, die genannten Anforderungen in `docs/anforderungen/`, [fachmodell.md](../../../docs/fachmodell.md), [testbarkeit.md](../../../docs/testbarkeit.md), [navigation.md](../../../docs/oberflaeche/navigation.md), [testdaten.md](../../../docs/testdaten.md), [zustaende.md](../../../docs/zustaende.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-grundlagen.md](../../../docs/design-grundlagen.md).
+2. **Verstehen.** Issue, die genannten Anforderungen in `docs/requirements/`, [domain-model.md](../../../docs/domain-model.md), [testability.md](../../../docs/testability.md), [navigation.md](../../../docs/ui/navigation.md), [test-data.md](../../../docs/test-data.md), [states.md](../../../docs/states.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-principles.md](../../../docs/design-principles.md).
 3. **Unklarheiten:** Sinnvolle Annahme treffen und im PR unter «Annahmen» aufführen. Nicht nachfragen. Nur bei einem Widerspruch zu einer Anforderung mit Status «Entschieden»: `pipeline:blockiert` auf das Issue, Frage stellen, beenden.
 4. **Branch** von aktuellem `main`: `claude/f<nr>-<kurzname>`, z.B. `claude/f04-anmeldung`. Gibt es schon einen `claude/f<nr>-…`-Branch von einem abgebrochenen Lauf, dort weitermachen statt neu anfangen.
    **Zwischenstände pushen:** Mindestens alle 30 Minuten committen und auf den Branch pushen. Der [Wächter](../pipeline-waechter/SKILL.md) erkennt daran, dass der Lauf noch lebt. Ein Lauf ohne Push über eine Stunde gilt nach 3 Stunden Sperre als abgebrochen und wird neu gestartet.
 5. **Reihenfolge der Umsetzung:**
    1. API-Vertrag: `openapi.yaml` anpassen, falls nötig. `npx -y @redocly/cli lint docs/api/openapi.yaml` ohne Fehler und Warnungen.
-   2. Backend: Migration, Domäne mit Regeln und Unit-Tests, REST-Ressourcen, Rechteprüfung mit 403-Tests, Seed-Daten gemäss testdaten.md.
-   3. Frontend: Screens nach navigation.md, Regeln aus testbarkeit.md, Design-Tokens.
+   2. Backend: Migration, Domäne mit Regeln und Unit-Tests, REST-Ressourcen, Rechteprüfung mit 403-Tests, Seed-Daten gemäss test-data.md.
+   3. Frontend: Screens nach navigation.md, Regeln aus testability.md, Design-Tokens.
    4. E2E-Tests in `e2e/`: mindestens ein Test pro Akzeptanzkriterium, Testname mit Anforderungs-ID, Projekte `mobil` und `desktop`, axe-Check pro neuem Screen.
-   5. Doku nachführen: navigation.md (Routen, Test-IDs), testdaten.md (Seed, Szenarien), zustaende.md (Verhalten), offene-punkte.md (neue Fragen).
+   5. Doku nachführen: navigation.md (Routen, Test-IDs), test-data.md (Seed, Szenarien), states.md (Verhalten), open-points.md (neue Fragen).
 6. **Selbst prüfen**, bevor du übergibst. Alles muss grün sein:
    - Backend-Build mit allen Tests
    - Frontend-Build und Lint
@@ -52,7 +52,7 @@ Nichts gefunden: notieren und beenden.
 
 1. Sperre setzen, Startkommentar.
 2. Den PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`). Die Befunde stehen im neuesten Review- oder Test-Kommentar: `scripts/pipeline.sh letzter-befund <nr>`.
-3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agenten-regeln.md, Abschnitt 6). Wäre das Runde 5 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
+3. Runde bestimmen: `scripts/pipeline.sh runde <nr>` (siehe agent-rules.md, Abschnitt 6). Wäre das Runde 5 oder mehr: `pipeline:blockiert`, Zusammenfassung, beenden.
 4. Meldet der Befund Konflikte mit `main`: zuerst `git fetch origin main && git rebase origin/main`, Konflikte lösen, dann alles erneut prüfen. Danach mit `git push --force-with-lease` auf den eigenen `claude/`-Branch pushen (der einzige erlaubte Force-Push).
 5. Jeden Befund beheben: aus dem Review «Muss» und «Sollte», aus dem Test Fehler und Beobachtungen. «Hinweise» nur, wenn es mit wenig Aufwand geht. Für jeden Fehler aus dem Test zuerst einen E2E- oder Unit-Test schreiben, der ihn zeigt, dann beheben.
 6. Selbst prüfen wie oben (Schritt 2.6), vollständig, nicht nur das Geänderte.

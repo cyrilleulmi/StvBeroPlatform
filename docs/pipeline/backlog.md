@@ -2,7 +2,7 @@
 
 Die Features des Kerns in Umsetzungsreihenfolge. Jedes Feature ist ein Issue auf GitHub mit demselben Titel (`F-xx · …`). Der Entwicklungs-Agent nimmt nur Features, deren Voraussetzungen auf `main` sind.
 
-Die Akzeptanzkriterien sind das, was der Test-Agent prüft. Szenarien `S…` stehen in [testdaten.md](../testdaten.md#szenarien-für-tests).
+Die Akzeptanzkriterien sind das, was der Test-Agent prüft. Szenarien `S…` stehen in [test-data.md](../test-data.md#szenarien-für-tests).
 
 | Nr. | Feature | Voraussetzung | Anforderungen |
 |---|---|---|---|
@@ -52,7 +52,7 @@ flowchart LR
 ```
 backend/     Quarkus, Package pro Kachel unter ch.stvbero.platform.<kachel>, gemeinsamer Kern unter …kern
 frontend/    Angular (Standalone, Signals), Feature pro Kachel, lazy geladen
-e2e/         Playwright Test: tests/, plaene/, playwright.config.ts (Projekte mobil + desktop, channel chrome)
+e2e/         Playwright Test: tests/, plans/, playwright.config.ts (Projekte mobil + desktop, channel chrome)
 scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles testen)
 .github/workflows/ci.yml   Build + Tests bei jedem PR
 ```
@@ -61,10 +61,10 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 1. `scripts/start.sh` startet aus einem frischen Klon Datenbank, Backend (Profil `dev`) und Frontend. Die App ist unter `http://localhost:4200` erreichbar.
 2. `scripts/test.sh` führt Backend-Tests und E2E-Tests aus und endet mit Exit-Code 0.
-3. `/dev-login` zeigt alle Seed-Personen aus testdaten.md (zunächst nur Personen, ohne Teams). Ein Klick meldet an und führt auf `/`.
+3. `/dev-login` zeigt alle Seed-Personen aus test-data.md (zunächst nur Personen, ohne Teams). Ein Klick meldet an und führt auf `/`.
 4. `/` zeigt die Begrüssung mit Vornamen und die Kacheln aus `GET /api/kacheln`. Die Kachel «Anwesenheit» ist registriert und führt auf `/termine` (dort vorerst leerer Zustand).
 5. Navigation mobil unten, ab 1024px links, nach navigation.md. Aktiver Eintrag mit `aria-current="page"`.
-6. Design-Tokens aus design-grundlagen.md als CSS Custom Properties. Unter `/profil` lässt sich die Darstellung umschalten (ursprünglich Hell/Dunkel/System, seit E-67 Hell/Düne/GitHub Dark/System), die Wahl bleibt nach Neuladen erhalten.
+6. Design-Tokens aus design-principles.md als CSS Custom Properties. Unter `/profil` lässt sich die Darstellung umschalten (ursprünglich Hell/Dunkel/System, seit E-67 Hell/Düne/GitHub Dark/System), die Wahl bleibt nach Neuladen erhalten.
 7. PWA: Manifest und Service Worker, installierbar.
 8. Test-Endpunkte `reset`, `uhr`, `anmelden` funktionieren im Profil `dev`/`test` und fehlen im Profil `prod` (Test, der das prüft).
 9. Ein Backend-Test vergleicht die von Quarkus erzeugte OpenAPI mit `docs/api/openapi.yaml` für alle bereits umgesetzten Pfade.
@@ -80,7 +80,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 **Akzeptanzkriterien:**
 
-1. Seed nach testdaten.md: Saisons, Teams, Personen, Teamzugehörigkeiten (noch ohne Linien).
+1. Seed nach test-data.md: Saisons, Teams, Personen, Teamzugehörigkeiten (noch ohne Linien).
 2. Als `alex` unter `/verwaltung/personen` eine Person anlegen und bearbeiten.
 3. Als `alex` unter `/verwaltung/teams` eine Person mit Funktion ins Team aufnehmen. Zweite Aufnahme derselben Person ins selbe Team wird abgelehnt (PTF-04).
 4. Petra kann gleichzeitig Coach in Team 1 und Spielerin in Team 2 sein. `/teams` zeigt bei ihr beide Teams mit der jeweiligen Funktion (PTF-12).
@@ -97,7 +97,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 **Akzeptanzkriterien:**
 
-1. Seed: Gruppen und Zuweisungen nach testdaten.md.
+1. Seed: Gruppen und Zuweisungen nach test-data.md.
 2. Als `petra` unter `/teams/<Team 1>/linien`: Linie hinzufügen, umbenennen, Reihenfolge ändern, löschen. Spielerinnen einer gelöschten Linie sind danach «ohne Linie».
 3. Zuweisung per Drag & Drop **und** per Auswahlfeld (`zuweisung-<personId>`). Beides speichert sofort.
 4. Szenario S15: höchstens eine Gruppe pro Spielerin und Team (LIN-02).
@@ -113,11 +113,11 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 **Akzeptanzkriterien:**
 
-1. Seed: Serien und Termine nach testdaten.md (Antworten folgen mit F-04).
+1. Seed: Serien und Termine nach test-data.md (Antworten folgen mit F-04).
 2. `/termine` zeigt alle kommenden Termine der eigenen Teams chronologisch. `anna` sieht Termin 01 (Team 1 + 2), `tina` nicht.
 3. Als `petra` einen Termin für Team 1 + Team 2 erfassen. Er erscheint bei Mitgliedern beider Teams (TER-01). Als `marc` kann Petra nicht für Team 1 erfassen (403).
 4. Als `petra` eine Serie anlegen (wöchentlich, Zeitraum). Termine erscheinen für jede Woche im Zeitraum (TER-05).
-5. Ausnahme für einen Zeitraum hinzufügen. Termine darin verschwinden bzw. werden abgesagt, wie in zustaende.md beschrieben (TER-07).
+5. Ausnahme für einen Zeitraum hinzufügen. Termine darin verschwinden bzw. werden abgesagt, wie in states.md beschrieben (TER-07).
 6. Einzelnen Termin einer Serie verschieben, ohne die Serie zu ändern (TER-06).
 7. Szenario S13: abgesagter Termin ist erkennbar, mit Grund.
 8. Antwortfrist pro Termin und Serie einstellbar, Standard 24 Stunden (TER-09, TER-10).
@@ -131,8 +131,8 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 **Akzeptanzkriterien:**
 
-1. Seed: Antworten nach testdaten.md.
-2. Szenario S1: Übersicht von Termin 01 genau wie in testdaten.md (Zähler, Gruppen, Reihenfolge, Coach-Block, Doppelrollen).
+1. Seed: Antworten nach test-data.md.
+2. Szenario S1: Übersicht von Termin 01 genau wie in test-data.md (Zähler, Gruppen, Reihenfolge, Coach-Block, Doppelrollen).
 3. Szenario S2: Antwort mit einem Tap aus der Terminliste und aus dem Detail. Zähler aktualisieren sich ohne Neuladen.
 4. Szenario S3: «vielleicht» ohne Kommentar nicht möglich, Fehlermeldung beim Feld.
 5. «nicht dabei» bietet einen freiwilligen Grund an, der sich überspringen lässt.
@@ -150,7 +150,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 
 **Akzeptanzkriterien:**
 
-1. Seed: Termine 04 und 05 mit Spielen und Aufgebot nach testdaten.md.
+1. Seed: Termine 04 und 05 mit Spielen und Aufgebot nach test-data.md.
 2. Als `petra` einen Spieltag für Team 1 mit zwei Spielen, Treffpunkt, Hinweisen und Google-Maps-Link erfassen (AUF-10 bis AUF-16).
 3. Termin-Detail zeigt Spiele nach Anspielzeit, Treffpunkt und den Link «In Google Maps öffnen» (öffnet in neuem Tab).
 4. `/termine/<04>/aufgebot`: alle Spielerinnen von Team 1 nach Linien gruppiert, Antwortstatus daneben, auch «offen» und «vielleicht» auswählbar (AUF-21, AUF-22).
@@ -192,7 +192,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 5. Spiel fehlt bei swiss unihockey: wird markiert, nicht gelöscht.
 6. Simulator «nicht erreichbar»: Abgleich meldet den Fehler, nichts wird verändert, die App funktioniert normal (SUH-09).
 7. Täglicher Abgleich als geplanter Job.
-8. Die offenen Fragen O-20 bis O-24 sind, soweit ohne Zugangsdaten möglich, geklärt und in offene-punkte.md bzw. 06-swiss-unihockey.md nachgeführt.
+8. Die offenen Fragen O-20 bis O-24 sind, soweit ohne Zugangsdaten möglich, geklärt und in open-points.md bzw. 06-swiss-unihockey.md nachgeführt.
 
 ---
 
@@ -203,7 +203,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 **Akzeptanzkriterien:**
 
 1. Schutz gegen Anfragen von fremden Seiten (CSRF) für alle schreibenden Endpunkte, z.B. Sitzungs-Cookie mit `SameSite` plus Prüfung von `Origin`. Eine schreibende Anfrage mit fremdem `Origin` wird mit 403 abgelehnt (Test).
-2. Sitzungen laufen ab: nach Inaktivität und nach einer Höchstdauer (Werte als Annahme festlegen und in offene-punkte.md nennen). Abmelden macht die Sitzung sofort ungültig (Test).
+2. Sitzungen laufen ab: nach Inaktivität und nach einer Höchstdauer (Werte als Annahme festlegen und in open-points.md nennen). Abmelden macht die Sitzung sofort ungültig (Test).
 3. Sitzungs-Token werden nur gehasht gespeichert. Ein Token aus der Datenbank allein erlaubt keine Anmeldung (Test).
 4. Swagger UI ist im Profil `prod` nicht erreichbar (Test).
 5. Sicherheits-Header im Profil `prod`: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` (Test).
@@ -299,8 +299,8 @@ F-08 (Härtung) follows after F-11.
 
 **Scope of this step:**
 
-- All Markdown in the repo: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**`, `backend/README.md`, `frontend/README.md`, `e2e/plaene/**`, `.github/**` templates.
-- File and folder names of documents become English (for example `docs/fachmodell.md` → `docs/domain-model.md`, `docs/anforderungen/` → `docs/requirements/`, `docs/entscheide.md` → `docs/decisions.md`, `e2e/plaene/` → `e2e/plans/`). All links are updated.
+- All Markdown in the repo: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**`, `backend/README.md`, `frontend/README.md`, `e2e/plans/**`, `.github/**` templates.
+- File and folder names of documents become English (for example `docs/domain-model.md` → `docs/domain-model.md`, `docs/requirements/` → `docs/requirements/`, `docs/decisions.md` → `docs/decisions.md`, `e2e/plans/` → `e2e/plans/`). All links are updated.
 - The content of the four skills under `.claude/skills/` and of `docs/pipeline/**`. Names stay, see above.
 - Comments, help text and output of the scripts in `scripts/` and of `.github/workflows/`.
 - The rules for agents: commit messages, PR descriptions and agent comments are English from now on. Issue and PR titles keep the pattern `F-xx · <title>`.
