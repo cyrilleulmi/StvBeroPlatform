@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** NF-11, NF-12, RR-05: Kacheln registrieren sich und sind nur für berechtigte Rollen sichtbar. */
+/** NF-11, NF-12, RR-05: tiles registry themselves and are visible only to authorized roles. */
 class TileRegistryTest {
 
     static final CurrentUser PLAYER = new CurrentUser(UUID.randomUUID(), UUID.randomUUID(), "Anna", false);
@@ -25,23 +25,23 @@ class TileRegistryTest {
     }
 
     @Test
-    void rr05TileWithRoleOnlyForAuthorizedVisible() {
-        TileRegistry register = new TileRegistry(List.of(new AttendanceTile(), new AdminOnly("verwaltung", 99)));
+    void rr05TileWithRoleVisibleOnlyToAuthorizedUsers() {
+        TileRegistry registry = new TileRegistry(List.of(new AttendanceTile(), new AdminOnly("verwaltung", 99)));
 
-        assertEquals(List.of("anwesenheit"), register.visibleFor(PLAYER).stream().map(Tile::id).toList());
-        assertEquals(List.of("anwesenheit", "verwaltung"), register.visibleFor(ADMIN).stream().map(Tile::id).toList());
+        assertEquals(List.of("anwesenheit"), registry.visibleFor(PLAYER).stream().map(Tile::id).toList());
+        assertEquals(List.of("anwesenheit", "verwaltung"), registry.visibleFor(ADMIN).stream().map(Tile::id).toList());
     }
 
     @Test
-    void nf11TilesInFixedSortOrder() {
-        TileRegistry register = new TileRegistry(List.of(
+    void nf11TilesAreInFixedSortOrder() {
+        TileRegistry registry = new TileRegistry(List.of(
                 new AdminOnly("b", 5), new AttendanceTile(), new AdminOnly("a", 5)));
 
-        assertEquals(List.of("a", "b", "anwesenheit"), register.visibleFor(ADMIN).stream().map(Tile::id).toList());
+        assertEquals(List.of("a", "b", "anwesenheit"), registry.visibleFor(ADMIN).stream().map(Tile::id).toList());
     }
 
     @Test
-    void nf11AttendanceDeliversHerMetadata() {
+    void nf11AttendanceTileProvidesItsMetadata() {
         Tile tile = new TileRegistry(List.of(new AttendanceTile())).visibleFor(PLAYER).getFirst();
 
         assertEquals(new Tile("anwesenheit", "Anwesenheit", "calendar-check", "/termine", TileColor.primary, null), tile);

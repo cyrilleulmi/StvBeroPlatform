@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
-/** F-03: Termine und Serien (TER-01 bis TER-11, RR-06, RR-07). IDs aus docs/testdaten.md. */
+/** F-03: events and series (TER-01 to TER-11, RR-06, RR-07). IDs from docs/test-data.md. */
 @QuarkusTest
 class EventsTest {
 
@@ -46,7 +46,7 @@ class EventsTest {
     static final String SERIES_2 = "70000000-0000-4000-8000-000000000002";
 
     @Inject
-    EntityManager em;
+    EntityManager entityManager;
 
     String petra;
 
@@ -56,30 +56,30 @@ class EventsTest {
         petra = login("petra");
     }
 
-    private static ValidatableResponse list(String session, String query) {
+    private static ValidatableResponse listEvents(String session, String query) {
         return given().cookie("stv_session", session).get("/api/events" + query).then().statusCode(200);
     }
 
-    private static List<String> ids(String session, String query) {
-        return list(session, query).extract().jsonPath().getList("id");
+    private static List<String> eventIds(String session, String query) {
+        return listEvents(session, query).extract().jsonPath().getList("id");
     }
 
-    private static String event(String start, String end, String... teams) {
+    private static String eventBody(String start, String end, String... teams) {
         return """
                 {"type":"PRACTICE","title":"Zusatztraining","start":"%s","end":"%s","teamIds":[%s],
                  "location":{"name":"Turnhalle Dorf"},"notes":"Hallenschuhe"}"""
-                .formatted(start, end, String.join(",", List.of(teams).stream().map(t -> "\"" + t + "\"").toList()));
+                .formatted(start, end, String.join(",", List.of(teams).stream().map(team -> "\"" + team + "\"").toList()));
     }
 
-    private static String series(String weekday, String startTime, String startDate, String endDate, String... teams) {
+    private static String seriesBody(String weekday, String startTime, String startDate, String endDate, String... teams) {
         return """
                 {"type":"PRACTICE","title":"Konditionstraining","teamIds":[%s],"weekday":"%s","startTime":"%s",
                  "endTime":"21:00","validFrom":"%s","validUntil":"%s","location":{"name":"Sporthalle Nord"}}"""
-                .formatted(String.join(",", List.of(teams).stream().map(t -> "\"" + t + "\"").toList()),
+                .formatted(String.join(",", List.of(teams).stream().map(team -> "\"" + team + "\"").toList()),
                         weekday, startTime, startDate, endDate);
     }
 
-    // ------------------------------------------------------------------ Kriterium 1 und 2
+    // ------------------------------------------------------------------ Criteria 1 and 2
 
     @Test
     void k1SeedSeriesAndEvents() {
@@ -96,7 +96,7 @@ class EventsTest {
                 .body("responseDeadlineHours", equalTo(24))
                 .body("responseDeadline", equalTo("2026-11-16T18:30:00+01:00"))
                 .body("myResponse.status", equalTo("ATTENDING"))
-                // 12 verschiedene Spielerinnen, Lea zählt einmal (ANM-32); Antworten aus dem Seed (F-04)
+                // 12 different players, Lea counts once (ANM-32); responses from the seed (F-04)
                 .body("counts.attending", equalTo(7))
                 .body("counts.pending", equalTo(2))
                 .body("canEdit", equalTo(false));
@@ -106,7 +106,7 @@ class EventsTest {
                 .body("meetingPoint.time", equalTo("2026-11-22T08:00:00+01:00"))
                 .body("notes", equalTo("Weisse Trikots mitnehmen"))
                 .body("location.mapsUrl", equalTo("https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf"))
-                // Spiele und Aufgebot im Entwurf ab F-05 (AUF-23: für Anna noch kein Aufgebot)
+                // Matches and draft call-up from F-05 on (AUF-23: no call-up for Anna yet)
                 .body("matches.size()", equalTo(2))
                 .body("myCallUp", equalTo("NO_CALL_UP_YET"));
         given().cookie("stv_session", petra).get("/api/series/" + SERIES_1).then().statusCode(200)
@@ -120,37 +120,37 @@ class EventsTest {
                 .body("exceptions[0].reason", equalTo("Weihnachtsferien"))
                 .body("exceptions[0].startDate", equalTo("2026-12-21"))
                 .body("exceptions[0].endDate", equalTo("2027-01-03"));
-        // Weihnachtsferien: keine Trainings am 22.12. und 29.12. (TER-07)
-        List<String> start = list(petra, "?from=2026-12-20&to=2027-01-06&team=" + TEAM_2)
+        // Christmas holidays: no practices on 22.12. and 29.12. (TER-07)
+        List<String> starts = listEvents(petra, "?from=2026-12-20&to=2027-01-06&team=" + TEAM_2)
                 .extract().jsonPath().getList("start");
-        assertThat(start, contains("2027-01-05T18:30:00+01:00"));
+        assertThat(starts, contains("2027-01-05T18:30:00+01:00"));
     }
 
     @Test
-    void k2UpcomingEventsTheOwnTeamsChronological() {
+    void k2UpcomingEventsOfOwnTeamsInChronologicalOrder() {
         String anna = login("anna");
-        List<String> annas = ids(anna, "");
-        assertThat(annas.subList(0, 4), contains(T01, T02, T04, T03));
-        assertThat(annas, hasItems(T01, T02, T03, T04, T06));
-        assertThat(annas, not(hasItem(T05)));
-        assertThat(annas, not(hasItem(T07)));
-        List<String> start = list(anna, "").extract().jsonPath().getList("start");
-        assertThat(start.stream().map(b -> Instant.from(java.time.OffsetDateTime.parse(b))).toList(),
-                equalTo(start.stream().map(b -> Instant.from(java.time.OffsetDateTime.parse(b))).sorted().toList()));
+        List<String> annasEvents = eventIds(anna, "");
+        assertThat(annasEvents.subList(0, 4), contains(T01, T02, T04, T03));
+        assertThat(annasEvents, hasItems(T01, T02, T03, T04, T06));
+        assertThat(annasEvents, not(hasItem(T05)));
+        assertThat(annasEvents, not(hasItem(T07)));
+        List<String> starts = listEvents(anna, "").extract().jsonPath().getList("start");
+        assertThat(starts.stream().map(time -> Instant.from(java.time.OffsetDateTime.parse(time))).toList(),
+                equalTo(starts.stream().map(time -> Instant.from(java.time.OffsetDateTime.parse(time))).sorted().toList()));
 
         String tina = login("tina");
-        List<String> tinas = ids(tina, "");
-        assertThat(tinas, not(hasItem(T01)));
-        assertThat(tinas, hasItem(T06));
-        list(tina, "").body("[0].start", equalTo("2026-11-18T18:00:00+01:00"))
+        List<String> tinasEvents = eventIds(tina, "");
+        assertThat(tinasEvents, not(hasItem(T01)));
+        assertThat(tinasEvents, hasItem(T06));
+        listEvents(tina, "").body("[0].start", equalTo("2026-11-18T18:00:00+01:00"))
                 .body("teams.id", everyItem(hasItem(TEAM_3)));
-        // Alex ist in keinem Team: keine Termine
-        list(login("alex"), "").body("$", empty());
+        // Alex is in no team: no events
+        listEvents(login("alex"), "").body("$", empty());
     }
 
-    /** Test-Befund F-03: Die Serie zeigte nur die eigenen Teams (TER-11). */
+    /** Test finding F-03: the series showed only the own teams (TER-11). */
     @Test
-    void ter11SeriesNamesAllTeamsAlsoOther() {
+    void ter11SeriesNamesAllTeamsIncludingOthers() {
         given().cookie("stv_session", login("anna")).get("/api/series/" + SERIES_1).then().statusCode(200)
                 .body("teams.id", contains(TEAM_1, TEAM_2))
                 .body("teams.name", contains("Team 1", "Team 2"))
@@ -161,7 +161,7 @@ class EventsTest {
     }
 
     @Test
-    void k2OnlyMembersSeeAEvent() {
+    void k2OnlyMembersSeeAnEvent() {
         given().cookie("stv_session", login("tina")).get("/api/events/" + T01).then().statusCode(403)
                 .contentType("application/problem+json");
         given().cookie("stv_session", login("alex")).get("/api/events/" + T01).then().statusCode(200);
@@ -170,12 +170,12 @@ class EventsTest {
         given().cookie("stv_session", login("tina")).get("/api/series/" + SERIES_1).then().statusCode(403);
     }
 
-    // ------------------------------------------------------------------ Kriterium 3
+    // ------------------------------------------------------------------ Criterion 3
 
     @Test
-    void k3EventForTwoTeamsAppearsAtMembersBoth() {
+    void k3EventForTwoTeamsAppearsForMembersOfBoth() {
         String id = given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1, TEAM_2))
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1, TEAM_2))
                 .post("/api/events").then().statusCode(201)
                 .body("title", equalTo("Zusatztraining"))
                 .body("teams.id", contains(TEAM_1, TEAM_2))
@@ -185,24 +185,24 @@ class EventsTest {
                 .body("responseDeadlineHours", equalTo(24))
                 .body("canEdit", equalTo(true))
                 .extract().path("id");
-        assertThat(ids(login("anna"), ""), hasItem(id));   // Team 1
-        assertThat(ids(login("eva"), ""), hasItem(id));    // Team 2
-        assertThat(ids(login("marc"), ""), hasItem(id));   // Coach Team 2
-        assertThat(ids(login("tina"), ""), not(hasItem(id)));
-        // Marc (Coach von Team 2) darf den gemeinsamen Termin bearbeiten (RR-06)
+        assertThat(eventIds(login("anna"), ""), hasItem(id));   // Team 1
+        assertThat(eventIds(login("eva"), ""), hasItem(id));    // Team 2
+        assertThat(eventIds(login("marc"), ""), hasItem(id));   // Coach Team 2
+        assertThat(eventIds(login("tina"), ""), not(hasItem(id)));
+        // Marc (coach of Team 2) may edit the shared event (RR-06)
         given().cookie("stv_session", login("marc")).get("/api/events/" + id).then().body("canEdit", equalTo(true));
     }
 
     @Test
-    void k3OnlyCoachesAInvolvedTeamsCreate() {
-        String body = event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1);
+    void k3OnlyCoachesOfAnInvolvedTeamCanCreate() {
+        String body = eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1);
         given().cookie("stv_session", login("marc")).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(403).body("rule", equalTo("RR-07"));
         given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(403);
-        // Petra ist in Team 2 nur Spielerin
+        // Petra is only a player in Team 2
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_2))
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_2))
                 .post("/api/events").then().statusCode(403);
         given().cookie("stv_session", login("alex")).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(201);
@@ -211,10 +211,10 @@ class EventsTest {
         given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body("{\"reason\":\"x\"}")
                 .post("/api/events/" + T01 + "/cancel").then().statusCode(403);
         given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
-                .body(series("MONDAY", "18:00", "2026-11-23", "2026-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2026-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(403);
         given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
-                .body(series("TUESDAY", "18:30", "2026-08-18", "2027-04-27", TEAM_3))
+                .body(seriesBody("TUESDAY", "18:30", "2026-08-18", "2027-04-27", TEAM_3))
                 .put("/api/series/" + SERIES_1).then().statusCode(403);
         given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2026-12-01\",\"endDate\":\"2026-12-02\",\"reason\":\"x\"}")
@@ -222,81 +222,81 @@ class EventsTest {
     }
 
     @Test
-    void k3InputsBecomeChecked() {
+    void k3InputsAreChecked() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T19:30:00+01:00", "2026-11-20T18:00:00+01:00", TEAM_1))
+                .body(eventBody("2026-11-20T19:30:00+01:00", "2026-11-20T18:00:00+01:00", TEAM_1))
                 .post("/api/events").then().statusCode(400).body("fields[0].field", equalTo("end"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-10T18:00:00+01:00", "2026-11-10T19:30:00+01:00", TEAM_1))
+                .body(eventBody("2026-11-10T18:00:00+01:00", "2026-11-10T19:30:00+01:00", TEAM_1))
                 .post("/api/events").then().statusCode(400);
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", UUID.randomUUID().toString()))
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", UUID.randomUUID().toString()))
                 .post("/api/events").then().statusCode(400).body("fields[0].field", equalTo("teamIds"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00"))
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00"))
                 .post("/api/events").then().statusCode(400);
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1, TEAM_2)
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1, TEAM_2)
                         .replace("PRACTICE", "MATCH_DAY"))
                 .post("/api/events").then().statusCode(400).body("fields[0].field", equalTo("teamIds"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1)
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1)
                         .replace("\"name\":\"Turnhalle Dorf\"", "\"name\":\"Halle\",\"mapsUrl\":\"http://x.ch\""))
                 .post("/api/events").then().statusCode(400);
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "18:00", "2026-11-23", "2027-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2027-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(400).body("fields[0].field", equalTo("validUntil"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "21:30", "2026-11-23", "2026-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "21:30", "2026-11-23", "2026-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(400).body("fields[0].field", equalTo("endTime"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "18 Uhr", "2026-11-23", "2026-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "18 Uhr", "2026-11-23", "2026-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(400);
     }
 
-    // ------------------------------------------------------------------ Kriterium 4
+    // ------------------------------------------------------------------ Criterion 4
 
     @Test
-    void k4SeriesGeneratedEventForEveryWeek() {
+    void k4SeriesGeneratesEventForEveryWeek() {
         String id = given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "19:30", "2026-11-16", "2026-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "19:30", "2026-11-16", "2026-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(201)
                 .body("weekday", equalTo("MONDAY"))
                 .body("exceptions", empty())
                 .body("responseDeadlineHours", equalTo(24))
                 .extract().path("id");
-        List<String> start = list(login("anna"), "?to=2027-01-31").extract().jsonPath()
+        List<String> starts = listEvents(login("anna"), "?to=2027-01-31").extract().jsonPath()
                 .getList("findAll { it.seriesId == '" + id + "' }.start");
-        assertThat(start, contains("2026-11-16T19:30:00+01:00", "2026-11-23T19:30:00+01:00",
+        assertThat(starts, contains("2026-11-16T19:30:00+01:00", "2026-11-23T19:30:00+01:00",
                 "2026-11-30T19:30:00+01:00", "2026-12-07T19:30:00+01:00", "2026-12-14T19:30:00+01:00",
                 "2026-12-21T19:30:00+01:00"));
     }
 
     @Test
-    void k4SeriesGeneratedNoPastEvents() {
+    void k4SeriesGeneratesNoPastEvents() {
         String id = given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "05:00", "2026-11-02", "2026-11-30", TEAM_1).replace("21:00", "06:00"))
+                .body(seriesBody("MONDAY", "05:00", "2026-11-02", "2026-11-30", TEAM_1).replace("21:00", "06:00"))
                 .post("/api/series").then().statusCode(201).extract().path("id");
-        List<String> start = list(petra, "").extract().jsonPath().getList("findAll { it.seriesId == '" + id + "' }.start");
-        assertThat(start, contains("2026-11-23T05:00:00+01:00", "2026-11-30T05:00:00+01:00"));
+        List<String> starts = listEvents(petra, "").extract().jsonPath().getList("findAll { it.seriesId == '" + id + "' }.start");
+        assertThat(starts, contains("2026-11-23T05:00:00+01:00", "2026-11-30T05:00:00+01:00"));
     }
 
-    // ------------------------------------------------------------------ Kriterium 5
+    // ------------------------------------------------------------------ Criterion 5
 
     @Test
-    void k5ExceptionRemovedEventsWithoutResponses() {
+    void k5ExceptionRemovesEventsWithoutResponses() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2026-11-30\",\"endDate\":\"2026-12-06\",\"reason\":\"Hallenreinigung\"}")
                 .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(201)
                 .body("exceptions.reason", contains("Hallenreinigung", "Weihnachtsferien"));
-        List<String> start = list(petra, "?from=2026-11-28&to=2026-12-09&type=PRACTICE").extract().jsonPath()
+        List<String> starts = listEvents(petra, "?from=2026-11-28&to=2026-12-09&type=PRACTICE").extract().jsonPath()
                 .getList("findAll { it.seriesId == '" + SERIES_1 + "' }.start");
-        assertThat(start, contains("2026-12-08T18:30:00+01:00"));
+        assertThat(starts, contains("2026-12-08T18:30:00+01:00"));
     }
 
     @Test
-    void k5ExceptionSaysEventsWithResponsesFrom() {
-        // Termin 01 hat Antworten aus dem Seed (F-04), z.B. Anna «dabei»
+    void k5ExceptionCancelsEventsWithResponses() {
+        // Event 01 has responses from the seed (F-04), e.g. Anna attending
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2026-11-17\",\"endDate\":\"2026-11-19\",\"reason\":\"Hallensperre\"}")
                 .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(201);
@@ -306,12 +306,12 @@ class EventsTest {
         given().cookie("stv_session", login("anna")).get("/api/events/" + T01).then()
                 .body("myResponse.status", equalTo("ATTENDING"))
                 .body("counts.attending", equalTo(7));
-        // Andere Serien sind nicht betroffen
+        // Other series are not affected
         given().cookie("stv_session", petra).get("/api/events/" + T02).then().body("status", equalTo("PLANNED"));
     }
 
     @Test
-    void k5ExceptionToBeforeFromIsInvalid() {
+    void k5ExceptionEndingBeforeItStartsIsInvalid() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2026-12-06\",\"endDate\":\"2026-11-30\",\"reason\":\"x\"}")
                 .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(400);
@@ -320,10 +320,10 @@ class EventsTest {
                 .post("/api/series/" + UUID.randomUUID() + "/exceptions").then().statusCode(404);
     }
 
-    // ------------------------------------------------------------------ Kriterium 6
+    // ------------------------------------------------------------------ Criterion 6
 
     @Test
-    void k6SingleSeriesEventMove() {
+    void k6MoveSingleSeriesEvent() {
         String body = """
                 {"type":"PRACTICE","title":"Training","start":"2026-11-20T19:00:00+01:00","end":"2026-11-20T20:30:00+01:00",
                  "teamIds":["%s"],"location":{"name":"Sporthalle Nord"}}""".formatted(TEAM_1);
@@ -332,46 +332,46 @@ class EventsTest {
                 .body("start", equalTo("2026-11-20T19:00:00+01:00"))
                 .body("rescheduled", equalTo(true))
                 .body("seriesId", equalTo(SERIES_2));
-        // Die Serie bleibt unverändert, die anderen Termine auch
+        // The series stays unchanged, and so do the other events
         given().cookie("stv_session", petra).get("/api/series/" + SERIES_2).then()
                 .body("weekday", equalTo("THURSDAY")).body("startTime", equalTo("19:00"));
-        List<String> start = list(petra, "?from=2026-11-19&to=2026-11-27&team=" + TEAM_1 + "&type=PRACTICE")
+        List<String> starts = listEvents(petra, "?from=2026-11-19&to=2026-11-27&team=" + TEAM_1 + "&type=PRACTICE")
                 .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
-        assertThat(start, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:00:00+01:00"));
+        assertThat(starts, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:00:00+01:00"));
 
-        // Spätere Änderung der Serie übernimmt der verschobene Termin nicht (TER-08)
+        // The moved event does not take over a later change of the series (TER-08)
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("THURSDAY", "19:30", "2026-08-20", "2027-04-29", TEAM_1).replace("21:00", "21:00"))
+                .body(seriesBody("THURSDAY", "19:30", "2026-08-20", "2027-04-29", TEAM_1).replace("21:00", "21:00"))
                 .put("/api/series/" + SERIES_2).then().statusCode(200).body("startTime", equalTo("19:30"));
         given().cookie("stv_session", petra).get("/api/events/" + T02).then()
                 .body("start", equalTo("2026-11-20T19:00:00+01:00"));
-        start = list(petra, "?from=2026-11-19&to=2026-12-04&team=" + TEAM_1 + "&type=PRACTICE")
+        starts = listEvents(petra, "?from=2026-11-19&to=2026-12-04&team=" + TEAM_1 + "&type=PRACTICE")
                 .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
-        assertThat(start, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:30:00+01:00", "2026-12-03T19:30:00+01:00"));
-        // Vergangene Termine bleiben unverändert
+        assertThat(starts, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:30:00+01:00", "2026-12-03T19:30:00+01:00"));
+        // Past events stay unchanged
         given().cookie("stv_session", petra).get("/api/events?view=past&team=" + TEAM_1 + "&type=PRACTICE")
                 .then().body("findAll { it.seriesId == '" + SERIES_2 + "' }[0].start", equalTo("2026-11-12T19:00:00+01:00"));
     }
 
     @Test
-    void ter08SeriesOnOtherWeekday() {
+    void ter08SeriesMovedToOtherWeekday() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("FRIDAY", "19:00", "2026-08-20", "2026-12-31", TEAM_1))
+                .body(seriesBody("FRIDAY", "19:00", "2026-08-20", "2026-12-31", TEAM_1))
                 .put("/api/series/" + SERIES_2).then().statusCode(200);
-        List<String> start = list(petra, "?to=2026-12-31&team=" + TEAM_1 + "&type=PRACTICE")
+        List<String> starts = listEvents(petra, "?to=2026-12-31&team=" + TEAM_1 + "&type=PRACTICE")
                 .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
-        // Termin 02 hat seit F-04 eine Antwort (Anna): er wird abgesagt statt entfernt (TER-07, zustaende.md)
-        assertThat(start, contains("2026-11-19T19:00:00+01:00", "2026-11-20T19:00:00+01:00",
+        // Event 02 has had a response (Anna) since F-04: it is cancelled instead of removed (TER-07, states.md)
+        assertThat(starts, contains("2026-11-19T19:00:00+01:00", "2026-11-20T19:00:00+01:00",
                 "2026-11-27T19:00:00+01:00", "2026-12-04T19:00:00+01:00", "2026-12-11T19:00:00+01:00",
                 "2026-12-18T19:00:00+01:00", "2026-12-25T19:00:00+01:00"));
         given().cookie("stv_session", petra).get("/api/events/" + T02).then().statusCode(200)
                 .body("status", equalTo("CANCELLED")).body("cancellationReason", equalTo("Serie geändert"));
-        // Ohne Antworten wird ein Termin entfernt: Do 26.11.
+        // Without responses an event is removed: Thu 26.11.
         given().cookie("stv_session", petra).get("/api/events/" + UUID.nameUUIDFromBytes("termin-2-2026-11-26".getBytes()))
                 .then().statusCode(404);
     }
 
-    // ------------------------------------------------------------------ Kriterium 7
+    // ------------------------------------------------------------------ Criterion 7
 
     @Test
     void k7CancelledEventWithReason() {
@@ -383,39 +383,39 @@ class EventsTest {
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"reason\":\"Nochmals\"}")
                 .post("/api/events/" + T03 + "/cancel").then().statusCode(409).body("rule", equalTo("TER-06"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(event("2026-11-24T18:30:00+01:00", "2026-11-24T20:00:00+01:00", TEAM_1))
+                .body(eventBody("2026-11-24T18:30:00+01:00", "2026-11-24T20:00:00+01:00", TEAM_1))
                 .put("/api/events/" + T03).then().statusCode(409);
     }
 
     @Test
-    void ter06EventCancel() {
-        // Marc ist Coach von Team 2 und darf den gemeinsamen Termin absagen (RR-06)
+    void ter06CancelEvent() {
+        // Marc is coach of Team 2 and may cancel the shared event (RR-06)
         given().cookie("stv_session", login("marc")).contentType(ContentType.JSON).body("{\"reason\":\"  Halle gesperrt \"}")
                 .post("/api/events/" + T01 + "/cancel").then().statusCode(200)
                 .body("status", equalTo("CANCELLED")).body("cancellationReason", equalTo("Halle gesperrt"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"reason\":\"\"}")
                 .post("/api/events/" + T02 + "/cancel").then().statusCode(400);
-        // Vergangene Termine lassen sich nicht absagen
+        // Past events cannot be cancelled
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"reason\":\"x\"}")
                 .post("/api/events/" + T07 + "/cancel").then().statusCode(409);
     }
 
-    // ------------------------------------------------------------------ Kriterium 8
+    // ------------------------------------------------------------------ Criterion 8
 
     @Test
     void k8ResponseDeadlinePerEventAndSeries() {
-        String body = event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1)
+        String body = eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1)
                 .replace("\"notes\"", "\"responseDeadlineHours\":48,\"notes\"");
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(201)
                 .body("responseDeadlineHours", equalTo(48))
                 .body("responseDeadline", equalTo("2026-11-18T18:00:00+01:00"));
-        String series = given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
+        String seriesId = given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body(seriesBody("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
                         .replace("\"location\"", "\"responseDeadlineHours\":2,\"location\""))
                 .post("/api/series").then().statusCode(201).body("responseDeadlineHours", equalTo(2))
                 .extract().path("id");
-        list(petra, "?to=2026-11-16").body("find { it.seriesId == '" + series + "' }.responseDeadline",
+        listEvents(petra, "?to=2026-11-16").body("find { it.seriesId == '" + seriesId + "' }.responseDeadline",
                 equalTo("2026-11-16T17:30:00+01:00"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(body.replace("48", "-1")).post("/api/events").then().statusCode(400)
@@ -423,21 +423,21 @@ class EventsTest {
                 .body("fields[0].message", equalTo("Mindestens 0 Stunden."));
     }
 
-    /** Test-Befund F-03: Bean Validation lieferte englische Meldungen («must be less than or equal to 336»). */
+    /** Test finding F-03: Bean Validation returned English messages («must be less than or equal to 336»). */
     @Test
     void ter10ResponseDeadlineAtMostTwoWeeksWithGermanMessage() {
-        String body = event("2026-11-21T18:00:00+01:00", "2026-11-21T19:30:00+01:00", TEAM_1)
+        String body = eventBody("2026-11-21T18:00:00+01:00", "2026-11-21T19:30:00+01:00", TEAM_1)
                 .replace("\"notes\"", "\"responseDeadlineHours\":337,\"notes\"");
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(400)
                 .body("fields[0].field", equalTo("responseDeadlineHours"))
                 .body("fields[0].message", equalTo("Höchstens 336 Stunden (14 Tage)."));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(series("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
+                .body(seriesBody("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
                         .replace("\"location\"", "\"responseDeadlineHours\":337,\"location\""))
                 .put("/api/series/" + SERIES_1).then().statusCode(400)
                 .body("fields[0].message", equalTo("Höchstens 336 Stunden (14 Tage)."));
-        // Andere Felder: deutsche Standardtexte statt «must not be null»
+        // Other fields: German default texts instead of «must not be null»
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(body.replace("\"title\":\"Zusatztraining\",", "").replace("337", "24"))
                 .post("/api/events").then().statusCode(400)
@@ -445,20 +445,20 @@ class EventsTest {
                 .body("fields[0].message", not(containsString("must")));
     }
 
-    // ------------------------------------------------------------------ Kriterium 9
+    // ------------------------------------------------------------------ Criterion 9
 
     @Test
-    void k9FilterTeamTypeAndPast() {
-        // Termin 06 gehört auch zu Team 3; Petra ist dort nicht Mitglied, sieht ihn aber über Team 1 und 2
-        assertThat(ids(petra, "?team=" + TEAM_3), contains(T06));
-        assertThat(ids(petra, "?type=MATCH_DAY"), contains(T04, T05));
-        assertThat(ids(petra, "?type=OTHER&team=" + TEAM_1), contains(T06));
-        List<String> past = ids(login("anna"), "?view=past");
+    void k9FilterByTeamTypeAndPast() {
+        // Event 06 also belongs to Team 3; Petra is not a member there but sees it through Team 1 and 2
+        assertThat(eventIds(petra, "?team=" + TEAM_3), contains(T06));
+        assertThat(eventIds(petra, "?type=MATCH_DAY"), contains(T04, T05));
+        assertThat(eventIds(petra, "?type=OTHER&team=" + TEAM_1), contains(T06));
+        List<String> past = eventIds(login("anna"), "?view=past");
         assertThat(past.get(1), equalTo(T07));
         assertThat(past, not(hasItem(T08)));
-        assertThat(ids(login("vera"), "?view=past"), containsInAnyOrder(T08));
-        // Vergangene absteigend: Do 12.11. (Serie 02), Di 10.11. (Termin 07), Do 05.11.
-        list(login("anna"), "?view=past").body("[0].start", equalTo("2026-11-12T19:00:00+01:00"))
+        assertThat(eventIds(login("vera"), "?view=past"), containsInAnyOrder(T08));
+        // Past events descending: Thu 12.11. (series 02), Tue 10.11. (event 07), Thu 05.11.
+        listEvents(login("anna"), "?view=past").body("[0].start", equalTo("2026-11-12T19:00:00+01:00"))
                 .body("[1].start", equalTo("2026-11-10T18:30:00+01:00"))
                 .body("[2].start", equalTo("2026-11-05T19:00:00+01:00"));
         given().cookie("stv_session", petra).get("/api/events?view=morgen").then().statusCode(400);

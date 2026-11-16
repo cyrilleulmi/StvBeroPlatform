@@ -10,8 +10,8 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 
 /**
- * F-00, Kriterium 8: Ohne Test-Hilfen (wie im Profil prod, dort ist {@code stv.testhilfen=false})
- * existieren die Test-Endpunkte nicht.
+ * F-00, criterion 8: without test support (as in the prod profile, where {@code stv.test-support=false})
+ * the test endpoints do not exist.
  */
 @QuarkusTest
 @TestProfile(ProdWithoutTestSupportTest.LikeProd.class)
@@ -25,7 +25,7 @@ class ProdWithoutTestSupportTest {
     }
 
     @Test
-    void testEndpointsMissing() {
+    void testEndpointsAreMissing() {
         given().post("/api/test/reset").then().statusCode(404);
         given().get("/api/test/clock").then().statusCode(404);
         given().contentType("application/json").body("{\"now\":\"2026-11-16T19:00:00+01:00\"}")
@@ -39,9 +39,9 @@ class ProdWithoutTestSupportTest {
                 .put("/api/test/swiss-unihockey/matches").then().statusCode(404);
     }
 
-    /** F-07, Kriterium 2: Im Profil prod spricht die App mit swiss unihockey, nicht mit dem Simulator. */
+    /** F-07, criterion 2: in the prod profile the app talks to swiss unihockey, not to the simulator. */
     @Test
-    void withoutTestSupportSpeaksTheAppWithSwissUnihockey() {
+    void withoutTestSupportAppTalksToSwissUnihockey() {
         Object source = io.quarkus.arc.ClientProxy.unwrap(io.quarkus.arc.Arc.container()
                 .instance(ch.stvbero.platform.core.swissunihockey.SwissUnihockeySource.class).get());
         org.junit.jupiter.api.Assertions.assertInstanceOf(ch.stvbero.platform.core.swissunihockey.SuApiSource.class,
@@ -51,13 +51,13 @@ class ProdWithoutTestSupportTest {
                         .getValue("stv.swiss-unihockey.url", String.class));
         org.junit.jupiter.api.Assertions.assertTrue(io.quarkus.arc.Arc.container()
                 .select(ch.stvbero.platform.core.swissunihockey.SuSimulator.class).isUnsatisfied(),
-                "Kein Simulator ohne Test-Hilfen");
+                "No simulator without test support");
     }
 
     @Test
-    void testEndpointsMissingAlsoInTheOpenApi() {
+    void testEndpointsAreAlsoMissingFromOpenApi() {
         String specification = given().get("/q/openapi?format=json").then().statusCode(200).extract().asString();
-        org.junit.jupiter.api.Assertions.assertFalse(specification.contains("/api/test/"), "Test-Pfade in der OpenAPI");
+        org.junit.jupiter.api.Assertions.assertFalse(specification.contains("/api/test/"), "Test paths in the OpenAPI");
     }
 
     @Test

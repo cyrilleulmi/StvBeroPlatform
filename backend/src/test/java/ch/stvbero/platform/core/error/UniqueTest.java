@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Unique-Constraint-Verletzungen werden in der Ursachenkette erkannt (PTF-04, SAI-01). */
+/** Unique constraint violations are detected in the cause chain (PTF-04, SAI-01). */
 class UniqueTest {
 
     @Test

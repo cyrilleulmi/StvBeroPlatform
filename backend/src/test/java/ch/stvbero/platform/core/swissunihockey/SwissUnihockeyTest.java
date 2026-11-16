@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
- * F-07: Anbindung swiss unihockey (SUH-02 bis SUH-10, BEN-06, S12) gegen den Simulator. IDs aus docs/testdaten.md.
+ * F-07: swiss unihockey integration (SUH-02 to SUH-10, BEN-06, S12) against the simulator. IDs from docs/test-data.md.
  */
 @QuarkusTest
 class SwissUnihockeyTest {
@@ -53,7 +53,7 @@ class SwissUnihockeyTest {
         given().post("/api/test/reset").then().statusCode(204);
     }
 
-    private static void simulator(String body) {
+    private static void presetSimulator(String body) {
         given().contentType(ContentType.JSON).body(body).put("/api/test/swiss-unihockey/matches").then().statusCode(204);
     }
 
@@ -80,19 +80,19 @@ class SwissUnihockeyTest {
     private static List<Map<String, Object>> newNotifications() {
         List<Map<String, Object>> all = given().get("/api/test/notifications").then().statusCode(200)
                 .extract().jsonPath().getList("$");
-        return all.stream().filter(b -> !((String) b.get("id")).startsWith("90000000")).toList();
+        return all.stream().filter(notification -> !((String) notification.get("id")).startsWith("90000000")).toList();
     }
 
-    // ------------------------------------------------------------------ Kriterium 1: Verknüpfen (SUH-02)
+    // ------------------------------------------------------------------ Criterion 1: link (SUH-02)
 
     @Test
-    void suh02AdminLinkedTeamAndReleasesSyncFrom() {
+    void suh02AdminLinksTeamAndTriggersSync() {
         String alex = login("alex");
         link(alex, TEAM_2, "900002").statusCode(200)
                 .body("id", equalTo(TEAM_2)).body("name", equalTo("Team 2")).body("suTeamId", equalTo(900002));
         given().cookie("stv_session", alex).get("/api/teams/" + TEAM_2).then().body("suTeamId", equalTo(900002));
 
-        simulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000001,"
+        presetSimulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000001,"
                 + "\"startTime\":\"2026-12-05T13:00:00+01:00\",\"homeTeam\":\"UHC Fünf\",\"awayTeam\":\"Team 2\","
                 + "\"hall\":\"Turnhalle Weid\",\"location\":\"Beispielstadt\"}]}");
         sync(alex, TEAM_2).statusCode(200).body("created", equalTo(1)).body("affectedEvents", hasSize(1));
@@ -110,7 +110,7 @@ class SwissUnihockeyTest {
     }
 
     @Test
-    void suh02TeamIdOnlyOnceAndPositive() {
+    void suh02TeamIdUniqueAndPositive() {
         String alex = login("alex");
         link(alex, TEAM_2, "900001").statusCode(409).body("rule", equalTo("SUH-02"));
         link(alex, TEAM_2, "0").statusCode(400).body("fields[0].field", equalTo("suTeamId"));
@@ -119,26 +119,26 @@ class SwissUnihockeyTest {
         sync(alex, "10000000-0000-4000-8000-000000000999").statusCode(404);
     }
 
-    // ------------------------------------------------------------------ Kriterium 2: Simulator in dev/test
+    // ------------------------------------------------------------------ Criterion 2: simulator in dev/test
 
     @Test
-    void inProfileTestSpeaksTheAppWithTheSimulator() {
+    void inTestProfileAppTalksToTheSimulator() {
         assertInstanceOf(SuSimulator.class, io.quarkus.arc.ClientProxy.unwrap(source));
     }
 
     @Test
-    void byResetIsAllSynced() {
+    void afterResetEverythingIsInSync() {
         sync(login("alex"), TEAM_1).statusCode(200)
                 .body("created", equalTo(0)).body("changed", equalTo(0)).body("missing", equalTo(0))
                 .body("unchanged", equalTo(2)).body("affectedEvents", hasSize(0));
         assertThat(newNotifications(), hasSize(0));
     }
 
-    // ------------------------------------------------------------------ Kriterium 3: Spieltage bilden (SUH-04)
+    // ------------------------------------------------------------------ Criterion 3: form match days (SUH-04)
 
     @Test
-    void suh04MatchesAtSameDayInSameHallAreAMatchDay() {
-        simulator("""
+    void suh04MatchesOnSameDayInSameHallFormOneMatchDay() {
+        presetSimulator("""
                 {"suTeamId":900001,"matches":[%s,%s,
                  {"suMatchId":5000020,"startTime":"2026-12-06T10:00:00+01:00","homeTeam":"Team 1",
                   "awayTeam":"UHC Drei","hall":"Sporthalle Nord","location":"Beromünster"},
@@ -164,7 +164,7 @@ class SwissUnihockeyTest {
         assertThat(tournament.getList("matches.source"), everyItem(equalTo("SWISS_UNIHOCKEY")));
         assertEquals("Sporthalle Nord", tournament.getString("location.name"));
         assertEquals("Beromünster", tournament.getString("location.address"));
-        // SUH-07: Google-Maps-Link automatisch
+        // SUH-07: Google Maps link generated automatically
         assertEquals("https://www.google.com/maps/search/?api=1&query=Sporthalle+Nord+Beromünster"
                 .replace("ü", "%C3%BC"), tournament.getString("location.mapsUrl"));
         assertEquals("2026-12-06T10:00:00+01:00", tournament.getString("start"));
@@ -176,34 +176,34 @@ class SwissUnihockeyTest {
         assertThat(otherDay.getList("matches.opponent"), contains("UHC Sechs"));
         assertEquals("https://www.google.com/maps/search/?api=1&query=47.2%2C8.2", otherDay.getString("location.mapsUrl"));
 
-        // Erneuter Abgleich ändert nichts
+        // Syncing again changes nothing
         sync(login("alex"), TEAM_1).statusCode(200).body("created", equalTo(0)).body("unchanged", equalTo(6));
     }
 
     @Test
-    void suh04NewMatchComesToTheExistingMatchDay() {
-        simulator("""
+    void suh04NewMatchIsAddedToTheExistingMatchDay() {
+        presetSimulator("""
                 {"suTeamId":900001,"matches":[%s,%s,
                  {"suMatchId":5000030,"startTime":"2026-11-22T14:00:00+01:00","homeTeam":"Team 1",
                   "awayTeam":"UHC Drei","hall":"Sporthalle Seefeld","location":"Musterdorf"}]}"""
                 .formatted(MATCH_01_SU, match02("11:45")));
         sync(login("alex"), TEAM_1).statusCode(200).body("created", equalTo(1))
                 .body("affectedEvents", contains(T04));
-        JsonPath t = event(T04);
-        assertThat(t.getList("matches.opponent"), contains("UHC Musterdorf", "Unihockey Beispielstadt", "UHC Drei"));
-        assertEquals("2026-11-22T15:15:00+01:00", t.getString("end"));
+        JsonPath matchDay = event(T04);
+        assertThat(matchDay.getList("matches.opponent"), contains("UHC Musterdorf", "Unihockey Beispielstadt", "UHC Drei"));
+        assertEquals("2026-11-22T15:15:00+01:00", matchDay.getString("end"));
     }
 
-    // ------------------------------------------------------------------ Kriterium 4: S12 (SUH-05, SUH-06, BEN-06)
+    // ------------------------------------------------------------------ Criterion 4: S12 (SUH-05, SUH-06, BEN-06)
 
     @Test
-    void s12ReschedulingIsAppliedOwnDatesStay() {
+    void s12ReschedulingIsAppliedOwnDataStays() {
         String alex = login("alex");
         JsonPath before = event(T04);
         List<Object> callUpBefore = given().cookie("stv_session", alex).get("/api/events/" + T04 + "/call-up")
                 .then().statusCode(200).extract().jsonPath().getList("groups");
 
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("12:15") + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("12:15") + "]}");
         sync(alex, TEAM_1).statusCode(200)
                 .body("changed", equalTo(1)).body("unchanged", equalTo(1)).body("created", equalTo(0))
                 .body("affectedEvents", contains(T04));
@@ -212,47 +212,47 @@ class SwissUnihockeyTest {
         assertThat(after.getList("matches.startTime"),
                 contains("2026-11-22T09:30:00+01:00", "2026-11-22T12:15:00+01:00"));
         assertThat(after.getList("matches.id"), hasItem(MATCH_02));
-        // SUH-06: eigene Daten unverändert
+        // SUH-06: own data unchanged
         assertEquals(before.getString("meetingPoint.time"), after.getString("meetingPoint.time"));
         assertEquals(before.getString("meetingPoint.location"), after.getString("meetingPoint.location"));
         assertEquals("Weisse Trikots mitnehmen", after.getString("notes"));
         assertEquals(before.getString("start"), after.getString("start"));
         assertEquals("2026-11-22T13:30:00+01:00", after.getString("end"));
-        assertEquals(before.getMap("counts"), after.getMap("counts"), "Antworten bleiben");
+        assertEquals(before.getMap("counts"), after.getMap("counts"), "Responses stay");
         assertEquals(callUpBefore, given().cookie("stv_session", alex).get("/api/events/" + T04 + "/call-up")
-                .then().extract().jsonPath().getList("groups"), "Aufgebot bleibt");
+                .then().extract().jsonPath().getList("groups"), "Call-up stays");
 
-        // BEN-06: alle Mitglieder von Team 1 (Petra, Anna, Lea, Mia, Sara, Nina, Jana, Kim), nicht Team 2
-        List<Map<String, Object>> newValue = newNotifications();
-        assertThat(newValue.stream().map(b -> ((Map<?, ?>) b.get("recipient")).get("firstName")).toList(),
+        // BEN-06: all members of Team 1 (Petra, Anna, Lea, Mia, Sara, Nina, Jana, Kim), not Team 2
+        List<Map<String, Object>> created = newNotifications();
+        assertThat(created.stream().map(notification -> ((Map<?, ?>) notification.get("recipient")).get("firstName")).toList(),
                 containsInAnyOrder("Petra", "Anna", "Lea", "Mia", "Sara", "Nina", "Jana", "Kim"));
-        assertThat(newValue.stream().map(b -> b.get("type")).toList(), everyItem(equalTo("MATCH_CHANGED")));
-        assertThat(newValue.stream().map(b -> b.get("eventId")).toList(), everyItem(equalTo(T04)));
-        assertThat(newValue.stream().map(b -> b.get("text")).toList(), everyItem(equalTo(
+        assertThat(created.stream().map(notification -> notification.get("type")).toList(), everyItem(equalTo("MATCH_CHANGED")));
+        assertThat(created.stream().map(notification -> notification.get("eventId")).toList(), everyItem(equalTo(T04)));
+        assertThat(created.stream().map(notification -> notification.get("text")).toList(), everyItem(equalTo(
                 "Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.")));
 
-        // Zweiter Abgleich: nichts mehr zu tun, keine weitere Benachrichtigung
+        // Second sync: nothing left to do, no further notification
         sync(alex, TEAM_1).statusCode(200).body("changed", equalTo(0)).body("unchanged", equalTo(2));
         assertThat(newNotifications(), hasSize(8));
     }
 
     @Test
-    void suh05FirstMatchRescheduledMovesTheMatchDay() {
-        simulator("""
+    void suh05RescheduledFirstMatchMovesTheMatchDay() {
+        presetSimulator("""
                 {"suTeamId":900001,"matches":[
                  {"suMatchId":5000001,"startTime":"2026-11-22T10:00:00+01:00","homeTeam":"Team 1",
                   "awayTeam":"UHC Musterdorf","hall":"Sporthalle Seefeld","location":"Musterdorf"},%s]}"""
                 .formatted(match02("11:45")));
         sync(login("alex"), TEAM_1).statusCode(200).body("changed", equalTo(1));
-        JsonPath t = event(T04);
-        assertEquals("2026-11-22T10:00:00+01:00", t.getString("start"));
-        assertEquals(true, t.getBoolean("rescheduled"));
-        assertEquals("2026-11-22T08:00:00+01:00", t.getString("meetingPoint.time"), "Treffpunkt bleibt (SUH-06)");
+        JsonPath matchDay = event(T04);
+        assertEquals("2026-11-22T10:00:00+01:00", matchDay.getString("start"));
+        assertEquals(true, matchDay.getBoolean("rescheduled"));
+        assertEquals("2026-11-22T08:00:00+01:00", matchDay.getString("meetingPoint.time"), "Meeting point stays (SUH-06)");
     }
 
     @Test
-    void suh05MatchToOtherDayIsOwnMatchDay() {
-        simulator("""
+    void suh05MatchMovedToOtherDayBecomesItsOwnMatchDay() {
+        presetSimulator("""
                 {"suTeamId":900001,"matches":[%s,
                  {"suMatchId":5000002,"startTime":"2026-11-29T11:45:00+01:00","homeTeam":"Unihockey Beispielstadt",
                   "awayTeam":"Team 1","hall":"Turnhalle Weid","location":"Beispielstadt"}]}""".formatted(MATCH_01_SU));
@@ -261,10 +261,10 @@ class SwissUnihockeyTest {
         assertThat(affected, hasSize(2));
         assertThat(event(T04).getList("matches.opponent"), contains("UHC Musterdorf"));
         String newEvent = affected.stream().filter(id -> !id.equals(T04)).findFirst().orElseThrow();
-        JsonPath newValue = event(newEvent);
-        assertThat(newValue.getList("matches.id"), contains(MATCH_02));
-        assertEquals("Turnhalle Weid", newValue.getString("location.name"));
-        assertThat(newNotifications().stream().map(b -> b.get("text")).distinct().toList(), contains(
+        JsonPath newMatchDay = event(newEvent);
+        assertThat(newMatchDay.getList("matches.id"), contains(MATCH_02));
+        assertEquals("Turnhalle Weid", newMatchDay.getString("location.name"));
+        assertThat(newNotifications().stream().map(notification -> notification.get("text")).distinct().toList(), contains(
                 "Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu am So 29.11. 11:45, "
                         + "neu in Turnhalle Weid."));
     }
@@ -278,21 +278,21 @@ class SwissUnihockeyTest {
 
     @Test
     void suh05WholeMatchDayRescheduledStaysAMatchDay() {
-        wholeMatchDayRescheduled(MATCH_01_29 + "," + MATCH_02_29);
+        checkWholeMatchDayRescheduled(MATCH_01_29 + "," + MATCH_02_29);
     }
 
     @Test
-    void suh05WholeMatchDayRescheduledReverseSortOrder() {
-        wholeMatchDayRescheduled(MATCH_02_29 + "," + MATCH_01_29);
+    void suh05WholeMatchDayRescheduledInReverseOrder() {
+        checkWholeMatchDayRescheduled(MATCH_02_29 + "," + MATCH_01_29);
     }
 
-    private void wholeMatchDayRescheduled(String matches) {
+    private void checkWholeMatchDayRescheduled(String matches) {
         String alex = login("alex");
         JsonPath before = event(T04);
         List<Object> callUpBefore = given().cookie("stv_session", alex).get("/api/events/" + T04 + "/call-up")
                 .then().statusCode(200).extract().jsonPath().getList("groups");
 
-        simulator("{\"suTeamId\":900001,\"matches\":[" + matches + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + matches + "]}");
         sync(alex, TEAM_1).statusCode(200).body("changed", equalTo(2)).body("created", equalTo(0))
                 .body("affectedEvents", contains(T04));
 
@@ -303,67 +303,67 @@ class SwissUnihockeyTest {
         assertEquals("2026-11-29T09:30:00+01:00", after.getString("start"));
         assertEquals(true, after.getBoolean("rescheduled"));
         assertEquals("Sporthalle Seefeld", after.getString("location.name"));
-        // SUH-06: eigene Daten bleiben beim bestehenden Spieltag
+        // SUH-06: own data stays with the existing match day
         assertEquals(before.getString("meetingPoint.time"), after.getString("meetingPoint.time"));
         assertEquals(before.getString("meetingPoint.location"), after.getString("meetingPoint.location"));
         assertEquals("Weisse Trikots mitnehmen", after.getString("notes"));
-        assertEquals(before.getMap("counts"), after.getMap("counts"), "Antworten bleiben");
+        assertEquals(before.getMap("counts"), after.getMap("counts"), "Responses stay");
         assertEquals(callUpBefore, given().cookie("stv_session", alex).get("/api/events/" + T04 + "/call-up")
-                .then().extract().jsonPath().getList("groups"), "Aufgebot bleibt");
+                .then().extract().jsonPath().getList("groups"), "Call-up stays");
 
-        // Kein zusätzlicher Spieltag: zweiter Abgleich ändert nichts und legt nichts an (SUH-04)
+        // No additional match day: a second sync changes nothing and creates nothing (SUH-04)
         sync(alex, TEAM_1).statusCode(200).body("changed", equalTo(0)).body("created", equalTo(0))
                 .body("unchanged", equalTo(2));
-        assertThat(newNotifications().stream().map(b -> b.get("eventId")).distinct().toList(),
+        assertThat(newNotifications().stream().map(notification -> notification.get("eventId")).distinct().toList(),
                 contains(T04));
     }
 
     @Test
     void suh08ResultIsAppliedWithoutNotification() {
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU.replace("\"hall\"", "\"result\":\"5:3\",\"hall\"")
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU.replace("\"hall\"", "\"result\":\"5:3\",\"hall\"")
                 + "," + match02("11:45") + "]}");
         sync(login("alex"), TEAM_1).statusCode(200).body("changed", equalTo(1));
         assertThat(event(T04).getList("matches.result"), contains("5:3", null));
         assertThat(newNotifications(), hasSize(0));
     }
 
-    // ------------------------------------------------------------------ Kriterium 5: Spiel fehlt
+    // ------------------------------------------------------------------ Criterion 5: match missing
 
     @Test
     void missingMatchIsMarkedNotDeleted() {
         String alex = login("alex");
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
         sync(alex, TEAM_1).statusCode(200).body("missing", equalTo(1)).body("unchanged", equalTo(1))
                 .body("affectedEvents", contains(T04));
-        JsonPath t = event(T04);
-        assertThat(t.getList("matches.missingAtSu"), contains(false, true));
-        assertThat(t.getList("matches.id"), hasItem(MATCH_02));
+        JsonPath matchDay = event(T04);
+        assertThat(matchDay.getList("matches.missingAtSu"), contains(false, true));
+        assertThat(matchDay.getList("matches.id"), hasItem(MATCH_02));
 
-        // Jetzt darf die Coach es löschen (SUH-06)
+        // Now the coach may delete it (SUH-06)
         given().cookie("stv_session", login("petra")).delete("/api/events/" + T04 + "/matches/" + MATCH_02)
                 .then().statusCode(204);
     }
 
     @Test
-    void againDeliveredMatchIsNotMoreMarked() {
+    void matchDeliveredAgainIsNoLongerMarked() {
         String alex = login("alex");
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
         sync(alex, TEAM_1).statusCode(200);
         given().post("/api/test/reset").then().statusCode(204);
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "]}");
         sync(alex = login("alex"), TEAM_1).statusCode(200);
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("11:45") + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("11:45") + "]}");
         sync(alex, TEAM_1).statusCode(200).body("changed", equalTo(1)).body("missing", equalTo(0));
         assertThat(event(T04).getList("matches.missingAtSu"), everyItem(equalTo(false)));
     }
 
-    // ------------------------------------------------------------------ Kriterium 6: nicht erreichbar (SUH-09)
+    // ------------------------------------------------------------------ Criterion 6: unavailable (SUH-09)
 
     @Test
-    void suh09NotReachableChangesNothing() {
+    void suh09UnavailableChangesNothing() {
         String alex = login("alex");
         JsonPath before = event(T04);
-        simulator("{\"suTeamId\":900001,\"unavailable\":true,\"matches\":[" + MATCH_01_SU + "]}");
+        presetSimulator("{\"suTeamId\":900001,\"unavailable\":true,\"matches\":[" + MATCH_01_SU + "]}");
 
         sync(alex, TEAM_1).statusCode(502).contentType("application/problem+json")
                 .body("rule", equalTo("SUH-09"))
@@ -372,34 +372,34 @@ class SwissUnihockeyTest {
         JsonPath after = event(T04);
         assertEquals(before.getList("matches"), after.getList("matches"));
         assertThat(newNotifications(), hasSize(0));
-        // Die App funktioniert normal weiter
+        // The app keeps working normally
         given().cookie("stv_session", login("anna")).get("/api/events").then().statusCode(200);
         given().cookie("stv_session", alex).get("/api/teams").then().statusCode(200);
     }
 
-    // ------------------------------------------------------------------ Kriterium 7: täglicher Job (SUH-03)
+    // ------------------------------------------------------------------ Criterion 7: daily job (SUH-03)
 
     @Test
-    void suh03DailyJobSyncsAllLinkedTeamsFrom() {
+    void suh03DailyJobSyncsAllLinkedTeams() {
         String alex = login("alex");
         link(alex, TEAM_2, "900002").statusCode(200);
-        simulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("12:15") + "]}");
+        presetSimulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
+        presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("12:15") + "]}");
 
-        // Team 2 gestört, Team 1 läuft trotzdem
+        // Team 2 fails, Team 1 still runs
         assertEquals(1, job.syncAll());
         assertThat(event(T04).getList("matches.startTime"), hasItem("2026-11-22T12:15:00+01:00"));
     }
 
-    // ------------------------------------------------------------------ SUH-10, Abgrenzung
+    // ------------------------------------------------------------------ SUH-10, scope
 
     @Test
-    void suh10FromHandCreatedMatchDaysStayUntouched() {
+    void suh10ManuallyCreatedMatchDaysStayUntouched() {
         String alex = login("alex");
         link(alex, TEAM_2, "900002").statusCode(200);
         JsonPath before = event(T05);
-        // swiss unihockey liefert für Team 2 ein Spiel am selben Tag in derselben Halle wie der manuelle Termin 05
-        simulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000005,"
+        // swiss unihockey delivers a match for Team 2 on the same day in the same hall as the manual event 05
+        presetSimulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000005,"
                 + "\"startTime\":\"2026-11-28T15:00:00+01:00\",\"homeTeam\":\"Team 2\",\"awayTeam\":\"UHC Fünf\","
                 + "\"hall\":\"Turnhalle Weid\",\"location\":\"Beispielstadt\"}]}");
         List<String> affected = sync(alex, TEAM_2).statusCode(200).body("created", equalTo(1))
@@ -411,13 +411,13 @@ class SwissUnihockeyTest {
     }
 
     @Test
-    void syncWithoutCurrentSeason() {
+    void syncWithoutCurrentSeasonGives409() {
         given().delete("/api/test/current-season").then().statusCode(204);
         sync(login("alex"), TEAM_1).statusCode(409).body("rule", equalTo("SAI-03"));
     }
 
     @Test
-    void simulatorPresetIsChecked() {
+    void simulatorPresetIsValidated() {
         given().contentType(ContentType.JSON).body("{\"suTeamId\":900001,\"matches\":[{\"suMatchId\":1}]}")
                 .put("/api/test/swiss-unihockey/matches").then().statusCode(400);
     }

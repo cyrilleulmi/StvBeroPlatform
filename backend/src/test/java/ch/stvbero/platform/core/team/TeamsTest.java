@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
-/** F-01: Teams und Teamzugehörigkeiten (PTF-03, PTF-04, PTF-07, PTF-12, SAI-02, RR-04, RR-07). */
+/** F-01: teams and team memberships (PTF-03, PTF-04, PTF-07, PTF-12, SAI-02, RR-04, RR-07). */
 @QuarkusTest
 class TeamsTest {
 
@@ -52,7 +52,7 @@ class TeamsTest {
     }
 
     @Test
-    void adminSeesAllTeamsTheSeason() {
+    void adminSeesAllTeamsOfTheSeason() {
         given().cookie("stv_session", alex).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Team 1", "Team 2", "Team 3"))
                 .body("[0].suTeamId", equalTo(900001))
@@ -62,13 +62,13 @@ class TeamsTest {
     }
 
     @Test
-    void ptf07CoachesAndPlayersSeparate() {
+    void ptf07CoachesAndPlayersAreSeparate() {
         String anna = login("anna");
         given().cookie("stv_session", anna).get("/api/teams/" + TEAM_1).then().statusCode(200)
                 .body("name", equalTo("Team 1"))
                 .body("myTeamRole", equalTo("PLAYER"))
                 .body("coaches.firstName", contains("Petra"))
-                // Ab F-02 nach Linie: Linien nach Reihenfolge, Goalies, dann «Ohne Linie» (LIN-06, LIN-09)
+                // From F-02 by line: lines in sort order, goalies, then «Ohne Linie» (LIN-06, LIN-09)
                 .body("lineup.groups.name", contains("Linie 1", "Linie 2", "Goalies"))
                 .body("lineup.groups[0].players.lastName", contains("Frei", "Graf", "Muster"))
                 .body("lineup.groups[1].players.lastName", contains("Brun", "Roth"))
@@ -82,7 +82,7 @@ class TeamsTest {
     void ptf04ConcurrentAddGives409InsteadOf500() {
         for (int round = 0; round < 5; round++) {
             reset();
-            List<Integer> status = Concurrently.statuscodes(2, () -> given().cookie("stv_session", alex)
+            List<Integer> status = Concurrently.statusCodes(2, () -> given().cookie("stv_session", alex)
                     .contentType(ContentType.JSON)
                     .body("{\"personId\":\"" + TINA + "\",\"teamRole\":\"COACH\"}")
                     .post("/api/teams/" + TEAM_1 + "/members").statusCode());
@@ -93,7 +93,7 @@ class TeamsTest {
     }
 
     @Test
-    void ptf04SecondAddIsRejected() {
+    void ptf04AddingTwiceIsRejected() {
         given().cookie("stv_session", alex).contentType(ContentType.JSON)
                 .body("{\"personId\":\"" + TINA + "\",\"teamRole\":\"COACH\"}")
                 .post("/api/teams/" + TEAM_1 + "/members").then().statusCode(201)
@@ -121,7 +121,7 @@ class TeamsTest {
     }
 
     @Test
-    void teamRoleUpdateAndRemove() {
+    void changeTeamRoleAndRemoveMember() {
         given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
                 .put("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(200)
                 .body("teamRole", equalTo("COACH"));
@@ -135,7 +135,7 @@ class TeamsTest {
     }
 
     @Test
-    void teamCreateAndRename() {
+    void createAndRenameTeam() {
         String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"name\":\"Team 4\"}")
                 .post("/api/teams").then().statusCode(201)
                 .body("name", equalTo("Team 4"))
@@ -167,33 +167,33 @@ class TeamsTest {
                 .body("{\"name\":\"Team X\"}").post("/api/teams").then().statusCode(409);
     }
 
-    /** Nachbesserung #21: Umbenennen in der aktuellen Saison lässt das Archiv unverändert (SAI-02). */
+    /** Rework #21: renaming in the current season leaves the archive unchanged (SAI-02). */
     @Test
-    void sai02RenameChangedTheArchiveNot() {
+    void sai02RenameDoesNotChangeTheArchive() {
         given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"name\":\"Damen 1\"}")
                 .put("/api/teams/" + TEAM_1).then().statusCode(200).body("name", equalTo("Damen 1"));
 
-        // Aktuelle Saison: neuer Name
+        // Current season: new name
         given().cookie("stv_session", alex).get("/api/teams/" + TEAM_1).then().statusCode(200)
                 .body("name", equalTo("Damen 1"));
         given().cookie("stv_session", alex).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Damen 1", "Team 2", "Team 3"));
-        // Archiv: weiterhin der damalige Name
+        // Archive: still the name of that time
         given().cookie("stv_session", alex).queryParam("season", SEASON_2025).get("/api/teams/" + TEAM_1).then().statusCode(200)
                 .body("name", equalTo("Team 1"));
         given().cookie("stv_session", alex).queryParam("season", SEASON_2025).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Team 1"));
-        // Personendetail: Zugehörigkeit im Archiv mit dem damaligen Namen (Vera war nur 2025/26 in Team 1)
+        // Person detail: membership in the archive with the name of that time (Vera was only in Team 1 in 2025/26)
         given().cookie("stv_session", alex).get("/api/persons/" + VERA).then().statusCode(200)
                 .body("memberships.team.name", contains("Team 1"))
                 .body("memberships.seasonId", contains(SEASON_2025));
-        // Mein Bereich zeigt den aktuellen Namen
+        // The me endpoint shows the current name
         given().cookie("stv_session", login("petra")).get("/api/me").then().statusCode(200)
                 .body("memberships.team.name", contains("Damen 1", "Team 2"));
     }
 
     @Test
-    void sai02ArchiveLetsItselfNotRename() {
+    void sai02ArchiveCannotBeRenamed() {
         given().cookie("stv_session", alex).queryParam("season", SEASON_2025).contentType(ContentType.JSON)
                 .body("{\"name\":\"Team X\"}").put("/api/teams/" + TEAM_1).then().statusCode(409)
                 .body("rule", equalTo("SAI-02"));
@@ -204,7 +204,7 @@ class TeamsTest {
     }
 
     @Test
-    void teamTheItInTheSeasonNotGives() {
+    void teamMissingInTheSeasonGives404() {
         given().cookie("stv_session", alex).queryParam("season", SEASON_2025).get("/api/teams/" + TEAM_2).then().statusCode(404);
         given().cookie("stv_session", alex).get("/api/teams/10000000-0000-4000-8000-000000000099").then().statusCode(404);
     }

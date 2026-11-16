@@ -12,8 +12,8 @@ import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.startsWith;
 
 /**
- * Nachbesserung #16: Nicht lesbare Anfragen (ungültiges JSON, falscher Typ, falsches Format) ergeben 400 mit
- * Problem Details und einem deutschen {@code detail}, wie alle anderen Fehler (docs/api/README.md).
+ * Rework #16: unreadable requests (invalid JSON, wrong type, wrong format) give 400 with Problem Details
+ * and a German {@code detail}, like all other errors (docs/api/README.md).
  */
 @QuarkusTest
 class UnreadableRequestTest {
@@ -62,7 +62,7 @@ class UnreadableRequestTest {
     }
 
     @Test
-    void otherErrorTheFrameworksStayUnchanged() {
+    void otherFrameworkErrorsStayUnchanged() {
         given().get("/api/gibt-es-nicht").then().statusCode(404);
         given().contentType(ContentType.TEXT).body("alex").post("/api/test/login").then().statusCode(415);
         given().delete("/api/seasons").then().statusCode(405);

@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Unit-Tests der Teamregeln (PTF-04, PTF-07). */
+/** Unit tests of the team rules (PTF-04, PTF-07). */
 class TeamRulesTest {
 
     private static final PersonSummary PETRA = new PersonSummary(UUID.randomUUID(), "Petra", "Keller");
@@ -21,31 +21,31 @@ class TeamRulesTest {
     private static final PersonSummary MARC = new PersonSummary(UUID.randomUUID(), "Marc", "Huber");
 
     @Test
-    void ptf04SecondAddInSameTeamIsRejected() {
+    void ptf04AddingTwiceToSameTeamIsRejected() {
         List<TeamRules.Member> team = List.of(new TeamRules.Member(PETRA, TeamRole.COACH));
 
-        DomainError f = assertThrows(DomainError.class, () -> TeamRules.checkCanAdd(team, PETRA.id()));
+        DomainError error = assertThrows(DomainError.class, () -> TeamRules.checkCanAdd(team, PETRA.id()));
 
-        assertEquals(409, f.status());
-        assertEquals("PTF-04", f.rule());
-        assertTrue(f.getMessage().contains("Petra Keller ist schon in diesem Team (Coach)"));
+        assertEquals(409, error.status());
+        assertEquals("PTF-04", error.rule());
+        assertTrue(error.getMessage().contains("Petra Keller ist schon in diesem Team (Coach)"));
     }
 
     @Test
-    void ptf04OtherTeamRoleInOtherTeamIsAllowed() {
+    void ptf04PersonNotYetInTeamCanBeAdded() {
         List<TeamRules.Member> otherTeam = List.of(new TeamRules.Member(ANNA, TeamRole.PLAYER));
         assertDoesNotThrow(() -> TeamRules.checkCanAdd(otherTeam, PETRA.id()));
     }
 
     @Test
-    void ptf07CoachesAppearNeverAtThePlayers() {
-        TeamRules.Split a = TeamRules.split(List.of(
+    void ptf07CoachesNeverAppearAmongPlayers() {
+        TeamRules.Split split = TeamRules.split(List.of(
                 new TeamRules.Member(PETRA, TeamRole.COACH),
                 new TeamRules.Member(MARC, TeamRole.COACH),
                 new TeamRules.Member(ANNA, TeamRole.PLAYER),
                 new TeamRules.Member(SARA, TeamRole.PLAYER)));
 
-        assertEquals(List.of(MARC, PETRA), a.coaches());
-        assertEquals(List.of(SARA, ANNA), a.players(), "nach Nachname sortiert");
+        assertEquals(List.of(MARC, PETRA), split.coaches());
+        assertEquals(List.of(SARA, ANNA), split.players(), "sorted by last name");
     }
 }

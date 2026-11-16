@@ -16,9 +16,9 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.containsString;
 
 /**
- * Nachbesserung #31: Eine Anfrage ohne Body an einen Endpunkt mit Pflicht-Body ergibt 400 mit Problem Details,
- * deutschem {@code detail} und ohne englische Meldung oder internen Parameternamen in {@code felder}
- * (docs/api/README.md «Fehler»).
+ * Rework #31: a request without a body to an endpoint with a required body gives 400 with Problem Details,
+ * a German {@code detail} and no English message or internal parameter name in {@code fields}
+ * (docs/api/README.md, errors).
  */
 @QuarkusTest
 class MissingBodyTest {
@@ -41,7 +41,7 @@ class MissingBodyTest {
     }
 
     @Test
-    void missingFieldInBodyNamesStillTheField() {
+    void missingFieldInBodyIsStillNamed() {
         given().cookie("stv_session", login("alex")).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\"}")
                 .post("/api/seasons")

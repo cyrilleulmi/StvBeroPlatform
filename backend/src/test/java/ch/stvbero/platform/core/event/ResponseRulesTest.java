@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Fachregeln zu Antworten (ANM-04, ANM-05, ANM-07, ANM-10, ANM-11, RR-06, TER-06). */
+/** Domain rules for responses (ANM-04, ANM-05, ANM-07, ANM-10, ANM-11, RR-06, TER-06). */
 class ResponseRulesTest {
 
     static final UUID TEAM_1 = UUID.randomUUID();
@@ -24,16 +24,16 @@ class ResponseRulesTest {
 
     @Test
     void anm04MaybeRequiresComment() {
-        DomainError f = assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, null));
-        assertEquals(422, f.status());
-        assertEquals("ANM-04", f.rule());
-        assertEquals("comment", f.toProblem().fields().get(0).field());
+        DomainError error = assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, null));
+        assertEquals(422, error.status());
+        assertEquals("ANM-04", error.rule());
+        assertEquals("comment", error.toProblem().fields().get(0).field());
         assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, "   "));
         assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.MAYBE, "Komme später"));
     }
 
     @Test
-    void anm05NotAttendingWithoutReasonAllowed() {
+    void anm05DeclineWithoutReasonIsAllowed() {
         assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.DECLINED, null));
         assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.ATTENDING, null));
     }
@@ -45,31 +45,31 @@ class ResponseRulesTest {
     }
 
     @Test
-    void anm10AwayFromAttendingByDeadlineIsLate() {
+    void anm10LeavingAttendingAfterDeadlineIsLate() {
         assertTrue(ResponseRules.lateCancellation(ResponseStatus.ATTENDING, false, ResponseStatus.DECLINED, DEADLINE, DEADLINE));
         assertTrue(ResponseRules.lateCancellation(ResponseStatus.ATTENDING, false, ResponseStatus.MAYBE, DEADLINE, DEADLINE.plusSeconds(3600)));
     }
 
     @Test
-    void anm10BeforeTheDeadlineNotLate() {
+    void anm10BeforeTheDeadlineIsNotLate() {
         assertFalse(ResponseRules.lateCancellation(ResponseStatus.ATTENDING, false, ResponseStatus.DECLINED, DEADLINE, BEFORE_DEADLINE));
     }
 
     @Test
-    void anm10WithoutBeforeAttendingNotLate() {
+    void anm10WithoutPreviousAttendingIsNotLate() {
         assertFalse(ResponseRules.lateCancellation(ResponseStatus.PENDING, false, ResponseStatus.DECLINED, DEADLINE, DEADLINE));
         assertFalse(ResponseRules.lateCancellation(ResponseStatus.MAYBE, false, ResponseStatus.DECLINED, DEADLINE, DEADLINE));
     }
 
     @Test
-    void anm10MarkingStaysToAgainAttending() {
+    void anm10MarkStaysUntilAttendingAgain() {
         assertTrue(ResponseRules.lateCancellation(ResponseStatus.DECLINED, true, ResponseStatus.MAYBE, DEADLINE, DEADLINE));
         assertTrue(ResponseRules.lateCancellation(ResponseStatus.DECLINED, true, ResponseStatus.DECLINED, DEADLINE, DEADLINE));
         assertFalse(ResponseRules.lateCancellation(ResponseStatus.DECLINED, true, ResponseStatus.ATTENDING, DEADLINE, DEADLINE));
     }
 
     @Test
-    void ter06CancelledOrOverTakesNoResponse() {
+    void ter06CancelledOrPastEventTakesNoResponse() {
         Instant now = Instant.parse("2026-11-16T05:00:00Z");
         DomainError cancelled = assertThrows(DomainError.class,
                 () -> ResponseRules.checkOpenForResponses(EventStatus.CANCELLED, now.plusSeconds(3600), now));
@@ -81,36 +81,36 @@ class ResponseRulesTest {
     }
 
     @Test
-    void anm11CoachActsForPlayersTheOwnTeams() {
+    void anm11CoachRespondsForPlayersOfOwnTeams() {
         assertTrue(ResponseRules.canRespondOnBehalf(false, Map.of(TEAM_1, TeamRole.COACH),
                 Map.of(TEAM_1, TeamRole.PLAYER)));
-        // Lea: Spielerin in Team 1 und Team 2, die Coach von Team 2 darf auch
+        // Lea: player in Team 1 and Team 2, the coach of Team 2 may as well
         assertTrue(ResponseRules.canRespondOnBehalf(false, Map.of(TEAM_2, TeamRole.COACH),
                 Map.of(TEAM_1, TeamRole.PLAYER, TEAM_2, TeamRole.PLAYER)));
     }
 
     @Test
-    void rr06NoOnBehalfForOtherTeams() {
+    void rr06NoRespondingOnBehalfForOtherTeams() {
         assertFalse(ResponseRules.canRespondOnBehalf(false, Map.of(TEAM_2, TeamRole.COACH),
                 Map.of(TEAM_1, TeamRole.PLAYER)));
-        // Petra ist in Team 2 Spielerin: dort darf sie nicht für andere antworten
+        // Petra is a player in Team 2: there she may not respond for others
         assertFalse(ResponseRules.canRespondOnBehalf(false,
                 Map.of(TEAM_1, TeamRole.COACH, TEAM_2, TeamRole.PLAYER), Map.of(TEAM_2, TeamRole.PLAYER)));
-        // Nicht für andere Coaches
+        // Not for other coaches
         assertFalse(ResponseRules.canRespondOnBehalf(false, Map.of(TEAM_1, TeamRole.COACH), Map.of(TEAM_1, TeamRole.COACH)));
-        // Spielerinnen gar nicht
+        // Players not at all
         assertEquals(403, assertThrows(DomainError.class, () -> ResponseRules.checkCanRespondOnBehalf(false,
                 Map.of(TEAM_1, TeamRole.PLAYER), Map.of(TEAM_1, TeamRole.PLAYER))).status());
     }
 
     @Test
-    void rr04AdminActsForEveryMember() {
+    void rr04AdminRespondsForEveryMember() {
         assertTrue(ResponseRules.canRespondOnBehalf(true, Map.of(), Map.of(TEAM_1, TeamRole.COACH)));
         assertFalse(ResponseRules.canRespondOnBehalf(true, Map.of(), Map.of()));
     }
 
     @Test
-    void anm07CommentOnlyForCoachesSelfAndAdmins() {
+    void anm07CommentVisibleOnlyToCoachesSelfAndAdmins() {
         assertTrue(ResponseRules.commentVisible(false, false, TeamRole.COACH));
         assertTrue(ResponseRules.commentVisible(false, true, TeamRole.PLAYER));
         assertTrue(ResponseRules.commentVisible(true, false, null));
@@ -119,7 +119,7 @@ class ResponseRulesTest {
     }
 
     @Test
-    void anm01OnlyMembersResponsesForItself() {
+    void anm01OnlyMembersRespondForThemselves() {
         assertEquals(403, assertThrows(DomainError.class, () -> ResponseRules.checkCanRespondForSelf(false)).status());
         assertDoesNotThrow(() -> ResponseRules.checkCanRespondForSelf(true));
     }

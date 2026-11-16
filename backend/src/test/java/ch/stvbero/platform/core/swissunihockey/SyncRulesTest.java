@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Fachregeln des Abgleichs (SUH-04, SUH-05, SUH-07, BEN-06), ohne Datenbank. */
+/** Domain rules of the sync (SUH-04, SUH-05, SUH-07, BEN-06), without a database. */
 class SyncRulesTest {
 
     private static Instant at(int month, int day, int hour, int minute) {
@@ -26,7 +26,7 @@ class SyncRulesTest {
     }
 
     @Test
-    void ownTeamComesInEveryMatchBefore() {
+    void ownTeamIsTheOneInEveryMatch() {
         List<SuMatch> matches = List.of(
                 match(1, at(11, 22, 9, 30), "STV Beromünster I", "UHC Musterdorf", "Halle"),
                 match(2, at(11, 22, 11, 45), "Unihockey Beispielstadt", "STV Beromünster I", "Halle"));
@@ -41,15 +41,15 @@ class SyncRulesTest {
     }
 
     @Test
-    void atOnlyAMatchDecidesTheNameInTheApp() {
-        List<SuMatch> a = List.of(match(1, at(11, 22, 11, 45), "Unihockey Beispielstadt", "Team 1", "Halle"));
-        assertEquals("team 1", SyncRules.ownTeam(a, "Team 1"));
-        assertFalse(SyncRules.side(a.get(0), "team 1").home());
+    void withOnlyOneMatchTheNameInTheAppDecides() {
+        List<SuMatch> single = List.of(match(1, at(11, 22, 11, 45), "Unihockey Beispielstadt", "Team 1", "Halle"));
+        assertEquals("team 1", SyncRules.ownTeam(single, "Team 1"));
+        assertFalse(SyncRules.side(single.get(0), "team 1").home());
         assertNull(SyncRules.ownTeam(List.of(), "Team 1"));
     }
 
     @Test
-    void suh04SameDayAndSameHallResultAMatchDay() {
+    void suh04SameDayAndSameHallFormOneMatchDay() {
         Map<SyncRules.Key, List<SuMatch>> groups = SyncRules.groupByDayAndHall(List.of(
                 match(3, at(11, 22, 14, 0), "A", "B", "Turnhalle Weid"),
                 match(2, at(11, 22, 11, 45), "A", "C", "Sporthalle  Seefeld"),
@@ -59,22 +59,22 @@ class SyncRulesTest {
         assertEquals(3, groups.size());
         List<List<SuMatch>> values = List.copyOf(groups.values());
         assertEquals(List.of(1, 2), values.get(0).stream().map(SuMatch::suMatchId).toList(),
-                "Gleiche Halle trotz Gross-/Kleinschreibung und Leerzeichen, nach Anspielzeit");
-        assertEquals(List.of(3), values.get(1).stream().map(SuMatch::suMatchId).toList(), "Andere Halle");
-        assertEquals(List.of(4), values.get(2).stream().map(SuMatch::suMatchId).toList(), "Anderer Tag");
+                "Same hall despite case and whitespace, ordered by start time");
+        assertEquals(List.of(3), values.get(1).stream().map(SuMatch::suMatchId).toList(), "Other hall");
+        assertEquals(List.of(4), values.get(2).stream().map(SuMatch::suMatchId).toList(), "Other day");
         assertEquals(new SyncRules.Key(LocalDate.of(2026, 11, 22), "sporthalle seefeld"),
                 groups.keySet().iterator().next());
     }
 
     @Test
-    void periodFromFirstStartTimeToLastWithMatchDuration() {
-        SyncRules.Period z = SyncRules.period(List.of(at(11, 22, 11, 45), at(11, 22, 9, 30)));
-        assertEquals(at(11, 22, 9, 30), z.start());
-        assertEquals(at(11, 22, 13, 0), z.end(), "Wie Termin 04 im Seed");
+    void periodRunsFromFirstStartTimeToLastPlusMatchDuration() {
+        SyncRules.Period period = SyncRules.period(List.of(at(11, 22, 11, 45), at(11, 22, 9, 30)));
+        assertEquals(at(11, 22, 9, 30), period.start());
+        assertEquals(at(11, 22, 13, 0), period.end(), "Like event 04 in the seed");
     }
 
     @Test
-    void onlyMatchesTheSeason() {
+    void onlyMatchesWithinTheSeason() {
         assertTrue(SyncRules.inSeason(at(11, 22, 9, 30), LocalDate.of(2026, 7, 1), LocalDate.of(2027, 6, 30)));
         assertFalse(SyncRules.inSeason(at(6, 20, 9, 30), LocalDate.of(2026, 7, 1), LocalDate.of(2027, 6, 30)));
     }
@@ -100,7 +100,7 @@ class SyncRulesTest {
                 "Sporthalle Seefeld");
         assertFalse(SyncRules.significantlyChanged(old, old));
         assertFalse(SyncRules.significantlyChanged(old, new SyncRules.MatchState("Unihockey Beispielstadt",
-                at(11, 22, 11, 45), false, "sporthalle  seefeld")), "Schreibweise der Halle zählt nicht");
+                at(11, 22, 11, 45), false, "sporthalle  seefeld")), "Spelling of the hall does not count");
 
         SyncRules.MatchState later = new SyncRules.MatchState("Unihockey Beispielstadt", at(11, 22, 12, 15), false,
                 "Sporthalle Seefeld");
@@ -114,7 +114,7 @@ class SyncRulesTest {
     }
 
     @Test
-    void ben06Text() {
+    void ben06ChangeNotificationText() {
         assertEquals("Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.",
                 SyncRules.matchChangedText("Spieltag", at(11, 22, 9, 30),
                         List.of("Spiel gegen Unihockey Beispielstadt neu um 12:15")));

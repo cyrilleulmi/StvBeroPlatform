@@ -8,25 +8,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Unit-Tests der Personenregeln (RR-04). */
+/** Unit tests of the person rules (RR-04). */
 class PersonRulesTest {
 
     @Test
-    void rr04LastAdminCanThePermissionNotRevokedBecome() {
-        DomainError f = assertThrows(DomainError.class, () -> PersonRules.checkAdminRevocation(true, false, 1));
-        assertEquals(409, f.status());
-        assertEquals("RR-04", f.rule());
+    void rr04LastAdminCannotLoseAdminPermission() {
+        DomainError error = assertThrows(DomainError.class, () -> PersonRules.checkAdminRevocation(true, false, 1));
+        assertEquals(409, error.status());
+        assertEquals("RR-04", error.rule());
     }
 
     @Test
-    void rr04WithSecondAdminWorksTheRevocation() {
+    void rr04RevocationWorksWithSecondAdmin() {
         assertDoesNotThrow(() -> PersonRules.checkAdminRevocation(true, false, 2));
         assertDoesNotThrow(() -> PersonRules.checkAdminRevocation(true, true, 1));
         assertDoesNotThrow(() -> PersonRules.checkAdminRevocation(false, false, 1));
     }
 
     @Test
-    void emptyInputsBecomeToNull() {
+    void blankInputsBecomeNull() {
         assertNull(PersonRules.clean("   "));
         assertEquals("Anna", PersonRules.clean(" Anna "));
     }

@@ -16,13 +16,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasSize;
 
-/** F-01: Saisons anlegen, übernehmen und wechseln (SAI-02, SAI-03, SAI-04, SAI-06, RR-07). */
+/** F-01: create, carry over and switch seasons (SAI-02, SAI-03, SAI-04, SAI-06, RR-07). */
 @QuarkusTest
 class SeasonsTest {
 
     static final String SEASON_2025 = "60000000-0000-4000-8000-000000000001";
     static final String SEASON_2026 = "60000000-0000-4000-8000-000000000002";
-    static final String NEW = "{\"name\":\"2027/28\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\",\"copyFrom\":\"" + SEASON_2026 + "\"}";
+    static final String NEW_SEASON = "{\"name\":\"2027/28\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\",\"copyFrom\":\"" + SEASON_2026 + "\"}";
 
     String alex;
 
@@ -36,8 +36,8 @@ class SeasonsTest {
     void sai01ConcurrentCreateGives409InsteadOf500() {
         for (int round = 0; round < 5; round++) {
             reset();
-            List<Integer> status = Concurrently.statuscodes(2, () -> given().cookie("stv_session", alex)
-                    .contentType(ContentType.JSON).body(NEW).post("/api/seasons").statusCode());
+            List<Integer> status = Concurrently.statusCodes(2, () -> given().cookie("stv_session", alex)
+                    .contentType(ContentType.JSON).body(NEW_SEASON).post("/api/seasons").statusCode());
             assertThat(status, contains(201, 409));
             given().cookie("stv_session", alex).get("/api/seasons").then().statusCode(200)
                     .body("name", contains("2027/28", "2026/27", "2025/26"));
@@ -45,7 +45,7 @@ class SeasonsTest {
     }
 
     @Test
-    void listNewestFirstWithArchive() {
+    void listNewestFirstWithArchived() {
         given().cookie("stv_session", login("anna")).get("/api/seasons").then().statusCode(200)
                 .body("name", contains("2026/27", "2025/26"))
                 .body("current", contains(true, false))
@@ -53,8 +53,8 @@ class SeasonsTest {
     }
 
     @Test
-    void sai04Sai06NewSeasonWithCarryOverCreateAndActivate() {
-        String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body(NEW)
+    void sai04Sai06CreateAndActivateNewSeasonWithCarryOver() {
+        String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body(NEW_SEASON)
                 .post("/api/seasons").then().statusCode(201)
                 .body("name", equalTo("2027/28"))
                 .body("current", equalTo(false))
@@ -66,7 +66,7 @@ class SeasonsTest {
         given().cookie("stv_session", alex).queryParam("season", id)
                 .get("/api/teams/10000000-0000-4000-8000-000000000001").then().statusCode(200)
                 .body("coaches.firstName", contains("Petra"))
-                // Linien und Zuweisungen werden mit übernommen (SAI-04, LIN-11)
+                // Lines and assignments are carried over too (SAI-04, LIN-11)
                 .body("lineup.groups.name", contains("Linie 1", "Linie 2", "Goalies"))
                 .body("lineup.groups[0].players.firstName", contains("Mia", "Lea", "Anna"))
                 .body("lineup.groups[0].id", not(equalTo("30000000-0000-4000-8000-000000000001")))
@@ -86,13 +86,13 @@ class SeasonsTest {
                 .body("memberships[0].seasonId", equalTo(id));
     }
 
-    /** Nachbesserung #21: Die neue Saison übernimmt den aktuellen Namen; umbenennen dort ändert die Vorsaison nicht (SAI-02). */
+    /** Rework #21: the new season takes over the current name; renaming it there does not change the previous season (SAI-02). */
     @Test
     void sai02TeamNameAppliesPerSeason() {
         String team1 = "10000000-0000-4000-8000-000000000001";
         given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"name\":\"Damen 1\"}")
                 .put("/api/teams/" + team1).then().statusCode(200);
-        String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body(NEW)
+        String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body(NEW_SEASON)
                 .post("/api/seasons").then().statusCode(201).extract().path("id");
 
         given().cookie("stv_session", alex).queryParam("season", id).get("/api/teams").then().statusCode(200)
@@ -110,7 +110,7 @@ class SeasonsTest {
     }
 
     @Test
-    void withoutCarryOverIsTheNewSeasonEmpty() {
+    void withoutCarryOverTheNewSeasonIsEmpty() {
         String id = given().cookie("stv_session", alex).contentType(ContentType.JSON)
                 .body("{\"name\":\"2027/28\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\"}")
                 .post("/api/seasons").then().statusCode(201).extract().path("id");
@@ -119,7 +119,7 @@ class SeasonsTest {
     }
 
     @Test
-    void sai03AlsoOneOldSeasonCanAgainCurrentBecome() {
+    void sai03OldSeasonCanBecomeCurrentAgain() {
         given().cookie("stv_session", alex).post("/api/seasons/" + SEASON_2025 + "/activate").then().statusCode(204);
         given().cookie("stv_session", alex).get("/api/seasons").then().statusCode(200)
                 .body("current", contains(false, true))
@@ -127,7 +127,7 @@ class SeasonsTest {
     }
 
     @Test
-    void conflictsAndError() {
+    void conflictsAndErrors() {
         given().cookie("stv_session", alex).contentType(ContentType.JSON)
                 .body("{\"name\":\"2026/27\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\"}")
                 .post("/api/seasons").then().statusCode(409);
@@ -146,7 +146,7 @@ class SeasonsTest {
     @Test
     void rr07OnlyAdminsManageSeasons() {
         String marc = login("marc");
-        given().cookie("stv_session", marc).contentType(ContentType.JSON).body(NEW)
+        given().cookie("stv_session", marc).contentType(ContentType.JSON).body(NEW_SEASON)
                 .post("/api/seasons").then().statusCode(403);
         given().cookie("stv_session", marc).post("/api/seasons/" + SEASON_2025 + "/activate").then().statusCode(403);
         given().get("/api/seasons").then().statusCode(401);

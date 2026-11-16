@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
-/** F-04: An- und Abmeldung mit Übersicht (ANM-01 bis ANM-32, RR-02, RR-03, RR-06). IDs aus docs/testdaten.md. */
+/** F-04: responses with overview (ANM-01 to ANM-32, RR-02, RR-03, RR-06). IDs from docs/test-data.md. */
 @QuarkusTest
 class ResponsesTest {
 
@@ -50,7 +50,7 @@ class ResponsesTest {
         return given().cookie("stv_session", session).get("/api/events/" + event + "/overview").then();
     }
 
-    private static ValidatableResponse set(String session, String event, String person, String body) {
+    private static ValidatableResponse respond(String session, String event, String person, String body) {
         return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body)
                 .put("/api/events/" + event + "/responses/" + person).then();
     }
@@ -59,52 +59,52 @@ class ResponsesTest {
         given().contentType(ContentType.JSON).body("{\"now\":\"" + now + "\"}").put("/api/test/clock").then().statusCode(204);
     }
 
-    private static List<String> names(JsonPath json, String path) {
+    private static List<String> firstNames(JsonPath json, String path) {
         return json.getList(path + ".person.firstName");
     }
 
-    // ------------------------------------------------------------------ Übersicht (S1)
+    // ------------------------------------------------------------------ Overview (S1)
 
     @Test
-    void s1OverviewFromEvent01() {
+    void s1OverviewOfEvent01() {
         JsonPath json = overview(login("petra"), T01).statusCode(200).extract().jsonPath();
 
-        // ANM-23, ANM-32: Gesamttotal mit jeder Spielerin einmal (Lea zählt einmal)
+        // ANM-23, ANM-32: grand total with every player once (Lea counts once)
         assertThat(json.getMap("total"), equalTo(Map.of("attending", 7, "declined", 2, "maybe", 1, "pending", 2)));
 
-        // ANM-20: nach Team, Teams nach Name
+        // ANM-20: by team, teams by name
         assertThat(json.getList("teams.team.name"), contains("Team 1", "Team 2"));
         assertThat(json.getMap("teams[0].counts"), equalTo(Map.of("attending", 5, "declined", 1, "maybe", 0, "pending", 1)));
         assertThat(json.getMap("teams[1].counts"), equalTo(Map.of("attending", 3, "declined", 1, "maybe", 1, "pending", 1)));
 
-        // ANM-21: Linien in ihrer Reihenfolge, dann Goalies, dann «Ohne Linie»; Personen nach Nachname
+        // ANM-21: lines in their sort order, then goalies, then «Ohne Linie»; persons by last name
         assertThat(json.getList("teams[0].groups.name"), contains("Linie 1", "Linie 2", "Goalies", "Ohne Linie"));
         assertThat(json.getList("teams[0].groups.type"), contains("LINE", "LINE", "GOALIES", "NO_LINE"));
         assertThat(json.getString("teams[0].groups[0].groupId"), equalTo(GROUP_LINE_1_TEAM_1));
         assertThat(json.getString("teams[0].groups[3].groupId"), nullValue());
-        assertThat(names(json, "teams[0].groups[0].entries"), contains("Mia", "Lea", "Anna"));
+        assertThat(firstNames(json, "teams[0].groups[0].entries"), contains("Mia", "Lea", "Anna"));
         assertThat(json.getList("teams[0].groups[0].entries.response.status"), contains("DECLINED", "ATTENDING", "ATTENDING"));
-        assertThat(names(json, "teams[0].groups[1].entries"), contains("Sara", "Nina"));
+        assertThat(firstNames(json, "teams[0].groups[1].entries"), contains("Sara", "Nina"));
         assertThat(json.getList("teams[0].groups[1].entries.response.status"), contains("ATTENDING", "PENDING"));
-        assertThat(names(json, "teams[0].groups[2].entries"), contains("Jana"));
-        assertThat(names(json, "teams[0].groups[3].entries"), contains("Kim"));
+        assertThat(firstNames(json, "teams[0].groups[2].entries"), contains("Jana"));
+        assertThat(firstNames(json, "teams[0].groups[3].entries"), contains("Kim"));
 
-        // ANM-31: Petra als Spielerin in Team 2, Lea in beiden Teams; leere Gruppen fehlen nicht hier, Team 2 hat keine «Ohne Linie»
+        // ANM-31: Petra as a player in Team 2, Lea in both teams; no empty group is missing here, Team 2 has no «Ohne Linie»
         assertThat(json.getList("teams[1].groups.name"), contains("Linie 1", "Linie 2", "Goalies"));
-        assertThat(names(json, "teams[1].groups[0].entries"), contains("Petra", "Eva", "Lara"));
+        assertThat(firstNames(json, "teams[1].groups[0].entries"), contains("Petra", "Eva", "Lara"));
         assertThat(json.getList("teams[1].groups[0].entries.response.status"), contains("ATTENDING", "MAYBE", "ATTENDING"));
-        assertThat(names(json, "teams[1].groups[1].entries"), contains("Lea", "Zoe"));
-        assertThat(names(json, "teams[1].groups[2].entries"), contains("Ella"));
+        assertThat(firstNames(json, "teams[1].groups[1].entries"), contains("Lea", "Zoe"));
+        assertThat(firstNames(json, "teams[1].groups[2].entries"), contains("Ella"));
 
-        // ANM-22: Coach-Block mit Team, nicht unter den Spielerinnen von Team 1
-        assertThat(names(json, "coaches"), contains("Petra", "Marc"));
+        // ANM-22: coach block with team, not among the players of Team 1
+        assertThat(firstNames(json, "coaches"), contains("Petra", "Marc"));
         assertThat(json.getList("coaches.team.name"), contains("Team 1", "Team 2"));
         assertThat(json.getList("coaches.response.status"), contains("ATTENDING", "DECLINED"));
     }
 
     @Test
-    void anm21EmptyGroupsMissing() {
-        // Termin 02 nur Team 1; nach S14 ist «Ohne Linie» leer
+    void anm21EmptyGroupsAreLeftOut() {
+        // Event 02 only Team 1; after S14 «Ohne Linie» is empty
         String petra = login("petra");
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body("{\"groupId\":\"30000000-0000-4000-8000-000000000002\"}")
@@ -112,13 +112,13 @@ class ResponsesTest {
                 .then().statusCode(204);
         JsonPath json = overview(petra, T01).statusCode(200).extract().jsonPath();
         assertThat(json.getList("teams[0].groups.name"), contains("Linie 1", "Linie 2", "Goalies"));
-        assertThat(names(json, "teams[0].groups[1].entries"), contains("Kim", "Sara", "Nina"));
+        assertThat(firstNames(json, "teams[0].groups[1].entries"), contains("Kim", "Sara", "Nina"));
     }
 
-    // ------------------------------------------------------------------ Kommentare (S4)
+    // ------------------------------------------------------------------ Comments (S4)
 
     @Test
-    void s4CommentsNotForPlayers() {
+    void s4CommentsHiddenFromPlayers() {
         JsonPath json = overview(login("anna"), T01).statusCode(200).extract().jsonPath();
         List<Map<String, Object>> all = json.getList("teams.groups.flatten().entries.flatten().response");
         assertThat(all, everyItem(not(hasKey("comment"))));
@@ -126,10 +126,10 @@ class ResponsesTest {
     }
 
     @Test
-    void s4CommentsForCoachOnlyInOwnTeam() {
+    void s4CoachSeesCommentsOnlyInOwnTeam() {
         JsonPath json = overview(login("petra"), T01).statusCode(200).extract().jsonPath();
         assertThat(json.getString("teams[0].groups[0].entries[0].response.comment"), equalTo("Krank"));
-        // RR-06: Petra ist in Team 2 Spielerin, sieht Evas Kommentar dort nicht, auch nicht Marcs
+        // RR-06: Petra is a player in Team 2, does not see Eva's comment there, nor Marc's
         assertThat(json.getMap("teams[1].groups[0].entries[1].response"), not(hasKey("comment")));
         assertThat(json.getMap("coaches[1].response"), not(hasKey("comment")));
 
@@ -140,7 +140,7 @@ class ResponsesTest {
     }
 
     @Test
-    void anm07OwnCommentAndAdminSeesAll() {
+    void anm07OwnCommentVisibleAndAdminSeesAll() {
         JsonPath mia = overview(login("mia"), T01).statusCode(200).extract().jsonPath();
         assertThat(mia.getString("teams[0].groups[0].entries[0].response.comment"), equalTo("Krank"));
         assertThat(mia.getMap("teams[1].groups[0].entries[1].response"), not(hasKey("comment")));
@@ -152,81 +152,81 @@ class ResponsesTest {
     }
 
     @Test
-    void rr02OverviewOnlyForMembersTheTeams() {
+    void rr02OverviewOnlyForMembersOfTheTeams() {
         overview(login("ruth"), T01).statusCode(403);
         overview(login("anna"), "40000000-0000-4000-8000-000000000099").statusCode(404);
     }
 
-    // ------------------------------------------------------------------ Eigene Antwort (S2, S3, S5)
+    // ------------------------------------------------------------------ Own response (S2, S3, S5)
 
     @Test
-    void s2ResponseWithATap() {
+    void s2RespondWithOneTap() {
         String nina = login("nina");
-        set(nina, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200)
+        respond(nina, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200)
                 .body("status", equalTo("ATTENDING")).body("lateCancellation", equalTo(false))
                 .body("changedAt", equalTo("2026-11-16T06:00:00+01:00"));
         JsonPath json = overview(nina, T01).statusCode(200).extract().jsonPath();
         assertThat(json.getMap("teams[0].counts"), equalTo(Map.of("attending", 6, "declined", 1, "maybe", 0, "pending", 0)));
         assertThat(json.getMap("total"), equalTo(Map.of("attending", 8, "declined", 2, "maybe", 1, "pending", 1)));
-        // ANM-09: bleibt nach Neuladen, auch in der Terminliste
+        // ANM-09: stays after reloading, also in the event list
         given().cookie("stv_session", nina).get("/api/events/" + T01).then().statusCode(200)
                 .body("myResponse.status", equalTo("ATTENDING")).body("counts.attending", equalTo(8));
     }
 
     @Test
-    void anm09ResponseAnyTimeChangeable() {
+    void anm09ResponseChangeableAnyTime() {
         String anna = login("anna");
-        set(anna, T01, "me", "{\"status\":\"DECLINED\",\"comment\":\"  Arzttermin \"}").statusCode(200)
+        respond(anna, T01, "me", "{\"status\":\"DECLINED\",\"comment\":\"  Arzttermin \"}").statusCode(200)
                 .body("status", equalTo("DECLINED")).body("comment", equalTo("Arzttermin"));
-        set(anna, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200)
+        respond(anna, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200)
                 .body("status", equalTo("ATTENDING")).body("$", not(hasKey("comment")));
     }
 
     @Test
-    void s3MaybeWithoutComment() {
+    void s3MaybeWithoutCommentIsRejected() {
         String nina = login("nina");
-        set(nina, T01, "me", "{\"status\":\"MAYBE\"}").statusCode(422)
+        respond(nina, T01, "me", "{\"status\":\"MAYBE\"}").statusCode(422)
                 .contentType("application/problem+json")
                 .body("rule", equalTo("ANM-04")).body("detail", equalTo(ResponseRules.COMMENT_REQUIRED))
                 .body("fields[0].field", equalTo("comment"));
-        set(nina, T01, "me", "{\"status\":\"MAYBE\",\"comment\":\" \"}").statusCode(422);
-        // Nichts gespeichert
+        respond(nina, T01, "me", "{\"status\":\"MAYBE\",\"comment\":\" \"}").statusCode(422);
+        // Nothing saved
         given().cookie("stv_session", nina).get("/api/events/" + T01).then().body("myResponse.status", equalTo("PENDING"));
-        set(nina, T01, "me", "{\"status\":\"MAYBE\",\"comment\":\"Knie\"}").statusCode(200)
+        respond(nina, T01, "me", "{\"status\":\"MAYBE\",\"comment\":\"Knie\"}").statusCode(200)
                 .body("comment", equalTo("Knie"));
     }
 
     @Test
-    void anm03OnlyThreeResponses() {
+    void anm03OnlyThreeResponseValues() {
         String nina = login("nina");
-        set(nina, T01, "me", "{\"status\":\"PENDING\"}").statusCode(400);
-        set(nina, T01, "me", "{}").statusCode(400);
-        set(nina, T01, "me", "{\"status\":\"ATTENDING\",\"comment\":\"" + "x".repeat(201) + "\"}").statusCode(400);
+        respond(nina, T01, "me", "{\"status\":\"PENDING\"}").statusCode(400);
+        respond(nina, T01, "me", "{}").statusCode(400);
+        respond(nina, T01, "me", "{\"status\":\"ATTENDING\",\"comment\":\"" + "x".repeat(201) + "\"}").statusCode(400);
     }
 
     @Test
     void s5LateCancellation() {
         clock("2026-11-16T19:00:00+01:00");
         String anna = login("anna");
-        set(anna, T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200).body("lateCancellation", equalTo(true));
+        respond(anna, T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200).body("lateCancellation", equalTo(true));
         given().cookie("stv_session", login("petra")).get("/api/events/" + T01 + "/overview").then()
                 .body("teams[0].groups[0].entries[2].person.firstName", equalTo("Anna"))
                 .body("teams[0].groups[0].entries[2].response.lateCancellation", equalTo(true));
-        // Zurück auf «dabei»: keine kurzfristige Absage mehr
-        set(anna, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200).body("lateCancellation", equalTo(false));
+        // Back to attending: no longer a late cancellation
+        respond(anna, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200).body("lateCancellation", equalTo(false));
     }
 
     @Test
-    void anm10BeforeTheDeadlineNotLate() {
-        set(login("anna"), T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200)
+    void anm10BeforeTheDeadlineIsNotLate() {
+        respond(login("anna"), T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200)
                 .body("lateCancellation", equalTo(false));
     }
 
     @Test
     void anm02OneResponsePerPersonAndEvent() {
-        // Lea in Team 1 und Team 2: eine Antwort, in beiden Teams sichtbar (ANM-30)
+        // Lea in Team 1 and Team 2: one response, visible in both teams (ANM-30)
         String lea = login("lea");
-        set(lea, T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200);
+        respond(lea, T01, "me", "{\"status\":\"DECLINED\"}").statusCode(200);
         JsonPath json = overview(lea, T01).extract().jsonPath();
         assertThat(json.getString("teams[0].groups[0].entries[1].response.status"), equalTo("DECLINED"));
         assertThat(json.getString("teams[1].groups[1].entries[0].response.status"), equalTo("DECLINED"));
@@ -237,110 +237,110 @@ class ResponsesTest {
     @Test
     void anm01CoachRespondsLikePlayer() {
         String marc = login("marc");
-        set(marc, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200);
+        respond(marc, T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200);
         JsonPath json = overview(marc, T01).extract().jsonPath();
         assertThat(json.getString("coaches[1].response.status"), equalTo("ATTENDING"));
-        // Coaches zählen nicht (ANM-23)
+        // Coaches do not count (ANM-23)
         assertThat(json.getInt("total.attending"), equalTo(7));
     }
 
     @Test
-    void rr02NoResponseOnOtherEvents() {
-        set(login("ruth"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Admin ohne Team antwortet nicht für sich
-        set(login("alex"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(403);
-        set(login("anna"), "40000000-0000-4000-8000-000000000099", "me", "{\"status\":\"ATTENDING\"}").statusCode(404);
+    void rr02NoResponseToOtherTeamsEvents() {
+        respond(login("ruth"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Admin without a team does not respond for themselves
+        respond(login("alex"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(403);
+        respond(login("anna"), "40000000-0000-4000-8000-000000000099", "me", "{\"status\":\"ATTENDING\"}").statusCode(404);
     }
 
     @Test
     void ter06CancelledEventTakesNoResponse() {
-        set(login("anna"), T03, "me", "{\"status\":\"ATTENDING\"}").statusCode(409)
+        respond(login("anna"), T03, "me", "{\"status\":\"ATTENDING\"}").statusCode(409)
                 .body("rule", equalTo("TER-06")).body("detail", equalTo(ResponseRules.CANCELLED));
-        set(login("petra"), T03, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(409);
+        respond(login("petra"), T03, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(409);
     }
 
     @Test
     void ter06PastEventTakesNoResponse() {
-        set(login("anna"), T07, "me", "{\"status\":\"ATTENDING\"}").statusCode(409).body("rule", equalTo("TER-06"));
+        respond(login("anna"), T07, "me", "{\"status\":\"ATTENDING\"}").statusCode(409).body("rule", equalTo("TER-06"));
     }
 
-    // ------------------------------------------------------------------ Stellvertretend (S7, S8)
+    // ------------------------------------------------------------------ On behalf (S7, S8)
 
     @Test
-    void s7OnBehalfResponses() {
+    void s7RespondOnBehalf() {
         String petra = login("petra");
-        set(petra, T01, NINA, "{\"status\":\"DECLINED\",\"comment\":\"Hat angerufen\"}").statusCode(200)
+        respond(petra, T01, NINA, "{\"status\":\"DECLINED\",\"comment\":\"Hat angerufen\"}").statusCode(200)
                 .body("status", equalTo("DECLINED"))
                 .body("enteredBy.firstName", equalTo("Petra")).body("enteredBy.lastName", equalTo("Keller"));
-        // ANM-12: für alle sichtbar, wer eingetragen hat; Nina sieht es bei ihrer Antwort
+        // ANM-12: who entered it is visible to everyone; Nina sees it on her response
         given().cookie("stv_session", login("nina")).get("/api/events/" + T01).then().statusCode(200)
                 .body("myResponse.status", equalTo("DECLINED"))
                 .body("myResponse.enteredBy.firstName", equalTo("Petra"))
                 .body("myResponse.comment", equalTo("Hat angerufen"));
         JsonPath anna = overview(login("anna"), T01).extract().jsonPath();
         assertThat(anna.getString("teams[0].groups[1].entries[1].response.enteredBy.lastName"), equalTo("Keller"));
-        // Antwortet Nina danach selbst, fällt «eingetragen von» weg
-        set(login("nina"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200).body("$", not(hasKey("enteredBy")));
+        // If Nina then responds herself, «eingetragen von» is dropped
+        respond(login("nina"), T01, "me", "{\"status\":\"ATTENDING\"}").statusCode(200).body("$", not(hasKey("enteredBy")));
     }
 
     @Test
     void s7OnBehalfFollowsSameRules() {
         String petra = login("petra");
-        set(petra, T01, NINA, "{\"status\":\"MAYBE\"}").statusCode(422).body("rule", equalTo("ANM-04"));
+        respond(petra, T01, NINA, "{\"status\":\"MAYBE\"}").statusCode(422).body("rule", equalTo("ANM-04"));
         clock("2026-11-16T19:00:00+01:00");
-        set(petra, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200).body("lateCancellation", equalTo(true));
+        respond(petra, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200).body("lateCancellation", equalTo(true));
     }
 
     @Test
-    void s8NoOnBehalfForOtherTeams() {
+    void s8NoRespondingOnBehalfForOtherTeams() {
         String marc = login("marc");
-        set(marc, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(403)
+        respond(marc, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(403)
                 .contentType("application/problem+json").body("rule", equalTo("RR-07"));
-        // Lea ist auch in Team 2 Spielerin: Marc darf
-        set(marc, T01, LEA, "{\"status\":\"DECLINED\"}").statusCode(200);
-        // Nicht für Coaches (Petra ist in Team 2 Spielerin: das geht)
-        set(marc, T01, PETRA, "{\"status\":\"DECLINED\"}").statusCode(200);
-        set(login("petra"), T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // RR-06: Petra ist in Team 2 nur Spielerin
-        set(login("petra"), T01, EVA, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Spielerinnen vertreten niemanden
-        set(login("anna"), T01, MIA, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Nicht Mitglied eines beteiligten Teams
-        set(login("ruth"), T01, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Unveränderte Antwort von Anna
+        // Lea is also a player in Team 2: Marc may
+        respond(marc, T01, LEA, "{\"status\":\"DECLINED\"}").statusCode(200);
+        // Not for coaches (Petra is a player in Team 2: that works)
+        respond(marc, T01, PETRA, "{\"status\":\"DECLINED\"}").statusCode(200);
+        respond(login("petra"), T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // RR-06: Petra is only a player in Team 2
+        respond(login("petra"), T01, EVA, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Players respond for nobody
+        respond(login("anna"), T01, MIA, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Not a member of an involved team
+        respond(login("ruth"), T01, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Anna's response is unchanged
         given().cookie("stv_session", login("anna")).get("/api/events/" + T01).then()
                 .body("myResponse.status", equalTo("ATTENDING"));
     }
 
     @Test
-    void onBehalfForPersonWithoutTeamInEvent() {
-        set(login("petra"), T01, TINA, "{\"status\":\"ATTENDING\"}").statusCode(404);
-        set(login("petra"), T01, "20000000-0000-4000-8000-000000000099", "{\"status\":\"ATTENDING\"}").statusCode(404);
-        set(login("alex"), T01, TINA, "{\"status\":\"ATTENDING\"}").statusCode(404);
+    void onBehalfForPersonWithoutTeamInEventGives404() {
+        respond(login("petra"), T01, TINA, "{\"status\":\"ATTENDING\"}").statusCode(404);
+        respond(login("petra"), T01, "20000000-0000-4000-8000-000000000099", "{\"status\":\"ATTENDING\"}").statusCode(404);
+        respond(login("alex"), T01, TINA, "{\"status\":\"ATTENDING\"}").statusCode(404);
     }
 
     @Test
-    void rr04AdminActsForEvery() {
+    void rr04AdminRespondsForEveryone() {
         String alex = login("alex");
-        set(alex, T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(200).body("enteredBy.firstName", equalTo("Alex"));
-        set(alex, T02, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200);
+        respond(alex, T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(200).body("enteredBy.firstName", equalTo("Alex"));
+        respond(alex, T02, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200);
     }
 
     // ------------------------------------------------------------------ Seed
 
     @Test
-    void seedResponsesByTestData() {
+    void seedResponsesMatchTestData() {
         String anna = login("anna");
         List<Map<String, Object>> list = given().cookie("stv_session", anna).get("/api/events").then().statusCode(200)
                 .extract().jsonPath().getList("findAll { it.id in ['" + T01 + "','" + T02 + "'] }.myResponse");
-        assertThat(list.stream().map(m -> m.get("status")).toList(), contains("ATTENDING", "ATTENDING"));
-        // Termin 02: nur Anna hat geantwortet
+        assertThat(list.stream().map(response -> response.get("status")).toList(), contains("ATTENDING", "ATTENDING"));
+        // Event 02: only Anna has responded
         given().cookie("stv_session", anna).get("/api/events/" + T02).then()
                 .body("counts.attending", equalTo(1)).body("counts.pending", equalTo(6));
-        // Termin 06: niemand
+        // Event 06: nobody
         given().cookie("stv_session", anna).get("/api/events/40000000-0000-4000-8000-000000000006/overview").then()
                 .body("total.pending", equalTo(13)).body("total.attending", equalTo(0));
-        // Termin 04 und 05 (Spieltage)
+        // Events 04 and 05 (match days)
         given().cookie("stv_session", login("petra")).get("/api/events/40000000-0000-4000-8000-000000000004/overview").then()
                 .body("total.attending", equalTo(4)).body("total.maybe", equalTo(1)).body("total.declined", equalTo(1))
                 .body("total.pending", equalTo(1)).body("coaches[0].response.status", equalTo("ATTENDING"));

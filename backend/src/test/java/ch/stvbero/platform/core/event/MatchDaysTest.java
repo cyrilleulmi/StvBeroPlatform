@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * F-05: Spieltage und Aufgebot (AUF-10 bis AUF-28, RR-03, S9, S11). IDs aus docs/testdaten.md.
+ * F-05: match days and call-up (AUF-10 to AUF-28, RR-03, S9, S11). IDs from docs/test-data.md.
  */
 @QuarkusTest
 class MatchDaysTest {
@@ -62,17 +62,17 @@ class MatchDaysTest {
         return given().cookie("stv_session", session).post("/api/events/" + id + "/call-up/publish").then();
     }
 
-    private static ValidatableResponse matchAdd(String session, String event, String body) {
+    private static ValidatableResponse addMatch(String session, String event, String body) {
         return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body)
                 .post("/api/events/" + event + "/matches").then();
     }
 
-    private static ValidatableResponse matchUpdate(String session, String event, String match, String body) {
+    private static ValidatableResponse updateMatch(String session, String event, String match, String body) {
         return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body)
                 .put("/api/events/" + event + "/matches/" + match).then();
     }
 
-    private static ValidatableResponse matchDelete(String session, String event, String match) {
+    private static ValidatableResponse deleteMatch(String session, String event, String match) {
         return given().cookie("stv_session", session).delete("/api/events/" + event + "/matches/" + match).then();
     }
 
@@ -80,16 +80,16 @@ class MatchDaysTest {
         given().contentType(ContentType.JSON).body("{\"now\":\"" + now + "\"}").put("/api/test/clock").then().statusCode(204);
     }
 
-    private static String ids(String... ids) {
-        return "{\"personIds\":[" + String.join(",", List.of(ids).stream().map(i -> "\"" + i + "\"").toList()) + "]}";
+    private static String personIds(String... ids) {
+        return "{\"personIds\":[" + String.join(",", List.of(ids).stream().map(id -> "\"" + id + "\"").toList()) + "]}";
     }
 
-    // ------------------------------------------------------------------ Seed (Kriterium 1)
+    // ------------------------------------------------------------------ Seed (criterion 1)
 
     @Test
     void seedEvent04WithMatchesMeetingPointAndDraft() {
         JsonPath json = event(login("petra"), T04).statusCode(200).extract().jsonPath();
-        // AUF-14: nach Anspielzeit
+        // AUF-14: by start time
         assertThat(json.getList("matches.id"), contains(MATCH_01, MATCH_02));
         assertThat(json.getList("matches.opponent"), contains("UHC Musterdorf", "Unihockey Beispielstadt"));
         assertThat(json.getList("matches.home"), contains(true, false));
@@ -101,7 +101,7 @@ class MatchDaysTest {
         assertThat(json.getString("location.mapsUrl"), equalTo("https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf"));
         assertThat(json.getString("notes"), equalTo("Weisse Trikots mitnehmen"));
         assertThat(json.getString("callUpStatus"), equalTo("DRAFT"));
-        // Petra ist in Team 1 Coach: kein eigener Aufgebotsstatus
+        // Petra is coach in Team 1: no own call-up status
         assertThat(json.get("myCallUp"), nullValue());
     }
 
@@ -111,14 +111,14 @@ class MatchDaysTest {
         assertThat(json.getList("matches.id"), contains(MATCH_03));
         assertThat(json.getString("matches[0].source"), equalTo("MANUAL"));
         assertThat(json.getString("callUpStatus"), equalTo("PUBLISHED"));
-        // AUF-24: jede Spielerin sieht ihren Status; Petra ist in Team 2 Spielerin
+        // AUF-24: every player sees her status; Petra is a player in Team 2
         assertThat(event(login("eva"), T05).extract().path("myCallUp"), equalTo("CALLED_UP"));
         assertThat(event(login("petra"), T05).extract().path("myCallUp"), equalTo("CALLED_UP"));
         assertThat(event(login("lea"), T05).extract().path("myCallUp"), equalTo("NOT_CALLED_UP"));
     }
 
     @Test
-    void auf23DraftStaysForPlayersHidden() {
+    void auf23DraftStaysHiddenFromPlayers() {
         JsonPath json = event(login("anna"), T04).statusCode(200).extract().jsonPath();
         assertThat(json.getString("callUpStatus"), equalTo("NONE"));
         assertThat(json.getString("myCallUp"), equalTo("NO_CALL_UP_YET"));
@@ -132,7 +132,7 @@ class MatchDaysTest {
         assertThat(json.get("myCallUp"), nullValue());
     }
 
-    // ------------------------------------------------------------------ Aufgebot lesen (Kriterium 4, 7)
+    // ------------------------------------------------------------------ Read call-up (criteria 4, 7)
 
     @Test
     void auf21Auf22SelectionByLinesWithResponseStatus() {
@@ -155,17 +155,17 @@ class MatchDaysTest {
     }
 
     @Test
-    void auf28CoachesStandNotInTheSelection() {
+    void auf28CoachesAreNotInTheSelection() {
         JsonPath json = callUp(login("petra"), T04).statusCode(200).extract().jsonPath();
         assertThat(json.getList("groups.entries.person.id.flatten()"), not(hasItem(PETRA)));
         assertThat(json.getList("groups.entries.person.id.flatten()").size(), equalTo(7));
     }
 
     @Test
-    void s11CallUpOnlyForCoachesTheTeamsAndAdmins() {
+    void s11CallUpOnlyForCoachesOfTheTeamAndAdmins() {
         callUp(login("anna"), T04).statusCode(403).body("rule", equalTo("RR-07"));
         callUp(login("marc"), T04).statusCode(403);
-        setCallUp(login("anna"), T04, ids(ANNA)).statusCode(403);
+        setCallUp(login("anna"), T04, personIds(ANNA)).statusCode(403);
         publish(login("anna"), T04).statusCode(403);
         callUp(login("alex"), T04).statusCode(200);
         callUp(login("marc"), T05).statusCode(200);
@@ -174,39 +174,39 @@ class MatchDaysTest {
     @Test
     void auf02NoCallUpForPractices() {
         callUp(login("petra"), T01).statusCode(409).body("rule", equalTo("AUF-02"));
-        setCallUp(login("petra"), T01, ids(ANNA)).statusCode(409);
+        setCallUp(login("petra"), T01, personIds(ANNA)).statusCode(409);
     }
 
     @Test
-    void callUpUnknownEvent404() {
+    void callUpOfUnknownEventGives404() {
         callUp(login("petra"), "40000000-0000-4000-8000-000000000099").statusCode(404);
     }
 
-    // ------------------------------------------------------------------ Aufgebot setzen und veröffentlichen
+    // ------------------------------------------------------------------ Set and publish call-up
 
     @Test
-    void auf22AlsoPendingAndDeclinedCallable() {
+    void auf22PendingAndDeclinedCanAlsoBeCalledUp() {
         String petra = login("petra");
-        JsonPath json = setCallUp(petra, T04, ids(NINA, KIM)).statusCode(200).extract().jsonPath();
+        JsonPath json = setCallUp(petra, T04, personIds(NINA, KIM)).statusCode(200).extract().jsonPath();
         assertThat(json.getInt("calledUpCount"), equalTo(2));
         assertThat(json.getString("status"), equalTo("DRAFT"));
         assertThat(json.getList("groups[1].entries.calledUp"), contains(false, true));
         assertThat(json.getList("groups[3].entries.calledUp"), contains(true));
-        // bleibt gespeichert
+        // stays saved
         assertThat(callUp(petra, T04).extract().path("calledUpCount"), equalTo(2));
     }
 
     @Test
-    void auf28CoachAndOtherAreNotCallable() {
+    void auf28CoachAndOutsidersCannotBeCalledUp() {
         String petra = login("petra");
-        setCallUp(petra, T04, ids(ANNA, PETRA)).statusCode(422).body("rule", equalTo("AUF-28"));
-        setCallUp(petra, T04, ids(TINA)).statusCode(422);
+        setCallUp(petra, T04, personIds(ANNA, PETRA)).statusCode(422).body("rule", equalTo("AUF-28"));
+        setCallUp(petra, T04, personIds(TINA)).statusCode(422);
         setCallUp(petra, T04, "{}").statusCode(400);
         assertThat(callUp(petra, T04).extract().path("calledUpCount"), equalTo(5));
     }
 
     @Test
-    void s9PublishShowsPlayersHerStatus() {
+    void s9PublishingShowsPlayersTheirStatus() {
         String petra = login("petra");
         assertThat(event(login("anna"), T04).extract().path("myCallUp"), equalTo("NO_CALL_UP_YET"));
 
@@ -218,42 +218,42 @@ class MatchDaysTest {
         assertThat(event(login("kim"), T04).extract().path("myCallUp"), equalTo("NOT_CALLED_UP"));
         assertThat(event(login("nina"), T04).extract().path("callUpStatus"), equalTo("PUBLISHED"));
 
-        // nur einmal
+        // only once
         publish(petra, T04).statusCode(409).body("rule", equalTo("AUF-23"));
-        // Änderung danach: bleibt veröffentlicht, Kim jetzt aufgeboten (AUF-27)
-        setCallUp(petra, T04, ids(ANNA, KIM)).statusCode(200).body("status", equalTo("PUBLISHED"));
+        // A change afterwards: stays published, Kim now called up (AUF-27)
+        setCallUp(petra, T04, personIds(ANNA, KIM)).statusCode(200).body("status", equalTo("PUBLISHED"));
         assertThat(event(login("kim"), T04).extract().path("myCallUp"), equalTo("CALLED_UP"));
         assertThat(event(login("lea"), T04).extract().path("myCallUp"), equalTo("NOT_CALLED_UP"));
     }
 
     @Test
-    void auf23EmptyCallUpLetsItselfNotPublish() {
+    void auf23EmptyCallUpCannotBePublished() {
         String petra = login("petra");
-        setCallUp(petra, T04, ids()).statusCode(200).body("status", equalTo("NONE"));
+        setCallUp(petra, T04, personIds()).statusCode(200).body("status", equalTo("NONE"));
         publish(petra, T04).statusCode(409).body("rule", equalTo("AUF-23"));
     }
 
     @Test
-    void ter06OverOrCancelledLetsItselfNotMoreUpdate() {
+    void ter06PastOrCancelledCanNoLongerBeChanged() {
         String petra = login("petra");
         clock("2026-11-22T14:00:00+01:00");
-        setCallUp(petra, T04, ids(ANNA)).statusCode(409).body("rule", equalTo("TER-06"));
+        setCallUp(petra, T04, personIds(ANNA)).statusCode(409).body("rule", equalTo("TER-06"));
         publish(petra, T04).statusCode(409);
         callUp(petra, T04).statusCode(200);
     }
 
     @Test
-    void concurrentSaveGivesNever500() {
+    void concurrentSaveNeverGives500() {
         String petra = login("petra");
-        List<Integer> codes = Concurrently.statuscodes(4,
-                () -> setCallUp(petra, T04, ids(ANNA)).extract().statusCode());
+        List<Integer> codes = Concurrently.statusCodes(4,
+                () -> setCallUp(petra, T04, personIds(ANNA)).extract().statusCode());
         assertThat(codes, everyItem(equalTo(200)));
     }
 
-    // ------------------------------------------------------------------ Spiele (Kriterium 2, 8)
+    // ------------------------------------------------------------------ Matches (criteria 2, 8)
 
     @Test
-    void auf16MatchDayFromHandWithMatchesCreate() {
+    void auf16CreateManualMatchDayWithMatches() {
         String petra = login("petra");
         String eventId = given().cookie("stv_session", petra).contentType(ContentType.JSON).body("""
                         {"type":"MATCH_DAY","title":"Spieltag","start":"2026-12-06T10:00:00+01:00",
@@ -262,10 +262,10 @@ class MatchDaysTest {
                          "notes":"Rote Trikots","meetingPoint":{"time":"2026-12-06T09:00:00+01:00","location":"Bahnhof"}}
                         """.formatted(TEAM_1))
                 .post("/api/events").then().statusCode(201).extract().path("id");
-        matchAdd(petra, eventId, """
+        addMatch(petra, eventId, """
                 {"opponent":"UHC Zwei","startTime":"2026-12-06T12:00:00+01:00","home":false}""").statusCode(201)
                 .body("source", equalTo("MANUAL"));
-        matchAdd(petra, eventId, """
+        addMatch(petra, eventId, """
                 {"opponent":"UHC Eins","startTime":"2026-12-06T10:00:00+01:00","home":true}""").statusCode(201);
 
         JsonPath json = event(petra, eventId).statusCode(200).extract().jsonPath();
@@ -279,36 +279,36 @@ class MatchDaysTest {
     }
 
     @Test
-    void matchAddRules() {
+    void addMatchRules() {
         String petra = login("petra");
-        String match = """
+        String newMatch = """
                 {"opponent":"UHC Drei","startTime":"2026-11-22T12:30:00+01:00","home":true}""";
-        matchAdd(login("anna"), T04, match).statusCode(403);
-        matchAdd(login("marc"), T04, match).statusCode(403);
-        matchAdd(petra, T01, match).statusCode(409).body("rule", equalTo("AUF-01"))
+        addMatch(login("anna"), T04, newMatch).statusCode(403);
+        addMatch(login("marc"), T04, newMatch).statusCode(403);
+        addMatch(petra, T01, newMatch).statusCode(409).body("rule", equalTo("AUF-01"))
                 .body("detail", equalTo("Nur ein Spieltag hat Spiele."));
-        matchAdd(petra, T04, """
+        addMatch(petra, T04, """
                 {"opponent":"UHC Drei","startTime":"2026-11-23T12:30:00+01:00","home":true}""")
                 .statusCode(400).body("fields[0].field", equalTo("startTime"));
-        matchAdd(petra, T04, """
+        addMatch(petra, T04, """
                 {"opponent":"","startTime":"2026-11-22T12:30:00+01:00","home":true}""").statusCode(400);
-        matchAdd(petra, T04, match).statusCode(201);
+        addMatch(petra, T04, newMatch).statusCode(201);
         assertThat(event(petra, T04).extract().jsonPath().getList("matches.opponent"),
                 contains("UHC Musterdorf", "Unihockey Beispielstadt", "UHC Drei"));
     }
 
     @Test
-    void auf15ResultCreateAlsoByTheMatchDay() {
+    void auf15EnterResultAlsoAfterTheMatchDay() {
         String petra = login("petra");
         clock("2026-11-23T08:00:00+01:00");
-        matchUpdate(petra, T04, MATCH_01, """
+        updateMatch(petra, T04, MATCH_01, """
                 {"opponent":"UHC Musterdorf","startTime":"2026-11-22T09:30:00+01:00","home":true,"result":"5:3"}""")
                 .statusCode(200).body("result", equalTo("5:3"));
         assertThat(event(login("anna"), T04).extract().path("matches[0].result"), equalTo("5:3"));
-        matchUpdate(petra, T04, MATCH_01, """
+        updateMatch(petra, T04, MATCH_01, """
                 {"opponent":"UHC Musterdorf","startTime":"2026-11-22T09:30:00+01:00","home":true,"result":"5-3"}""")
                 .statusCode(400);
-        matchUpdate(login("anna"), T04, MATCH_01, """
+        updateMatch(login("anna"), T04, MATCH_01, """
                 {"opponent":"UHC Musterdorf","startTime":"2026-11-22T09:30:00+01:00","home":true,"result":"1:0"}""")
                 .statusCode(403);
     }
@@ -316,29 +316,29 @@ class MatchDaysTest {
     @Test
     void suh06ImportedMatchesAreProtected() {
         String petra = login("petra");
-        matchUpdate(petra, T04, MATCH_02, """
+        updateMatch(petra, T04, MATCH_02, """
                 {"opponent":"Andere","startTime":"2026-11-22T11:45:00+01:00","home":false}""")
                 .statusCode(409).body("rule", equalTo("SUH-06"));
-        matchDelete(petra, T04, MATCH_02).statusCode(409);
-        // Spiel eines anderen Termins
-        matchUpdate(petra, T04, MATCH_03, """
+        deleteMatch(petra, T04, MATCH_02).statusCode(409);
+        // Match of another event
+        updateMatch(petra, T04, MATCH_03, """
                 {"opponent":"UH Testingen","startTime":"2026-11-22T11:45:00+01:00","home":true}""").statusCode(404);
     }
 
     @Test
-    void fromHandCreatedMatchUpdateAndDelete() {
+    void updateAndDeleteManuallyCreatedMatch() {
         String marc = login("marc");
-        matchUpdate(marc, T05, MATCH_03, """
+        updateMatch(marc, T05, MATCH_03, """
                 {"opponent":"UH Testingen II","startTime":"2026-11-28T14:15:00+01:00","home":false}""")
                 .statusCode(200).body("opponent", equalTo("UH Testingen II")).body("home", equalTo(false));
-        matchDelete(login("petra"), T05, MATCH_03).statusCode(403);
-        matchDelete(marc, T05, MATCH_03).statusCode(204);
+        deleteMatch(login("petra"), T05, MATCH_03).statusCode(403);
+        deleteMatch(marc, T05, MATCH_03).statusCode(204);
         assertThat(event(marc, T05).extract().jsonPath().getList("matches"), equalTo(List.of()));
-        matchDelete(marc, T05, MATCH_03).statusCode(404);
+        deleteMatch(marc, T05, MATCH_03).statusCode(404);
     }
 
     @Test
-    void matchDayMoveTakesFromHandCreatedMatchesWith() {
+    void movingMatchDayMovesManuallyCreatedMatches() {
         String marc = login("marc");
         given().cookie("stv_session", marc).contentType(ContentType.JSON).body("""
                         {"type":"MATCH_DAY","title":"Spieltag","start":"2026-11-29T14:00:00+01:00",
@@ -348,7 +348,7 @@ class MatchDaysTest {
     }
 
     @Test
-    void o48ImportedMatchDayOnlyAtSameDayReschedulableResultStaysCreatable() {
+    void o48ImportedMatchDayOnlyReschedulableOnSameDayResultStaysEditable() {
         String petra = login("petra");
         String rescheduled = """
                 {"type":"MATCH_DAY","title":"Spieltag","start":"2026-11-29T09:30:00+01:00",
@@ -356,15 +356,15 @@ class MatchDaysTest {
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(rescheduled)
                 .put("/api/events/" + T04).then().statusCode(422)
                 .body("rule", equalTo("SUH-05")).body("fields[0].field", equalTo("start"));
-        // Spieltag und Spiele bleiben am 22.11.
+        // Match day and matches stay on 22.11.
         event(petra, T04).body("start", equalTo("2026-11-22T09:30:00+01:00"))
                 .body("matches[0].startTime", equalTo("2026-11-22T09:30:00+01:00"));
-        // Am selben Tag verschieben geht
+        // Moving within the same day works
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body("""
                         {"type":"MATCH_DAY","title":"Spieltag","start":"2026-11-22T09:00:00+01:00",
                          "end":"2026-11-22T13:00:00+01:00","teamIds":["%s"]}""".formatted(TEAM_1))
                 .put("/api/events/" + T04).then().statusCode(200);
-        matchUpdate(petra, T04, MATCH_01, """
+        updateMatch(petra, T04, MATCH_01, """
                 {"opponent":"UHC Musterdorf","startTime":"2026-11-22T09:30:00+01:00","home":true,"result":"2:1"}""")
                 .statusCode(200).body("result", equalTo("2:1"));
     }
@@ -378,8 +378,8 @@ class MatchDaysTest {
     }
 
     @Test
-    void auf03MatchDayBelongsToExactlyATeam() {
-        // bestehend aus F-03, hier nur als Kontrolle, dass Spieltage weiterhin ein Team haben
+    void auf03MatchDayBelongsToExactlyOneTeam() {
+        // existing from F-03, here only as a check that match days still have one team
         JsonPath json = event(login("alex"), T04).statusCode(200).extract().jsonPath();
         assertThat(json.getList("teams.id"), containsInAnyOrder(TEAM_1));
     }

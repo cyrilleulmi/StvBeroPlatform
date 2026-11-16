@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** F-00: Anmeldung über Sitzungs-Cookie, /api/ich, /api/kacheln, Abmelden. */
+/** F-00: login via session cookie, /api/me, /api/tiles, logout. */
 @QuarkusTest
 public class AuthTest {
 
@@ -31,14 +31,14 @@ public class AuthTest {
         given().post("/api/test/reset").then().statusCode(204);
     }
 
-    /** Meldet als Seed-Person an und liefert das Sitzungs-Cookie. Auch für andere Tests. */
+    /** Logs in as a seed person and returns the session cookie. Also used by other tests. */
     public static String login(String loginKey) {
         return given().contentType(ContentType.JSON).body("{\"loginKey\":\"" + loginKey + "\"}")
                 .post("/api/test/login").then().statusCode(204).extract().cookie("stv_session");
     }
 
     @Test
-    void withoutSessionGivesIt401AsProblemDetails() {
+    void withoutSessionGives401AsProblemDetails() {
         given().get("/api/me").then().statusCode(401)
                 .contentType("application/problem+json")
                 .body("status", equalTo(401))
@@ -52,7 +52,7 @@ public class AuthTest {
     }
 
     @Test
-    void meDeliversPersonAndCurrentSeason() {
+    void meReturnsPersonAndCurrentSeason() {
         given().cookie("stv_session", login("anna")).get("/api/me").then().statusCode(200)
                 .body("id", equalTo("20000000-0000-4000-8000-000000000005"))
                 .body("firstName", equalTo("Anna"))
@@ -65,7 +65,7 @@ public class AuthTest {
                 .body("memberships[0].teamRole", equalTo("PLAYER"));
     }
 
-    /** Nachbesserung #13: ohne aktuelle Saison 409 als Problem Details (SAI-03), auch für Admins. */
+    /** Rework #13: without a current season 409 as Problem Details (SAI-03), also for admins. */
     @Test
     void meWithoutCurrentSeasonGives409() {
         given().delete("/api/test/current-season").then().statusCode(204);
@@ -80,14 +80,14 @@ public class AuthTest {
     }
 
     @Test
-    void meWithoutSessionGivesAlsoWithoutCurrentSeason401() {
+    void meWithoutSessionGives401EvenWithoutCurrentSeason() {
         given().delete("/api/test/current-season").then().statusCode(204);
 
         given().get("/api/me").then().statusCode(401);
     }
 
     @Test
-    void adminIsPropertyThePerson() {
+    void adminIsAPropertyOfThePerson() {
         given().cookie("stv_session", login("alex")).get("/api/me").then().statusCode(200)
                 .body("admin", equalTo(true))
                 .body("memberships", empty());
@@ -104,7 +104,7 @@ public class AuthTest {
     }
 
     @Test
-    void logoutEndedTheSession() {
+    void logoutEndsTheSession() {
         String session = login("anna");
 
         given().cookie("stv_session", session).post("/api/logout").then().statusCode(204)
@@ -114,7 +114,7 @@ public class AuthTest {
     }
 
     @Test
-    void sessionShowsWhetherSomeoneSignedInIs() {
+    void sessionShowsWhetherSomeoneIsSignedIn() {
         given().get("/api/session").then().statusCode(200).body("signedIn", equalTo(false));
         given().cookie("stv_session", "gibt-es-nicht").get("/api/session").then().statusCode(200)
                 .body("signedIn", equalTo(false));
@@ -122,9 +122,9 @@ public class AuthTest {
                 .body("signedIn", equalTo(true));
     }
 
-    /** Nachbesserung #26 K1: Abmelden ist idempotent, auch mit derselben Sitzung nacheinander. */
+    /** Rework #26 K1: logout is idempotent, also with the same session one after the other. */
     @Test
-    void twiceLogoutWithSameSessionGivesTwice204() {
+    void loggingOutTwiceWithSameSessionGives204Twice() {
         String session = login("anna");
 
         for (int i = 0; i < 2; i++) {
@@ -134,9 +134,9 @@ public class AuthTest {
         given().cookie("stv_session", session).get("/api/me").then().statusCode(401);
     }
 
-    /** Nachbesserung #26 K1: gleichzeitige Abmeldungen mit demselben Cookie enden nie mit 500. */
+    /** Rework #26 K1: concurrent logouts with the same cookie never end with 500. */
     @Test
-    void concurrentLogoutWithSameSessionGivesAlways204() throws Exception {
+    void concurrentLogoutWithSameSessionAlwaysGives204() throws Exception {
         int parallel = 8;
         for (int round = 0; round < 5; round++) {
             String session = login("anna");
@@ -152,9 +152,9 @@ public class AuthTest {
                 }
                 start.countDown();
                 for (Future<Response> response : responses) {
-                    Response r = response.get(30, TimeUnit.SECONDS);
-                    assertEquals(204, r.statusCode(), "Status einer gleichzeitigen Abmeldung");
-                    assertTrue(r.header("Set-Cookie").contains("stv_session=;"), "Cookie wird gelöscht");
+                    Response result = response.get(30, TimeUnit.SECONDS);
+                    assertEquals(204, result.statusCode(), "Status of a concurrent logout");
+                    assertTrue(result.header("Set-Cookie").contains("stv_session=;"), "Cookie is deleted");
                 }
             } finally {
                 pool.shutdownNow();
@@ -164,7 +164,7 @@ public class AuthTest {
     }
 
     @Test
-    void logoutWithoutSessionWorksAlso() {
+    void logoutWithoutSessionAlsoWorks() {
         given().post("/api/logout").then().statusCode(204);
     }
 }

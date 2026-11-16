@@ -16,10 +16,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** F-06: Regeln, wann wer benachrichtigt wird (BEN-01 bis BEN-07, BEN-13). */
+/** F-06: rules for when who is notified (BEN-01 to BEN-07, BEN-13). */
 class NotificationRulesTest {
 
-    /** Termin 01: Di 17.11.2026 18:30, Antwortfrist 24 Stunden, also Mo 16.11. 18:30. */
+    /** Event 01: Tue 17.11.2026 18:30, response deadline 24 hours, so Mon 16.11. 18:30. */
     private static final Instant START = time("2026-11-17T18:30:00+01:00");
 
     private static Instant time(String iso) {
@@ -27,14 +27,14 @@ class NotificationRulesTest {
     }
 
     @Test
-    void ben01ReminderTwelveHoursBeforeTheDeadlineToToTheDeadline() {
+    void ben01ReminderFromTwelveHoursBeforeUntilTheDeadline() {
         assertFalse(NotificationRules.reminderDue(EventStatus.PLANNED, START, 24, time("2026-11-16T06:29:59+01:00")));
         assertTrue(NotificationRules.reminderDue(EventStatus.PLANNED, START, 24, time("2026-11-16T06:30:00+01:00")));
         assertTrue(NotificationRules.reminderDue(EventStatus.PLANNED, START, 24, time("2026-11-16T18:29:59+01:00")));
         assertFalse(NotificationRules.reminderDue(EventStatus.PLANNED, START, 24, time("2026-11-16T18:30:00+01:00")));
-        // Andere Frist verschiebt das Fenster
+        // A different deadline shifts the window
         assertTrue(NotificationRules.reminderDue(EventStatus.PLANNED, START, 0, time("2026-11-17T07:00:00+01:00")));
-        // Abgesagte Termine: keine Erinnerung
+        // Cancelled events: no reminder
         assertFalse(NotificationRules.reminderDue(EventStatus.CANCELLED, START, 24, time("2026-11-16T07:00:00+01:00")));
     }
 
@@ -42,15 +42,15 @@ class NotificationRulesTest {
     void ben02LateCancellationOnlyOnChangeAwayFromAttending() {
         assertTrue(NotificationRules.lateCancellationNotice(ATTENDING, DECLINED, true));
         assertTrue(NotificationRules.lateCancellationNotice(ATTENDING, MAYBE, true));
-        // Vor der Frist ist es nicht kurzfristig
+        // Before the deadline it is not a late cancellation
         assertFalse(NotificationRules.lateCancellationNotice(ATTENDING, DECLINED, false));
-        // Bleibt kurzfristig (vielleicht → nicht dabei): nicht nochmals
+        // Stays a late cancellation (maybe → declined): not again
         assertFalse(NotificationRules.lateCancellationNotice(MAYBE, DECLINED, true));
         assertFalse(NotificationRules.lateCancellationNotice(PENDING, DECLINED, false));
     }
 
     @Test
-    void ben04DeclineACalledUp() {
+    void ben04CalledUpPlayerDeclines() {
         assertTrue(NotificationRules.calledUpPlayerDeclined(true, true, ATTENDING, DECLINED));
         assertTrue(NotificationRules.calledUpPlayerDeclined(true, true, ATTENDING, MAYBE));
         assertTrue(NotificationRules.calledUpPlayerDeclined(true, true, PENDING, DECLINED));
@@ -58,13 +58,13 @@ class NotificationRulesTest {
         assertFalse(NotificationRules.calledUpPlayerDeclined(true, true, DECLINED, MAYBE));
         assertFalse(NotificationRules.calledUpPlayerDeclined(true, true, DECLINED, DECLINED));
         assertFalse(NotificationRules.calledUpPlayerDeclined(true, true, DECLINED, ATTENDING));
-        // Nicht aufgeboten oder nur Entwurf (AUF-23)
+        // Not called up or only a draft (AUF-23)
         assertFalse(NotificationRules.calledUpPlayerDeclined(false, true, ATTENDING, DECLINED));
         assertFalse(NotificationRules.calledUpPlayerDeclined(true, false, ATTENDING, DECLINED));
     }
 
     @Test
-    void ben05OnlyAffected() {
+    void ben05OnlyAffectedPersonsAreNotified() {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
         UUID c = UUID.randomUUID();
@@ -74,7 +74,7 @@ class NotificationRulesTest {
     }
 
     @Test
-    void ben07ReschedulingIsOneOtherStartTime() {
+    void ben07ReschedulingMeansADifferentStartTime() {
         assertTrue(NotificationRules.rescheduled(START, time("2026-11-17T19:00:00+01:00")));
         assertFalse(NotificationRules.rescheduled(START, time("2026-11-17T18:30:00+01:00")));
     }
@@ -87,7 +87,7 @@ class NotificationRulesTest {
     }
 
     @Test
-    void texts() {
+    void notificationTexts() {
         assertEquals("Training Di 17.11.", NotificationRules.label("Training", START));
         assertEquals("Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.",
                 NotificationRules.lateCancellationText("Anna Muster", "Training Di 17.11.", DECLINED));

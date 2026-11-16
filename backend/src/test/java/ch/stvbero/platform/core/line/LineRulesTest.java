@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Unit-Tests der Linienregeln (LIN-02, LIN-04, LIN-05, LIN-06, LIN-07, LIN-09, LIN-10). */
+/** Unit tests of the line rules (LIN-02, LIN-04, LIN-05, LIN-06, LIN-07, LIN-09, LIN-10). */
 class LineRulesTest {
 
     private static final UUID L1 = UUID.randomUUID();
@@ -42,30 +42,30 @@ class LineRulesTest {
     }
 
     @Test
-    void lin06WithoutLineRemovedEveryAssignment() {
+    void lin06NoLineRemovesEveryAssignment() {
         assertEquals(Set.of(), LineRules.assign(List.of(L1), null));
     }
 
     @Test
-    void lin04SeveralPreviousBecomeOnTheLimitShortened() {
-        // Falls einmal mehrere Zuweisungen bestehen (Regel später gelockert), bleibt nur die neueste.
+    void lin04SeveralPreviousAreCutToTheLimit() {
+        // If several assignments ever exist (rule relaxed later), only the newest one stays.
         assertEquals(Set.of(L3), LineRules.assign(List.of(L1, L2), L3));
     }
 
     @Test
     void lin10OnlyPlayersAreAssignable() {
         assertDoesNotThrow(() -> LineRules.checkAssignable(ANNA, TeamRole.PLAYER));
-        DomainError f = assertThrows(DomainError.class, () -> LineRules.checkAssignable(ANNA, TeamRole.COACH));
-        assertEquals(409, f.status());
-        assertEquals("LIN-10", f.rule());
+        DomainError error = assertThrows(DomainError.class, () -> LineRules.checkAssignable(ANNA, TeamRole.COACH));
+        assertEquals(409, error.status());
+        assertEquals("LIN-10", error.rule());
         assertThrows(DomainError.class, () -> LineRules.checkAssignable(ANNA, null));
     }
 
     @Test
-    void lin05GoaliesLetItselfNotDelete() {
-        DomainError f = assertThrows(DomainError.class, () -> LineRules.checkIsLine(GOALIE_GROUP, "löschen"));
-        assertEquals(409, f.status());
-        assertEquals("LIN-05", f.rule());
+    void lin05GoaliesCannotBeDeleted() {
+        DomainError error = assertThrows(DomainError.class, () -> LineRules.checkIsLine(GOALIE_GROUP, "löschen"));
+        assertEquals(409, error.status());
+        assertEquals("LIN-05", error.rule());
         assertDoesNotThrow(() -> LineRules.checkIsLine(LINE_1, "löschen"));
     }
 
@@ -80,25 +80,25 @@ class LineRulesTest {
     }
 
     @Test
-    void getOnlyMembersAndAdmins() {
+    void onlyMembersAndAdminsCanView() {
         assertDoesNotThrow(() -> LineRules.checkCanView(false, TeamRole.PLAYER));
         assertDoesNotThrow(() -> LineRules.checkCanView(true, null));
         assertEquals(403, assertThrows(DomainError.class, () -> LineRules.checkCanView(false, null)).status());
     }
 
     @Test
-    void lin09NamePerTeamUniqueWithoutCaseCase() {
+    void lin09NameUniquePerTeamIgnoringCase() {
         List<LineRules.GroupInfo> groups = List.of(LINE_1, LINE_2, GOALIE_GROUP);
-        DomainError f = assertThrows(DomainError.class, () -> LineRules.checkName(groups, " linie 2 ", null));
-        assertEquals("LIN-09", f.rule());
+        DomainError error = assertThrows(DomainError.class, () -> LineRules.checkName(groups, " linie 2 ", null));
+        assertEquals("LIN-09", error.rule());
         assertThrows(DomainError.class, () -> LineRules.checkName(groups, "GOALIES", null));
         assertDoesNotThrow(() -> LineRules.checkName(groups, "Linie 3", null));
-        // Der eigene Name ist nicht «vergeben»
+        // The group's own name is not «taken»
         assertDoesNotThrow(() -> LineRules.checkName(groups, "Linie 2", L2));
     }
 
     @Test
-    void lin09MoveNumberedNew() {
+    void lin09MoveRenumbers() {
         List<UUID> lines = List.of(L1, L2, L3);
         assertEquals(List.of(L3, L1, L2), LineRules.move(lines, L3, 1));
         assertEquals(List.of(L2, L1, L3), LineRules.move(lines, L1, 2));
@@ -107,27 +107,27 @@ class LineRulesTest {
     }
 
     @Test
-    void displayLinesBySortOrderThenGoaliesThenWithoutLine() {
+    void displayLinesBySortOrderThenGoaliesThenNoLine() {
         LineRules.GroupInfo front = new LineRules.GroupInfo(L3, GroupType.LINE, "Zuerst", 1);
         LineRules.GroupInfo end = new LineRules.GroupInfo(L1, GroupType.LINE, "Linie 1", 2);
-        TeamDetailDto.Lineup e = LineRules.buildLineup(
+        TeamDetailDto.Lineup lineup = LineRules.buildLineup(
                 List.of(GOALIE_GROUP, end, front),
                 List.of(ANNA, MIA, JANA, KIM),
                 Map.of(ANNA.id(), Set.of(L1), MIA.id(), Set.of(L1), JANA.id(), Set.of(GOALIES)));
 
-        assertEquals(List.of("Zuerst", "Linie 1", "Goalies"), e.groups().stream().map(TeamDetailDto.GroupWithPlayers::name).toList());
-        // Leere Gruppen bleiben in der Einteilung (Linien-Screen zeigt sie)
-        assertEquals(List.of(), e.groups().get(0).players());
-        // Innerhalb einer Gruppe nach Nachname
-        assertEquals(List.of(MIA, ANNA), e.groups().get(1).players());
-        assertEquals(List.of(JANA), e.groups().get(2).players());
-        assertEquals(List.of(KIM), e.noLine());
+        assertEquals(List.of("Zuerst", "Linie 1", "Goalies"), lineup.groups().stream().map(TeamDetailDto.GroupWithPlayers::name).toList());
+        // Empty groups stay in the lineup (the lines screen shows them)
+        assertEquals(List.of(), lineup.groups().get(0).players());
+        // Within a group by last name
+        assertEquals(List.of(MIA, ANNA), lineup.groups().get(1).players());
+        assertEquals(List.of(JANA), lineup.groups().get(2).players());
+        assertEquals(List.of(KIM), lineup.noLine());
     }
 
     @Test
-    void lin06AssignmentToUnknownGroupCountsAsWithoutLine() {
-        TeamDetailDto.Lineup e = LineRules.buildLineup(List.of(LINE_1), List.of(ANNA),
+    void lin06AssignmentToUnknownGroupCountsAsNoLine() {
+        TeamDetailDto.Lineup lineup = LineRules.buildLineup(List.of(LINE_1), List.of(ANNA),
                 Map.of(ANNA.id(), Set.of(UUID.randomUUID())));
-        assertEquals(List.of(ANNA), e.noLine());
+        assertEquals(List.of(ANNA), lineup.noLine());
     }
 }

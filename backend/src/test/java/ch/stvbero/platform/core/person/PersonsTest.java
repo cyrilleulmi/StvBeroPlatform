@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 
-/** F-01: Personenverwaltung (PTF-01, PTF-11, RR-04, RR-07). */
+/** F-01: person administration (PTF-01, PTF-11, RR-04, RR-07). */
 @QuarkusTest
 class PersonsTest {
 
@@ -29,7 +29,7 @@ class PersonsTest {
     }
 
     @Test
-    void listByLastNameWithSearch() {
+    void listIsSortedByLastNameAndSearchable() {
         given().cookie("stv_session", alex).get("/api/persons").then().statusCode(200)
                 .body("", hasSize(17))
                 .body("[0].lastName", equalTo("Admin"))
@@ -41,7 +41,7 @@ class PersonsTest {
     }
 
     @Test
-    void ptf11PersonCreateAndUpdate() {
+    void ptf11CreateAndUpdatePerson() {
         String id = given().cookie("stv_session", alex).contentType(ContentType.JSON)
                 .body("{\"firstName\":\" Nora \",\"lastName\":\"Lang\",\"email\":\"\"}")
                 .post("/api/persons").then().statusCode(201)
@@ -62,7 +62,7 @@ class PersonsTest {
     }
 
     @Test
-    void personDetailShowsMembershipsAllSeasons() {
+    void personDetailShowsMembershipsOfAllSeasons() {
         given().cookie("stv_session", alex).get("/api/persons/" + PETRA).then().statusCode(200)
                 .body("memberships.team.name", contains("Team 1", "Team 2"))
                 .body("memberships.teamRole", contains("COACH", "PLAYER"));
@@ -92,7 +92,7 @@ class PersonsTest {
     }
 
     @Test
-    void rr07NotAdminsGet403() {
+    void rr07NonAdminsGet403() {
         String petra = login("petra");
         given().cookie("stv_session", petra).get("/api/persons").then().statusCode(403)
                 .contentType("application/problem+json")

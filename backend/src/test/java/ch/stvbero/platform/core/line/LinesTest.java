@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
-/** F-02: Linien und Goalies (LIN-01 bis LIN-11, RR-03, RR-07). IDs aus docs/testdaten.md. */
+/** F-02: lines and goalies (LIN-01 to LIN-11, RR-03, RR-07). IDs from docs/test-data.md. */
 @QuarkusTest
 class LinesTest {
 
@@ -78,22 +78,22 @@ class LinesTest {
     }
 
     @Test
-    void k2LineCreateRenameMoveDelete() {
-        String l3 = given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Linie 3"))
+    void k2CreateRenameMoveAndDeleteLine() {
+        String line3 = given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Linie 3"))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(201)
                 .body("type", equalTo("LINE"))
                 .body("sortOrder", equalTo(3))
                 .extract().path("id");
 
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Powerplay", 1))
-                .put("/api/teams/" + TEAM_1 + "/groups/" + l3).then().statusCode(200)
+                .put("/api/teams/" + TEAM_1 + "/groups/" + line3).then().statusCode(200)
                 .body("name", equalTo("Powerplay"))
                 .body("sortOrder", equalTo(1));
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200)
                 .body("groups.name", contains("Powerplay", "Linie 1", "Linie 2", "Goalies"))
                 .body("groups.sortOrder", contains(1, 2, 3, null));
 
-        // Linie 2 löschen: Sara und Nina sind danach ohne Linie (LIN-06), Reihenfolge ohne Lücke
+        // Delete line 2: Sara and Nina then have no line (LIN-06), sort order without a gap
         given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(204);
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200)
                 .body("groups.name", contains("Powerplay", "Linie 1", "Goalies"))
@@ -103,7 +103,7 @@ class LinesTest {
     }
 
     @Test
-    void k2NewLineToSpecificPosition() {
+    void k2NewLineAtSpecificPosition() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Linie 0", 1))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(201).body("sortOrder", equalTo(1));
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then()
@@ -111,14 +111,14 @@ class LinesTest {
     }
 
     @Test
-    void lin09NamePerTeamUnique() {
+    void lin09NameUniquePerTeam() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("linie 2"))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(409).body("rule", equalTo("LIN-09"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Linie 1"))
                 .put("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(409).body("rule", equalTo("LIN-09"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line(""))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(400).body("fields[0].field", equalTo("name"));
-        // Gleicher Name in einem anderen Team ist erlaubt
+        // The same name in another team is allowed
         given().cookie("stv_session", login("marc")).contentType(ContentType.JSON).body(line("Linie 3"))
                 .post("/api/teams/" + TEAM_2 + "/groups").then().statusCode(201);
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Linie 3"))
@@ -126,10 +126,10 @@ class LinesTest {
     }
 
     @Test
-    void doubleClickOnLineCreateGives409InsteadOf500() {
+    void doubleClickOnCreateLineGives409InsteadOf500() {
         for (int round = 0; round < 5; round++) {
             reset();
-            List<Integer> status = Concurrently.statuscodes(2, () -> given().cookie("stv_session", petra)
+            List<Integer> status = Concurrently.statusCodes(2, () -> given().cookie("stv_session", petra)
                     .contentType(ContentType.JSON).body(line("Linie 3"))
                     .post("/api/teams/" + TEAM_1 + "/groups").statusCode());
             assertThat(status, contains(201, 409));
@@ -137,19 +137,19 @@ class LinesTest {
     }
 
     @Test
-    void k3AssignAndWithoutLine() {
-        // S14: Kim der Linie 2 zuweisen
+    void k3AssignAndSetNoLine() {
+        // S14: assign Kim to line 2
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + KIM).then().statusCode(204);
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then()
                 .body("groups[1].players.firstName", contains("Kim", "Sara", "Nina"))
                 .body("noLine", empty());
-        // zurück auf «ohne Linie»
+        // back to «ohne Linie»
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(null))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + KIM).then().statusCode(204);
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then()
                 .body("noLine.firstName", contains("Kim"));
-        // Zur Goalie machen
+        // Make her a goalie
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T1_GOALIES))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + KIM).then().statusCode(204);
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then()
@@ -169,22 +169,22 @@ class LinesTest {
     }
 
     @Test
-    void lin03LeaHasInEveryTeamOneOwnLine() {
+    void lin03LeaHasHerOwnLineInEveryTeam() {
         given().cookie("stv_session", login("lea")).get("/api/me").then().statusCode(200)
                 .body("memberships.team.name", contains("Team 1", "Team 2"))
                 .body("memberships.groupId", contains(T1_LINE_1, T2_LINE_2));
-        // Änderung in Team 1 lässt Team 2 unverändert
+        // A change in Team 1 leaves Team 2 unchanged
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + LEA).then().statusCode(204);
         given().cookie("stv_session", login("lea")).get("/api/me").then().statusCode(200)
                 .body("memberships.groupId", contains(T1_LINE_2, T2_LINE_2));
-        // Eine Gruppe eines anderen Teams lässt sich nicht zuweisen
+        // A group of another team cannot be assigned
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T2_LINE_1))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + LEA).then().statusCode(404);
     }
 
     @Test
-    void lin10OnlyPlayersTheTeams() {
+    void lin10OnlyPlayersOfTheTeam() {
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T1_LINE_1))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + PETRA).then().statusCode(409)
                 .body("rule", equalTo("LIN-10"));
@@ -193,7 +193,7 @@ class LinesTest {
     }
 
     @Test
-    void lin10ChangeToTheCoachRemovedTheAssignment() {
+    void lin10ChangeToCoachRemovesTheAssignment() {
         String alex = login("alex");
         given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
                 .put("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(200)
@@ -219,7 +219,7 @@ class LinesTest {
     }
 
     @Test
-    void k6NewTeamHasImmediatelyGoalies() {
+    void k6NewTeamHasGoaliesImmediately() {
         String alex = login("alex");
         String id = given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"name\":\"Team 4\"}")
                 .post("/api/teams").then().statusCode(201).extract().path("id");
@@ -229,10 +229,10 @@ class LinesTest {
     }
 
     @Test
-    void k7OnlyCoachesTheTeamsAndAdminsUpdate() {
+    void k7OnlyCoachesOfTheTeamAndAdminsCanEdit() {
         String marc = login("marc");
         String anna = login("anna");
-        // marc ist Coach von Team 2, nicht von Team 1: 403 (RR-07)
+        // marc is coach of Team 2, not of Team 1: 403 (RR-07)
         given().cookie("stv_session", marc).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
         given().cookie("stv_session", marc).contentType(ContentType.JSON).body(line("Linie 3"))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
@@ -242,7 +242,7 @@ class LinesTest {
         given().cookie("stv_session", marc).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + ANNA).then().statusCode(403);
 
-        // anna ist Spielerin: darf lesen, nicht ändern
+        // anna is a player: may read, not change
         given().cookie("stv_session", anna).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200)
                 .body("groups", hasSize(3));
         given().cookie("stv_session", anna).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
@@ -250,19 +250,19 @@ class LinesTest {
         given().cookie("stv_session", anna).contentType(ContentType.JSON).body(line("Linie 3"))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
 
-        // petra ist in Team 2 nur Spielerin
+        // petra is only a player in Team 2
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T2_LINE_1))
                 .put("/api/teams/" + TEAM_2 + "/assignments/" + LEA).then().statusCode(403);
 
-        // Admin darf
+        // Admin may
         given().cookie("stv_session", login("alex")).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + ANNA).then().statusCode(204);
-        // Ohne Anmeldung: 401
+        // Without login: 401
         given().get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(401);
     }
 
     @Test
-    void unknownTeamAndUnknownLine() {
+    void unknownTeamAndUnknownLineGive404() {
         String alex = login("alex");
         given().cookie("stv_session", alex).get("/api/teams/10000000-0000-4000-8000-000000000099/groups").then().statusCode(404);
         given().cookie("stv_session", alex).delete("/api/teams/" + TEAM_1 + "/groups/" + T2_LINE_1).then().statusCode(404);
@@ -280,7 +280,7 @@ class LinesTest {
     void lin02ConcurrentAssignmentGivesNo500() {
         for (int round = 0; round < 5; round++) {
             reset();
-            List<Integer> status = Concurrently.statuscodes(2, () -> given().cookie("stv_session", petra)
+            List<Integer> status = Concurrently.statusCodes(2, () -> given().cookie("stv_session", petra)
                     .contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                     .put("/api/teams/" + TEAM_1 + "/assignments/" + KIM).statusCode());
             assertThat(status, not(hasItem(500)));

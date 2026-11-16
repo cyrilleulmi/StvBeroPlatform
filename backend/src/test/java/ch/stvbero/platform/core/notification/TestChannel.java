@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Zweiter Kanal nur in den Tests (BEN-11): zeigt, dass ein weiterer Kanal (später E-Mail oder Push) jede
- * Nachricht erhält, ohne dass sich die Auslöser ändern.
+ * Second channel used only in tests (BEN-11): shows that a further channel (later e-mail or push) receives
+ * every message without the triggers changing.
  */
 @ApplicationScoped
 public class TestChannel implements Channel {
 
     private final List<Message> kept = new CopyOnWriteArrayList<>();
 
-    /** Über eine Methode, nicht das Feld: Der Test erhält einen Client-Proxy. */
+    /** Through a method, not the field: the test receives a client proxy. */
     List<Message> kept() {
         return kept;
     }

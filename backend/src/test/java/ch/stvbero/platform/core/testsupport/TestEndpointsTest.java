@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** F-00, Kriterien 8 und 10: Test-Endpunkte im Profil test, injizierte Uhr. */
+/** F-00, criteria 8 and 10: test endpoints in the test profile, injected clock. */
 @QuarkusTest
 class TestEndpointsTest {
 
@@ -28,7 +28,7 @@ class TestEndpointsTest {
     }
 
     @Test
-    void resetSetsClockOnDefault() {
+    void resetSetsClockToDefault() {
         given().contentType(ContentType.JSON).body("{\"now\":\"2030-01-01T12:00:00+01:00\"}")
                 .put("/api/test/clock").then().statusCode(204);
 
@@ -40,7 +40,7 @@ class TestEndpointsTest {
     }
 
     @Test
-    void clockSetChangedNowInWholeBackend() {
+    void settingClockChangesNowInWholeBackend() {
         given().contentType(ContentType.JSON).body("{\"now\":\"2026-11-16T19:00:00+01:00\"}")
                 .put("/api/test/clock").then().statusCode(204);
 
@@ -49,16 +49,16 @@ class TestEndpointsTest {
     }
 
     @Test
-    void clockReleaseUsesRealTime() {
+    void releasingClockUsesRealTime() {
         given().delete("/api/test/clock").then().statusCode(204);
 
         given().get("/api/test/clock").then().statusCode(200).body("fixed", equalTo(false));
         long gap = Math.abs(clock.instant().toEpochMilli() - System.currentTimeMillis());
-        assertEquals(true, gap < 5_000, "Abstand zur Systemzeit: " + gap);
+        assertEquals(true, gap < 5_000, "Gap to system time: " + gap);
     }
 
     @Test
-    void clockSetWithoutInstantIsInvalid() {
+    void settingClockWithoutInstantIsInvalid() {
         given().contentType(ContentType.JSON).body("{}").put("/api/test/clock").then().statusCode(400).contentType("application/problem+json").body("fields[0].field", org.hamcrest.Matchers.equalTo("now"));
     }
 
@@ -83,7 +83,7 @@ class TestEndpointsTest {
     }
 
     @Test
-    void currentSeasonRemoveAndResetPutsSheAgainHer() {
+    void removedCurrentSeasonIsRestoredByReset() {
         given().delete("/api/test/current-season").then().statusCode(204);
         given().cookie("stv_session", alexLogin()).get("/api/seasons").then().statusCode(200)
                 .body("$", hasSize(2))
