@@ -42,7 +42,7 @@ test('F-05 K1 K3 AUF-10 AUF-12 AUF-14: Termin 04 zeigt Spiele nach Anspielzeit, 
   await page.goto(`/termine/${T04}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Spieltag');
   await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toBeVisible();
-  expect(await spiele(page)).toEqual([
+  await expect.poll(() => spiele(page)).toEqual([
     '09:30 Team 1 – UHC Musterdorf',
     '11:45 Unihockey Beispielstadt – Team 1',
   ]);
@@ -68,7 +68,7 @@ test('F-05 K1 AUF-24: Termin 05 ist veröffentlicht – Eva aufgeboten, Lea nich
   await anmelden(page, 'eva');
   await page.goto(`/termine/${T05}`);
   await expect(page.getByTestId('mein-aufgebot')).toHaveText('aufgeboten');
-  expect(await spiele(page)).toEqual(['14:00 Team 2 – UH Testingen']);
+  await expect.poll(() => spiele(page)).toEqual(['14:00 Team 2 – UH Testingen']);
   await expect(page.getByTestId(`spiel-${SPIEL_03}`)).toBeVisible();
 
   await anmelden(page, 'lea');
@@ -106,7 +106,7 @@ test('F-05 K2 AUF-10 bis AUF-16: Petra erfasst einen Spieltag mit zwei Spielen',
 
   await expect(page).toHaveURL(/\/termine\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('status')).toHaveText('Der Termin ist erfasst.');
-  expect(await spiele(page)).toEqual(['10:00 Team 1 – UHC Eins', '13:00 UHC Zwei – Team 1']);
+  await expect.poll(() => spiele(page)).toEqual(['10:00 Team 1 – UHC Eins', '13:00 UHC Zwei – Team 1']);
   await expect(page.getByTestId('treffpunkt')).toHaveText('09:00 · Bahnhof');
   await expect(page.getByTestId('spielort-karte')).toHaveAttribute('href', 'https://maps.google.com/?q=Halle+Ost');
   await expect(page.getByTestId('spielort-karte')).toHaveAttribute('target', '_blank');
@@ -259,13 +259,13 @@ test('F-05 AUF-14 AUF-16: Marc ändert die Spiele von Termin 05 beim Bearbeiten'
 
   await expect(page).toHaveURL(`/termine/${T05}`);
   await expect(page.getByRole('status')).toHaveText('Änderungen gespeichert.');
-  expect(await spiele(page)).toEqual(['14:00 Team 2 – UH Testingen II', '15:15 UHC Abend – Team 2']);
+  await expect.poll(() => spiele(page)).toEqual(['14:00 Team 2 – UH Testingen II', '15:15 UHC Abend – Team 2']);
 
   await page.goto(`/termine/${T05}/bearbeiten`);
   await page.getByRole('button', { name: 'Spiel 1 entfernen' }).click();
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
   await expect(page).toHaveURL(`/termine/${T05}`);
-  expect(await spiele(page)).toEqual(['15:15 UHC Abend – Team 2']);
+  await expect.poll(() => spiele(page)).toEqual(['15:15 UHC Abend – Team 2']);
 });
 
 test('F-05 SUH-06: Spiele aus swiss unihockey sind im Formular nicht änderbar', async ({ page }) => {
