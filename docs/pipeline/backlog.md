@@ -421,7 +421,7 @@ F-08 (hardening) follows after F-11.
 6. As `anna` (player only): nothing changed. Administration and other teams' data answer 403.
 7. A person who is coach in Team 1 and player in Team 2 (`petra`) has coach rights everywhere.
 8. Notifications that go to «the coaches of the team» (late cancellation, withdrawal of a called-up player) still go only to the coaches of that team, not to all coaches.
-9. Requirements RR-03, RR-04 and RR-06 are rewritten and RR-08 («deleting is for admins») is added. The matrix of who may do what is in `docs/requirements/07-roles-rights.md`.
+9. Requirements RR-03, RR-04 and RR-06 are rewritten and RR-08 («deleting is for admins») is added. The matrix of who may do what is in `docs/requirements/07-roles-permissions.md`.
 
 **Assumptions to confirm (record as open points):** coaches see comments of all teams; removing a person from a team counts as deleting; cancelling an event does not.
 

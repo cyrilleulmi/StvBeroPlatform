@@ -1,6 +1,6 @@
 # Test plan follow-up fix #14 · Lock double clicks (write actions)
 
-Issue #14 · PR #27 · Rule "Forms" in `docs/states.md`, state "Action in progress" in `docs/testability.md`
+Issue #14 · PR #27 · Rule "Forms" in `docs/states.md`, state "Action running" in `docs/testability.md`
 
 General, for every case:
 

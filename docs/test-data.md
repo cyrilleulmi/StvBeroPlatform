@@ -275,7 +275,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S17 | Login in test mode | Open `/profil` without login, choose «Petra Keller» on `/dev-login` | Redirect to `/dev-login?ziel=%2Fprofil`, afterwards back to `/profil` | F-00 |
 | S18 | Tiles by role | As `anna` and as `alex` open `/` | Both see the tile «Anwesenheit». Only `alex` has «Verwaltung» in the navigation | NF-12, RR-05 |
 | S20 | Dual role | As `petra` open `/teams` | Team 1 «Coach», Team 2 «Spielerin». In Team 2 Petra is listed among the players, in Team 1 among the coaches | PTF-04, PTF-07, PTF-12 |
-| S21 | New season | As `alex` at `/verwaltung/saisons` create 2027/28 with takeover from 2026/27, make it current | Teams and memberships taken over, 2026/27 becomes archive | SAI-04, SAI-06 |
+| S21 | New season | As `alex` at `/verwaltung/saisons` create 2027/28 with carry-over from 2026/27, make it current | Teams and memberships taken over, 2026/27 becomes archive | SAI-04, SAI-06 |
 | S22 | One team role per team | As `alex` try to add Petra to Team 1 again | UI: «(schon im Team)», not selectable. API: 409 with rule PTF-04 | PTF-04 |
 | S23 | No current season | `DELETE /api/test/aktuelle-saison`, as `anna` open `/teams` | Redirect to `/keine-saison?ziel=%2Fteams` with notice «Noch keine aktuelle Saison», `GET /api/ich` answers 409 with rule SAI-03 | SAI-03 |
 | S27 | Event for two teams | As `petra` at `/termine/neu` create an event for Team 1 + Team 2 | Appears for `anna` and `eva`. As `marc` only for Team 1: API 403 | TER-01, TER-11 |

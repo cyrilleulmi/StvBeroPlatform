@@ -200,7 +200,7 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Planned: created (optionally with takeover, SAI-04)
+    [*] --> Planned: created (optionally with carry-over, SAI-04)
     Planned --> Current: make current (SAI-06)
     Current --> Archive: another, later season becomes current
     Archive --> Current: make current again
@@ -213,7 +213,7 @@ stateDiagram-v2
 | If no season is current (yet), e.g. in a fresh installation without seed, `GET /api/ich` and every request without `saison` answer 409 «Keine aktuelle Saison» (rule SAI-03). The UI then redirects every route to the notice `/keine-saison`. It shows the notice only in this state: opened directly without login, it goes to the login; with a current season, on to the target. | SAI-03 |
 | "Archive" is every season that starts before the current one. Teams and memberships in it are read-only: changing gives 409 with rule SAI-02. | SAI-02 |
 | A new season is "planned" first and can be adjusted before it becomes current. | SAI-04 |
-| Takeover copies teams, team memberships and lines with names, order and assignments. The source stays unchanged. | SAI-04, LIN-11 |
+| Carry-over copies teams, team memberships and lines with names, order and assignments. The source stays unchanged. | SAI-04, LIN-11 |
 | Name already taken or period overlaps with another season: 409. Two concurrent requests (double click) also give 201 and 409, never 500. End before start: 400. | SAI-01 |
 
 ## Team membership

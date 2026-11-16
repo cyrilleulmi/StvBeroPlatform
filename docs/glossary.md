@@ -56,6 +56,17 @@ If a term is missing, add it here in the same style before using it.
 | swiss unihockey | swiss unihockey | proper name, also «SU» |
 | Darstellung | theme | |
 | Übersicht (Anwesenheit) | overview | |
+| Anwesenheit | attendance | tile «Anwesenheit» |
+| Präsenzkontrolle | attendance check | |
+| Fahrerliste | driver list | |
+| Übernahme (neue Saison) | carry-over | copying teams, memberships and lines into a new season |
+| Abmelden (Sitzung) | log out | not to be confused with declining an event |
+| Hinweise (Termin) | notes | |
+| Verschiebung (Termin) | rescheduling | |
+| Entwurf | draft | |
+| Heim / Auswärts | home / away | |
+| Doppelrolle | dual role | |
+| Gültigkeitszeitraum | validity period | |
 
 ## Project and pipeline terms
 
@@ -80,6 +91,19 @@ If a term is missing, add it here in the same style before using it.
 | Szenario | scenario | `S1`, `S2`, … |
 | Testplan | test plan | `e2e/plans/` |
 | Grundgerüst | foundation | F-00 |
+| Produktionspipeline | production pipeline | |
+| freigeben / Freigabe | release | |
+| anstossen | trigger | subcommand `anstossen` stays |
+| Übergabe | handover | |
+| Abschlusskommentar | final comment | |
+| Startkommentar | start comment | |
+| Muss / Sollte / Hinweis | Must / Should / Note | severity of review findings |
+| Fehler / Beobachtung (Test) | error / observation | test findings |
+| Fall / Grenzfall | case / edge case | in test plans |
+| Ausgangslage | starting point | in test plans |
+| Rundgang | walkthrough | |
+| trocken (Probelauf) | dry run | flag `--trocken` stays |
+| Leitplanken | guardrails | |
 
 ## Status values of requirements
 
