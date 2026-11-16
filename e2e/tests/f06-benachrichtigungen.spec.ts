@@ -284,3 +284,28 @@ for (const schema of ['light', 'dark'] as const) {
     await barrierefrei(page);
   });
 }
+
+test('F-06 O-51: Glocke verdeckt auch beim Scrollen keine Bedienelemente', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobil', 'Glocke oben rechts gibt es nur mobil');
+  await anmelden(page, 'petra');
+  await page.goto(`/termine/${T01}`);
+  const stift = page.getByRole('button', { name: 'Antwort für Mia Frei eintragen' });
+  await expect(stift).toBeVisible();
+  const box = (await glocke(page).boundingBox())!;
+  // Stift-Button so weit nach oben scrollen, dass er auf der Höhe der Glocke liegt
+  const vorher = (await stift.boundingBox())!;
+  await page.evaluate((dy) => window.scrollBy(0, dy), vorher.y - box.y);
+  const knopf = (await stift.boundingBox())!;
+  expect(Math.abs(knopf.y - box.y), 'Stift liegt auf der Höhe der Glocke').toBeLessThan(4);
+  // Neben der Glocke ist der Stift nicht mehr sichtbar: Er liegt unter der Kopfzeile. Vorher war er
+  // links sichtbar und rechts von der Glocke überdeckt, ein Tipp auf den Rand öffnete die Benachrichtigungen.
+  const imInhalt = await page.evaluate(
+    ([px, py]) => !!document.elementFromPoint(px, py)?.closest('main'),
+    [knopf.x + 4, knopf.y + knopf.height / 2],
+  );
+  expect(imInhalt, 'Inhalt auf der Höhe der Glocke sichtbar').toBe(false);
+  // Der Stift bleibt bedienbar
+  await stift.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/termine/${T01}$`));
+});

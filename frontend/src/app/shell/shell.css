@@ -2,9 +2,22 @@
   min-height: 100dvh;
 }
 
+/* Mobil: feste Kopfzeile mit Hintergrund hinter der Glocke. Der Inhalt scrollt darunter durch,
+   damit die Glocke auch beim Scrollen nie über Bedienelementen liegt (O-51). Höhe: 10px + 48px + 10px. */
+.kopfzeile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  height: calc(68px + env(safe-area-inset-top));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
 .inhalt {
-  /* Oben Platz für die Glocke (Benachrichtigungen), damit sie keinen Inhalt verdeckt. */
-  padding: calc(64px + env(safe-area-inset-top)) var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
+  /* Oben Platz für die Kopfzeile mit der Glocke (Benachrichtigungen), damit sie keinen Inhalt verdeckt. */
+  padding: calc(84px + env(safe-area-inset-top)) var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
   max-width: 880px;
 }
 
@@ -150,6 +163,10 @@ a.aktiv span {
     border-top: 0;
     border-right: 1px solid var(--border);
     padding: 24px 16px;
+  }
+
+  .kopfzeile {
+    display: none;
   }
 
   .marke {

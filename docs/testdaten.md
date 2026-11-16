@@ -256,7 +256,7 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S8 | Kein Stellvertreten für fremde Teams | Als `marc` bei Termin 01 für Anna antworten wollen | Aktion nicht angeboten, API antwortet 403 | RR-06 |
 | S9 | Aufgebot veröffentlichen | Als `petra` Termin 04 → Aufgebot → veröffentlichen | Anna sieht «aufgeboten», Kim «nicht aufgeboten». Alle 7 Spielerinnen von Team 1 werden benachrichtigt, Kim mit «nicht aufgeboten» | AUF-23, AUF-24 |
 | S10 | Aufgebotene meldet sich ab | Als `eva` bei Termin 05 auf «nicht dabei» wechseln | Marc erhält «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.» | AUF-26, BEN-04 |
-| S27 | Benachrichtigung öffnen | Als `anna` `/benachrichtigungen` öffnen, Eintrag zu Termin 03 antippen | Termin 03 öffnet sich, Zähler in der Navigation verschwindet, Eintrag ist gelesen | BEN-12 |
+| S32 | Benachrichtigung öffnen | Als `anna` `/benachrichtigungen` öffnen, Eintrag zu Termin 03 antippen | Termin 03 öffnet sich, Zähler in der Navigation verschwindet, Eintrag ist gelesen | BEN-12 |
 | S11 | Aufgebot nur für Coaches | Als `anna` `/termine/40000000-0000-4000-8000-000000000004/aufgebot` öffnen | Hinweis «Keine Berechtigung», API 403 | RR-03 |
 | S12 | Verschiebung durch swiss unihockey | Simulator: Spiel 02 auf 12:15. Abgleich auslösen | Spiel 02 zeigt 12:15, Treffpunkt und Aufgebot unverändert, Team 1 wird benachrichtigt | SUH-05, SUH-06 |
 | S13 | Abgesagter Termin | Als `anna` Termin 03 öffnen | Als abgesagt erkennbar, mit Grund. Antworten nicht möglich | TER-06 |

@@ -8,7 +8,7 @@ Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature
 
 - **Mobil:** Bottom-Navigation mit Start, Termine, Teams, Profil. Admins sehen zusätzlich «Verwaltung».
 - **Desktop (ab 1024px):** dieselben Einträge als Seitennavigation links.
-- **Benachrichtigungen (F-06):** eigener Link in der Navigation, ausserhalb der Liste der Haupteinträge. Mobil eine runde Glocke oben rechts (Name «Benachrichtigungen», Beschriftung nur für Screenreader), ab 1024px ein Eintrag «Benachrichtigungen» über «Start». Mit Ungelesenen zeigt er die Anzahl (`benachrichtigungen-zaehler`), der Name lautet dann z.B. «Benachrichtigungen 2 ungelesen». Der Zähler wird bei jedem Seitenwechsel neu geladen.
+- **Benachrichtigungen (F-06):** eigener Link in der Navigation, ausserhalb der Liste der Haupteinträge. Mobil eine runde Glocke oben rechts in einer festen Kopfzeile, der Inhalt scrollt darunter durch (Name «Benachrichtigungen», Beschriftung nur für Screenreader), ab 1024px ein Eintrag «Benachrichtigungen» über «Start». Mit Ungelesenen zeigt er die Anzahl (`benachrichtigungen-zaehler`), der Name lautet dann z.B. «Benachrichtigungen 2 ungelesen». Der Zähler wird bei jedem Seitenwechsel neu geladen.
 - Der aktive Eintrag hat `aria-current="page"`.
 - Die Navigation ist ein `nav` mit `aria-label="Hauptnavigation"`.
 - Reihenfolge: Start, Termine, Teams, Profil, (Verwaltung). Seitentitel im Browser: «<Seite> · STV Bero».
