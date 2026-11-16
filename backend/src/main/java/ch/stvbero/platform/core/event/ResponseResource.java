@@ -34,12 +34,12 @@ public class ResponseResource {
     @GET
     @Path("/overview")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getOverview", summary = "Antworten nach Team und Gruppe, Coach-Block, Zähler (ANM-20 bis ANM-32)")
+    @Operation(operationId = "getOverview", summary = "Responses by team and group, coach block, counts (ANM-20 to ANM-32)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = OverviewDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public OverviewDto overview(@PathParam("eventId") UUID eventId) {
         return responses.overview(auth.person(), eventId);
@@ -49,18 +49,18 @@ public class ResponseResource {
     @Path("/responses/me")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "setOwnResponse", summary = "Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)")
-    @APIResponse(responseCode = "200", description = "Gespeichert",
+    @Operation(operationId = "setOwnResponse", summary = "Set or change the person's own response (ANM-01 to ANM-10)")
+    @APIResponse(responseCode = "200", description = "Saved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ResponseDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "422", description = "Fachliche Regel verletzt",
+    @APIResponse(responseCode = "422", description = "Domain rule violated",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public ResponseDto setOwn(@PathParam("eventId") UUID eventId, @Valid @NotNull ResponseInput input) {
         return responses.set(auth.person(), eventId, null, input);
@@ -70,18 +70,18 @@ public class ResponseResource {
     @Path("/responses/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "setResponseOnBehalf", summary = "Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)")
-    @APIResponse(responseCode = "200", description = "Gespeichert",
+    @Operation(operationId = "setResponseOnBehalf", summary = "Respond on behalf of a person (ANM-11, ANM-12, RR-06)")
+    @APIResponse(responseCode = "200", description = "Saved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ResponseDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "422", description = "Fachliche Regel verletzt",
+    @APIResponse(responseCode = "422", description = "Domain rule violated",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public ResponseDto setOnBehalf(@PathParam("eventId") UUID eventId, @PathParam("personId") UUID personId,
                                             @Valid @NotNull ResponseInput input) {

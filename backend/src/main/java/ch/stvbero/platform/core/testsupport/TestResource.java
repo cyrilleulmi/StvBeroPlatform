@@ -83,8 +83,8 @@ public class TestResource {
 
     @POST
     @Path("/reset")
-    @Operation(operationId = "testReset", summary = "Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen")
-    @APIResponse(responseCode = "204", description = "Zurückgesetzt")
+    @Operation(operationId = "testReset", summary = "Reset the database to the seed, the clock to default and the simulator")
+    @APIResponse(responseCode = "204", description = "Reset")
     public void reset() {
         seed.reset();
         simulator.reset();
@@ -94,9 +94,9 @@ public class TestResource {
     @Path("/swiss-unihockey/matches")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testSetSuMatches",
-            summary = "Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert")
-    @APIResponse(responseCode = "204", description = "Gesetzt")
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+            summary = "Set the data the simulator delivers for a swiss unihockey team ID")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void setSuMatches(@Valid @NotNull SuPreset preset) {
         simulator.set(preset.suTeamId(), preset.matches().stream().map(SuMatchDto::toMatch).toList(),
@@ -107,9 +107,9 @@ public class TestResource {
     @Path("/clock")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testSetClock",
-            summary = "Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus.")
-    @APIResponse(responseCode = "204", description = "Gesetzt")
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+            summary = "Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately.")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void setClock(@Valid @NotNull ClockInput input) {
         clock.fixAt(input.now().toInstant());
@@ -119,7 +119,7 @@ public class TestResource {
     @GET
     @Path("/clock")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "testGetClock", summary = "Aktuelle Backend-Zeit")
+    @Operation(operationId = "testGetClock", summary = "Current backend time")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ClockState.class)))
     public ClockState getClock() {
@@ -128,8 +128,8 @@ public class TestResource {
 
     @DELETE
     @Path("/clock")
-    @Operation(operationId = "testReleaseClock", summary = "Wieder die echte Zeit verwenden")
-    @APIResponse(responseCode = "204", description = "Gelöst")
+    @Operation(operationId = "testReleaseClock", summary = "Use the real time again")
+    @APIResponse(responseCode = "204", description = "Released")
     public void releaseClock() {
         clock.release();
     }
@@ -138,7 +138,7 @@ public class TestResource {
     @Path("/notifications")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testListNotifications",
-            summary = "Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed")
+            summary = "All notifications of all persons since the last reset, including the seed")
     @APIResponse(responseCode = "200", description = "Chronologisch",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(type = SchemaType.ARRAY, implementation = NotificationDto.class)))
@@ -150,8 +150,8 @@ public class TestResource {
     @Path("/current-season")
     @Transactional
     @Operation(operationId = "testRemoveCurrentSeason",
-            summary = "Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her.")
-    @APIResponse(responseCode = "204", description = "Entfernt")
+            summary = "Mark no season as current any more (state «no current season»). Reset restores the seed.")
+    @APIResponse(responseCode = "204", description = "Removed")
     public void removeCurrentSeason() {
         Season.update("current = false where current = true");
     }
@@ -159,11 +159,11 @@ public class TestResource {
     @POST
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "testLogin", summary = "Ohne Passwort als Seed-Person anmelden. Setzt das Sitzungs-Cookie.")
+    @Operation(operationId = "testLogin", summary = "Log in as a seed person without a password. Sets the session cookie.")
     @APIResponse(responseCode = "204", description = "Angemeldet")
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response login(@Valid @NotNull LoginInput input) {
         Account account = Account.withLoginKey(input.loginKey())
@@ -175,7 +175,7 @@ public class TestResource {
     @GET
     @Path("/persons")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "testListPersons", summary = "Personen mit Schlüssel für die Testmodus-Anmeldung (/dev-login)")
+    @Operation(operationId = "testListPersons", summary = "Persons with their key for the test mode login (/dev-login)")
     @APIResponse(responseCode = "200", description = "Nach Nachname, dann Vorname",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = TestPerson.class)))
     public List<TestPerson> persons() {

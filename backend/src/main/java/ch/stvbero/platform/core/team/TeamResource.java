@@ -38,10 +38,10 @@ public class TeamResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listTeams", summary = "Teams einer Saison. Ohne Admin-Rechte nur die eigenen.")
+    @Operation(operationId = "listTeams", summary = "Teams of a season. Without admin permission only the person's own teams.")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = TeamDto.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<TeamDto> list(@QueryParam("season") UUID season) {
         return teams.list(auth.person(), season);
@@ -50,16 +50,16 @@ public class TeamResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createTeam", summary = "Team anlegen (Admin)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createTeam", summary = "Create a team (admin)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@QueryParam("season") UUID season, @Valid @NotNull TeamInput input) {
         return Response.status(201).entity(teams.create(auth.person(), season, input)).build();
@@ -68,12 +68,12 @@ public class TeamResource {
     @GET
     @Path("/{teamId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getTeam", summary = "Team mit Coaches und Spielerinnen nach Gruppe")
+    @Operation(operationId = "getTeam", summary = "Team with coaches and players by group")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDetailDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public TeamDetailDto get(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season) {
         return teams.get(auth.person(), teamId, season);
@@ -83,16 +83,16 @@ public class TeamResource {
     @Path("/{teamId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "renameTeam", summary = "Team umbenennen (Admin)")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "renameTeam", summary = "Rename a team (admin)")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public TeamDto update(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
                            @Valid @NotNull TeamInput input) {
@@ -103,16 +103,16 @@ public class TeamResource {
     @Path("/{teamId}/members")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "addMember", summary = "Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)")
+    @Operation(operationId = "addMember", summary = "Add a person with a team role to the team (PTF-03, PTF-04, admin)")
     @APIResponse(responseCode = "201", description = "Aufgenommen",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamMembershipDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response addMember(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
                               @Valid @NotNull MemberInput input) {
@@ -123,16 +123,16 @@ public class TeamResource {
     @Path("/{teamId}/members/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "changeTeamRole", summary = "Funktion im Team ändern (Admin)")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "changeTeamRole", summary = "Change the team role (admin)")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamMembershipDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public TeamMembershipDto changeTeamRole(@PathParam("teamId") UUID teamId, @PathParam("personId") UUID personId,
                                                  @QueryParam("season") UUID season,
@@ -142,13 +142,13 @@ public class TeamResource {
 
     @DELETE
     @Path("/{teamId}/members/{personId}")
-    @Operation(operationId = "removeMember", summary = "Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.")
-    @APIResponse(responseCode = "204", description = "Entfernt")
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @Operation(operationId = "removeMember", summary = "Remove a person from the team (admin). Existing responses are kept.")
+    @APIResponse(responseCode = "204", description = "Removed")
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void removeMember(@PathParam("teamId") UUID teamId, @PathParam("personId") UUID personId,
                           @QueryParam("season") UUID season) {

@@ -8,7 +8,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.time.OffsetDateTime;
 
 /** Simplified form of a match as the simulator delivers it (test support). */
-@Schema(name = "SuMatch", description = "Vereinfachte Form eines Spiels, wie sie der Simulator liefert")
+@Schema(name = "SuMatch", description = "Simplified form of a match, as the simulator delivers it")
 public record SuMatchDto(@NotNull @Positive Integer suMatchId,
                          @NotNull OffsetDateTime startTime,
                          @NotBlank String homeTeam,

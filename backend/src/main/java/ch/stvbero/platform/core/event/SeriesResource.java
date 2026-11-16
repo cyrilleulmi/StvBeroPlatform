@@ -36,14 +36,14 @@ public class SeriesResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createSeries", summary = "Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createSeries", summary = "Create a series; creates the events in the validity period (TER-05, coach)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SeriesDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@Valid @NotNull SeriesInput input) {
         return Response.status(201).entity(series.create(auth.person(), input)).build();
@@ -52,12 +52,12 @@ public class SeriesResource {
     @GET
     @Path("/{seriesId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getSeries", summary = "Serie mit Ausnahmen")
+    @Operation(operationId = "getSeries", summary = "Series with its series exceptions")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SeriesDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public SeriesDto get(@PathParam("seriesId") UUID seriesId) {
         return series.get(auth.person(), seriesId);
@@ -67,16 +67,16 @@ public class SeriesResource {
     @Path("/{seriesId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateSeries", summary = "Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "updateSeries", summary = "Update a series. Applies to future events; given responses are kept (TER-08, coach).")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SeriesDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public SeriesDto update(@PathParam("seriesId") UUID seriesId, @Valid @NotNull SeriesInput input) {
         return series.update(auth.person(), seriesId, input);
@@ -86,16 +86,16 @@ public class SeriesResource {
     @Path("/{seriesId}/exceptions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createSeriesException", summary = "Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createSeriesException", summary = "Exclude a period from the series, e.g. holidays (TER-07, coach)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SeriesDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response createException(@PathParam("seriesId") UUID seriesId, @Valid @NotNull SeriesExceptionDto input) {
         return Response.status(201).entity(series.createException(auth.person(), seriesId, input)).build();

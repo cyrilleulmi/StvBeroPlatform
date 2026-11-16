@@ -37,10 +37,10 @@ public class PersonResource {
     PersonService persons;
 
     @GET
-    @Operation(operationId = "listPersons", summary = "Alle Personen (Admin)")
+    @Operation(operationId = "listPersons", summary = "All persons (admin)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = PersonDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<PersonDto> list(@QueryParam("search") String search) {
         return persons.list(auth.person(), search);
@@ -48,12 +48,12 @@ public class PersonResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createPerson", summary = "Person anlegen (Admin)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createPerson", summary = "Create a person (admin)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@Valid @NotNull PersonInput input) {
         return Response.status(201).entity(persons.create(auth.person(), input)).build();
@@ -61,12 +61,12 @@ public class PersonResource {
 
     @GET
     @Path("/{personId}")
-    @Operation(operationId = "getPerson", summary = "Person mit allen Teamzugehörigkeiten (Admin)")
+    @Operation(operationId = "getPerson", summary = "Person with all team memberships (admin)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDetailDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public PersonDetailDto get(@PathParam("personId") UUID personId) {
         return persons.get(auth.person(), personId);
@@ -75,16 +75,16 @@ public class PersonResource {
     @PUT
     @Path("/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updatePerson", summary = "Person ändern (Admin)")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "updatePerson", summary = "Update a person (admin)")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public PersonDto update(@PathParam("personId") UUID personId, @Valid @NotNull PersonInput input) {
         return persons.update(auth.person(), personId, input);

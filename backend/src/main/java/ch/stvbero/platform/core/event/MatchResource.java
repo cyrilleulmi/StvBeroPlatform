@@ -41,16 +41,16 @@ public class MatchResource {
     @Path("/matches")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "addMatch", summary = "Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "addMatch", summary = "Add a match to a match day (AUF-14, coach)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MatchDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response add(@PathParam("eventId") UUID eventId, @Valid @NotNull MatchInput input) {
         return Response.status(201).entity(matches.add(auth.person(), eventId, input)).build();
@@ -60,16 +60,16 @@ public class MatchResource {
     @Path("/matches/{matchId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateMatch", summary = "Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "updateMatch", summary = "Update a match, e.g. enter the result (AUF-15, coach). Imported fields are read-only (409).")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MatchDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public MatchDto update(@PathParam("eventId") UUID eventId, @PathParam("matchId") UUID matchId,
                             @Valid @NotNull MatchInput input) {
@@ -78,13 +78,13 @@ public class MatchResource {
 
     @DELETE
     @Path("/matches/{matchId}")
-    @Operation(operationId = "deleteMatch", summary = "Von Hand erfasstes Spiel löschen (Coach)")
-    @APIResponse(responseCode = "204", description = "Gelöscht")
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @Operation(operationId = "deleteMatch", summary = "Delete a manually entered match (coach)")
+    @APIResponse(responseCode = "204", description = "Deleted")
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response delete(@PathParam("eventId") UUID eventId, @PathParam("matchId") UUID matchId) {
         matches.delete(auth.person(), eventId, matchId);
@@ -94,14 +94,14 @@ public class MatchResource {
     @GET
     @Path("/call-up")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getCallUp", summary = "Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)")
+    @Operation(operationId = "getCallUp", summary = "Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = CallUpDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public CallUpDto callUp(@PathParam("eventId") UUID eventId) {
         return callUps.get(auth.person(), eventId);
@@ -111,18 +111,18 @@ public class MatchResource {
     @Path("/call-up")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "setCallUp", summary = "Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).")
-    @APIResponse(responseCode = "200", description = "Gespeichert",
+    @Operation(operationId = "setCallUp", summary = "Save the selection (coach). If the call-up is published, the players affected are notified (AUF-27).")
+    @APIResponse(responseCode = "200", description = "Saved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = CallUpDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "422", description = "Fachliche Regel verletzt",
+    @APIResponse(responseCode = "422", description = "Domain rule violated",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public CallUpDto setCallUp(@PathParam("eventId") UUID eventId, @Valid @NotNull CallUpInput input) {
         return callUps.set(auth.person(), eventId, input);
@@ -131,14 +131,14 @@ public class MatchResource {
     @POST
     @Path("/call-up/publish")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "publishCallUp", summary = "Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)")
-    @APIResponse(responseCode = "200", description = "Veröffentlicht",
+    @Operation(operationId = "publishCallUp", summary = "Publish the call-up and notify all players of the team (AUF-23, AUF-24, coach)")
+    @APIResponse(responseCode = "200", description = "Published",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = CallUpDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public CallUpDto publish(@PathParam("eventId") UUID eventId) {
         return callUps.publish(auth.person(), eventId);

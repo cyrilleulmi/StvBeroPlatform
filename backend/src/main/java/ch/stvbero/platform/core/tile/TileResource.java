@@ -28,10 +28,10 @@ public class TileResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listTiles", summary = "Kacheln, die die angemeldete Person sehen darf (NF-11, NF-12)")
+    @Operation(operationId = "listTiles", summary = "Tiles the signed-in person may see (NF-11, NF-12)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = Tile.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<Tile> get() {
         return registry.visibleFor(auth.person());

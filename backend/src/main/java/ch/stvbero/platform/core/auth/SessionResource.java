@@ -21,7 +21,7 @@ public class SessionResource {
     @GET
     @Public
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getSession", summary = "Ob eine gültige Sitzung besteht")
+    @Operation(operationId = "getSession", summary = "Whether a valid session exists")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SessionDto.class)))
     public SessionDto get() {

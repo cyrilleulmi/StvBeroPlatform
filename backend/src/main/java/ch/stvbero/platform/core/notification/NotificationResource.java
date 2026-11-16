@@ -33,11 +33,11 @@ public class NotificationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listNotifications", summary = "Eigene Benachrichtigungen, neueste zuerst (BEN-12)")
+    @Operation(operationId = "listNotifications", summary = "The person's own notifications, newest first (BEN-12)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(type = SchemaType.ARRAY, implementation = NotificationDto.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<NotificationDto> get(@QueryParam("unread") Boolean unread) {
         return notifications.own(auth.person(), Boolean.TRUE.equals(unread));
@@ -45,13 +45,13 @@ public class NotificationResource {
 
     @POST
     @Path("/{notificationId}/read")
-    @Operation(operationId = "markNotificationRead", summary = "Als gelesen markieren")
+    @Operation(operationId = "markNotificationRead", summary = "Mark as read")
     @APIResponse(responseCode = "204", description = "Markiert")
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void read(@PathParam("notificationId") UUID id) {
         notifications.read(auth.person(), id);

@@ -34,7 +34,7 @@ public class SwissUnihockeyResource {
     SuSync sync;
 
     public record SuLink(
-            @Schema(type = SchemaType.INTEGER, nullable = true, description = "`null` löst die Verknüpfung")
+            @Schema(type = SchemaType.INTEGER, nullable = true, description = "`null` removes the link")
             Integer suTeamId) {
     }
 
@@ -42,16 +42,16 @@ public class SwissUnihockeyResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "linkSu",
-            summary = "Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)")
-    @APIResponse(responseCode = "200", description = "Gespeichert",
+            summary = "Link a team to swiss unihockey or remove the link (SUH-02, admin)")
+    @APIResponse(responseCode = "200", description = "Saved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Team-ID schon mit einem anderen Team verknüpft",
+    @APIResponse(responseCode = "409", description = "Team ID already linked to another team",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public TeamDto link(@PathParam("teamId") UUID teamId, @Valid @NotNull SuLink input) {
         return sync.link(auth.person(), teamId, input.suTeamId());
@@ -61,17 +61,17 @@ public class SwissUnihockeyResource {
     @Path("/sync")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "syncSu",
-            summary = "Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)")
+            summary = "Run the sync now instead of waiting for the daily run (SUH-03, admin)")
     @APIResponse(responseCode = "200", description = "Ergebnis des Abgleichs",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = SyncResultDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Nicht verknüpft oder nicht in der aktuellen Saison",
+    @APIResponse(responseCode = "409", description = "Not linked or not in the current season",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "502", description = "swiss unihockey nicht erreichbar oder unerwartete Antwort (SUH-09)",
+    @APIResponse(responseCode = "502", description = "swiss unihockey unavailable or unexpected response (SUH-09)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public SyncResultDto sync(@PathParam("teamId") UUID teamId) {
         return sync.sync(auth.person(), teamId);

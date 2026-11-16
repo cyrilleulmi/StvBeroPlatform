@@ -42,12 +42,12 @@ public class MeResource {
     @GET
     @Path("/me")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getMe", summary = "Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison")
+    @Operation(operationId = "getMe", summary = "Signed-in person with the team memberships of the current season")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MeDto.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public MeDto get() {
         CurrentUser user = auth.person();
@@ -60,7 +60,7 @@ public class MeResource {
     @POST
     @Path("/logout")
     @Public
-    @Operation(operationId = "logout", summary = "Sitzung beenden und Sitzungs-Cookie löschen")
+    @Operation(operationId = "logout", summary = "End the session and delete the session cookie")
     @APIResponse(responseCode = "204", description = "Abgemeldet")
     public Response logout() {
         auth.token().ifPresent(sessions::end);

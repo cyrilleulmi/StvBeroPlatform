@@ -38,12 +38,12 @@ public class LineResource {
     @GET
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getLineup", summary = "Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»")
+    @Operation(operationId = "getLineup", summary = "Lines and goalies of a team with their players, plus «Ohne Linie» (no line)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDetailDto.Lineup.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public TeamDetailDto.Lineup get(@PathParam("teamId") UUID teamId) {
         return lines.get(auth.person(), teamId);
@@ -53,16 +53,16 @@ public class LineResource {
     @Path("/groups")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createLine", summary = "Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createLine", summary = "Create a line (LIN-07, coach). Each team automatically has exactly one goalies group.")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = GroupDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@PathParam("teamId") UUID teamId, @Valid @NotNull LineInput input) {
         return Response.status(201).entity(lines.create(auth.person(), teamId, input)).build();
@@ -72,16 +72,16 @@ public class LineResource {
     @Path("/groups/{groupId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateLine", summary = "Linie umbenennen oder Reihenfolge ändern (Coach)")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "updateLine", summary = "Rename a line or change its order (coach)")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = GroupDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public GroupDto update(@PathParam("teamId") UUID teamId, @PathParam("groupId") UUID groupId,
                              @Valid @NotNull LineInput input) {
@@ -90,13 +90,13 @@ public class LineResource {
 
     @DELETE
     @Path("/groups/{groupId}")
-    @Operation(operationId = "deleteLine", summary = "Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409).")
-    @APIResponse(responseCode = "204", description = "Gelöscht")
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @Operation(operationId = "deleteLine", summary = "Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409).")
+    @APIResponse(responseCode = "204", description = "Deleted")
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void delete(@PathParam("teamId") UUID teamId, @PathParam("groupId") UUID groupId) {
         lines.delete(auth.person(), teamId, groupId);
@@ -105,15 +105,15 @@ public class LineResource {
     @PUT
     @Path("/assignments/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "setAssignment", summary = "Spielerin einer Gruppe zuweisen oder auf «ohne Linie» setzen (LIN-02, LIN-07, LIN-10)")
-    @APIResponse(responseCode = "204", description = "Gesetzt")
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @Operation(operationId = "setAssignment", summary = "Assign a player to a group or set her to no line (LIN-02, LIN-07, LIN-10)")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void assign(@PathParam("teamId") UUID teamId, @PathParam("personId") UUID personId,
                          @Valid @NotNull AssignmentInput input) {

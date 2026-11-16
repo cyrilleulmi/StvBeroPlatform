@@ -35,10 +35,10 @@ public class SeasonResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listSeasons", summary = "Alle Saisons, neueste zuerst")
+    @Operation(operationId = "listSeasons", summary = "All seasons, newest first")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = SeasonDto.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<SeasonDto> list() {
         auth.person();
@@ -48,16 +48,16 @@ public class SeasonResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createSeason", summary = "Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createSeason", summary = "Create a season, optionally with carry-over from the previous season (SAI-04, admin)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SeasonDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@Valid @NotNull NewSeason input) {
         return Response.status(201).entity(seasons.create(auth.person(), input)).build();
@@ -65,11 +65,11 @@ public class SeasonResource {
 
     @POST
     @Path("/{seasonId}/activate")
-    @Operation(operationId = "activateSeason", summary = "Saison zur aktuellen Saison machen (SAI-03, SAI-06, Admin)")
+    @Operation(operationId = "activateSeason", summary = "Make a season the current season (SAI-03, SAI-06, admin)")
     @APIResponse(responseCode = "204", description = "Aktiviert")
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void activate(@PathParam("seasonId") UUID seasonId) {
         seasons.activate(auth.person(), seasonId);

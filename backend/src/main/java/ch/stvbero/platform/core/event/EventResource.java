@@ -39,10 +39,10 @@ public class EventResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listEvents", summary = "Termine der eigenen Teams mit eigener Antwort (TER-13)")
+    @Operation(operationId = "listEvents", summary = "Events of the person's own teams with the person's own response (TER-13)")
     @APIResponse(responseCode = "200", description = "Chronologisch sortiert (vergangene absteigend)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = EventSummaryDto.class)))
-    @APIResponse(responseCode = "401", description = "Nicht angemeldet",
+    @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<EventSummaryDto> list(@QueryParam("from") LocalDate from, @QueryParam("to") LocalDate to,
                                      @QueryParam("team") UUID team, @QueryParam("type") EventType type,
@@ -53,14 +53,14 @@ public class EventResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createEvent", summary = "Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)")
-    @APIResponse(responseCode = "201", description = "Angelegt",
+    @Operation(operationId = "createEvent", summary = "Create a single event, match day or other event (TER-11, AUF-16, coach)")
+    @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@Valid @NotNull EventInput input) {
         return Response.status(201).entity(events.create(auth.person(), input)).build();
@@ -69,12 +69,12 @@ public class EventResource {
     @GET
     @Path("/{eventId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getEvent", summary = "Termin mit eigener Antwort, bei Spieltag mit Spielen, Treffpunkt und eigenem Aufgebotsstatus")
+    @Operation(operationId = "getEvent", summary = "Event with the person's own response; for a match day with matches, meeting point and own call-up status")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto get(@PathParam("eventId") UUID eventId) {
         return events.get(auth.person(), eventId);
@@ -84,18 +84,18 @@ public class EventResource {
     @Path("/{eventId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updateEvent", summary = "Termin ändern oder verschieben (TER-06, TER-12, Coach)")
-    @APIResponse(responseCode = "200", description = "Geändert",
+    @Operation(operationId = "updateEvent", summary = "Update or reschedule an event (TER-06, TER-12, coach)")
+    @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "422", description = "Fachliche Regel verletzt",
+    @APIResponse(responseCode = "422", description = "Domain rule violated",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto update(@PathParam("eventId") UUID eventId, @Valid @NotNull EventInput input) {
         return events.update(auth.person(), eventId, input);
@@ -105,16 +105,16 @@ public class EventResource {
     @Path("/{eventId}/cancel")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "cancelEvent", summary = "Termin absagen (TER-06, TER-12, Coach). Danach sind keine Antworten mehr möglich.")
+    @Operation(operationId = "cancelEvent", summary = "Cancel an event (TER-06, TER-12, coach). After that, no more responses are possible.")
     @APIResponse(responseCode = "200", description = "Abgesagt",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
-    @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
+    @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "403", description = "Keine Berechtigung (RR-07)",
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "404", description = "Nicht gefunden",
+    @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto cancel(@PathParam("eventId") UUID eventId, @Valid @NotNull CancellationDto input) {
         return events.cancel(auth.person(), eventId, input.reason());
