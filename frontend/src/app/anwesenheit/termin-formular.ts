@@ -71,6 +71,8 @@ interface SpielZeile {
   zeit: string;
   heim: boolean;
   resultat: string | null;
+  /** Importiert und von swiss unihockey nicht mehr geliefert: darf entfernt werden (SUH-06). */
+  nichtMehrBeiSu: boolean;
 }
 
 type Feld = keyof Eingabe;
@@ -277,6 +279,7 @@ export class TerminFormular {
         zeit: this.werte().beginn,
         heim: true,
         resultat: null,
+        nichtMehrBeiSu: false,
       },
     ]);
   }
@@ -438,7 +441,8 @@ export class TerminFormular {
 
   /**
    * Spiele eines Spieltags nach dem Speichern des Termins: neue anlegen, geänderte speichern, entfernte
-   * löschen (AUF-14, AUF-16). Importierte Spiele bleiben unberührt. Liefert eine Meldung, falls etwas
+   * löschen (AUF-14, AUF-16). Importierte Spiele bleiben unberührt, ausser swiss unihockey liefert sie
+   * nicht mehr: dann dürfen sie entfernt werden (SUH-06). Liefert eine Meldung, falls etwas
    * nicht ging; der Termin selbst ist dann schon gespeichert.
    */
   private async spieleSpeichern(t: Termin, vorher: Termin | null): Promise<string | null> {
@@ -448,7 +452,8 @@ export class TerminFormular {
     const bisher = new Map((vorher?.spiele ?? []).map((sp) => [sp.id, sp]));
     try {
       for (const sp of bisher.values()) {
-        if (sp.quelle === 'MANUELL' && !zeilen.some((z) => z.id === sp.id)) {
+        const loeschbar = sp.quelle === 'MANUELL' || sp.beiSuNichtMehrVorhanden;
+        if (loeschbar && !zeilen.some((z) => z.id === sp.id)) {
           await firstValueFrom(this.http.delete<void>(`/api/termine/${t.id}/spiele/${sp.id}`));
         }
       }
@@ -618,6 +623,7 @@ export class TerminFormular {
             zeit: eingabe(sp.anspielzeit).zeit,
             heim: sp.heim,
             resultat: sp.resultat ?? null,
+            nichtMehrBeiSu: sp.quelle !== 'MANUELL' && sp.beiSuNichtMehrVorhanden,
           })),
         );
       } else if (serieId) {
