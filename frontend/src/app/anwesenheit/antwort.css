@@ -1,0 +1,95 @@
+/* Antworten (F-04): Antwort-Buttons, Übersicht, Dialoge. Farben nur über Tokens (O-16). */
+
+.antwort {
+  display: grid;
+  gap: 6px;
+}
+
+.antwort p {
+  margin: 0;
+}
+
+.knoepfe {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 420px;
+}
+
+.antwort-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--touch);
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font: 700 13px/1.15 var(--font);
+  text-align: center;
+  cursor: pointer;
+}
+
+.antwort-knopf app-icon {
+  flex: none;
+}
+
+.antwort-knopf[aria-pressed='true'][data-art='dabei'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.antwort-knopf[aria-pressed='true'][data-art='nicht-dabei'] {
+  background: var(--coral-soft);
+  border-color: var(--coral);
+}
+
+.antwort-knopf[aria-pressed='true'][data-art='vielleicht'] {
+  background: var(--mustard-soft);
+  border-color: var(--mustard);
+}
+
+.antwort-knopf:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.rueckmeldung {
+  font-weight: 600;
+}
+
+.kommentar {
+  overflow-wrap: anywhere;
+}
+
+.chip[data-art='kurzfristig'] {
+  background: var(--coral-soft);
+}
+
+.dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  color: var(--text);
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog h2,
+.dialog p {
+  margin: 0;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.dialog-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

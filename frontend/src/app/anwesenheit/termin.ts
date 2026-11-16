@@ -11,21 +11,23 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Termin as TerminDaten } from '../api/typen';
+import type { Termin as TerminDaten, Uebersicht as UebersichtDaten } from '../api/typen';
 import { AnmeldungService } from '../kern/anmeldung.service';
 import { fehlerstatus, fehlertext } from '../kern/fehlertext';
 import { RueckmeldungService } from '../kern/rueckmeldung.service';
 import { TEXTE } from '../kern/texte';
+import { MeineAntwort } from './meine-antwort';
+import { Uebersicht } from './uebersicht';
 import { jahrVon, terminDatum, uhrzeit } from './zeit';
 
 /**
- * Termin (`/termine/:terminId`): Angaben, Status (abgesagt mit Grund, verschoben) und für Coaches der Link
- * zum Bearbeiten (TER-04, TER-06). Antworten und Übersicht kommen mit F-04.
+ * Termin (`/termine/:terminId`): Angaben, Status (abgesagt mit Grund, verschoben), für Coaches der Link
+ * zum Bearbeiten (TER-04, TER-06), die eigene Antwort und die Übersicht nach Team und Linie (F-04, ANM).
  */
 @Component({
   selector: 'app-termin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, MeineAntwort, Uebersicht],
   template: `
     <div class="kopf">
       <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
@@ -53,6 +55,21 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
           <p class="meldung-hinweis" data-testid="termin-status">
             {{ texte.termine.verschobenHinweis }}
           </p>
+        }
+        @if (binMitglied()) {
+          <section class="karte" aria-labelledby="termin-meine-antwort">
+            <h2 id="termin-meine-antwort" class="abschnitt-titel">
+              {{ texte.antwort.meineAntwort }}
+            </h2>
+            <app-meine-antwort
+              [terminId]="t.id"
+              [antwort]="t.meineAntwort"
+              [name]="texte.antwort.meineAntwort"
+              [gesperrt]="sperre()"
+              [details]="true"
+              (geaendert)="nachladen()"
+            />
+          </section>
         }
         <section class="karte" aria-labelledby="termin-angaben">
           <h2 id="termin-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
@@ -119,6 +136,17 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
             >
           }
         </section>
+        @if (uebersicht(); as u) {
+          <app-uebersicht
+            [terminId]="t.id"
+            [daten]="u"
+            [coachIn]="coachIn()"
+            [admin]="anmeldung.ich()?.admin ?? false"
+            [ichId]="anmeldung.ich()?.id ?? null"
+            [offen]="!sperre()"
+            (geaendert)="nachladen()"
+          />
+        }
       }
     </div>
   `,
@@ -126,7 +154,7 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
 })
 export class Termin {
   private readonly http = inject(HttpClient);
-  private readonly anmeldung = inject(AnmeldungService);
+  protected readonly anmeldung = inject(AnmeldungService);
   private readonly rueckmeldung = inject(RueckmeldungService);
   protected readonly texte = TEXTE;
   protected readonly uhrzeit = uhrzeit;
@@ -135,6 +163,7 @@ export class Termin {
   readonly terminId = input.required<string>();
 
   protected readonly termin = signal<TerminDaten | null>(null);
+  protected readonly uebersicht = signal<UebersichtDaten | null>(null);
   protected readonly laedt = signal(true);
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
@@ -144,6 +173,26 @@ export class Termin {
   protected readonly zeitraum = computed(() => {
     const t = this.termin();
     return t ? TEXTE.termine.zeitraum(uhrzeit(t.beginn), uhrzeit(t.ende)) : '';
+  });
+
+  /** Mitglied eines beteiligten Teams: kann für sich antworten (ANM-01). */
+  protected readonly binMitglied = computed(() =>
+    (this.termin()?.teams ?? []).some((t) => !!t.meineFunktion),
+  );
+
+  /** Teams des Termins, in denen die angemeldete Person Coach ist (RR-06). */
+  protected readonly coachIn = computed(() =>
+    (this.termin()?.teams ?? []).filter((t) => t.meineFunktion === 'COACH').map((t) => t.id),
+  );
+
+  /** Erklärung, warum nicht mehr geantwortet werden kann (TER-06), sonst `null`. */
+  protected readonly sperre = computed(() => {
+    const t = this.termin();
+    if (!t) return null;
+    if (t.status === 'ABGESAGT') return TEXTE.antwort.abgesagt;
+    const jetzt = this.anmeldung.ich()?.jetzt;
+    if (jetzt && Date.parse(t.ende) <= Date.parse(jetzt)) return TEXTE.antwort.vorbei;
+    return null;
   });
 
   protected readonly teams = computed(() =>
@@ -162,12 +211,33 @@ export class Termin {
     return terminDatum(iso, this.jahr());
   }
 
+  /** Nach einer Antwort: Termin (eigene Antwort, Zähler) und Übersicht ohne Neuladen der Seite. */
+  protected async nachladen(): Promise<void> {
+    const id = this.terminId();
+    try {
+      const [termin, uebersicht] = await Promise.all([
+        firstValueFrom(this.http.get<TerminDaten>(`/api/termine/${id}`)),
+        firstValueFrom(this.http.get<UebersichtDaten>(`/api/termine/${id}/uebersicht`)),
+      ]);
+      this.termin.set(termin);
+      this.uebersicht.set(uebersicht);
+    } catch (e) {
+      this.fehler.set(fehlertext(e));
+    }
+  }
+
   private async laden(id: string): Promise<void> {
     this.laedt.set(true);
     this.fehler.set(null);
     this.termin.set(null);
+    this.uebersicht.set(null);
     try {
-      this.termin.set(await firstValueFrom(this.http.get<TerminDaten>(`/api/termine/${id}`)));
+      const [termin, uebersicht] = await Promise.all([
+        firstValueFrom(this.http.get<TerminDaten>(`/api/termine/${id}`)),
+        firstValueFrom(this.http.get<UebersichtDaten>(`/api/termine/${id}/uebersicht`)),
+      ]);
+      this.termin.set(termin);
+      this.uebersicht.set(uebersicht);
     } catch (e) {
       const status = fehlerstatus(e);
       this.fehler.set(

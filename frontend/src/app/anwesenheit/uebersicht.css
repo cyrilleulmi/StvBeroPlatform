@@ -1,0 +1,190 @@
+.uebersicht {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.uebersicht h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.uebersicht h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.zaehler {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.zaehler span[aria-hidden='true'] {
+  color: var(--muted);
+}
+
+.total {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+}
+
+.total .zaehler-name {
+  font-weight: 800;
+}
+
+.total .zahlen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+
+.team {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.team-kopf {
+  display: grid;
+  gap: 2px;
+}
+
+.gruppe {
+  display: grid;
+}
+
+.personen {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px 16px;
+}
+
+@media (min-width: 640px) {
+  .personen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .personen {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--touch);
+  min-width: 0;
+}
+
+.symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+}
+
+.symbol[data-art='dabei'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.symbol[data-art='nicht-dabei'] {
+  background: var(--coral-soft);
+  border-color: var(--coral);
+  color: var(--text);
+}
+
+.symbol[data-art='vielleicht'] {
+  background: var(--mustard-soft);
+  border-color: var(--mustard);
+  color: var(--text);
+}
+
+.person-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.person-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.status-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.person-text .kommentar {
+  flex-basis: 100%;
+}
+
+.icon-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--touch);
+  height: var(--touch);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-knopf:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.wahl {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wahl legend {
+  font-weight: 700;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.checkbox input[type='radio'] {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--primary);
+  flex: none;
+}
