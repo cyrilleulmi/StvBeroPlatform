@@ -46,9 +46,14 @@ public class SitzungService {
                 .map(s -> new Angemeldet(s.konto.id, s.konto.person.id, s.konto.person.vorname, s.konto.person.admin));
     }
 
+    /**
+     * Beendet die Sitzung, idempotent: Ist sie schon gelöscht (z.B. zweite, gleichzeitige
+     * Abmeldung), passiert nichts. Darum ein Bulk-Delete statt Laden und Entfernen, das bei
+     * einer inzwischen gelöschten Zeile eine OptimisticLockException wirft (Nachbesserung #26).
+     */
     @Transactional
     public void beenden(String token) {
-        Sitzung.deleteById(token);
+        Sitzung.delete("token", token);
     }
 
     public NewCookie cookie(String token) {
