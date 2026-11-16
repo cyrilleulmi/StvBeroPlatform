@@ -520,7 +520,10 @@ paths:
       tags: [Termine]
       operationId: terminAnlegen
       summary: Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
-      description: Die Person muss Coach in jedem angegebenen Team sein. Ein Spieltag hat genau ein Team (AUF-03).
+      description: |
+        Die Person muss Admin oder Coach in mindestens einem der angegebenen Teams sein (TER-01, RR-06), sonst 403.
+        Ein Spieltag hat genau ein Team (AUF-03). Ein Termin in der Vergangenheit ergibt 400, einer in einer
+        Saison im Archiv 409 (SAI-02). Ohne `antwortfristStunden` gelten 24 Stunden (TER-10).
       requestBody:
         required: true
         content:
@@ -534,6 +537,7 @@ paths:
               schema: { $ref: '#/components/schemas/Termin' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/termine/{terminId}:
     parameters:
       - $ref: '#/components/parameters/terminId'
@@ -553,7 +557,10 @@ paths:
       tags: [Termine]
       operationId: terminAendern
       summary: Termin ändern oder verschieben (TER-06, TER-12, Coach)
-      description: Eine geänderte Beginnzeit gilt als Verschiebung und benachrichtigt alle Betroffenen. Antworten bleiben erhalten.
+      description: |
+        Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Betroffenen (ab F-06).
+        Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
+        Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
       requestBody:
         required: true
         content:
@@ -591,6 +598,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Termin' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
         '409': { $ref: '#/components/responses/Konflikt' }
@@ -600,6 +608,9 @@ paths:
       tags: [Termine]
       operationId: serieAnlegen
       summary: Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
+      description: |
+        Erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Rechte wie bei
+        `terminAnlegen`. Der Zeitraum dauert höchstens ein Jahr (400).
       requestBody:
         required: true
         content:
@@ -613,6 +624,7 @@ paths:
               schema: { $ref: '#/components/schemas/Serie' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/serien/{serieId}:
     parameters:
       - $ref: '#/components/parameters/serieId'
@@ -632,6 +644,10 @@ paths:
       tags: [Termine]
       operationId: serieAendern
       summary: Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
+      description: |
+        Künftige Termine übernehmen die neuen Angaben. Einzeln geänderte und abgesagte Termine bleiben unverändert.
+        Termine, die nicht mehr zur Serie passen, werden entfernt bzw. abgesagt («Serie geändert»), wenn schon
+        jemand geantwortet hat.
       requestBody:
         required: true
         content:
@@ -646,6 +662,7 @@ paths:
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
   /api/serien/{serieId}/ausnahmen:
     parameters:
       - $ref: '#/components/parameters/serieId'
@@ -653,6 +670,9 @@ paths:
       tags: [Termine]
       operationId: ausnahmeAnlegen
       summary: Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
+      description: |
+        Künftige geplante Termine der Serie im Zeitraum werden entfernt. Hat schon jemand geantwortet, wird der
+        Termin stattdessen abgesagt, Grund = Grund der Ausnahme (O-19).
       requestBody:
         required: true
         content:
@@ -666,6 +686,8 @@ paths:
               schema: { $ref: '#/components/schemas/Serie' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
 
   # ---------------------------------------------------------------- Antworten
   /api/termine/{terminId}/uebersicht:
@@ -1237,12 +1259,16 @@ components:
       allOf:
         - $ref: '#/components/schemas/Person'
         - type: object
-          required: [saison, zugehoerigkeiten]
+          required: [saison, zugehoerigkeiten, jetzt]
           properties:
             saison: { $ref: '#/components/schemas/Saison' }
             zugehoerigkeiten:
               type: array
               items: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+            jetzt:
+              type: string
+              format: date-time
+              description: Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
     Sitzung:
       type: object
       required: [angemeldet]
@@ -1473,7 +1499,7 @@ components:
             - $ref: '#/components/schemas/Ort'
             - type: 'null'
         hinweise: { type: [string, 'null'], maxLength: 500 }
-        antwortfristStunden: { type: integer, minimum: 0, default: 24 }
+        antwortfristStunden: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Stunden vor Beginn (TER-09, TER-10)' }
         treffpunkt:
           oneOf:
             - $ref: '#/components/schemas/Treffpunkt'
@@ -1483,9 +1509,14 @@ components:
       allOf:
         - $ref: '#/components/schemas/SerieSchreiben'
         - type: object
-          required: [id, ausnahmen]
+          required: [id, teams, ausnahmen]
           properties:
             id: { type: string, format: uuid }
+            teams:
+              type: array
+              minItems: 1
+              description: Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (TER-11)
+              items: { $ref: '#/components/schemas/Team' }
             ausnahmen:
               type: array
               items: { $ref: '#/components/schemas/Ausnahme' }
@@ -1496,7 +1527,7 @@ components:
         typ:
           type: string
           enum: [TRAINING, ANLASS]
-        titel: { type: string, examples: [Training] }
+        titel: { type: string, minLength: 1, maxLength: 80, examples: [Training] }
         teamIds:
           type: array
           minItems: 1
@@ -1513,14 +1544,14 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Ort'
             - type: 'null'
-        antwortfristStunden: { type: integer, minimum: 0, default: 24 }
+        antwortfristStunden: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Stunden vor Beginn (TER-09, TER-10)' }
     Ausnahme:
       type: object
       required: [von, bis, grund]
       properties:
         von: { type: string, format: date }
         bis: { type: string, format: date }
-        grund: { type: string, examples: [Weihnachtsferien] }
+        grund: { type: string, minLength: 1, maxLength: 200, examples: [Weihnachtsferien] }
 
     Antwort:
       type: object

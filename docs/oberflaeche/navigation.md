@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) und F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie).
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) und F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`).
 
 ## Navigation
 
@@ -24,6 +24,7 @@ flowchart LR
     Detail --> TerminBearbeiten["/termine/:id/bearbeiten (Coach)"]
     Termine --> TerminNeu["/termine/neu (Coach)"]
     TerminBearbeiten --> Serie["/serien/:id (Coach)"]
+    Serie --> SerieBearbeiten["/serien/:id/bearbeiten (Coach)"]
     Start --> Teams["/teams"]
     Teams --> Team["/teams/:id"]
     Team --> Linien["/teams/:id/linien (Coach)"]
@@ -45,12 +46,13 @@ flowchart LR
 | `/anmelden` | Anmelden | alle | Login (Verfahren offen, O-01). Im Testmodus Link «Zur Anmeldung im Testmodus». `?ziel=` wird weitergegeben | F-00 |
 | `/dev-login` | Testmodus-Anmeldung | nur `dev`/`test` (Development-Build) | Liste der Seed-Personen (`GET /api/test/personen`), ein Klick meldet an und führt auf `?ziel=` bzw. `/` | F-00 |
 | `/` | Start | angemeldet | Begrüssung, nächster eigener Termin mit Antwort-Buttons, Kacheln je nach Rolle | F-00, F-04 |
-| `/termine` | Termine | angemeldet | Kommende Termine aller eigenen Teams, eigene Antwort direkt änderbar. Filter `?team=<id>`, `?ansicht=vergangen` | F-03, F-04 |
-| `/termine/:id` | Termin | Mitglieder der beteiligten Teams | Angaben, eigene Antwort, Übersicht nach Team und Linie, Coach-Block. Bei Spieltag: Spiele, Treffpunkt, Spielort, eigener Aufgebotsstatus | F-04, F-05 |
-| `/termine/neu` | Termin erfassen | Coach | Einzeltermin, Spieltag oder Serie | F-03, F-05 |
-| `/termine/:id/bearbeiten` | Termin bearbeiten | Coach | Angaben ändern, verschieben, absagen | F-03 |
+| `/termine` | Termine | angemeldet | Kommende Termine aller eigenen Teams nach Monat, Umschalter «Kommend»/«Vergangen» (`nav` «Ansicht», `?ansicht=vergangen`), Auswahl «Team» (`?team=<id>`), Coaches und Admins: Link «Termin erfassen». Ab F-04 eigene Antwort direkt änderbar | F-03, F-04 |
+| `/termine/:id` | Termin | Mitglieder der beteiligten Teams, Admin | Angaben (Datum, Zeit, Teams, Ort, Treffpunkt, Antwortfrist, Hinweise, Serie), Status «Abgesagt: <Grund>» bzw. «verschoben», Coaches: «Termin bearbeiten», «Serie ansehen». Ab F-04: eigene Antwort, Übersicht nach Team und Linie, Coach-Block. Bei Spieltag ab F-05: Spiele, eigener Aufgebotsstatus | F-03, F-04, F-05 |
+| `/termine/neu` | Termin erfassen | Coach, Admin | Auswahl «Einzelner Termin» / «Serie (jede Woche)» (`?art=serie`), Art, Titel, Datum bzw. Wochentag und Zeitraum, Beginn, Ende, Teams (Checkboxen), Ort, Hinweise, Antwortfrist. Spieltag ab F-05 | F-03, F-05 |
+| `/termine/:id/bearbeiten` | Termin bearbeiten | Coach eines beteiligten Teams, Admin | Angaben ändern, verschieben (anderes Datum oder andere Zeit), «Termin absagen» (Dialog mit Grund). Bei Serienterminen Hinweis «gilt nur für diesen Termin» | F-03 |
 | `/termine/:id/aufgebot` | Aufgebot | Coach | Auswahl nach Linien gruppiert, Antwortstatus daneben, veröffentlichen | F-05 |
-| `/serien/:id` | Serie | Coach | Regel, Teams, Ausnahmen (Ferien) | F-03 |
+| `/serien/:id` | Serie | Mitglieder der Teams der Serie (Coaches und Admins mit Bearbeitung) | Regel, Zeitraum, Teams (alle Teams der Serie, auch die, in denen man nicht ist), Antwortfrist, Ausnahmen (Liste und Formular «Ausnahme hinzufügen»), Link «Serie bearbeiten» | F-03 |
+| `/serien/:id/bearbeiten` | Serie bearbeiten | Coach eines Teams der Serie, Admin | Wie «Termin erfassen» als Serie; gilt für künftige Termine (TER-08) | F-03 |
 | `/teams` | Meine Teams | angemeldet | Eigene Teams der aktuellen Saison mit eigener Funktion (PTF-12), Link auf `/teams/:id` | F-01 |
 | `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), Spielerinnen nach Linie (Listen mit dem Gruppennamen, leere Gruppen fehlen). Coaches und Admins sehen den Link «Linien einteilen». `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
 | `/teams/:id/linien` | Linien | Coach, Admin (andere Mitglieder lesend) | Linien hinzufügen, umbenennen, sortieren («<Linie> nach oben/unten»), löschen (Dialog), Spielerinnen per Drag & Drop oder Auswahlfeld «Linie von <Name>» zuweisen; speichert sofort. Ohne Zugehörigkeit «Keine Berechtigung». Aktuelle Saison | F-02 |
@@ -75,7 +77,7 @@ Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert
 | Vielleicht mit Kommentar | Antwort «vielleicht» | «Vielleicht – bitte kurz begründen» |
 | Absage-Grund | Antwort «nicht dabei» (optional, überspringbar) | «Nicht dabei» |
 | Stellvertretend antworten | Coach in der Übersicht, Menü bei einer Person | «Antwort für <Name> eintragen» |
-| Termin absagen | Termin bearbeiten | «Termin absagen» |
+| Termin absagen | Termin bearbeiten, «Termin absagen» | «Termin absagen» (Feld «Grund», Pflicht) |
 | Linie löschen | Linien, «<Linie> löschen» | «<Linie> löschen?» |
 | Aufgebot veröffentlichen | Aufgebot | «Aufgebot veröffentlichen?» |
 
@@ -117,10 +119,12 @@ Erfolgsmeldungen haben `role="status"`, Fehler `role="alert"`. In «Person aufne
 
 | Test-ID | Element |
 |---|---|
-| `termin-karte-<terminId>` | Eintrag in der Terminliste |
+| `termin-karte-<terminId>` | Eintrag in der Terminliste (`li` mit `aria-label` «<Titel> <Datum> <Beginn>», z.B. «Training Di 17.11. 18:30», und `data-status`) |
 | `meine-antwort` | Antwort-Buttons der angemeldeten Person (in Karte und Detail) |
 | `antwort-dabei`, `antwort-nicht-dabei`, `antwort-vielleicht` | Die drei Antwort-Buttons innerhalb von `meine-antwort` |
-| `termin-status` | Hinweis «abgesagt» bzw. «verschoben» |
+| `termin-status` | Hinweis «abgesagt» bzw. «verschoben» (in der Karte als Chip, im Detail als Hinweis mit Grund) |
+| `antwortfrist` | Antwortfrist im Detail eines Termins, z.B. «Mo 16.11. 18:30 (24 Stunden vor Beginn)» |
+| `ausnahmen` | Abschnitt «Ausnahmen» auf `/serien/:id` |
 | `uebersicht` | Gesamte Übersicht eines Termins |
 | `uebersicht-total` | Gesamtzähler |
 | `uebersicht-team-<teamId>` | Abschnitt eines Teams |

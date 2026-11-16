@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import ch.stvbero.platform.kern.uhr.Uhr;
 
 @Path("/api")
 @Tag(name = "Ich")
@@ -34,6 +35,9 @@ public class IchResource {
 
     @Inject
     TeamService teams;
+
+    @Inject
+    Uhr uhr;
 
     @GET
     @Path("/ich")
@@ -50,7 +54,7 @@ public class IchResource {
         Person person = Person.findById(angemeldet.personId());
         Saison saison = Saison.aktuelleOderFehler();
         return new IchDto(person.id, person.vorname, person.nachname, person.email, person.admin,
-                SaisonDto.von(saison, saison), teams.meine(person.id, saison));
+                SaisonDto.von(saison, saison), teams.meine(person.id, saison), uhr.jetztMitOffset());
     }
 
     @POST

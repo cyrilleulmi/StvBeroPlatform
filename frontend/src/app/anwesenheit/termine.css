@@ -1,0 +1,128 @@
+:host {
+  display: grid;
+  gap: var(--abschnitt);
+}
+
+.titelzeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.titelzeile h1 {
+  margin: 0;
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.filter .feld {
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+
+.umschalter {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.umschalter a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.umschalter a[aria-current='page'] {
+  background: var(--primary-soft);
+}
+
+.monat {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.monat:first-of-type {
+  margin-top: 0;
+}
+
+.termin {
+  align-items: center;
+}
+
+.datum {
+  display: grid;
+  justify-items: center;
+  flex: none;
+  width: 56px;
+  padding: 6px 0;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+  line-height: 1.2;
+}
+
+li[data-status='ABGESAGT'] .datum {
+  background: var(--coral-soft);
+}
+
+.wochentag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tag {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.inhalt {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.inhalt .nebentext {
+  overflow-wrap: anywhere;
+}
+
+.durchgestrichen {
+  text-decoration: line-through;
+}
+
+.status-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+}
+
+.chip[data-art='abgesagt'] {
+  background: var(--coral-soft);
+}
+
+.chip[data-art='verschoben'] {
+  background: var(--mustard-soft);
+}

@@ -44,7 +44,11 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team. Der Teamname gilt pro Saison: Wird Team 1 umbenannt, zeigt 2025/26 weiterhin «Team 1» (SAI-02, Nachbesserung #21) |
 | F-02 | Gruppen 01–08 und Linienzuweisungen gemäss Tabellen «Gruppen» und «Personen». Kim ist ohne Linie. Zusätzlich Gruppe 09: Goalies von Team 1 in Saison 2025/26 (leer, Vera ist dort ohne Linie) |
 
-Serien, Termine und Antworten folgen mit F-03 bis F-05. Die Tabellen unten sind das Zielbild.
+| F-03 | Serien 01–03 mit allen ihren Terminen im Gültigkeitszeitraum (auch vergangenen), Ausnahme «Weihnachtsferien» bei Serie 01, Termine 01–08 gemäss Tabelle «Termine mit festen IDs». Termin 03 abgesagt («Halle besetzt»). Spieltage 04 und 05 mit Spielort, Google-Maps-Link und Treffpunkt, noch ohne Spiele und Aufgebot. Antwortfrist überall 24 Stunden. Noch **keine Antworten** (alle «offen») |
+
+Antworten folgen mit F-04, Spiele und Aufgebote mit F-05. Die Tabellen unten sind das Zielbild.
+
+Serientermine ohne feste ID haben die ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, z.B. für Serie 02 am 26.11.2026 `termin-2-2026-11-26`. Sie heissen «Training», Ort wie die Serie.
 
 Im Profil `dev` wird der Seed beim Start des Backends geladen. Jeder Neustart (auch Live-Reload) setzt die Daten zurück.
 
@@ -125,11 +129,13 @@ Die Serien erzeugen weitere Termine. Diese hier haben feste IDs und definierte A
 | 01 | Training Di 17.11.2026 18:30 (Serie 01) | Team 1 + Team 2 | **Hauptbeispiel**, alle Antwortstatus |
 | 02 | Training Do 19.11.2026 19:00 (Serie 02) | Team 1 | Nur Anna hat geantwortet |
 | 03 | Training Di 24.11.2026 18:30 (Serie 01) | Team 1 + Team 2 | **abgesagt** («Halle besetzt») |
-| 04 | Spieltag So 22.11.2026 | Team 1 | Aus swiss unihockey, 2 Spiele, Aufgebot im **Entwurf** |
-| 05 | Spieltag Sa 28.11.2026 | Team 2 | Von Hand erfasst, 1 Spiel, Aufgebot **veröffentlicht** |
-| 06 | Anlass Fr 11.12.2026 19:00 Teamessen | Team 1 + 2 + 3 | Niemand hat geantwortet |
+| 04 | Spieltag So 22.11.2026 09:30–13:00 | Team 1 | Aus swiss unihockey, 2 Spiele, Aufgebot im **Entwurf** |
+| 05 | Spieltag Sa 28.11.2026 14:00–16:00 | Team 2 | Von Hand erfasst, 1 Spiel, Aufgebot **veröffentlicht** |
+| 06 | Anlass Fr 11.12.2026 19:00–22:00 Teamessen | Team 1 + 2 + 3 | Niemand hat geantwortet, ohne Ort |
 | 07 | Training Di 10.11.2026 18:30 (Serie 01) | Team 1 + Team 2 | Vergangen |
-| 08 | Training Di 12.05.2026 18:30 | Team 1 (Saison 2025/26) | Archiv, mit Vera |
+| 08 | Training Di 12.05.2026 18:30–20:00 | Team 1 (Saison 2025/26) | Archiv, mit Vera |
+
+Beginn eines Spieltags ist die Anspielzeit des ersten Spiels (Annahme F-03).
 
 ### Termin 01: Training Di 17.11.2026, Team 1 + Team 2
 
@@ -230,11 +236,14 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S24 | Linie löschen | Als `petra` unter `/teams/<Team 1>/linien` «Linie 2 löschen» bestätigen | Sara und Nina stehen unter «Ohne Linie», Linie 1 und Goalies unverändert | LIN-06, LIN-07 |
 | S25 | Goalies bleiben | Als `petra` die Goalies von Team 1 löschen wollen (`DELETE /api/teams/<Team 1>/gruppen/<Gruppe 03>`) | Oberfläche bietet es nicht an, API 409 mit Regel LIN-05 | LIN-05 |
 | S26 | Linien nur lesend | Als `anna` `/teams/<Team 1>/linien` öffnen; als `marc` dasselbe | Anna sieht die Einteilung ohne Bedienelemente. Marc: «Keine Berechtigung», API 403 | LIN-07, RR-07 |
-| S16 | Archiv | Als `alex` unter `/verwaltung/saisons` bei 2025/26 «Teams ansehen», Team 1 öffnen | Hinweis «Archiv: nur lesend», Vera als Spielerin sichtbar, keine Bearbeitung möglich (API 409). Termin 08 ab F-03 | SAI-02 |
+| S16 | Archiv | Als `alex` unter `/verwaltung/saisons` bei 2025/26 «Teams ansehen», Team 1 öffnen | Hinweis «Archiv: nur lesend», Vera als Spielerin sichtbar, keine Bearbeitung möglich (API 409). Termin 08 sieht Vera unter `/termine?ansicht=vergangen` | SAI-02 |
 | S17 | Anmeldung im Testmodus | `/profil` ohne Anmeldung öffnen, auf `/dev-login` «Petra Keller» wählen | Weiterleitung auf `/dev-login?ziel=%2Fprofil`, danach zurück auf `/profil` | F-00 |
 | S18 | Kacheln nach Rolle | Als `anna` und als `alex` `/` öffnen | Beide sehen die Kachel «Anwesenheit». Nur `alex` hat «Verwaltung» in der Navigation | NF-12, RR-05 |
 | S20 | Doppelrolle | Als `petra` `/teams` öffnen | Team 1 «Coach», Team 2 «Spielerin». In Team 2 steht Petra bei den Spielerinnen, in Team 1 bei den Coaches | PTF-04, PTF-07, PTF-12 |
 | S21 | Neue Saison | Als `alex` unter `/verwaltung/saisons` 2027/28 mit Übernahme aus 2026/27 anlegen, zur aktuellen machen | Teams und Zugehörigkeiten übernommen, 2026/27 wird Archiv | SAI-04, SAI-06 |
 | S22 | Eine Funktion pro Team | Als `alex` in Team 1 Petra nochmals aufnehmen wollen | Oberfläche: «(schon im Team)», nicht wählbar. API: 409 mit Regel PTF-04 | PTF-04 |
 | S23 | Keine aktuelle Saison | `DELETE /api/test/aktuelle-saison`, als `anna` `/teams` öffnen | Weiterleitung auf `/keine-saison?ziel=%2Fteams` mit Hinweis «Noch keine aktuelle Saison», `GET /api/ich` antwortet 409 mit Regel SAI-03 | SAI-03 |
+| S27 | Termin für zwei Teams | Als `petra` unter `/termine/neu` einen Termin für Team 1 + Team 2 erfassen | Erscheint bei `anna` und `eva`. Als `marc` nur für Team 1: API 403 | TER-01, TER-11 |
+| S28 | Ferien ausnehmen | Als `petra` bei Serie 01 Ausnahme 30.11.–06.12.2026 | Training Di 01.12. verschwindet (keine Antworten). Mit Antwort: abgesagt mit Grund der Ausnahme | TER-07 |
+| S29 | Serientermin verschieben | Als `petra` Termin 02 auf Fr 20.11. 19:00 | «verschoben», Serie 02 unverändert, Do 26.11. bleibt | TER-06 |
 | S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |

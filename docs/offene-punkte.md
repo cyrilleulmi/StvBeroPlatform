@@ -34,6 +34,9 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-36 | Wie entsteht in einer frischen Installation die erste aktuelle Saison? | Ohne aktuelle Saison zeigt die App allen, auch Admins, nur den Hinweis `/keine-saison` (Nachbesserung #13). Die Verwaltung der Saisons ist so nicht erreichbar. Annahme: Die erste Saison wird bei der Einrichtung angelegt (Seed bzw. Migration beim Produktivstart). Alternative: Admins sehen auf dem Hinweis einen Link zu `/verwaltung/saisons`. |
 | O-37 | Dürfen zwei Linien eines Teams gleich heissen? | Annahme F-02: nein, Namen sind pro Team eindeutig (ohne Gross-/Kleinschreibung), damit das Auswahlfeld eindeutig ist (409, LIN-09). |
 | O-38 | Lassen sich die Goalies umbenennen? | Annahme F-02: nein, «Goalies» ist fest (409, LIN-05). |
+| O-39 | Wer darf einen Termin für mehrere Teams erfassen? | Annahme F-03: Coach in mindestens einem der Teams (oder Admin). So kann Petra (Coach Team 1) das gemeinsame Training mit Team 2 erfassen, wie im Akzeptanzkriterium verlangt. Der Vertrag sagte vorher «Coach in jedem Team». Das Formular bietet die eigenen Teams an. |
+| O-40 | Werden beim Anlegen einer Serie auch vergangene Daten erzeugt? | Annahme F-03: nein, nur Termine, die noch nicht begonnen haben. Der Seed enthält dagegen alle Termine seit Serienbeginn. |
+| O-41 | Gilt eine Änderung der Seriezeit als Verschiebung (Hinweis, Benachrichtigung)? | Annahme F-03: nein, nur das Verschieben eines einzelnen Termins setzt «verschoben». Benachrichtigungen kommen mit F-06 (TER-12). |
 
 ## Pipeline
 
