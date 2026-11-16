@@ -260,7 +260,7 @@ stateDiagram-v2
 |---|---|
 | Ohne gültige Sitzung antworten alle fachlichen Endpunkte mit 401 (Problem Details). Öffentlich sind nur `GET /api/sitzung`, `POST /api/abmelden` und die Test-Endpunkte. | RR-07 |
 | `GET /api/sitzung` antwortet immer 200 mit `angemeldet: true/false`. | F-00 |
-| Abmelden löscht die Sitzung und das Cookie, auch ohne gültige Sitzung 204. | F-00 |
+| Abmelden löscht die Sitzung und das Cookie, auch ohne gültige Sitzung 204. Idempotent: mehrere (auch gleichzeitige) Abmeldungen mit demselben Cookie antworten alle mit 204, nie mit 500. | F-00, Nachbesserung #26 |
 | Eine Sitzung läuft nicht ab (Annahme, O-33). | O-01 |
 
 ## Abläufe

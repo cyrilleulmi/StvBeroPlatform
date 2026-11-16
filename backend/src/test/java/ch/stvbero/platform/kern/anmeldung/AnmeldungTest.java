@@ -2,14 +2,25 @@ package ch.stvbero.platform.kern.anmeldung;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** F-00: Anmeldung über Sitzungs-Cookie, /api/ich, /api/kacheln, Abmelden. */
 @QuarkusTest
@@ -109,6 +120,47 @@ public class AnmeldungTest {
                 .body("angemeldet", equalTo(false));
         given().cookie("stv_sitzung", anmelden("anna")).get("/api/sitzung").then().statusCode(200)
                 .body("angemeldet", equalTo(true));
+    }
+
+    /** Nachbesserung #26 K1: Abmelden ist idempotent, auch mit derselben Sitzung nacheinander. */
+    @Test
+    void zweimalAbmeldenMitDerselbenSitzungGibtZweimal204() {
+        String sitzung = anmelden("anna");
+
+        for (int i = 0; i < 2; i++) {
+            given().cookie("stv_sitzung", sitzung).post("/api/abmelden").then().statusCode(204)
+                    .header("Set-Cookie", containsString("stv_sitzung=;"));
+        }
+        given().cookie("stv_sitzung", sitzung).get("/api/ich").then().statusCode(401);
+    }
+
+    /** Nachbesserung #26 K1: gleichzeitige Abmeldungen mit demselben Cookie enden nie mit 500. */
+    @Test
+    void gleichzeitigAbmeldenMitDerselbenSitzungGibtImmer204() throws Exception {
+        int parallel = 8;
+        for (int runde = 0; runde < 5; runde++) {
+            String sitzung = anmelden("anna");
+            CountDownLatch start = new CountDownLatch(1);
+            ExecutorService pool = Executors.newFixedThreadPool(parallel);
+            try {
+                List<Future<Response>> antworten = new ArrayList<>();
+                for (int i = 0; i < parallel; i++) {
+                    antworten.add(pool.submit(() -> {
+                        start.await();
+                        return given().cookie("stv_sitzung", sitzung).post("/api/abmelden");
+                    }));
+                }
+                start.countDown();
+                for (Future<Response> antwort : antworten) {
+                    Response r = antwort.get(30, TimeUnit.SECONDS);
+                    assertEquals(204, r.statusCode(), "Status einer gleichzeitigen Abmeldung");
+                    assertTrue(r.header("Set-Cookie").contains("stv_sitzung=;"), "Cookie wird gelöscht");
+                }
+            } finally {
+                pool.shutdownNow();
+            }
+            given().cookie("stv_sitzung", sitzung).get("/api/ich").then().statusCode(401);
+        }
     }
 
     @Test
