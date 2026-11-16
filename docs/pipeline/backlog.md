@@ -63,7 +63,7 @@ scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles tes
 3. `/dev-login` zeigt alle Seed-Personen aus testdaten.md (zunächst nur Personen, ohne Teams). Ein Klick meldet an und führt auf `/`.
 4. `/` zeigt die Begrüssung mit Vornamen und die Kacheln aus `GET /api/kacheln`. Die Kachel «Anwesenheit» ist registriert und führt auf `/termine` (dort vorerst leerer Zustand).
 5. Navigation mobil unten, ab 1024px links, nach navigation.md. Aktiver Eintrag mit `aria-current="page"`.
-6. Design-Tokens aus design-grundlagen.md als CSS Custom Properties. Unter `/profil` lässt sich Hell/Dunkel/System umschalten, die Wahl bleibt nach Neuladen erhalten.
+6. Design-Tokens aus design-grundlagen.md als CSS Custom Properties. Unter `/profil` lässt sich die Darstellung umschalten (ursprünglich Hell/Dunkel/System, seit E-67 Hell/Düne/GitHub Dark/System), die Wahl bleibt nach Neuladen erhalten.
 7. PWA: Manifest und Service Worker, installierbar.
 8. Test-Endpunkte `reset`, `uhr`, `anmelden` funktionieren im Profil `dev`/`test` und fehlen im Profil `prod` (Test, der das prüft).
 9. Ein Backend-Test vergleicht die von Quarkus erzeugte OpenAPI mit `docs/api/openapi.yaml` für alle bereits umgesetzten Pfade.

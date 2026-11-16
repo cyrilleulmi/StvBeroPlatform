@@ -1,4 +1,6 @@
-/* Design-Tokens «Salbei frisch» (docs/design-grundlagen.md). Farben nur über diese Variablen. */
+/* Design-Tokens (docs/design-grundlagen.md). Farben nur über diese Variablen.
+   Drei Darstellungen (NF-08): Hell («Salbei frisch»), Düne, GitHub Dark. «System» setzt kein
+   data-theme: hell gilt dann Hell, dunkel GitHub Dark. */
 :root,
 [data-theme='light'] {
   --bg: #f0f5f2;
@@ -27,40 +29,59 @@
   color-scheme: light;
 }
 
-[data-theme='dark'] {
-  --bg: #18201d;
-  --surface: #212b27;
-  --text: #e7eeea;
-  --muted: #a2b0aa;
-  --border: #31403a;
-  --primary: #6fd0b4;
-  --on-primary: #0e2620;
-  --primary-soft: #224238;
-  --coral: #f3a493;
-  --coral-soft: #48302c;
-  --mustard: #e3d97a;
-  --mustard-soft: #3e3b22;
-  --blue: #8ec3ec;
-  --blue-soft: #233848;
+[data-theme='duene'] {
+  --bg: #f3ece1;
+  --surface: #fffaf3;
+  --text: #33291f;
+  --muted: #72634f;
+  --border: #e4d8c6;
+  --primary: #2b5f75;
+  --on-primary: #ffffff;
+  --primary-soft: #e1e4e1;
+  --coral: #ad442d;
+  --coral-soft: #f4e1d7;
+  --mustard: #7c5e00;
+  --mustard-soft: #ede4d1;
+  --blue: #5b4fa8;
+  --blue-soft: #e8e2e9;
+  color-scheme: light;
+}
+
+[data-theme='github-dark'] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --text: #e6edf3;
+  --muted: #9198a1;
+  --border: #30363d;
+  --primary: #58a6ff;
+  --on-primary: #0c1724;
+  --primary-soft: #1b2c41;
+  --coral: #ff7b72;
+  --coral-soft: #392427;
+  --mustard: #e3b341;
+  --mustard-soft: #342e1f;
+  --blue: #bc8cff;
+  --blue-soft: #2d2741;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #18201d;
-    --surface: #212b27;
-    --text: #e7eeea;
-    --muted: #a2b0aa;
-    --border: #31403a;
-    --primary: #6fd0b4;
-    --on-primary: #0e2620;
-    --primary-soft: #224238;
-    --coral: #f3a493;
-    --coral-soft: #48302c;
-    --mustard: #e3d97a;
-    --mustard-soft: #3e3b22;
-    --blue: #8ec3ec;
-    --blue-soft: #233848;
+  /* «System» im Dunkeln: gleiche Werte wie [data-theme='github-dark']. */
+  :root:not([data-theme]) {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --text: #e6edf3;
+    --muted: #9198a1;
+    --border: #30363d;
+    --primary: #58a6ff;
+    --on-primary: #0c1724;
+    --primary-soft: #1b2c41;
+    --coral: #ff7b72;
+    --coral-soft: #392427;
+    --mustard: #e3b341;
+    --mustard-soft: #342e1f;
+    --blue: #bc8cff;
+    --blue-soft: #2d2741;
     color-scheme: dark;
   }
 }

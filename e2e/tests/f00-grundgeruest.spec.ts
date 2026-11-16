@@ -160,11 +160,12 @@ test.describe('Navigation', () => {
 
 test.describe('Design', () => {
   const HELL = 'rgb(240, 245, 242)';
-  const DUNKEL = 'rgb(24, 32, 29)';
+  /** Hintergrund von GitHub Dark: die dunkle Darstellung, auch bei «System» im Dunkeln (E-67). */
+  const DUNKEL = 'rgb(13, 17, 23)';
   const hintergrund = (page: import('@playwright/test').Page) =>
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  test('F-00 K6 NF-06 NF-07: Hell/Dunkel/System umschalten, die Wahl bleibt nach Neuladen', async ({ page }) => {
+  test('F-00 K6 NF-06 NF-07: Hell/GitHub Dark/System umschalten, die Wahl bleibt nach Neuladen', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await anmelden(page, 'anna');
     await page.goto('/profil');
@@ -174,14 +175,14 @@ test.describe('Design', () => {
     await expect(umschalter.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(await hintergrund(page)).toBe(HELL);
 
-    await umschalter.getByRole('radio', { name: 'Dunkel' }).check();
-    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'dark');
+    await umschalter.getByRole('radio', { name: 'GitHub Dark' }).check();
+    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'github-dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
     await barrierefrei(page);
 
     await page.reload();
-    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Dunkel' })).toBeChecked();
-    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'dark');
+    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'GitHub Dark' })).toBeChecked();
+    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'github-dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
 
     await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Hell' }).check();

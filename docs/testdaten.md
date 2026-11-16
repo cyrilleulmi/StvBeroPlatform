@@ -286,4 +286,5 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S33 | Spieltag aus swiss unihockey | Simulator für `900001`: Spiel 01, 02 und zwei Spiele am So 06.12.2026 10:00 und 12:30 in «Sporthalle Nord», Beromünster. Abgleich auslösen | Ein neuer Spieltag So 06.12. mit beiden Spielen, Spielort mit Google-Maps-Link | SUH-04, SUH-07 |
 | S34 | Spiel fehlt bei swiss unihockey | Simulator für `900001` nur Spiel 01. Abgleich auslösen | Spiel 02 bleibt, markiert «swiss unihockey liefert dieses Spiel nicht mehr.», Coach kann es löschen | SUH-06 |
 | S35 | swiss unihockey nicht erreichbar | Simulator für `900001` mit `"nichtErreichbar": true`. Abgleich auslösen | Meldung «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nichts geändert | SUH-09 |
-| S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |
+| S19 | Darstellung | Als `anna` unter `/profil` «GitHub Dark» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung: hell «Hell», dunkel «GitHub Dark» | NF-06, NF-08 |
+| S36 | Darstellung Düne | Als `anna` unter `/profil` «Düne» wählen, zu `/` wechseln, neu laden | `data-theme` am Dokument ist `duene`, die Farben gelten auch, wenn das System dunkel ist, und bleiben nach dem Neuladen. Kein Kontrast-Befund | NF-08 |
