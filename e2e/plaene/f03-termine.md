@@ -56,3 +56,17 @@ Automatisiert in `e2e/tests/f03-termine.spec.ts` (Abschnitt «Befunde aus dem Te
 | Beobachtung 1 / G4, G5 | Antwortfrist 337 bzw. 400 und -1 im Formular (Termin und Serie), API 337 | E2E «Antwortfrist ausserhalb 0 bis 336 Stunden», `ter10AntwortfristHoechstensZweiWochenMitDeutscherMeldung` |
 | Beobachtung 2 / G11 | Langer Titel, Ort, Hinweise ohne Leerzeichen, Detailseite | E2E «Lange Wörter … brechen um» (mobil und desktop) |
 | Beobachtung 3 / G12 | `petra` → `/termine?team=<Team 3>`: Auswahl «Team 3» | E2E K9 (Ende) |
+
+## Nachtest Runde 1 (Test-Agent)
+
+Ausgangslage wie oben. Prüft die Befunde aus Runde 0 erneut und die Kriterien K1 bis K9 als Regression.
+
+| Nr. | Fall | Schritte | Erwartung |
+|---|---|---|---|
+| R1 | Serie fremder Teams (G9) | `anna`, `marc` → `/serien/<01>`; `tina` → `/serien/<01>` | anna und marc: «Teams: Team 1 + Team 2». tina: «Keine Berechtigung», API 403 |
+| R2 | Antwortfrist im Formular (G4, G5) | `petra` → `/termine/neu`, Antwortfrist 337, -1, 2.5, leer → «Termin speichern»; `/serien/<01>/bearbeiten` 400 | «Höchstens 336 Stunden (14 Tage).», «Mindestens 0 Stunden.», «Bitte eine ganze Zahl angeben.»; Feld `aria-invalid="true"` und fokussiert; kein `POST` |
+| R3 | Antwortfrist und Pflichtfelder API | `POST /api/termine` mit `antwortfristStunden` 337 bzw. -1, leerem Titel, Hinweise 501 Zeichen, `teamIds: []` | 400, `felder[].meldung` auf Deutsch |
+| R4 | Lange Wörter (G11) | Termin mit Titel, Ort, Hinweisen aus einem 320 Zeichen langen Link ohne Leerzeichen; Detail, Liste, Bearbeiten bei 375 px | `scrollWidth` 375, Text bricht um, Titel auf 80 Zeichen gekürzt |
+| R5 | Filter fremdes Team (G12) | `petra` → `/termine?team=<Team 3>` mobil und Desktop | Auswahl zeigt «Team 3», Liste nur Teamessen |
+| R6 | Regression K1–K9 | wie K1–K9, mobil und Desktop; Doppelklick auf «Termin speichern» und «Absagen» | wie oben; je genau ein `POST` |
+| R7 | Darkmode | `/serien/<01>` (anna, mobil), Feldfehler Antwortfrist (mobil), `/termine?team=<Team 3>` (Desktop) | gut lesbar, Fehlertext erkennbar |
