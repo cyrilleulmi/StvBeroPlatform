@@ -43,3 +43,5 @@ Benachrichtigungen `90000000-0000-4000-8000-0000000000NN` (Anna Absage T03: 02, 
 | G4 | Neuladen | `/benachrichtigungen` neu laden, Deep Link ohne Anmeldung | Weiterleitung zu `/dev-login?ziel=%2Fbenachrichtigungen`, danach zurück |
 | G5 | Darstellung | Glocke mobil oben rechts und Desktop, hell und dunkel | lesbar, verdeckt nichts, Kontrast ausreichend |
 | G6 | Glocke verdeckt nichts | mobil `petra` → `/termine/<T01>`, so scrollen, dass «Antwort für Mia Frei eintragen» oben rechts steht | Die Glocke liegt nicht über Bedienelementen des Inhalts; ein Tipp auf den rechten Rand des Stift-Buttons trifft den Button |
+| G7 | Fokus unter Kopfzeile (O-51) | mobil `petra` → `/termine/<T01>`, ans Seitenende scrollen, mit Shift+Tab rückwärts durch alle Bedienelemente von `main` | Kein fokussiertes Element liegt unter der Kopfzeile (oben 68px) oder der Navigation unten (`scroll-padding`) |
+| G8 | Kopfzeile Darkmode | mobil dunkel, `lea`, `/termine/<T01>` und `/benachrichtigungen` | Kopfzeile mit dunklem Hintergrund und Trennlinie, Glocke mit Zähler lesbar; ab 1024px keine Kopfzeile |
