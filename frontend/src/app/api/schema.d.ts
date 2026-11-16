@@ -350,7 +350,9 @@ export interface paths {
         put?: never;
         /**
          * Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
-         * @description Die Person muss Coach in jedem angegebenen Team sein. Ein Spieltag hat genau ein Team (AUF-03).
+         * @description Die Person muss Admin oder Coach in mindestens einem der angegebenen Teams sein (TER-01, RR-06), sonst 403.
+         *     Ein Spieltag hat genau ein Team (AUF-03). Ein Termin in der Vergangenheit ergibt 400, einer in einer
+         *     Saison im Archiv 409 (SAI-02). Ohne `antwortfristStunden` gelten 24 Stunden (TER-10).
          */
         post: operations["terminAnlegen"];
         delete?: never;
@@ -372,7 +374,9 @@ export interface paths {
         get: operations["terminLesen"];
         /**
          * Termin ändern oder verschieben (TER-06, TER-12, Coach)
-         * @description Eine geänderte Beginnzeit gilt als Verschiebung und benachrichtigt alle Betroffenen. Antworten bleiben erhalten.
+         * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Betroffenen (ab F-06).
+         *     Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
+         *     Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
          */
         put: operations["terminAendern"];
         post?: never;
@@ -410,7 +414,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach) */
+        /**
+         * Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
+         * @description Erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Rechte wie bei
+         *     `terminAnlegen`. Der Zeitraum dauert höchstens ein Jahr (400).
+         */
         post: operations["serieAnlegen"];
         delete?: never;
         options?: never;
@@ -429,7 +437,12 @@ export interface paths {
         };
         /** Serie mit Ausnahmen */
         get: operations["serieLesen"];
-        /** Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach). */
+        /**
+         * Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
+         * @description Künftige Termine übernehmen die neuen Angaben. Einzeln geänderte und abgesagte Termine bleiben unverändert.
+         *     Termine, die nicht mehr zur Serie passen, werden entfernt bzw. abgesagt («Serie geändert»), wenn schon
+         *     jemand geantwortet hat.
+         */
         put: operations["serieAendern"];
         post?: never;
         delete?: never;
@@ -449,7 +462,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach) */
+        /**
+         * Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
+         * @description Künftige geplante Termine der Serie im Zeitraum werden entfernt. Hat schon jemand geantwortet, wird der
+         *     Termin stattdessen abgesagt, Grund = Grund der Ausnahme (O-19).
+         */
         post: operations["ausnahmeAnlegen"];
         delete?: never;
         options?: never;
@@ -881,6 +898,11 @@ export interface components {
         Ich: components["schemas"]["Person"] & {
             saison: components["schemas"]["Saison"];
             zugehoerigkeiten: components["schemas"]["Teamzugehoerigkeit"][];
+            /**
+             * Format: date-time
+             * @description Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
+             */
+            jetzt: string;
         };
         Sitzung: {
             angemeldet: boolean;
@@ -1069,7 +1091,10 @@ export interface components {
             teamIds: string[];
             ort?: components["schemas"]["Ort"] | null;
             hinweise?: string | null;
-            /** @default 24 */
+            /**
+             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @default 24
+             */
             antwortfristStunden: number;
             treffpunkt?: components["schemas"]["Treffpunkt"] | null;
         };
@@ -1095,7 +1120,10 @@ export interface components {
             /** Format: date */
             gueltigBis: string;
             ort?: components["schemas"]["Ort"] | null;
-            /** @default 24 */
+            /**
+             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @default 24
+             */
             antwortfristStunden: number;
         };
         Ausnahme: {
@@ -1997,6 +2025,7 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            409: components["responses"]["Konflikt"];
         };
     };
     terminLesen: {
@@ -2080,6 +2109,7 @@ export interface operations {
                     "application/json": components["schemas"]["Termin"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
@@ -2109,6 +2139,7 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            409: components["responses"]["Konflikt"];
         };
     };
     serieLesen: {
@@ -2162,6 +2193,7 @@ export interface operations {
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     ausnahmeAnlegen: {
@@ -2190,6 +2222,8 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
         };
     };
     uebersichtLesen: {

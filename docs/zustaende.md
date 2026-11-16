@@ -61,6 +61,16 @@ stateDiagram-v2
 - Eine Erinnerung (BEN-01) geht 12 Stunden vor der Antwortfrist an alle mit Antwort OFFEN, höchstens einmal pro Person und Termin (BEN-13). Die 12 Stunden sind eine Annahme.
 - Verschieben behält alle Antworten. Ob «dabei» nach einer Verschiebung noch gilt, entscheidet die Person selbst.
 
+| Regel | Bezug |
+|---|---|
+| Ein Termin gehört zur Saison, in die sein Datum fällt. Sichtbar ist er für Mitglieder (jede Funktion) eines beteiligten Teams in dieser Saison und für Admins, sonst 403. | TER-13, RR-02 |
+| Erfassen: Admins oder Coach in **mindestens einem** der Teams (so erfasst Petra das gemeinsame Training von Team 1 + Team 2). Nur Teams, in denen die Person nichts ist: 403. Bearbeiten und absagen: Coach eines beteiligten Teams oder Admin; nach der Änderung muss weiterhin ein Team dabei sein, in dem die Person Coach ist (Annahme O-39). | TER-01, TER-11, RR-06 |
+| Ende vor Beginn, kein Team, Spieltag mit mehr als einem Team, unbekanntes Team oder ein Termin in der Vergangenheit: 400 mit Feld. Termin in einer Saison im Archiv: 409 (SAI-02). | TER-04, AUF-03 |
+| Abgesagte oder vergangene Termine lassen sich weder ändern noch nochmals absagen: 409, Regel TER-06. | TER-06 |
+| Eine andere Beginnzeit setzt `verschoben` (bleibt danach gesetzt). Ein so geänderter Serientermin übernimmt spätere Änderungen der Serie nicht mehr. | TER-06 |
+| Antwortfrist = Beginn minus `antwortfristStunden` (0 bis 336, Standard 24). | TER-09, TER-10 |
+| Liste: kommende = Ende nach «jetzt», aufsteigend; vergangene = Ende erreicht, absteigend. `?team=` zeigt die eigenen Termine, an denen dieses Team beteiligt ist. | TER-13 |
+
 ## Serie
 
 ```mermaid
@@ -79,6 +89,13 @@ Beim Hinzufügen einer Ausnahme (z.B. Ferien) gilt für die betroffenen künftig
 - Termin mit Antworten: wird abgesagt, Grund = Grund der Ausnahme. So geht keine Antwort verloren und alle werden benachrichtigt.
 
 Das ist eine Annahme.
+
+| Regel | Bezug |
+|---|---|
+| Anlegen erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Der Zeitraum dauert höchstens ein Jahr (400). | TER-05 |
+| Eine Ausnahme betrifft künftige **geplante** Termine der Serie, deren Datum im Zeitraum liegt (auch einzeln verschobene). Abgesagte bleiben. | TER-07 |
+| Ändern betrifft nur künftige Termine: geplante, nicht einzeln geänderte übernehmen die neuen Angaben (Antworten bleiben, `verschoben` wird nicht gesetzt). Daten, die neu dazukommen, erhalten einen Termin. Termine, deren Datum nicht mehr zur Serie passt, werden wie bei einer Ausnahme entfernt bzw. abgesagt (Grund «Serie geändert»). Vergangene, abgesagte und einzeln geänderte Termine bleiben. | TER-08 |
+| Rechte wie bei Terminen. Ansehen: Mitglieder der Teams der Serie und Admins (403). | TER-11, RR-06 |
 
 ## Aufgebot eines Spieltags
 
@@ -187,7 +204,7 @@ stateDiagram-v2
 | Regel | Bezug |
 |---|---|
 | Solange eine Anfrage läuft, ist der Absende-Button gesperrt und weitere Klicks (auch ein Doppelklick) lösen keine zweite Anfrage aus. | – |
-| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
+| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen, Termin und Serie speichern, Termin absagen, Ausnahme hinzufügen. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
 
 ## Sitzung
 

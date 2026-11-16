@@ -1259,12 +1259,16 @@ components:
       allOf:
         - $ref: '#/components/schemas/Person'
         - type: object
-          required: [saison, zugehoerigkeiten]
+          required: [saison, zugehoerigkeiten, jetzt]
           properties:
             saison: { $ref: '#/components/schemas/Saison' }
             zugehoerigkeiten:
               type: array
               items: { $ref: '#/components/schemas/Teamzugehoerigkeit' }
+            jetzt:
+              type: string
+              format: date-time
+              description: Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
     Sitzung:
       type: object
       required: [angemeldet]

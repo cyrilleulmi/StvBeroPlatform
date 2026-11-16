@@ -77,7 +77,8 @@ test.describe('Start und Kacheln', () => {
 
     await expect(page).toHaveURL('/termine');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Termine');
-    await expect(page.getByText('Keine kommenden Termine')).toBeVisible();
+    // Seit F-03 gibt es Termine im Seed; den leeren Zustand prüft f03-termine.spec.ts (Alex).
+    await expect(page.getByTestId('termin-karte-40000000-0000-4000-8000-000000000001')).toBeVisible();
     await barrierefrei(page);
   });
 

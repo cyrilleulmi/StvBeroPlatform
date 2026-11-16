@@ -1,0 +1,60 @@
+:host,
+.abschnitte {
+  display: grid;
+  gap: var(--abschnitt);
+}
+
+.status {
+  display: grid;
+  gap: 4px;
+}
+
+.angaben {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px 16px;
+  margin: 0 0 12px;
+}
+
+.angaben dt {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.angaben dt:first-child {
+  margin-top: 0;
+}
+
+.angaben dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.angaben a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-weight: 700;
+}
+
+.hinweise {
+  white-space: pre-line;
+}
+
+@media (min-width: 640px) {
+  .angaben {
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: baseline;
+    row-gap: 10px;
+  }
+
+  .angaben dt {
+    margin-top: 0;
+  }
+}
+
+.bearbeiten {
+  justify-self: start;
+}

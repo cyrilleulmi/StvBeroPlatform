@@ -4,10 +4,12 @@ import ch.stvbero.platform.kern.saison.SaisonDto;
 import ch.stvbero.platform.kern.team.TeamzugehoerigkeitDto;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Schema(name = "Ich")
 public record IchDto(UUID id, String vorname, String nachname, String email, boolean admin,
-                     SaisonDto saison, List<TeamzugehoerigkeitDto> zugehoerigkeiten) {
+                     SaisonDto saison, List<TeamzugehoerigkeitDto> zugehoerigkeiten,
+                     OffsetDateTime jetzt) {
 }

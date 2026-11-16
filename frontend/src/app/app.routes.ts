@@ -45,6 +45,10 @@ export const routes: Routes = [
           import('./anwesenheit/anwesenheit.routes').then((m) => m.ANWESENHEIT_ROUTES),
       },
       {
+        path: 'serien',
+        loadChildren: () => import('./anwesenheit/anwesenheit.routes').then((m) => m.SERIEN_ROUTES),
+      },
+      {
         path: 'teams',
         title: titel('Teams'),
         loadComponent: () => import('./seiten/teams/teams').then((m) => m.Teams),
