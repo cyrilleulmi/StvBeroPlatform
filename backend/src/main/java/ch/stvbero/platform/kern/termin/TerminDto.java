@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Termin mit allen Angaben (TER-04). Spiele, Aufgebot und eigener Aufgebotsstatus gibt es nur bei
- * Spieltagen; sie kommen mit F-05 (bis dahin: keine Spiele, kein Aufgebot).
+ * Termin mit allen Angaben (TER-04). Spiele, Stand des Aufgebots und eigener Aufgebotsstatus gibt es nur bei
+ * Spieltagen (AUF-14, AUF-23, AUF-24).
  */
 @Schema(name = "Termin")
 @JsonInclude(JsonInclude.Include.NON_NULL)

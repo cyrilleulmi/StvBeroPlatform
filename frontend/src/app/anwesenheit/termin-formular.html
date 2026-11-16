@@ -149,7 +149,9 @@
       "
     >
       <legend>{{ texte.terminFormular.teams }}</legend>
-      <p class="nebentext" id="termin-teams-hinweis">{{ texte.terminFormular.teamsHinweis }}</p>
+      <p class="nebentext" id="termin-teams-hinweis">
+        {{ spieltag() ? texte.terminFormular.teamsHinweisSpieltag : texte.terminFormular.teamsHinweis }}
+      </p>
       @for (t of teams(); track t.id; let erstes = $first) {
         <label class="checkbox">
           <input
@@ -170,7 +172,9 @@
     </fieldset>
 
     <div class="feld">
-      <label for="termin-ort">{{ texte.terminFormular.ort }}</label>
+      <label for="termin-ort">{{
+        spieltag() ? texte.terminFormular.spielort : texte.terminFormular.ort
+      }}</label>
       <input
         id="termin-ort"
         type="text"
@@ -185,6 +189,149 @@
         <p class="feldfehler" id="termin-ort-fehler">{{ m }}</p>
       }
     </div>
+
+    @if (!alsSerie()) {
+      <div class="feld">
+        <label for="termin-mapsUrl">{{ texte.terminFormular.mapsUrl }}</label>
+        <input
+          id="termin-mapsUrl"
+          type="url"
+          inputmode="url"
+          maxlength="500"
+          autocomplete="off"
+          [value]="werte().mapsUrl"
+          (input)="setzen('mapsUrl', $any($event.target).value)"
+          [attr.aria-invalid]="feldFehler().mapsUrl ? 'true' : null"
+          [attr.aria-describedby]="
+            feldFehler().mapsUrl ? 'termin-mapsUrl-fehler' : 'termin-mapsUrl-hinweis'
+          "
+        />
+        <p class="nebentext" id="termin-mapsUrl-hinweis">{{ texte.terminFormular.mapsUrlHinweis }}</p>
+        @if (feldFehler().mapsUrl; as m) {
+          <p class="feldfehler" id="termin-mapsUrl-fehler">{{ m }}</p>
+        }
+      </div>
+    }
+
+    @if (spieltag()) {
+      <fieldset class="gruppe">
+        <legend>{{ texte.terminFormular.treffpunkt }}</legend>
+        <div class="feldreihe">
+          <div class="feld">
+            <label for="termin-treffpunktZeit">{{ texte.terminFormular.treffpunktZeit }}</label>
+            <input
+              id="termin-treffpunktZeit"
+              type="time"
+              [value]="werte().treffpunktZeit"
+              (input)="setzen('treffpunktZeit', $any($event.target).value)"
+              [attr.aria-invalid]="feldFehler().treffpunktZeit ? 'true' : null"
+              [attr.aria-describedby]="fehlerId('treffpunktZeit')"
+            />
+            @if (feldFehler().treffpunktZeit; as m) {
+              <p class="feldfehler" id="termin-treffpunktZeit-fehler">{{ m }}</p>
+            }
+          </div>
+          <div class="feld">
+            <label for="termin-treffpunktOrt">{{ texte.terminFormular.treffpunktOrt }}</label>
+            <input
+              id="termin-treffpunktOrt"
+              type="text"
+              maxlength="120"
+              autocomplete="off"
+              [value]="werte().treffpunktOrt"
+              (input)="setzen('treffpunktOrt', $any($event.target).value)"
+              [attr.aria-invalid]="feldFehler().treffpunktOrt ? 'true' : null"
+              [attr.aria-describedby]="fehlerId('treffpunktOrt')"
+            />
+            @if (feldFehler().treffpunktOrt; as m) {
+              <p class="feldfehler" id="termin-treffpunktOrt-fehler">{{ m }}</p>
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="gruppe spiele" aria-describedby="termin-spiele-hinweis">
+        <legend>{{ texte.terminFormular.spiele }}</legend>
+        <p class="nebentext" id="termin-spiele-hinweis">{{ texte.terminFormular.spieleHinweis }}</p>
+        @for (z of spiele(); track z.schluessel; let i = $index) {
+          <fieldset class="spiel">
+            <legend>{{ texte.terminFormular.spiel(i + 1) }}</legend>
+            @if (z.quelle !== 'MANUELL') {
+              <p class="nebentext">
+                {{ z.zeit }} · {{ z.gegner }} ·
+                {{ z.heim ? texte.terminFormular.heim : texte.terminFormular.auswaerts }}
+              </p>
+              <p class="nebentext">{{ texte.terminFormular.importiert }}</p>
+            } @else {
+              <div class="feld">
+                <label [for]="'spiel-' + z.schluessel + '-gegner'">{{ texte.terminFormular.gegner }}</label>
+                <input
+                  [id]="'spiel-' + z.schluessel + '-gegner'"
+                  type="text"
+                  maxlength="80"
+                  autocomplete="off"
+                  [value]="z.gegner"
+                  (input)="spielSetzen(z.schluessel, 'gegner', $any($event.target).value)"
+                  [attr.aria-invalid]="spielFehlerId(z.schluessel, 'gegner') ? 'true' : null"
+                  [attr.aria-describedby]="spielFehlerId(z.schluessel, 'gegner')"
+                />
+                @if (spielFehlerId(z.schluessel, 'gegner'); as fid) {
+                  <p class="feldfehler" [id]="fid">{{ spielFehler()[z.schluessel + '-gegner'] }}</p>
+                }
+              </div>
+              <div class="feldreihe">
+                <div class="feld">
+                  <label [for]="'spiel-' + z.schluessel + '-zeit'">{{
+                    texte.terminFormular.anspielzeit
+                  }}</label>
+                  <input
+                    [id]="'spiel-' + z.schluessel + '-zeit'"
+                    type="time"
+                    [value]="z.zeit"
+                    (input)="spielSetzen(z.schluessel, 'zeit', $any($event.target).value)"
+                    [attr.aria-invalid]="spielFehlerId(z.schluessel, 'zeit') ? 'true' : null"
+                    [attr.aria-describedby]="spielFehlerId(z.schluessel, 'zeit')"
+                  />
+                  @if (spielFehlerId(z.schluessel, 'zeit'); as fid) {
+                    <p class="feldfehler" [id]="fid">{{ spielFehler()[z.schluessel + '-zeit'] }}</p>
+                  }
+                </div>
+                <div class="feld">
+                  <label [for]="'spiel-' + z.schluessel + '-heim'">{{
+                    texte.terminFormular.heimAuswaerts
+                  }}</label>
+                  <select
+                    [id]="'spiel-' + z.schluessel + '-heim'"
+                    (change)="spielSetzen(z.schluessel, 'heim', $any($event.target).value === 'heim')"
+                  >
+                    <option value="heim" [selected]="z.heim">{{ texte.terminFormular.heim }}</option>
+                    <option value="auswaerts" [selected]="!z.heim">
+                      {{ texte.terminFormular.auswaerts }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="button button-sekundaer button-klein entfernen"
+                [disabled]="speichert()"
+                (click)="spielEntfernen(z.schluessel)"
+              >
+                {{ texte.terminFormular.spielEntfernen(i + 1) }}
+              </button>
+            }
+          </fieldset>
+        }
+        <button
+          type="button"
+          class="button button-sekundaer button-klein hinzufuegen"
+          [disabled]="speichert()"
+          (click)="spielHinzufuegen()"
+        >
+          {{ texte.terminFormular.spielHinzufuegen }}
+        </button>
+      </fieldset>
+    }
 
     @if (!alsSerie()) {
       <div class="feld">

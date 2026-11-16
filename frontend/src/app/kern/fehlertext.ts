@@ -20,6 +20,15 @@ export function fehlerstatus(fehler: unknown): number {
   return fehler instanceof HttpErrorResponse ? fehler.status : 0;
 }
 
+/** Regel-ID eines Fehlers vom Backend (Problem Details, Feld `regel`), sonst null. */
+export function fehlerregel(fehler: unknown): string | null {
+  if (fehler instanceof HttpErrorResponse) {
+    const regel = (fehler.error as { regel?: unknown } | null)?.regel;
+    return typeof regel === 'string' ? regel : null;
+  }
+  return null;
+}
+
 /** Feldfehler aus Problem Details (`felder`), als Zuordnung Feld → Meldung. */
 export function feldfehler(fehler: unknown): Record<string, string> {
   const ergebnis: Record<string, string> = {};

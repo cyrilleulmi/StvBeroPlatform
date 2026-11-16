@@ -108,6 +108,7 @@ stateDiagram-v2
     [*] --> KEINES
     KEINES --> ENTWURF: Coach wählt erste Spielerin
     ENTWURF --> ENTWURF: Auswahl ändern
+    ENTWURF --> KEINES: Auswahl geleert
     ENTWURF --> VEROEFFENTLICHT: veröffentlichen<br/>alle Spielerinnen benachrichtigt (BEN-03)
     VEROEFFENTLICHT --> VEROEFFENTLICHT: Auswahl ändern<br/>nur Betroffene benachrichtigt (BEN-05)
     VEROEFFENTLICHT --> [*]: Spieltag vorbei
@@ -128,6 +129,26 @@ stateDiagram-v2
 - Solange das Aufgebot ein Entwurf ist, sehen es nur Coaches (AUF-23).
 - Aufgeboten werden kann jede Spielerin des Teams, unabhängig von ihrer Antwort (AUF-22).
 - Aufgebotene bestätigen nicht (AUF-25).
+
+| Regel | Bezug |
+|---|---|
+| Ansehen, auswählen und veröffentlichen dürfen Coaches des Teams und Admins, sonst 403. Ein Termin, der kein Spieltag ist, hat kein Aufgebot (409, Regel AUF-02). | RR-03, AUF-02 |
+| Speichern ersetzt die ganze Auswahl. Nur Spielerinnen des Teams, keine Coaches und niemand ausserhalb: 422 mit Regel AUF-28. Leere Auswahl im Entwurf: zurück zu KEINES. | AUF-22, AUF-28 |
+| Veröffentlicht wird nur ein Entwurf mit mindestens einer Spielerin, und nur einmal (sonst 409, Regel AUF-23). Danach bleibt es veröffentlicht, auch wenn die Coach die Auswahl ändert (Annahme O-46). | AUF-23 |
+| Vor der Veröffentlichung sehen Personen ohne Coach-Recht `aufgebotStatus: KEINES` und `meinAufgebot: NOCH_KEIN_AUFGEBOT` (Annahme O-45). `meinAufgebot` gibt es nur für Spielerinnen des Teams. | AUF-23, AUF-24 |
+| Abgesagter oder vergangener Spieltag: Auswahl und Veröffentlichen ergeben 409 (TER-06), Ansehen geht. Gleichzeitige Änderungen ergeben nie 500. | TER-06 |
+| Benachrichtigungen beim Veröffentlichen (BEN-03), bei Änderungen (BEN-05) und bei Abmeldung Aufgebotener (BEN-04) kommen mit F-06. | AUF-24, AUF-26, AUF-27 |
+
+## Spiel eines Spieltags
+
+| Regel | Bezug |
+|---|---|
+| Spiele haben Gegner, Anspielzeit, Heim/Auswärts und optional ein Resultat Heim:Gast (z.B. 5:3). Die API liefert sie nach Anspielzeit. | AUF-14, AUF-15 |
+| Erfassen, ändern und löschen dürfen Coaches des Teams und Admins (403). Nur bei Spieltagen (409, Regel AUF-01). | TER-11, RR-06 |
+| Die Anspielzeit liegt am Tag des Spieltags (400 beim Feld `anspielzeit`). Beim Ändern eines Spiels gilt das nur für eine neue Anspielzeit, das Resultat lässt sich also immer erfassen. Wird der Spieltag auf einen anderen Tag verschoben, ziehen von Hand erfasste Spiele mit. Hat er Spiele aus swiss unihockey, lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05); deren Datum kommt von swiss unihockey (Annahme O-48). | AUF-01, SUH-05 |
+| Hinzufügen und löschen nur, solange der Spieltag geplant und nicht vorbei ist (409, TER-06). Ändern, z.B. das Resultat, auch danach; nur ein abgesagter Spieltag ergibt 409 (Annahme O-47). | AUF-15, TER-06 |
+| Spiele aus swiss unihockey: Gegner, Anspielzeit und Heim/Auswärts sind schreibgeschützt, Löschen nur, wenn swiss unihockey sie nicht mehr liefert (409, Regel SUH-06). Das Resultat lässt sich erfassen. | SUH-06 |
+| Ein Spieltag mit Spielen oder Aufgebot lässt sich nicht in einen anderen Typ ändern (409, Regel AUF-01). | AUF-01 |
 
 ## Spiel aus swiss unihockey
 
@@ -207,7 +228,7 @@ stateDiagram-v2
 | Regel | Bezug |
 |---|---|
 | Solange eine Anfrage läuft, ist der Absende-Button gesperrt und weitere Klicks (auch ein Doppelklick) lösen keine zweite Anfrage aus. | – |
-| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen, Termin und Serie speichern, Termin absagen, Ausnahme hinzufügen. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
+| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen, Termin und Serie speichern, Termin absagen, Ausnahme hinzufügen, Aufgebot auswählen (alle Checkboxen gesperrt) und veröffentlichen, Resultat speichern. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
 
 ## Sitzung
 

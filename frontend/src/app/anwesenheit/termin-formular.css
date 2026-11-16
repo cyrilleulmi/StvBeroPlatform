@@ -74,3 +74,32 @@ textarea {
 .dialog::backdrop {
   background: color-mix(in srgb, var(--bg) 80%, transparent);
 }
+
+/* Spieltag (F-05): Treffpunkt und Spiele */
+.spiele {
+  gap: 12px;
+}
+
+.spiel {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-icon);
+  min-width: 0;
+}
+
+.spiel legend {
+  padding: 0 4px;
+  font-weight: 700;
+}
+
+.spiel p {
+  margin: 0;
+}
+
+.entfernen,
+.hinzufuegen {
+  justify-self: start;
+}

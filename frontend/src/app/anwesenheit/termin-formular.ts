@@ -17,13 +17,16 @@ import type {
   Ort,
   Serie,
   SerieSchreiben,
+  Spiel,
+  SpielSchreiben,
   Team,
   Termin,
   TerminSchreiben,
   TerminTyp,
+  Treffpunkt,
 } from '../api/typen';
 import { AnmeldungService } from '../kern/anmeldung.service';
-import { feldfehler, fehlerstatus, fehlertext } from '../kern/fehlertext';
+import { feldfehler, fehlerregel, fehlerstatus, fehlertext } from '../kern/fehlertext';
 import { RueckmeldungService } from '../kern/rueckmeldung.service';
 import { TEXTE } from '../kern/texte';
 import { eingabe, zurich } from './zeit';
@@ -52,8 +55,22 @@ interface Eingabe {
   gueltigBis: string;
   teamIds: string[];
   ort: string;
+  mapsUrl: string;
   hinweise: string;
   antwortfrist: string;
+  treffpunktZeit: string;
+  treffpunktOrt: string;
+}
+
+/** Ein Spiel im Formular eines Spieltags (AUF-14). `id` leer: neu, wird beim Speichern angelegt. */
+interface SpielZeile {
+  schluessel: number;
+  id: string | null;
+  quelle: Spiel['quelle'];
+  gegner: string;
+  zeit: string;
+  heim: boolean;
+  resultat: string | null;
 }
 
 type Feld = keyof Eingabe;
@@ -69,8 +86,11 @@ const LEER: Eingabe = {
   gueltigBis: '',
   teamIds: [],
   ort: '',
+  mapsUrl: '',
   hinweise: '',
   antwortfrist: '24',
+  treffpunktZeit: '',
+  treffpunktOrt: '',
 };
 
 /** Feldnamen der API auf die Felder des Formulars. */
@@ -86,12 +106,16 @@ const API_FELDER: Record<string, Feld> = {
   antwortfristStunden: 'antwortfrist',
   hinweise: 'hinweise',
   'ort.name': 'ort',
+  'ort.mapsUrl': 'mapsUrl',
+  'treffpunkt.zeit': 'treffpunktZeit',
+  'treffpunkt.ort': 'treffpunktOrt',
 };
 
 /**
  * Termin erfassen (`/termine/neu`, `?art=serie` für eine Serie), Termin bearbeiten und absagen
  * (`/termine/:terminId/bearbeiten`) und Serie bearbeiten (`/serien/:serieId/bearbeiten`).
- * TER-01, TER-04 bis TER-06, TER-08, TER-10, TER-11.
+ * TER-01, TER-04 bis TER-06, TER-08, TER-10, TER-11. Spieltage mit Spielen, Treffpunkt und
+ * Google-Maps-Link (AUF-10 bis AUF-16).
  */
 @Component({
   selector: 'app-termin-formular',
@@ -143,6 +167,12 @@ export class TerminFormular {
   protected readonly laufendeAktion = signal<string | null>(null);
   protected readonly speichert = computed(() => this.laufendeAktion() !== null);
   protected readonly grund = signal('');
+  protected readonly spiele = signal<SpielZeile[]>([]);
+  /** Feldfehler der Spiele, Schlüssel `<schluessel>-gegner` bzw. `<schluessel>-zeit`. */
+  protected readonly spielFehler = signal<Record<string, string>>({});
+  private naechsterSchluessel = 1;
+
+  protected readonly spieltag = computed(() => !this.alsSerie() && this.werte().typ === 'SPIELTAG');
 
   private readonly absagenDialog = viewChild<ElementRef<HTMLDialogElement>>('absagenDialog');
   private readonly grundFeld = viewChild<ElementRef<HTMLInputElement>>('grundFeld');
@@ -186,10 +216,15 @@ export class TerminFormular {
     }
   });
 
-  /** Termintypen zur Auswahl. Spieltage kommen mit F-05; ein bestehender bleibt wählbar. */
-  protected readonly typen = computed<TerminTyp[]>(() =>
-    this.termin()?.typ === 'SPIELTAG' ? ['SPIELTAG'] : ['TRAINING', 'ANLASS'],
-  );
+  /**
+   * Termintypen zur Auswahl. Neue Einzeltermine: alle drei (AUF-16). Ein bestehender Spieltag bleibt ein
+   * Spieltag, Serien sind Trainings oder Anlässe.
+   */
+  protected readonly typen = computed<TerminTyp[]>(() => {
+    if (this.termin()?.typ === 'SPIELTAG') return ['SPIELTAG'];
+    if (this.modus() === 'neu' && !this.alsSerie()) return ['TRAINING', 'SPIELTAG', 'ANLASS'];
+    return ['TRAINING', 'ANLASS'];
+  });
 
   /** Teams der Serie bzw. des Termins, in denen die Person nicht Mitglied ist. Sie bleiben erhalten. */
   protected readonly weitereTeams = computed(() => {
@@ -225,6 +260,53 @@ export class TerminFormular {
     if (!alt.titel || standardtitel.includes(alt.titel)) {
       this.setzen('titel', TEXTE.termine.typ[typ]);
     }
+    if (typ === 'SPIELTAG' && this.spiele().length === 0) {
+      this.spielHinzufuegen();
+    }
+  }
+
+  protected spielHinzufuegen(): void {
+    const schluessel = this.naechsterSchluessel++;
+    this.spiele.update((z) => [
+      ...z,
+      {
+        schluessel,
+        id: null,
+        quelle: 'MANUELL',
+        gegner: '',
+        zeit: this.werte().beginn,
+        heim: true,
+        resultat: null,
+      },
+    ]);
+  }
+
+  protected spielEntfernen(schluessel: number): void {
+    this.spiele.update((z) => z.filter((x) => x.schluessel !== schluessel));
+  }
+
+  protected spielSetzen<F extends 'gegner' | 'zeit' | 'heim'>(
+    schluessel: number,
+    feld: F,
+    wert: SpielZeile[F],
+  ): void {
+    this.spiele.update((z) =>
+      z.map((x) => (x.schluessel === schluessel ? { ...x, [feld]: wert } : x)),
+    );
+    const k = `${schluessel}-${feld}`;
+    if (this.spielFehler()[k]) {
+      this.spielFehler.update((f) => {
+        const kopie = { ...f };
+        delete kopie[k];
+        return kopie;
+      });
+    }
+  }
+
+  protected spielFehlerId(schluessel: number, feld: 'gegner' | 'zeit'): string | null {
+    return this.spielFehler()[`${schluessel}-${feld}`]
+      ? `spiel-${schluessel}-${feld}-fehler`
+      : null;
   }
 
   protected teamUmschalten(teamId: string, an: boolean): void {
@@ -261,7 +343,8 @@ export class TerminFormular {
             const t = await firstValueFrom(
               this.http.post<Termin>('/api/termine', this.terminDaten()),
             );
-            this.rueckmeldung.setzen(TEXTE.terminFormular.erfasst);
+            const spielFehler = await this.spieleSpeichern(t, null);
+            this.rueckmeldung.setzen(spielFehler ?? TEXTE.terminFormular.erfasst);
             await this.router.navigate(['/termine', t.id]);
           }
           break;
@@ -271,8 +354,10 @@ export class TerminFormular {
             this.http.put<Termin>(`/api/termine/${vorher.id}`, this.terminDaten()),
           );
           const verschoben = Date.parse(t.beginn) !== Date.parse(vorher.beginn);
+          const spielFehler = await this.spieleSpeichern(t, vorher);
           this.rueckmeldung.setzen(
-            verschoben ? TEXTE.terminFormular.verschoben : TEXTE.terminFormular.gespeichert,
+            spielFehler ??
+              (verschoben ? TEXTE.terminFormular.verschoben : TEXTE.terminFormular.gespeichert),
           );
           await this.router.navigate(['/termine', t.id]);
           break;
@@ -336,11 +421,60 @@ export class TerminFormular {
       beginn: zurich(w.datum, w.beginn),
       ende: zurich(w.datum, w.ende),
       teamIds: w.teamIds,
-      ort: this.ort(vorher?.ort ?? null),
+      ort: this.ort(vorher?.ort ?? null, true),
       hinweise: w.hinweise.trim() || null,
       antwortfristStunden: Number(w.antwortfrist),
-      treffpunkt: vorher?.treffpunkt ?? null,
+      treffpunkt: this.spieltag() ? this.treffpunkt() : (vorher?.treffpunkt ?? null),
     };
+  }
+
+  /** Treffpunkt eines Spieltags am Tag des Spieltags (AUF-12); beide Felder leer: keiner. */
+  private treffpunkt(): Treffpunkt | null {
+    const w = this.werte();
+    const ort = w.treffpunktOrt.trim();
+    if (!w.treffpunktZeit || !ort) return null;
+    return { zeit: zurich(w.datum, w.treffpunktZeit), ort };
+  }
+
+  /**
+   * Spiele eines Spieltags nach dem Speichern des Termins: neue anlegen, geänderte speichern, entfernte
+   * löschen (AUF-14, AUF-16). Importierte Spiele bleiben unberührt. Liefert eine Meldung, falls etwas
+   * nicht ging; der Termin selbst ist dann schon gespeichert.
+   */
+  private async spieleSpeichern(t: Termin, vorher: Termin | null): Promise<string | null> {
+    if (t.typ !== 'SPIELTAG') return null;
+    const datum = this.werte().datum;
+    const zeilen = this.spiele();
+    const bisher = new Map((vorher?.spiele ?? []).map((sp) => [sp.id, sp]));
+    try {
+      for (const sp of bisher.values()) {
+        if (sp.quelle === 'MANUELL' && !zeilen.some((z) => z.id === sp.id)) {
+          await firstValueFrom(this.http.delete<void>(`/api/termine/${t.id}/spiele/${sp.id}`));
+        }
+      }
+      for (const z of zeilen) {
+        if (z.quelle !== 'MANUELL') continue;
+        const daten: SpielSchreiben = {
+          gegner: z.gegner.trim(),
+          anspielzeit: zurich(datum, z.zeit),
+          heim: z.heim,
+          resultat: z.resultat,
+        };
+        const alt = z.id ? bisher.get(z.id) : undefined;
+        if (!alt) {
+          await firstValueFrom(this.http.post<Spiel>(`/api/termine/${t.id}/spiele`, daten));
+        } else if (
+          alt.gegner !== daten.gegner ||
+          alt.heim !== daten.heim ||
+          Date.parse(alt.anspielzeit) !== Date.parse(daten.anspielzeit)
+        ) {
+          await firstValueFrom(this.http.put<Spiel>(`/api/termine/${t.id}/spiele/${z.id}`, daten));
+        }
+      }
+      return null;
+    } catch (e) {
+      return TEXTE.terminFormular.spieleFehler(fehlertext(e));
+    }
   }
 
   private serieDaten(): SerieSchreiben {
@@ -354,16 +488,23 @@ export class TerminFormular {
       endeZeit: w.ende,
       gueltigVon: w.gueltigVon,
       gueltigBis: w.gueltigBis,
-      ort: this.ort(this.serie()?.ort ?? null),
+      ort: this.ort(this.serie()?.ort ?? null, false),
       antwortfristStunden: Number(w.antwortfrist),
     };
   }
 
-  /** Ort aus dem Namen; Adresse und Karten-Link eines bestehenden Orts bleiben, solange der Name gleich ist. */
-  private ort(bisher: Ort | null | undefined): Ort | null {
+  /**
+   * Ort aus dem Namen und (bei Einzelterminen) dem Google-Maps-Link (AUF-10, AUF-11). Adresse und Koordinaten
+   * eines bestehenden Orts bleiben, solange der Name gleich ist; bei Serien auch der Link.
+   */
+  private ort(bisher: Ort | null | undefined, mitLink: boolean): Ort | null {
     const name = this.werte().ort.trim();
     if (!name) return null;
-    return bisher && bisher.name === name ? bisher : { name };
+    const basis: Ort = bisher && bisher.name === name ? { ...bisher } : { name };
+    if (mitLink) {
+      basis.mapsUrl = this.werte().mapsUrl.trim() || null;
+    }
+    return basis;
   }
 
   /** Pflichtfelder im Browser prüfen; die übrigen Regeln prüft das Backend. */
@@ -382,8 +523,26 @@ export class TerminFormular {
     if (!w.ende) f.ende = pflicht('eine Zeit');
     else if (w.beginn && w.ende <= w.beginn) f.ende = TEXTE.terminFormular.endeNachBeginn;
     if (w.teamIds.length === 0) f.teamIds = TEXTE.terminFormular.teamPflicht;
+    if (!this.alsSerie() && w.mapsUrl.trim()) {
+      if (!w.ort.trim()) f.ort = pflicht('den Ort');
+      if (!/^https:\/\/\S+$/.test(w.mapsUrl.trim())) f.mapsUrl = TEXTE.terminFormular.mapsUrlFormat;
+    }
+    const sf: Record<string, string> = {};
+    if (this.spieltag()) {
+      const zeit = !!w.treffpunktZeit;
+      const ort = !!w.treffpunktOrt.trim();
+      if (zeit && !ort) f.treffpunktOrt = TEXTE.terminFormular.treffpunktBeide;
+      if (!zeit && ort) f.treffpunktZeit = TEXTE.terminFormular.treffpunktBeide;
+      for (const z of this.spiele()) {
+        if (z.quelle !== 'MANUELL') continue;
+        if (!z.gegner.trim()) sf[`${z.schluessel}-gegner`] = pflicht('den Gegner');
+        if (!z.zeit) sf[`${z.schluessel}-zeit`] = pflicht('eine Zeit');
+      }
+    }
+    this.spielFehler.set(sf);
     const frist = Number(w.antwortfrist);
-    if (w.antwortfrist.trim() === '' || !Number.isInteger(frist)) f.antwortfrist = pflicht('eine ganze Zahl');
+    if (w.antwortfrist.trim() === '' || !Number.isInteger(frist))
+      f.antwortfrist = pflicht('eine ganze Zahl');
     else if (frist < 0) f.antwortfrist = TEXTE.terminFormular.antwortfristMindestens;
     else if (frist > 336) f.antwortfrist = TEXTE.terminFormular.antwortfristHoechstens;
     this.feldFehler.set(f);
@@ -392,14 +551,24 @@ export class TerminFormular {
       document.getElementById(`termin-${erstes}`)?.focus();
       return false;
     }
+    const erstesSpiel = Object.keys(sf)[0];
+    if (erstesSpiel) {
+      document.getElementById(`spiel-${erstesSpiel}`)?.focus();
+      return false;
+    }
     return true;
   }
 
   private fehlerAnzeigen(e: unknown): void {
     const felder = feldfehler(e);
     const zugeordnet: Partial<Record<Feld, string>> = {};
+    // Spieltag mit Spielen aus swiss unihockey: nur am selben Tag verschiebbar, die Meldung gehört zum Datum (SUH-05).
+    const datumsregel = fehlerregel(e) === 'SUH-05';
     for (const [feld, meldung] of Object.entries(felder)) {
-      const ziel = API_FELDER[feld];
+      const ziel =
+        datumsregel && feld === 'beginn'
+          ? 'datum'
+          : (API_FELDER[feld] ?? (feld.startsWith('ort.') ? 'ort' : undefined));
       if (ziel) zugeordnet[ziel] = meldung;
     }
     if (Object.keys(zugeordnet).length > 0) {
@@ -416,6 +585,8 @@ export class TerminFormular {
     this.feldFehler.set({});
     this.termin.set(null);
     this.serie.set(null);
+    this.spiele.set([]);
+    this.spielFehler.set({});
     try {
       await this.teamsLaden();
       if (terminId) {
@@ -432,9 +603,23 @@ export class TerminFormular {
           ende: eingabe(t.ende).zeit,
           teamIds: t.teams.map((x) => x.id),
           ort: t.ort?.name ?? '',
+          mapsUrl: t.ort?.mapsUrl ?? '',
           hinweise: t.hinweise ?? '',
           antwortfrist: String(t.antwortfristStunden ?? 24),
+          treffpunktZeit: t.treffpunkt ? eingabe(t.treffpunkt.zeit).zeit : '',
+          treffpunktOrt: t.treffpunkt?.ort ?? '',
         });
+        this.spiele.set(
+          (t.spiele ?? []).map((sp) => ({
+            schluessel: this.naechsterSchluessel++,
+            id: sp.id,
+            quelle: sp.quelle,
+            gegner: sp.gegner,
+            zeit: eingabe(sp.anspielzeit).zeit,
+            heim: sp.heim,
+            resultat: sp.resultat ?? null,
+          })),
+        );
       } else if (serieId) {
         const s = await firstValueFrom(this.http.get<Serie>(`/api/serien/${serieId}`));
         this.serie.set(s);

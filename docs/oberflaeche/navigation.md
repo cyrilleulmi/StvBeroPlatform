@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`) und F-04 (Antworten in `/`, `/termine` und `/termine/:id`, Übersicht nach Team und Linie).
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`) F-04 (Antworten in `/`, `/termine` und `/termine/:id`, Übersicht nach Team und Linie) und F-05 (Spieltag im Formular mit Spielen, Treffpunkt und Google-Maps-Link, Spiele, Resultate und Aufgebotsstatus in `/termine/:id`, `/termine/:id/aufgebot`).
 
 ## Navigation
 
@@ -48,9 +48,9 @@ flowchart LR
 | `/` | Start | angemeldet | Begrüssung, nächster eigener Termin mit Antwort-Buttons, Kacheln je nach Rolle | F-00, F-04 |
 | `/termine` | Termine | angemeldet | Kommende Termine aller eigenen Teams nach Monat, Umschalter «Kommend»/«Vergangen» (`nav` «Ansicht», `?ansicht=vergangen`), Auswahl «Team» (`?team=<id>`), Coaches und Admins: Link «Termin erfassen». Ab F-04 eigene Antwort direkt änderbar | F-03, F-04 |
 | `/termine/:id` | Termin | Mitglieder der beteiligten Teams, Admin | Angaben (Datum, Zeit, Teams, Ort, Treffpunkt, Antwortfrist, Hinweise, Serie), Status «Abgesagt: <Grund>» bzw. «verschoben», Coaches: «Termin bearbeiten», «Serie ansehen». Ab F-04: eigene Antwort, Übersicht nach Team und Linie, Coach-Block. Bei Spieltag ab F-05: Spiele, eigener Aufgebotsstatus | F-03, F-04, F-05 |
-| `/termine/neu` | Termin erfassen | Coach, Admin | Auswahl «Einzelner Termin» / «Serie (jede Woche)» (`?art=serie`), Art, Titel, Datum bzw. Wochentag und Zeitraum, Beginn, Ende, Teams (Checkboxen), Ort, Hinweise, Antwortfrist. Spieltag ab F-05 | F-03, F-05 |
-| `/termine/:id/bearbeiten` | Termin bearbeiten | Coach eines beteiligten Teams, Admin | Angaben ändern, verschieben (anderes Datum oder andere Zeit), «Termin absagen» (Dialog mit Grund). Bei Serienterminen Hinweis «gilt nur für diesen Termin» | F-03 |
-| `/termine/:id/aufgebot` | Aufgebot | Coach | Auswahl nach Linien gruppiert, Antwortstatus daneben, veröffentlichen | F-05 |
+| `/termine/neu` | Termin erfassen | Coach, Admin | Auswahl «Einzelner Termin» / «Serie (jede Woche)» (`?art=serie`), Art (Training, Spieltag, Anlass), Titel, Datum bzw. Wochentag und Zeitraum, Beginn, Ende, Teams (Checkboxen), Ort, Google-Maps-Link, Hinweise, Antwortfrist. Bei «Spieltag»: Ort heisst «Spielort», Gruppe «Treffpunkt» (Zeit, Ort), Gruppe «Spiele» mit je einer Gruppe «Spiel n» (Gegner, Anspielzeit, «Heim oder auswärts», «Spiel n entfernen») und «Spiel hinzufügen» | F-03, F-05 |
+| `/termine/:id/bearbeiten` | Termin bearbeiten | Coach eines beteiligten Teams, Admin | Angaben ändern, verschieben (anderes Datum oder andere Zeit), «Termin absagen» (Dialog mit Grund). Bei Serienterminen Hinweis «gilt nur für diesen Termin». Spieltag: Spiele wie beim Erfassen; Spiele aus swiss unihockey nur lesend | F-03, F-05 |
+| `/termine/:id/aufgebot` | Aufgebot | Coach des Teams, Admin (sonst «Keine Berechtigung»; kein Spieltag: «Nur ein Spieltag hat ein Aufgebot.») | Stand (`aufgebot-status`, `aufgebot-anzahl`), Auswahl nach Linien gruppiert (je eine Gruppe mit dem Gruppennamen, Checkbox mit dem Namen der Spielerin, Antwortstatus und Kommentar daneben), speichert sofort (Rückmeldung «<Name> ist aufgeboten.»), «Veröffentlichen» mit Bestätigung. Coaches stehen nicht in der Auswahl (AUF-28). Abgesagt oder vorbei: nur lesend | F-05 |
 | `/serien/:id` | Serie | Mitglieder der Teams der Serie (Coaches und Admins mit Bearbeitung) | Regel, Zeitraum, Teams (alle Teams der Serie, auch die, in denen man nicht ist), Antwortfrist, Ausnahmen (Liste und Formular «Ausnahme hinzufügen»), Link «Serie bearbeiten» | F-03 |
 | `/serien/:id/bearbeiten` | Serie bearbeiten | Coach eines Teams der Serie, Admin | Wie «Termin erfassen» als Serie; gilt für künftige Termine (TER-08) | F-03 |
 | `/teams` | Meine Teams | angemeldet | Eigene Teams der aktuellen Saison mit eigener Funktion (PTF-12), Link auf `/teams/:id` | F-01 |
@@ -79,7 +79,8 @@ Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert
 | Stellvertretend antworten | Coach in der Übersicht, Button bei einer Person | «Antwort für <Name> eintragen» (Auswahl «Antwort» mit Radiobuttons, Feld «Kommentar (bei «vielleicht» Pflicht)») |
 | Termin absagen | Termin bearbeiten, «Termin absagen» | «Termin absagen» (Feld «Grund», Pflicht) |
 | Linie löschen | Linien, «<Linie> löschen» | «<Linie> löschen?» |
-| Aufgebot veröffentlichen | Aufgebot | «Aufgebot veröffentlichen?» |
+| Aufgebot veröffentlichen | Aufgebot, «Veröffentlichen» (Buttons «Veröffentlichen», «Abbrechen») | «Aufgebot veröffentlichen?» |
+| Resultat erfassen | Termin (Spieltag), Button «Resultat für <Heim> – <Gast> erfassen» (Coach, Admin) | «Resultat: <Heim> – <Gast>» (Feld «Resultat (Heim:Gast, z.B. 5:3)», leer entfernt es, Button «Resultat speichern») |
 
 ## Test-IDs
 
@@ -141,15 +142,16 @@ Zähler-Elemente tragen `data-zaehler="dabei|nicht-dabei|vielleicht|offen"`.
 
 | Test-ID | Element |
 |---|---|
-| `spiele` | Liste der Spiele eines Spieltags |
-| `spiel-<spielId>` | Ein Spiel |
-| `treffpunkt` | Treffpunkt (Zeit und Ort) |
-| `spielort-karte` | Link «In Google Maps öffnen» |
-| `mein-aufgebot` | Eigener Status: «aufgeboten», «nicht aufgeboten», «noch kein Aufgebot» |
+| `spiele` | Liste der Spiele eines Spieltags (`ol`, nach Anspielzeit). Ohne Spiele: Text «Für diesen Spieltag sind noch keine Spiele erfasst.» |
+| `spiel-<spielId>` | Ein Spiel (`li` mit `aria-label` «<Anspielzeit> <Heim> – <Gast>», z.B. «09:30 Team 1 – UHC Musterdorf»), dazu «Heim»/«Auswärts» und «Resultat 5:3» |
+| `treffpunkt` | Treffpunkt (Zeit und Ort), z.B. «08:00 · Parkplatz Sporthalle Nord» |
+| `spielort-karte` | Link «In Google Maps öffnen» (`target="_blank"`) |
+| `mein-aufgebot` | Eigener Status im Termin, nur für Spielerinnen des Teams: «aufgeboten», «nicht aufgeboten», «noch kein Aufgebot». Coaches und Admins sehen stattdessen den Stand und den Link «Aufgebot bearbeiten» |
 | `aufgebot-auswahl` | Auswahlliste im Aufgebot-Screen |
-| `aufgebot-person-<personId>` | Eintrag in der Auswahl (Checkbox mit Antwortstatus) |
-| `aufgebot-veroeffentlichen` | Button «Veröffentlichen» |
-| `aufgebot-status` | «Entwurf» bzw. «veröffentlicht am …» |
+| `aufgebot-person-<personId>` | Eintrag in der Auswahl (`li` mit `data-antwort` und `data-aufgeboten`, Checkbox mit dem Namen, Antwortstatus als Text daneben) |
+| `aufgebot-veroeffentlichen` | Button «Veröffentlichen» (nur im Entwurf; ohne Auswahl `disabled` mit Erklärung) |
+| `aufgebot-status` | «Entwurf», «Entwurf: noch niemand ausgewählt» bzw. «veröffentlicht am Mo 16.11. 06:00» |
+| `aufgebot-anzahl` | Anzahl Aufgebotene, z.B. «5 aufgeboten» |
 
 ### Linien
 

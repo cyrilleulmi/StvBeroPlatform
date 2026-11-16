@@ -143,6 +143,13 @@ public final class TerminRegeln {
         }
     }
 
+    /** Ein Spieltag mit Spielen oder Aufgebot bleibt ein Spieltag (409, AUF-01). */
+    public static void pruefeTypWechsel(TerminTyp bisher, TerminTyp neu, boolean hatSpieleOderAufgebot) {
+        if (bisher == TerminTyp.SPIELTAG && neu != TerminTyp.SPIELTAG && hatSpieleOderAufgebot) {
+            throw FachFehler.konflikt("Spieltag", "Ein Spieltag mit Spielen oder Aufgebot bleibt ein Spieltag.", "AUF-01");
+        }
+    }
+
     public static void pruefeSerie(LocalTime beginn, LocalTime ende, LocalDate von, LocalDate bis) {
         if (!ende.isAfter(beginn)) {
             throw FachFehler.ungueltigesFeld("endeZeit", "Das Ende muss nach dem Beginn liegen.");

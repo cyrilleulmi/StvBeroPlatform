@@ -95,6 +95,8 @@ public class TerminResource {
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
     @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
+    @APIResponse(responseCode = "422", description = "Fachliche Regel verletzt",
+            content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))
     public TerminDto aendern(@PathParam("terminId") UUID terminId, @Valid @NotNull TerminSchreiben eingabe) {
         return termine.aendern(anmeldung.person(), terminId, eingabe);
     }

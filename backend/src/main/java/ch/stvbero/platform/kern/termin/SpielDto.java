@@ -5,7 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** Spiel eines Spieltags (AUF). Spiele kommen mit F-05; bis dahin ist die Liste leer. */
+/** Spiel eines Spieltags (AUF-14, AUF-15). */
 @Schema(name = "Spiel")
 public record SpielDto(UUID id, String gegner, OffsetDateTime anspielzeit, boolean heim, String resultat,
                        Quelle quelle, Integer suSpielId, boolean beiSuNichtMehrVorhanden) {
