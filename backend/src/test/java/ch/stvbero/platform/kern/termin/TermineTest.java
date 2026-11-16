@@ -1,6 +1,5 @@
 package ch.stvbero.platform.kern.termin;
 
-import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
@@ -96,9 +95,10 @@ class TermineTest {
                 .body("serieId", equalTo(SERIE_1))
                 .body("antwortfristStunden", equalTo(24))
                 .body("antwortfrist", equalTo("2026-11-16T18:30:00+01:00"))
-                .body("meineAntwort.status", equalTo("OFFEN"))
-                // 12 verschiedene Spielerinnen, Lea zählt einmal (ANM-32); Antworten folgen mit F-04
-                .body("zaehler.offen", equalTo(12))
+                .body("meineAntwort.status", equalTo("DABEI"))
+                // 12 verschiedene Spielerinnen, Lea zählt einmal (ANM-32); Antworten aus dem Seed (F-04)
+                .body("zaehler.dabei", equalTo(7))
+                .body("zaehler.offen", equalTo(2))
                 .body("darfBearbeiten", equalTo(false));
         given().cookie("stv_sitzung", anna).get("/api/termine/" + T04).then().statusCode(200)
                 .body("typ", equalTo("SPIELTAG"))
@@ -295,10 +295,7 @@ class TermineTest {
 
     @Test
     void k5AusnahmeSagtTermineMitAntwortenAb() {
-        // Antworten gibt es ab F-04; hier direkt in der Datenbank
-        QuarkusTransaction.requiringNew().run(() -> em.createNativeQuery("""
-                        insert into antwort (termin_id, person_id, status, geaendert_am) values (?1, ?2, 'DABEI', now())""")
-                .setParameter(1, UUID.fromString(T01)).setParameter(2, UUID.fromString(ANNA)).executeUpdate());
+        // Termin 01 hat Antworten aus dem Seed (F-04), z.B. Anna «dabei»
         given().cookie("stv_sitzung", petra).contentType(ContentType.JSON)
                 .body("{\"von\":\"2026-11-17\",\"bis\":\"2026-11-19\",\"grund\":\"Hallensperre\"}")
                 .post("/api/serien/" + SERIE_1 + "/ausnahmen").then().statusCode(201);
@@ -307,7 +304,7 @@ class TermineTest {
                 .body("absagegrund", equalTo("Hallensperre"));
         given().cookie("stv_sitzung", anmelden("anna")).get("/api/termine/" + T01).then()
                 .body("meineAntwort.status", equalTo("DABEI"))
-                .body("zaehler.dabei", equalTo(1));
+                .body("zaehler.dabei", equalTo(7));
         // Andere Serien sind nicht betroffen
         given().cookie("stv_sitzung", petra).get("/api/termine/" + T02).then().body("status", equalTo("GEPLANT"));
     }
@@ -362,10 +359,15 @@ class TermineTest {
                 .put("/api/serien/" + SERIE_2).then().statusCode(200);
         List<String> beginne = liste(petra, "?bis=2026-12-31&team=" + TEAM_1 + "&typ=TRAINING")
                 .extract().jsonPath().getList("findAll { it.serieId == '" + SERIE_2 + "' }.beginn");
-        assertThat(beginne, contains("2026-11-20T19:00:00+01:00", "2026-11-27T19:00:00+01:00",
-                "2026-12-04T19:00:00+01:00", "2026-12-11T19:00:00+01:00", "2026-12-18T19:00:00+01:00",
-                "2026-12-25T19:00:00+01:00"));
-        given().cookie("stv_sitzung", petra).get("/api/termine/" + T02).then().statusCode(404);
+        // Termin 02 hat seit F-04 eine Antwort (Anna): er wird abgesagt statt entfernt (TER-07, zustaende.md)
+        assertThat(beginne, contains("2026-11-19T19:00:00+01:00", "2026-11-20T19:00:00+01:00",
+                "2026-11-27T19:00:00+01:00", "2026-12-04T19:00:00+01:00", "2026-12-11T19:00:00+01:00",
+                "2026-12-18T19:00:00+01:00", "2026-12-25T19:00:00+01:00"));
+        given().cookie("stv_sitzung", petra).get("/api/termine/" + T02).then().statusCode(200)
+                .body("status", equalTo("ABGESAGT")).body("absagegrund", equalTo("Serie geändert"));
+        // Ohne Antworten wird ein Termin entfernt: Do 26.11.
+        given().cookie("stv_sitzung", petra).get("/api/termine/" + UUID.nameUUIDFromBytes("termin-2-2026-11-26".getBytes()))
+                .then().statusCode(404);
     }
 
     // ------------------------------------------------------------------ Kriterium 7

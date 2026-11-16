@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class OpenApiVertragTest {
 
     private static final Set<String> METHODEN = Set.of("get", "put", "post", "delete", "patch");
-    private static final int MAX_TIEFE = 8;
+    private static final int MAX_TIEFE = 10;
 
     JsonNode vertrag;
     JsonNode erzeugt;

@@ -155,6 +155,35 @@ public class Seed {
     /** Abgesagte Seed-Termine: Nummer → Grund. */
     static final Map<Integer, String> ABGESAGT = Map.of(3, "Halle besetzt");
 
+    /** Antwort im Seed (F-04): Termin-Nummer, Person-Nummer, Status, Kommentar. */
+    record SeedAntwort(int termin, int person, String status, String kommentar) {
+    }
+
+    /** Zeitpunkt aller Seed-Antworten: vor dem Standard-«Jetzt» und vor jeder Antwortfrist. */
+    static final LocalDateTime ANTWORTEN_AM = LocalDateTime.of(2026, 11, 15, 20, 0);
+
+    private static final String D = "DABEI";
+    private static final String N = "NICHT_DABEI";
+    private static final String V = "VIELLEICHT";
+
+    /** Antworten gemäss docs/testdaten.md. Wer fehlt, ist «offen». */
+    static final List<SeedAntwort> ANTWORTEN = List.of(
+            // Termin 01: Hauptbeispiel, alle Antwortstatus (Nina und Ella offen)
+            new SeedAntwort(1, 5, D, null), new SeedAntwort(1, 6, D, null), new SeedAntwort(1, 7, N, "Krank"),
+            new SeedAntwort(1, 8, D, null), new SeedAntwort(1, 10, D, null), new SeedAntwort(1, 11, D, null),
+            new SeedAntwort(1, 2, D, null), new SeedAntwort(1, 12, V, "Komme evtl. später"),
+            new SeedAntwort(1, 13, D, null), new SeedAntwort(1, 14, N, null), new SeedAntwort(1, 3, N, "Ferien"),
+            // Termin 02: nur Anna
+            new SeedAntwort(2, 5, D, null),
+            // Termin 04: Spieltag Team 1
+            new SeedAntwort(4, 5, D, null), new SeedAntwort(4, 6, D, null), new SeedAntwort(4, 7, V, "Muss evtl. arbeiten"),
+            new SeedAntwort(4, 8, D, null), new SeedAntwort(4, 10, D, null), new SeedAntwort(4, 11, N, null),
+            new SeedAntwort(4, 2, D, null),
+            // Termin 05: Spieltag Team 2
+            new SeedAntwort(5, 2, D, null), new SeedAntwort(5, 6, D, null), new SeedAntwort(5, 12, D, null),
+            new SeedAntwort(5, 13, D, null), new SeedAntwort(5, 14, N, null), new SeedAntwort(5, 15, D, null),
+            new SeedAntwort(5, 3, D, null));
+
     /** Einzeltermin. Ort mit Adresse und Google-Maps-Link optional, Treffpunkt nur bei Spieltagen. */
     record SeedTermin(int nr, int saison, String typ, String titel, LocalDateTime beginn, LocalDateTime ende,
                       String ort, String adresse, String mapsUrl, String hinweise, LocalDateTime treffpunktZeit,
@@ -249,6 +278,14 @@ public class Seed {
             }
         }
         serienUndTermine();
+        for (SeedAntwort a : ANTWORTEN) {
+            em.createNativeQuery("""
+                            insert into antwort (termin_id, person_id, status, kommentar, geaendert_am, kurzfristig)
+                            values (?, ?, ?, ?, ?, false)""")
+                    .setParameter(1, terminId(a.termin())).setParameter(2, personId(a.person()))
+                    .setParameter(3, a.status()).setParameter(4, a.kommentar()).setParameter(5, zurich(ANTWORTEN_AM))
+                    .executeUpdate();
+        }
         em.clear();
 
         uhr.festsetzen(STANDARD_JETZT.atZone(Uhr.ZONE).toInstant());
