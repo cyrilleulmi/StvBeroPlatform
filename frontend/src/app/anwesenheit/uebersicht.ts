@@ -45,11 +45,11 @@ interface Ziel {
         <span class="zaehler-name">{{ t.total }}</span>
         <span class="zahlen">
           <span data-zaehler="dabei">{{ t.dabei(daten().total.dabei) }}</span>
-          <span aria-hidden="true">·</span>
+          <span class="trenner"> · </span>
           <span data-zaehler="nicht-dabei">{{ t.nichtDabei(daten().total.nichtDabei) }}</span>
-          <span aria-hidden="true">·</span>
+          <span class="trenner"> · </span>
           <span data-zaehler="vielleicht">{{ t.vielleicht(daten().total.vielleicht) }}</span>
-          <span aria-hidden="true">·</span>
+          <span class="trenner"> · </span>
           <span data-zaehler="offen">{{ t.offen(daten().total.offen) }}</span>
         </span>
       </p>
@@ -74,11 +74,11 @@ interface Ziel {
               [attr.data-testid]="'uebersicht-team-' + block.team.id + '-zaehler'"
             >
               <span data-zaehler="dabei">{{ t.dabei(block.zaehler.dabei) }}</span>
-              <span aria-hidden="true">·</span>
+              <span class="trenner"> · </span>
               <span data-zaehler="nicht-dabei">{{ t.nichtDabei(block.zaehler.nichtDabei) }}</span>
-              <span aria-hidden="true">·</span>
+              <span class="trenner"> · </span>
               <span data-zaehler="vielleicht">{{ t.vielleicht(block.zaehler.vielleicht) }}</span>
-              <span aria-hidden="true">·</span>
+              <span class="trenner"> · </span>
               <span data-zaehler="offen">{{ t.offen(block.zaehler.offen) }}</span>
             </p>
           </div>
