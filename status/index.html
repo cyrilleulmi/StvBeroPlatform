@@ -32,15 +32,22 @@ main { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
 a { color: var(--primary); font-weight: 600; text-decoration: none; }
 a:hover { text-decoration: underline; }
 header { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
-h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
 h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
 .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px; }
 .card.alarm { border-color: var(--coral); background: var(--coral-soft); }
 .row { display: flex; gap: 10px; align-items: flex-start; }
 .row + .row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-.icon { flex: 0 0 38px; height: 38px; border-radius: var(--radius-icon); display: grid; place-items: center; font-size: 18px; background: var(--primary-soft); }
-.icon.coral { background: var(--coral-soft); } .icon.mustard { background: var(--mustard-soft); } .icon.blue { background: var(--blue-soft); }
+.icon { flex: 0 0 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); font-weight: 800; font-size: 13px; }
+.icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon.coral { background: var(--coral-soft); color: var(--coral); } .icon.mustard { background: var(--mustard-soft); color: var(--mustard); } .icon.blue { background: var(--blue-soft); color: var(--blue); } .icon.muted { background: var(--bg); color: var(--muted); }
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn { display: inline-flex; align-items: center; gap: 8px; }
+.kopf { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.marke { display: inline-flex; align-items: center; gap: 10px; }
+.marke .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.marke .logo svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .grow { flex: 1; min-width: 0; }
 .title { font-weight: 700; }
 .meta { color: var(--muted); font-size: 13px; }
@@ -52,8 +59,8 @@ h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacin
 .seg button[aria-pressed="true"] { background: var(--primary-soft); color: var(--primary); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { border-radius: var(--radius-tile); border: 1px solid var(--border); background: var(--surface); padding: 10px 14px; min-width: 120px; flex: 1; }
-.chip b { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
-.chip span { color: var(--muted); font-size: 13px; }
+.chip b { display: block; font-size: 26px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.chip span { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .chip.coral b { color: var(--coral); } .chip.primary b { color: var(--primary); } .chip.mustard b { color: var(--mustard); }
 .tag { display: inline-block; font-size: 12px; font-weight: 700; border-radius: var(--radius-pill); padding: 2px 9px; background: var(--primary-soft); color: var(--primary); white-space: nowrap; }
 .tag.coral { background: var(--coral-soft); color: var(--coral); } .tag.mustard { background: var(--mustard-soft); color: var(--mustard); } .tag.blue { background: var(--blue-soft); color: var(--blue); } .tag.muted { background: var(--bg); color: var(--muted); }
@@ -75,13 +82,16 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
 <body>
 <main>
   <header>
-    <div>
-      <h1>StvBero Pipeline</h1>
-      <div class="sub" id="stand">Lädt …</div>
+    <div class="marke">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg></div>
+      <div>
+        <h1>StvBero Pipeline</h1>
+        <div class="sub" id="stand">Lädt …</div>
+      </div>
     </div>
     <div class="btns">
-      <button class="btn" id="neu-laden" type="button" data-testid="neu-laden">Aktualisieren</button>
-      <button class="btn primary" id="gelesen" type="button" data-testid="gelesen">Alles gelesen</button>
+      <button class="btn" id="neu-laden" type="button" data-testid="neu-laden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Aktualisieren</button>
+      <button class="btn primary" id="gelesen" type="button" data-testid="gelesen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>Alles gelesen</button>
     </div>
   </header>
 
@@ -119,6 +129,27 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
   const AGENT = 'cyrilleulmi';   // Die Agenten schreiben unter diesem Konto; Inhalte anderer sind ausgeblendet.
   const STUFEN = ['Entwicklung', 'Review', 'Test', 'Gemergt'];
   const $ = id => document.getElementById(id);
+
+  // Linien-Icons (Lucide, ISC-Lizenz)
+  const PFADE = {
+    warnung: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    fahne: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+    aktiv: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    uhr: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    code: '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+    review: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    test: '<path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>',
+    waechter: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    merge: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
+    neu: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/>',
+    start: '<path d="M6 3l14 9-14 9V3z"/>',
+    kommentar: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    zurueck: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  };
+  const ic = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${PFADE[name]}</svg>`;
+  // Emojis aus Agenten-Texten entfernen; Häkchen und Kreuze in Tabellen bleiben als Textzeichen lesbar.
+  const ohneEmoji = s => String(s ?? '').replace(/✅|✔️|✔/g, '✓').replace(/❌|✖️/g, '✗')
+    .replace(/\p{Extended_Pictographic}\uFE0F?/gu, '').replace(/[ \t]{2,}/g, ' ').replace(/ ·\s*$/,'').trim();
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -200,16 +231,23 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
     let wichtig = ['entwicklung', 'review', 'test', 'waechter'].includes(art) && !!kopf;
     if (/startet|gestartet|beansprucht/i.test(ersteZeile) && !kopf) wichtig = false;
     if (!art && !/startet|gestartet/i.test(ersteZeile)) wichtig = true; // freie Kommentare (z.B. Fragen, Befunde) zeigen
-    let ton = 'primary', icon = '✔️';
-    if (art === 'entwicklung') icon = '🛠️';
-    if (art === 'review') icon = '🔍';
-    if (art === 'test') icon = '🧪';
-    if (art === 'waechter') icon = '🛡️';
+    let ton = 'primary', icon = 'kommentar';
+    if (art === 'entwicklung') icon = 'code';
+    if (art === 'review') icon = 'review';
+    if (art === 'test') icon = 'test';
+    if (art === 'waechter') icon = 'waechter';
     if (zurueck) { ton = 'mustard'; }
-    if (gemergt) { icon = '🎉'; }
-    if (blockiert) { ton = 'coral'; icon = '⛔'; }
-    if (!wichtig) { ton = 'muted'; icon = '▶️'; }
-    return { zeit: k.created_at, nr: itemNr(k.issue_url), titel: kopf || ersteZeile || 'Kommentar', text: b.replace(/<!--[\s\S]*?-->/g, '').trim(), url: k.html_url, ton, icon, wichtig, gemergt, zurueck, blockiert };
+    if (gemergt) { icon = 'merge'; }
+    if (blockiert) { ton = 'coral'; icon = 'warnung'; }
+    if (!wichtig) { ton = 'muted'; icon = 'start'; }
+    // «Test · Runde 0 · 🔁 Nacharbeit» → Titel «Test · Runde 0», Marke «Nacharbeit»
+    let titel = kopf || ersteZeile || 'Kommentar', status = '';
+    const teile = titel.split(' · ');
+    if (kopf && teile.length > 1 && /\p{Extended_Pictographic}|✅/u.test(teile[teile.length - 1])) status = ohneEmoji(teile.pop());
+    titel = ohneEmoji(teile.join(' · '));
+    status = status.replace(/^[✓✗]\s*/, '');
+    if (status) status = status.charAt(0).toUpperCase() + status.slice(1);
+    return { zeit: k.created_at, nr: itemNr(k.issue_url), titel, status, text: ohneEmoji(b.replace(/<!--[\s\S]*?-->/g, '').trim()), url: k.html_url, ton, icon, wichtig, gemergt, zurueck, blockiert };
   }
 
   function zeichnen() {
@@ -228,10 +266,10 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
       alarm = '<div class="card alarm"><h2 style="color:var(--coral)">Braucht dich</h2>';
       for (const i of blockiert) {
         const letzter = daten.kommentare.filter(k => itemNr(k.issue_url) === i.number)[0];
-        alarm += `<div class="row"><div class="icon coral">⛔</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Blockiert: die Pipeline wartet auf deinen Entscheid.${letzter ? ' Letzter Kommentar ' + vor(letzter.created_at) + '.' : ''}</div></div></div>`;
+        alarm += `<div class="row"><div class="icon coral">${ic('warnung')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Blockiert: die Pipeline wartet auf deinen Entscheid.${letzter ? ' Letzter Kommentar ' + vor(letzter.created_at) + '.' : ''}</div></div></div>`;
       }
       for (const i of freigabe) {
-        alarm += `<div class="row"><div class="icon mustard">✋</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Nachbesserung ohne Freigabe. Mit Label <b>status:bereit</b> wird sie automatisch umgesetzt.</div></div></div>`;
+        alarm += `<div class="row"><div class="icon mustard">${ic('fahne')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Nachbesserung ohne Freigabe. Mit Label <b>status:bereit</b> wird sie automatisch umgesetzt.</div></div></div>`;
       }
       alarm += '</div>';
     }
@@ -251,20 +289,20 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
       const wer = nacharbeit ? 'Nacharbeit' : STUFEN[stufe];
       const zustand = aktiv ? `${wer}: Agent arbeitet` : `${wer}: wartet auf den Agenten`;
       const flow = STUFEN.map((s, x) => `<span class="${l.includes('pipeline:blockiert') && x === stufe ? 'bad' : x < stufe ? 'done' : x === stufe ? 'on' : ''}">${x === 0 && nacharbeit ? 'Nacharbeit' : s}</span>`).join('');
-      jetztHtml += `<div class="row"><div class="icon ${nacharbeit ? 'mustard' : 'blue'}">${aktiv ? '⚙️' : '⏳'}</div><div class="grow"><div class="title">${esc(p.title)} ${link(p)}</div><div class="meta">${esc(zustand)} · Runde ${runde}${k[0] ? ' · letzte Meldung ' + vor(k[0].created_at) : ''}</div><div class="flow">${flow}</div></div></div>`;
+      jetztHtml += `<div class="row"><div class="icon ${nacharbeit ? 'mustard' : 'blue'}">${ic(aktiv ? 'aktiv' : 'uhr')}</div><div class="grow"><div class="title">${esc(p.title)} ${link(p)}</div><div class="meta">${esc(zustand)} · Runde ${runde}${k[0] ? ' · letzte Meldung ' + vor(k[0].created_at) : ''}</div><div class="flow">${flow}</div></div></div>`;
     }
     for (const i of inArbeit) {
-      jetztHtml += `<div class="row"><div class="icon blue">🛠️</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Entwicklung läuft, noch kein PR</div><div class="flow">${STUFEN.map((s, x) => `<span class="${x === 0 ? 'on' : ''}">${s}</span>`).join('')}</div></div></div>`;
+      jetztHtml += `<div class="row"><div class="icon blue">${ic('code')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Entwicklung läuft, noch kein PR</div><div class="flow">${STUFEN.map((s, x) => `<span class="${x === 0 ? 'on' : ''}">${s}</span>`).join('')}</div></div></div>`;
     }
     $('jetzt').innerHTML = jetztHtml || '<p class="empty">Nichts in Arbeit.</p>';
 
     // Verlauf
     const eintraege = daten.kommentare.map(einordnen).filter(Boolean).filter(e => new Date(e.zeit) >= ab);
     const neueNb = daten.items.filter(i => labels(i).includes('typ:nachbesserung') && new Date(i.created_at) >= ab);
-    for (const i of neueNb) eintraege.push({ zeit: i.created_at, nr: i.number, titel: 'Neue Nachbesserung: ' + i.title.replace(/^Nachbesserung · /, ''), text: '', url: i.html_url, ton: 'blue', icon: '📝', wichtig: true });
+    for (const i of neueNb) eintraege.push({ zeit: i.created_at, nr: i.number, titel: 'Neue Nachbesserung: ' + i.title.replace(/^Nachbesserung · /, ''), status: '', text: '', url: i.html_url, ton: 'blue', icon: 'neu', wichtig: true });
     const gemergtEv = daten.ereignisse.filter(e => e.event === 'merged' && new Date(e.created_at) >= ab);
     const blockEv = daten.ereignisse.filter(e => e.event === 'labeled' && e.label && e.label.name === 'pipeline:blockiert' && new Date(e.created_at) >= ab);
-    for (const e of blockEv) eintraege.push({ zeit: e.created_at, nr: e.issue.number, titel: 'Blockiert', text: '', url: e.issue.html_url, ton: 'coral', icon: '⛔', wichtig: true, blockiert: true });
+    for (const e of blockEv) eintraege.push({ zeit: e.created_at, nr: e.issue.number, titel: 'Blockiert', status: '', text: '', url: e.issue.html_url, ton: 'coral', icon: 'warnung', wichtig: true, blockiert: true });
     eintraege.sort((a, b) => new Date(b.zeit) - new Date(a.zeit));
 
     const runden = eintraege.filter(e => e.zurueck && e.wichtig).length;
@@ -283,8 +321,9 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
       if (t !== letzterTag) { if (html) html += '</div>'; html += `<div class="day">${esc(t)}</div><div class="card">`; letzterTag = t; }
       const it = byNr[e.nr];
       const neu = new Date(e.zeit) > besuch;
-      html += `<div class="row"><div class="icon ${e.ton === 'primary' ? '' : e.ton}">${e.icon}</div><div class="grow">`
-        + `<div class="title">${neu ? '<span class="new" title="neu"></span>' : ''}${esc(e.titel)}</div>`
+      const tagTon = e.blockiert ? 'coral' : e.zurueck ? 'mustard' : e.gemergt ? '' : 'muted';
+      html += `<div class="row"><div class="icon ${e.ton === 'primary' ? '' : e.ton}">${ic(e.icon)}</div><div class="grow">`
+        + `<div class="kopf"><div class="title">${neu ? '<span class="new" title="neu"></span>' : ''}${esc(e.titel)}</div>${e.status ? `<span class="tag ${tagTon}">${esc(e.status)}</span>` : ''}</div>`
         + `<div class="meta">${zeit(e.zeit)} · ${it ? esc(it.title) + ' ' : ''}<a href="${esc(e.url)}">#${e.nr}</a></div>`
         + (e.text && e.wichtig ? `<details><summary>Ganze Meldung</summary><div class="body">${esc(e.text)}</div></details>` : '')
         + `</div></div>`;
