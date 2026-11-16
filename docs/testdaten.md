@@ -44,14 +44,11 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | F-00 | Saisons, alle Personen mit Konto und Schlüssel, Uhr auf Standard-«Jetzt». E-Mail jeder Person: `<schluessel>@example.ch` |
 | F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team. Der Teamname gilt pro Saison: Wird Team 1 umbenannt, zeigt 2025/26 weiterhin «Team 1» (SAI-02, Nachbesserung #21) |
 | F-02 | Gruppen 01–08 und Linienzuweisungen gemäss Tabellen «Gruppen» und «Personen». Kim ist ohne Linie. Zusätzlich Gruppe 09: Goalies von Team 1 in Saison 2025/26 (leer, Vera ist dort ohne Linie) |
-
 | F-03 | Serien 01–03 mit allen ihren Terminen im Gültigkeitszeitraum (auch vergangenen), Ausnahme «Weihnachtsferien» bei Serie 01, Termine 01–08 gemäss Tabelle «Termine mit festen IDs». Termin 03 abgesagt («Halle besetzt»). Spieltage 04 und 05 mit Spielort, Google-Maps-Link und Treffpunkt, noch ohne Spiele und Aufgebot. Antwortfrist überall 24 Stunden |
 | F-04 | Antworten zu den Terminen 01, 02, 04 und 05 gemäss den Tabellen unten (Termin 02: Anna «dabei»), alle eingetragen am 15.11.2026 20:00 von der Person selbst, keine kurzfristig. Übrige Termine ohne Antworten |
 | F-05 | Spiele 01–03 und die Aufgebote der Termine 04 (Entwurf) und 05 (veröffentlicht am 15.11.2026 21:00) gemäss den Tabellen unten. Spiele 01 und 02 stammen aus swiss unihockey (SU-Spiel-ID `5000001` bzw. `5000002`), Spiel 03 ist von Hand erfasst. Noch ohne Resultate |
-
 | F-06 | Benachrichtigungen 01–18 gemäss Tabelle «Benachrichtigungen» unten. Noch keine Erinnerungen |
-
-Der Abgleich mit swiss unihockey folgt mit F-07.
+| F-07 | Keine neuen Datensätze. Team 1 ist mit Team-ID `900001` verknüpft; der Simulator liefert nach Reset genau Spiel 01 und 02 (siehe [Simulierte swiss-unihockey-Daten](#simulierte-swiss-unihockey-daten)) |
 
 Serientermine ohne feste ID haben die ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, z.B. für Serie 02 am 26.11.2026 `termin-2-2026-11-26`. Sie heissen «Training», Ort wie die Serie.
 
@@ -238,7 +235,16 @@ Ungelesen nach Reset: Lea, Eva, Lara, Zoe, Ella je 2; Marc, Anna, Sara, Nina, Ja
 
 ## Simulierte swiss-unihockey-Daten
 
-Im Profil `dev`/`test` spricht die App nicht mit swiss unihockey, sondern mit einem Simulator. Er liefert nach Reset für Team-ID `900001` genau Spiel 01 und Spiel 02 von Termin 04. Mit `PUT /api/test/swiss-unihockey/spiele` lassen sich andere Daten vorgeben.
+Im Profil `dev`/`test` spricht die App nicht mit swiss unihockey, sondern mit einem Simulator (F-07). Er liefert nach Reset für Team-ID `900001` genau Spiel 01 und Spiel 02 von Termin 04, für alle anderen Team-IDs keine Spiele. Ein Abgleich direkt nach dem Reset ändert deshalb nichts («2 unverändert»). Mit `PUT /api/test/swiss-unihockey/spiele` lassen sich andere Daten oder ein Ausfall (`"nichtErreichbar": true`) vorgeben; `POST /api/test/reset` setzt den Simulator zurück.
+
+| SU-Spiel-ID | Anspielzeit | Heimteam | Gastteam | Halle | Ort |
+|---|---|---|---|---|---|
+| `5000001` | So 22.11.2026 09:30 | Team 1 | UHC Musterdorf | Sporthalle Seefeld | Musterdorf |
+| `5000002` | So 22.11.2026 11:45 | Unihockey Beispielstadt | Team 1 | Sporthalle Seefeld | Musterdorf |
+
+Beide mit Google-Maps-Link `https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf`, ohne Resultat. Der Simulator nennt das eigene Team «Team 1» wie in der App; bei swiss unihockey heisst es anders, der Abgleich erkennt es daran, dass es in jedem Spiel vorkommt (Annahme F-07).
+
+Neu angelegte Spieltage aus dem Abgleich heissen «Spieltag», haben den Spielort aus swiss unihockey, beginnen mit der ersten Anspielzeit und enden 75 Minuten nach der letzten.
 
 ## Szenarien für Tests
 
@@ -258,7 +264,7 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S10 | Aufgebotene meldet sich ab | Als `eva` bei Termin 05 auf «nicht dabei» wechseln | Marc erhält «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.» | AUF-26, BEN-04 |
 | S32 | Benachrichtigung öffnen | Als `anna` `/benachrichtigungen` öffnen, Eintrag zu Termin 03 antippen | Termin 03 öffnet sich, Zähler in der Navigation verschwindet, Eintrag ist gelesen | BEN-12 |
 | S11 | Aufgebot nur für Coaches | Als `anna` `/termine/40000000-0000-4000-8000-000000000004/aufgebot` öffnen | Hinweis «Keine Berechtigung», API 403 | RR-03 |
-| S12 | Verschiebung durch swiss unihockey | Simulator: Spiel 02 auf 12:15. Abgleich auslösen | Spiel 02 zeigt 12:15, Treffpunkt und Aufgebot unverändert, Team 1 wird benachrichtigt | SUH-05, SUH-06 |
+| S12 | Verschiebung durch swiss unihockey | Simulator: Spiel 02 auf 12:15. Als `alex` unter `/verwaltung/teams/<Team 1>` «Jetzt abgleichen» | «Abgleich fertig: 0 neu, 1 geändert, 0 nicht mehr bei swiss unihockey, 1 unverändert.» Spiel 02 zeigt 12:15, Treffpunkt, Hinweise, Antworten und Aufgebot unverändert. Alle 8 Mitglieder von Team 1 erhalten «Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.» | SUH-05, SUH-06, BEN-06 |
 | S13 | Abgesagter Termin | Als `anna` Termin 03 öffnen | Als abgesagt erkennbar, mit Grund. Antworten nicht möglich | TER-06 |
 | S14 | Linie wechseln | Als `petra` in Team 1 Kim der Linie 2 zuweisen | Kim erscheint bei Termin 01 unter Linie 2 von Team 1, «Ohne Linie» ist leer und wird nicht angezeigt | LIN-07, LIN-06 |
 | S15 | Eine Linie pro Team | Als `petra` Anna zusätzlich Linie 2 in Team 1 zuweisen | Anna wechselt in Linie 2, ist danach nicht mehr in Linie 1 | LIN-02 |
@@ -277,4 +283,7 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S29 | Serientermin verschieben | Als `petra` Termin 02 auf Fr 20.11. 19:00 | «verschoben», Serie 02 unverändert, Do 26.11. bleibt | TER-06 |
 | S30 | Spieltag erfassen | Als `petra` unter `/termine/neu` Art «Spieltag», Team 1, Spielort mit Google-Maps-Link, Treffpunkt, Hinweise, zwei Spiele | Termin zeigt Spiele nach Anspielzeit, Treffpunkt und «In Google Maps öffnen» (neuer Tab) | AUF-10–AUF-16 |
 | S31 | Resultat erfassen | Als `petra` Termin 04 → «Resultat für Team 1 – UHC Musterdorf erfassen» → 5:3 | Spiel 01 zeigt «Resultat 5:3», auch für `anna`. Gegner eines Spiels aus swiss unihockey ändern: API 409 Regel SUH-06 | AUF-15 |
+| S33 | Spieltag aus swiss unihockey | Simulator für `900001`: Spiel 01, 02 und zwei Spiele am So 06.12.2026 10:00 und 12:30 in «Sporthalle Nord», Beromünster. Abgleich auslösen | Ein neuer Spieltag So 06.12. mit beiden Spielen, Spielort mit Google-Maps-Link | SUH-04, SUH-07 |
+| S34 | Spiel fehlt bei swiss unihockey | Simulator für `900001` nur Spiel 01. Abgleich auslösen | Spiel 02 bleibt, markiert «swiss unihockey liefert dieses Spiel nicht mehr.», Coach kann es löschen | SUH-06 |
+| S35 | swiss unihockey nicht erreichbar | Simulator für `900001` mit `"nichtErreichbar": true`. Abgleich auslösen | Meldung «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nichts geändert | SUH-09 |
 | S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |
