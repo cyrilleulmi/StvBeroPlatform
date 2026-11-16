@@ -60,7 +60,7 @@ flowchart LR
 | `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), Spielerinnen nach Linie (Listen mit dem Gruppennamen, leere Gruppen fehlen). Coaches und Admins sehen den Link «Linien einteilen». `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
 | `/teams/:id/linien` | Linien | Coach, Admin (andere Mitglieder lesend) | Linien hinzufügen, umbenennen, sortieren («<Linie> nach oben/unten»), löschen (Dialog), Spielerinnen per Drag & Drop oder Auswahlfeld «Linie von <Name>» zuweisen; speichert sofort. Ohne Zugehörigkeit «Keine Berechtigung». Aktuelle Saison | F-02 |
 | `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, neueste zuerst (Liste «Benachrichtigungen»): Text, Zeitpunkt, ungelesene mit «Neu». Ein Klick markiert als gelesen und öffnet `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (nur mit Ungelesenen, Rückmeldung «Alle sind als gelesen markiert.»). Leer: «Keine Benachrichtigungen.» | F-06 |
-| `/profil` | Profil | angemeldet | Name, Hell/Dunkel/System, Abmelden | F-00 |
+| `/profil` | Profil | angemeldet | Name, Darstellung (Hell, Düne, GitHub Dark, System; NF-08), Abmelden | F-00 |
 | `/verwaltung` | Verwaltung | Admin | Einstieg: Links «Personen», «Teams verwalten», «Saisons». Andere sehen «Keine Berechtigung» | F-00, F-01 |
 | `/keine-saison` | Keine aktuelle Saison | angemeldet | Hinweis, wenn `GET /api/ich` mit 409 antwortet (keine Saison als aktuell festgelegt, SAI-03). Ohne Navigation, Buttons «Nochmals versuchen» (zurück zu `?ziel=`) und «Abmelden». Jede Route leitet in diesem Zustand mit `?ziel=` hierher. Direkt geöffnet: ohne Anmeldung zur Anmeldung, mit aktueller Saison direkt weiter zum Ziel | Nachbesserung #13 |
 | `/**` | Nicht gefunden | angemeldet | «Diese Seite gibt es nicht.» mit Link «Zur Startseite» | F-00 |
@@ -94,7 +94,7 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | Test-ID | Element |
 |---|---|
 | `hauptnavigation` | Navigation (mobil und Desktop) |
-| `theme-umschalter` | Umschalter Hell/Dunkel/System im Profil |
+| `theme-umschalter` | Umschalter «Darstellung» im Profil: Auswahl (Radio) «Hell», «Düne», «GitHub Dark», «System» |
 | `testmodus-hinweis` | Banner «Testmodus» (nur dev/test) |
 | `kachel-<id>` | Kachel auf dem Start-Screen (Link), z.B. `kachel-anwesenheit` |
 | `dev-login-person-<schluessel>` | Eintrag einer Testperson auf `/dev-login`, z.B. `dev-login-person-petra` |

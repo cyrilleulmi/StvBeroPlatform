@@ -7,16 +7,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Plattform des Vereins: Termine, An- und Abmeldung, Teams." />
     <meta name="theme-color" content="#2C7F69" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#18201D" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0D1117" media="(prefers-color-scheme: dark)" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script>
       // Gewählten Modus vor dem ersten Zeichnen anwenden (kein Aufblitzen). Siehe ThemeService.
       try {
-        var m = localStorage.getItem('stv-theme');
-        if (m === 'hell') document.documentElement.setAttribute('data-theme', 'light');
-        if (m === 'dunkel') document.documentElement.setAttribute('data-theme', 'dark');
+        var m = { hell: 'light', duene: 'duene', 'github-dark': 'github-dark' }[
+          localStorage.getItem('stv-theme')
+        ];
+        if (m) document.documentElement.setAttribute('data-theme', m);
       } catch (e) {}
     </script>
   </head>

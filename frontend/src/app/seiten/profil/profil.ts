@@ -6,7 +6,14 @@ import { Icon } from '../../kern/icon';
 import { TEXTE } from '../../kern/texte';
 import { Modus, ThemeService } from '../../kern/theme.service';
 
-/** Profil: Name, Hell/Dunkel/System (NF-06), Abmelden. */
+/** Eine Wahl im Umschalter. `vorschau` ist der Wert von `data-theme`, in dem sich die Wahl selbst zeigt. */
+interface Option {
+  wert: Modus;
+  text: string;
+  vorschau: string | null;
+}
+
+/** Profil: Name, Darstellung (NF-06, NF-08), Abmelden. */
 @Component({
   selector: 'app-profil',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,10 +30,11 @@ export class Profil {
   /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
   protected readonly abmeldend = signal(false);
 
-  protected readonly modi: { wert: Modus; text: string }[] = [
-    { wert: 'hell', text: TEXTE.profil.hell },
-    { wert: 'dunkel', text: TEXTE.profil.dunkel },
-    { wert: 'system', text: TEXTE.profil.system },
+  protected readonly optionen: Option[] = [
+    { wert: 'hell', text: TEXTE.profil.hell, vorschau: 'light' },
+    { wert: 'duene', text: TEXTE.profil.duene, vorschau: 'duene' },
+    { wert: 'github-dark', text: TEXTE.profil.githubDark, vorschau: 'github-dark' },
+    { wert: 'system', text: TEXTE.profil.system, vorschau: null },
   ];
 
   protected async abmelden(): Promise<void> {

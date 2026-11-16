@@ -45,9 +45,9 @@ Ausgangslage: Reset, als `anna` angemeldet.
 
 ## K6 · Design-Tokens und Darstellung
 
-1. Als `anna` `/profil` öffnen, Umschalter `theme-umschalter` mit Hell/Dunkel/System.
-2. «Dunkel» wählen → `<html data-theme="dark">`, Bildschirm dunkel; neu laden → bleibt dunkel.
-3. «Hell» → hell, bleibt nach Neuladen. «System» mit `prefers-color-scheme: dark` → dunkel.
+1. Als `anna` `/profil` öffnen, Umschalter `theme-umschalter` mit Hell/Düne/GitHub Dark/System (seit E-67, vorher Hell/Dunkel/System).
+2. «GitHub Dark» wählen → `<html data-theme="github-dark">`, Bildschirm dunkel; neu laden → bleibt dunkel.
+3. «Hell» → hell, bleibt nach Neuladen. «System» mit `prefers-color-scheme: dark` → dunkel (GitHub Dark).
 4. Jeder Screen (`/dev-login`, `/`, `/termine`, `/teams`, `/profil`, `/verwaltung`, Nicht gefunden) im Darkmode: lesbar, nichts Weisses auf Weiss.
 5. CSS Custom Properties aus design-grundlagen.md auf `:root` vorhanden (z.B. `--primary`).
 

@@ -13,16 +13,23 @@
   <fieldset class="umschalter" data-testid="theme-umschalter">
     <legend>{{ texte.profil.darstellung }}</legend>
     <div class="optionen">
-      @for (m of modi; track m.wert) {
-        <label class="option">
+      @for (o of optionen; track o.wert) {
+        <!-- Jede Wahl zeigt sich in ihren eigenen Farben: data-theme gilt auch für ein einzelnes Element. -->
+        <label class="option" [attr.data-theme]="o.vorschau">
           <input
             type="radio"
             name="darstellung"
-            [value]="m.wert"
-            [checked]="theme.modus() === m.wert"
-            (change)="theme.setzen(m.wert)"
+            [value]="o.wert"
+            [checked]="theme.modus() === o.wert"
+            (change)="theme.setzen(o.wert)"
           />
-          <span>{{ m.text }}</span>
+          <span class="name">{{ o.text }}</span>
+          <span class="farben" aria-hidden="true">
+            <span class="farbe farbe-primary"></span>
+            <span class="farbe farbe-coral"></span>
+            <span class="farbe farbe-mustard"></span>
+            <span class="farbe farbe-blue"></span>
+          </span>
         </label>
       }
     </div>

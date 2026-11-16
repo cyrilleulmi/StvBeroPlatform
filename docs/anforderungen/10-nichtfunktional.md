@@ -12,7 +12,8 @@ Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
 | NF-04 | Touch-Ziele sind mindestens 44px gross. | Entschieden |
 | NF-05 | Die App ist als PWA installierbar. | Entschieden |
 | NF-06 | Light- und Darkmode sind Pflicht. Der Modus folgt der Systemeinstellung und lässt sich von Hand umschalten. | Entschieden |
-| NF-07 | Das Grunddesign «Salbei frisch» ist für alle Kacheln verbindlich (siehe [design-grundlagen.md](../design-grundlagen.md)). | Entschieden |
+| NF-07 | Das Grunddesign «Salbei frisch» ist für alle Kacheln verbindlich (siehe [design-grundlagen.md](../design-grundlagen.md)). Form, Schrift und Abstände gelten für alle Darstellungen; die Farben von «Salbei frisch» sind die Darstellung «Hell» (NF-08). | Entschieden |
+| NF-08 | Es gibt drei Darstellungen: «Hell», «Düne» und «GitHub Dark» (E-67). Sie unterscheiden sich nur in den Farben und lassen sich im Profil wählen, dazu «System»: im Hellen gilt «Hell», im Dunkeln «GitHub Dark». Die Wahl bleibt im Browser gespeichert. Farben und Regeln: [design-grundlagen.md](../design-grundlagen.md#darstellungen). | Entschieden (Auswahl), Angenommen («System») |
 
 ## Aufbau
 
