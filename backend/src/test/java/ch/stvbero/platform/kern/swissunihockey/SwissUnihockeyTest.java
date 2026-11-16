@@ -269,6 +269,55 @@ class SwissUnihockeyTest {
                         + "neu in Turnhalle Weid."));
     }
 
+    private static final String SPIEL_01_29 = """
+            {"suSpielId":5000001,"anspielzeit":"2026-11-29T09:30:00+01:00","heimteam":"Team 1",
+             "gastteam":"UHC Musterdorf","halle":"Sporthalle Seefeld","ort":"Musterdorf"}""";
+    private static final String SPIEL_02_29 = """
+            {"suSpielId":5000002,"anspielzeit":"2026-11-29T11:45:00+01:00","heimteam":"Unihockey Beispielstadt",
+             "gastteam":"Team 1","halle":"Sporthalle Seefeld","ort":"Musterdorf"}""";
+
+    @Test
+    void suh05GanzerSpieltagVerschobenBleibtEinSpieltag() {
+        ganzerSpieltagVerschoben(SPIEL_01_29 + "," + SPIEL_02_29);
+    }
+
+    @Test
+    void suh05GanzerSpieltagVerschobenUmgekehrteReihenfolge() {
+        ganzerSpieltagVerschoben(SPIEL_02_29 + "," + SPIEL_01_29);
+    }
+
+    private void ganzerSpieltagVerschoben(String spiele) {
+        String alex = anmelden("alex");
+        JsonPath vorher = termin(T04);
+        List<Object> aufgebotVorher = given().cookie("stv_sitzung", alex).get("/api/termine/" + T04 + "/aufgebot")
+                .then().statusCode(200).extract().jsonPath().getList("gruppen");
+
+        simulator("{\"suTeamId\":900001,\"spiele\":[" + spiele + "]}");
+        abgleich(alex, TEAM_1).statusCode(200).body("geaendert", equalTo(2)).body("neu", equalTo(0))
+                .body("betroffeneTermine", contains(T04));
+
+        JsonPath nachher = termin(T04);
+        assertThat(nachher.getList("spiele.anspielzeit"),
+                contains("2026-11-29T09:30:00+01:00", "2026-11-29T11:45:00+01:00"));
+        assertThat(nachher.getList("spiele.id"), hasItem(SPIEL_02));
+        assertEquals("2026-11-29T09:30:00+01:00", nachher.getString("beginn"));
+        assertEquals(true, nachher.getBoolean("verschoben"));
+        assertEquals("Sporthalle Seefeld", nachher.getString("ort.name"));
+        // SUH-06: eigene Daten bleiben beim bestehenden Spieltag
+        assertEquals(vorher.getString("treffpunkt.zeit"), nachher.getString("treffpunkt.zeit"));
+        assertEquals(vorher.getString("treffpunkt.ort"), nachher.getString("treffpunkt.ort"));
+        assertEquals("Weisse Trikots mitnehmen", nachher.getString("hinweise"));
+        assertEquals(vorher.getMap("zaehler"), nachher.getMap("zaehler"), "Antworten bleiben");
+        assertEquals(aufgebotVorher, given().cookie("stv_sitzung", alex).get("/api/termine/" + T04 + "/aufgebot")
+                .then().extract().jsonPath().getList("gruppen"), "Aufgebot bleibt");
+
+        // Kein zusätzlicher Spieltag: zweiter Abgleich ändert nichts und legt nichts an (SUH-04)
+        abgleich(alex, TEAM_1).statusCode(200).body("geaendert", equalTo(0)).body("neu", equalTo(0))
+                .body("unveraendert", equalTo(2));
+        assertThat(neueBenachrichtigungen().stream().map(b -> b.get("terminId")).distinct().toList(),
+                contains(T04));
+    }
+
     @Test
     void suh08ResultatWirdUebernommenOhneBenachrichtigung() {
         simulator("{\"suTeamId\":900001,\"spiele\":[" + SPIEL_01_SU.replace("\"halle\"", "\"resultat\":\"5:3\",\"halle\"")

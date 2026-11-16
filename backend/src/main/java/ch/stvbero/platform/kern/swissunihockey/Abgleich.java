@@ -159,6 +159,7 @@ public class Abgleich {
         Map<Termin, List<String>> meldungen = new LinkedHashMap<>();
         Map<Termin, Instant> alterBeginn = new LinkedHashMap<>();
         List<SuSpiel> neue = new ArrayList<>();
+        Map<Termin, List<Umzug>> umzuege = new LinkedHashMap<>();
 
         for (SuSpiel g : nachId.values()) {
             if (beiAnderenTeams.contains(g.suSpielId())) {
@@ -191,21 +192,8 @@ public class Abgleich {
                 }
                 AbgleichRegeln.Schluessel ziel = AbgleichRegeln.Schluessel.von(g.anspielzeit(), g.halle());
                 if (!ziel.equals(schluessel(t))) {
-                    if (Spiel.count("termin.id", t.id) == 1) {
-                        // Einziges Spiel: Der Spieltag zieht mit und behält seine eigenen Daten (SUH-06)
-                        spieltage.remove(schluessel(t), t);
-                        ortSetzen(t, g);
-                        spieltage.putIfAbsent(ziel, t);
-                    } else {
-                        Termin anderer = spieltage.get(ziel);
-                        if (anderer == null) {
-                            anderer = neuerSpieltag(team, saison, g);
-                            neuAngelegt.add(anderer);
-                            spieltage.put(ziel, anderer);
-                        }
-                        s.termin = anderer;
-                        zeitraumNeu.add(anderer);
-                    }
+                    // Erst sammeln, dann umziehen: So zieht ein ganzer Spieltag gemeinsam um (SUH-04, SUH-06).
+                    umzuege.computeIfAbsent(t, k -> new ArrayList<>()).add(new Umzug(s, g, ziel));
                 }
                 zeitraumNeu.add(t);
             }
@@ -217,8 +205,10 @@ public class Abgleich {
             }
             s.beiSuNichtMehrVorhanden = false;
             z.betroffen.add(t.id);
-            z.betroffen.add(s.termin.id);
         }
+
+        // Spiele an einen anderen Tag oder in eine andere Halle verschieben (SUH-04, SUH-05, SUH-06)
+        umzuege.forEach((t, liste) -> umziehen(team, saison, t, liste, spieltage, neuAngelegt, zeitraumNeu, z));
 
         // Nicht mehr geliefert: markieren, nicht löschen. Die Coach entscheidet (zustaende.md).
         for (Spiel s : bestehend.values()) {
@@ -280,6 +270,63 @@ public class Abgleich {
                 team.id, z.neu, z.geaendert, z.nichtMehrVorhanden, z.unveraendert);
         return new AbgleichErgebnisDto(z.neu, z.geaendert, z.nichtMehrVorhanden, z.unveraendert,
                 List.copyOf(z.betroffen));
+    }
+
+    /** Ein Spiel, das an einen anderen Tag oder in eine andere Halle wechselt. */
+    private record Umzug(Spiel spiel, SuSpiel geliefert, AbgleichRegeln.Schluessel ziel) {
+    }
+
+    /**
+     * Verschiebt die Spiele eines Spieltags, die an einen anderen Tag oder in eine andere Halle wechseln.
+     * <p>
+     * Bleibt kein Spiel am bisherigen Tag in der bisherigen Halle, zieht der Spieltag selbst mit und behält
+     * Treffpunkt, Hinweise, Antworten und Aufgebot (SUH-06). Er zieht dorthin, wo die meisten seiner Spiele
+     * hingehen (bei Gleichstand dorthin, wo das früheste Spiel stattfindet), sofern dort noch kein anderer
+     * Spieltag ist. Die übrigen Spiele kommen zum Spieltag am Ziel oder in einen neuen. Ein Tag und eine Halle
+     * gehören so immer zu höchstens einem Spieltag (SUH-04).
+     */
+    private static void umziehen(Team team, Saison saison, Termin t, List<Umzug> liste,
+                                 Map<AbgleichRegeln.Schluessel, Termin> spieltage, Set<Termin> neuAngelegt,
+                                 Set<Termin> zeitraumNeu, Zaehler z) {
+        Map<AbgleichRegeln.Schluessel, List<Umzug>> nachZiel = new LinkedHashMap<>();
+        liste.stream()
+                .sorted(Comparator.comparing((Umzug u) -> u.geliefert().anspielzeit())
+                        .thenComparing(u -> u.geliefert().suSpielId()))
+                .forEach(u -> nachZiel.computeIfAbsent(u.ziel(), k -> new ArrayList<>()).add(u));
+
+        AbgleichRegeln.Schluessel mitziehen = null;
+        if (Spiel.count("termin.id", t.id) == liste.size()) {
+            int meiste = 0;
+            for (var e : nachZiel.entrySet()) {
+                Termin dort = spieltage.get(e.getKey());
+                if ((dort == null || dort == t) && e.getValue().size() > meiste) {
+                    meiste = e.getValue().size();
+                    mitziehen = e.getKey();
+                }
+            }
+        }
+        if (mitziehen != null) {
+            spieltage.remove(schluessel(t), t);
+            ortSetzen(t, nachZiel.get(mitziehen).get(0).geliefert());
+            spieltage.put(mitziehen, t);
+        }
+        zeitraumNeu.add(t);
+        for (var e : nachZiel.entrySet()) {
+            if (e.getKey().equals(mitziehen)) {
+                continue;
+            }
+            Termin ziel = spieltage.get(e.getKey());
+            if (ziel == null) {
+                ziel = neuerSpieltag(team, saison, e.getValue().get(0).geliefert());
+                neuAngelegt.add(ziel);
+                spieltage.put(e.getKey(), ziel);
+            }
+            for (Umzug u : e.getValue()) {
+                u.spiel().termin = ziel;
+            }
+            zeitraumNeu.add(ziel);
+            z.betroffen.add(ziel.id);
+        }
     }
 
     private static final class Zaehler {
