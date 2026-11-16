@@ -14,8 +14,8 @@ import jakarta.ws.rs.ext.Provider;
 import java.lang.reflect.Method;
 
 /**
- * Liest das Sitzungs-Cookie und setzt die {@link Anmeldung}. Ressourcen ohne {@link Oeffentlich}
- * antworten ohne gültige Sitzung mit 401.
+ * Reads the session cookie and fills the {@link AuthContext}. Resources without {@link Public}
+ * answer with 401 when there is no valid session.
  */
 @Provider
 public class AuthFilter implements ContainerRequestFilter {
@@ -33,7 +33,7 @@ public class AuthFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext request) {
         Cookie cookie = request.getCookies().get(SessionService.COOKIE);
         String token = cookie != null ? cookie.getValue() : null;
-        sessions.find(token).ifPresent(a -> auth.set(a, token));
+        sessions.find(token).ifPresent(user -> auth.set(user, token));
 
         if (auth.optional().isEmpty() && !isPublic()) {
             request.abortWith(Response.status(401)

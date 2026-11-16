@@ -3,17 +3,17 @@ package ch.stvbero.platform.core.swissunihockey;
 import java.util.List;
 
 /**
- * Woher der Abgleich die Spiele bezieht (SUH-01). Im Profil {@code prod} die Schnittstelle von swiss unihockey
- * ({@link SuApiQuelle}), in {@code dev} und {@code test} der {@link SuSimulator}.
+ * Where the sync gets the matches from (SUH-01). In the {@code prod} profile the swiss unihockey API
+ * ({@link SuApiSource}), in {@code dev} and {@code test} the {@link SuSimulator}.
  */
 public interface SwissUnihockeySource {
 
     /**
-     * Alle Spiele eines Teams in einer Saison.
+     * All matches of a team in a season.
      *
-     * @param suTeamId Team-ID bei swiss unihockey
-     * @param saison   Startjahr der Saison, z.B. 2026 für 2026/27
-     * @throws SuNichtErreichbar wenn swiss unihockey nicht antwortet oder Unerwartetes liefert (SUH-09)
+     * @param suTeamId team ID at swiss unihockey
+     * @param season   start year of the season, e.g. 2026 for 2026/27
+     * @throws SuUnavailable if swiss unihockey does not answer or delivers something unexpected (SUH-09)
      */
     List<SuMatch> matches(int suTeamId, int season);
 }

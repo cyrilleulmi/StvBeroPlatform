@@ -18,24 +18,24 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Teams und Teamzugehörigkeiten (PTF). Verwalten dürfen nur Admins (RR-04, PTF-11). */
+/** Teams and team memberships (PTF). Only admins may manage them (RR-04, PTF-11). */
 @ApplicationScoped
 public class TeamService {
 
     private static final Comparator<TeamDto> BY_NAME = Comparator
             .comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id);
 
-    /** Teamzugehörigkeiten nach Teamname in ihrer Saison (SAI-02). */
+    /** Team memberships by team name in their season (SAI-02). */
     static final Comparator<TeamMembershipDto> BY_TEAM_NAME = Comparator
-            .comparing((TeamMembershipDto z) -> z.team().name(), String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(z -> z.team().id());
+            .comparing((TeamMembershipDto m) -> m.team().name(), String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(m -> m.team().id());
 
-    /** Teams einer Saison. Admins sehen alle, sonst nur die eigenen (PTF-12). */
+    /** Teams of a season. Admins see all of them, everyone else only their own (PTF-12). */
     public List<TeamDto> list(CurrentUser user, UUID seasonId) {
         Season season = Season.orCurrent(seasonId);
         Map<UUID, TeamRole> mine = TeamMembership.<TeamMembership>list("person.id = ?1 and season.id = ?2",
                         user.personId(), season.id).stream()
-                .collect(Collectors.toMap(z -> z.team.id, z -> z.teamRole));
+                .collect(Collectors.toMap(m -> m.team.id, m -> m.teamRole));
         List<TeamSeason> teams = TeamSeason.list("season.id", season.id);
         return teams.stream()
                 .filter(ts -> user.admin() || mine.containsKey(ts.team.id))
@@ -44,13 +44,13 @@ public class TeamService {
                 .toList();
     }
 
-    /** Team mit Coaches und Spielerinnen. Nur Mitglieder des Teams in dieser Saison und Admins. */
+    /** Team with coaches and players. Only members of the team in this season and admins. */
     public TeamDetailDto get(CurrentUser user, UUID teamId, UUID seasonId) {
         Team team = find(teamId);
         Season season = Season.orCurrent(seasonId);
         List<TeamMembership> memberships = inTeam(team, season);
         Optional<TeamRole> mine = memberships.stream()
-                .filter(z -> z.person.id.equals(user.personId())).map(z -> z.teamRole).findFirst();
+                .filter(m -> m.person.id.equals(user.personId())).map(m -> m.teamRole).findFirst();
         if (!user.admin() && mine.isEmpty()) {
             throw DomainError.forbidden();
         }
@@ -58,7 +58,7 @@ public class TeamService {
             throw DomainError.notFound("Dieses Team gibt es in der Saison " + season.name + " nicht.");
         }
         TeamRules.Split split = TeamRules.split(members(memberships));
-        // Spielerinnen nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09)
+        // Players by line, then goalies, then «Ohne Linie» (LIN-06, LIN-09)
         return new TeamDetailDto(team.id, team.nameIn(season), team.suTeamId, mine.orElse(null), split.coaches(),
                 LineService.lineup(team, season, memberships));
     }
@@ -76,8 +76,8 @@ public class TeamService {
     }
 
     /**
-     * Team umbenennen. Der Name gilt nur in dieser Saison (Standard: aktuelle). Archivierte Saisons
-     * bleiben unverändert (409, SAI-02).
+     * Renames the team. The name only applies in this season (default: the current one). Archived seasons
+     * stay unchanged (409, SAI-02).
      */
     @Transactional
     public TeamDto update(CurrentUser user, UUID teamId, UUID seasonId, TeamInput input) {
@@ -91,7 +91,7 @@ public class TeamService {
         return TeamDto.of(ts, null);
     }
 
-    /** Person mit Funktion ins Team aufnehmen. Pro Team und Saison genau eine Funktion (PTF-04). */
+    /** Adds a person with a team role to the team. Exactly one team role per team and season (PTF-04). */
     @Transactional
     public TeamMembershipDto addMember(CurrentUser user, UUID teamId, UUID seasonId, MemberInput input) {
         user.checkAdmin();
@@ -100,40 +100,40 @@ public class TeamService {
         season.checkWritable();
         Person person = PersonService.find(input.personId());
         TeamRules.checkCanAdd(members(inTeam(team, season)), person.id);
-        // Kommt das Team neu in die Saison, übernimmt es den Namen aus der letzten Saison, in der es bestand.
-        team.addToSeason(season, lastName(team));
-        TeamMembership z = TeamMembership.create(person, team, season, input.teamRole());
-        z.persist();
-        // Gleichzeitige Aufnahme derselben Person (Doppelklick): 409 statt 500 (PTF-04).
+        // If the team is new in the season, it takes the name from the latest season it existed in.
+        team.addToSeason(season, latestName(team));
+        TeamMembership membership = TeamMembership.create(person, team, season, input.teamRole());
+        membership.persist();
+        // The same person added twice at the same time (double click): 409 instead of 500 (PTF-04).
         Unique.save(Team.getEntityManager(), "team_membership_one_role",
                 () -> DomainError.conflict("Schon im Team", person.firstName + " " + person.lastName
                         + " ist schon in diesem Team. Pro Team gibt es nur eine Funktion.", "PTF-04"));
-        return TeamMembershipDto.of(z);
+        return TeamMembershipDto.of(membership);
     }
 
     @Transactional
     public TeamMembershipDto changeTeamRole(CurrentUser user, UUID teamId, UUID personId, UUID seasonId,
                                                  TeamRole teamRole) {
         user.checkAdmin();
-        TeamMembership z = membership(teamId, personId, seasonId);
-        z.season.checkWritable();
-        z.teamRole = teamRole;
-        // Nur Spielerinnen sind in einer Linie (LIN-10): Beim Wechsel zur Coach entfällt die Zuweisung.
+        TeamMembership membership = membership(teamId, personId, seasonId);
+        membership.season.checkWritable();
+        membership.teamRole = teamRole;
+        // Only players are in a line (LIN-10): switching to coach removes the assignment.
         if (teamRole != TeamRole.PLAYER) {
-            z.groups.clear();
+            membership.groups.clear();
         }
-        return TeamMembershipDto.of(z);
+        return TeamMembershipDto.of(membership);
     }
 
     @Transactional
     public void removeMember(CurrentUser user, UUID teamId, UUID personId, UUID seasonId) {
         user.checkAdmin();
-        TeamMembership z = membership(teamId, personId, seasonId);
-        z.season.checkWritable();
-        z.delete();
+        TeamMembership membership = membership(teamId, personId, seasonId);
+        membership.season.checkWritable();
+        membership.delete();
     }
 
-    /** Teamzugehörigkeiten der angemeldeten Person in der aktuellen Saison, nach Teamname (PTF-12). */
+    /** Team memberships of the signed-in person in the given season, by team name (PTF-12). */
     public List<TeamMembershipDto> mine(UUID personId, Season season) {
         return TeamMembership.<TeamMembership>list("person.id = ?1 and season.id = ?2", personId, season.id)
                 .stream().map(TeamMembershipDto::of).sorted(BY_TEAM_NAME).toList();
@@ -147,7 +147,7 @@ public class TeamService {
                 .orElseThrow(() -> DomainError.notFound("Diese Person ist in dieser Saison nicht im Team."));
     }
 
-    private static String lastName(Team team) {
+    private static String latestName(Team team) {
         return team.seasons.stream().max(Comparator.comparing((TeamSeason ts) -> ts.season.startDate))
                 .map(ts -> ts.name).orElseThrow();
     }
@@ -157,7 +157,7 @@ public class TeamService {
     }
 
     private static List<TeamRules.Member> members(List<TeamMembership> memberships) {
-        return memberships.stream().map(z -> new TeamRules.Member(PersonSummary.of(z.person), z.teamRole)).toList();
+        return memberships.stream().map(m -> new TeamRules.Member(PersonSummary.of(m.person), m.teamRole)).toList();
     }
 
     private static Team find(UUID id) {

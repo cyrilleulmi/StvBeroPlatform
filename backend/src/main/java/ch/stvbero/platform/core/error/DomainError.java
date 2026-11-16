@@ -2,7 +2,7 @@ package ch.stvbero.platform.core.error;
 
 import java.util.List;
 
-/** Fehler, der als Problem Details an den Client geht. */
+/** An error that goes to the client as Problem Details. */
 public class DomainError extends RuntimeException {
 
     private final int status;
@@ -22,17 +22,17 @@ public class DomainError extends RuntimeException {
         this.fields = fields;
     }
 
-    /** 400 mit einem fehlerhaften Feld, z.B. Zeitraum «bis» vor «von». */
+    /** 400 with one invalid field, e.g. a period whose end is before its start. */
     public static DomainError invalidField(String field, String message) {
         return new DomainError(400, "Ungültige Anfrage", message, null, List.of(new Problem.FieldError(field, message)));
     }
 
-    /** 422: fachliche Regel verletzt, mit dem Feld, bei dem die Meldung erscheint (z.B. ANM-04). */
+    /** 422: a domain rule is violated, with the field where the message is shown (e.g. ANM-04). */
     public static DomainError ruleViolation(String field, String title, String message, String rule) {
         return new DomainError(422, title, message, rule, List.of(new Problem.FieldError(field, message)));
     }
 
-    /** 409: widerspricht dem aktuellen Zustand. */
+    /** 409: contradicts the current state. */
     public static DomainError conflict(String title, String detail, String rule) {
         return new DomainError(409, title, detail, rule);
     }

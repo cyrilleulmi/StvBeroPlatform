@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/** Personenverwaltung (PTF-01, PTF-11). Nur Admins (RR-04). */
+/** Managing persons (PTF-01, PTF-11). Admins only (RR-04). */
 @ApplicationScoped
 public class PersonService {
 
     public List<PersonDto> list(CurrentUser user, String search) {
         user.checkAdmin();
         List<Person> persons;
-        String s = PersonRules.clean(search);
-        if (s == null) {
+        String term = PersonRules.clean(search);
+        if (term == null) {
             persons = Person.list("order by lower(lastName), lower(firstName), id");
         } else {
-            String pattern = "%" + s.toLowerCase(Locale.ROOT) + "%";
+            String pattern = "%" + term.toLowerCase(Locale.ROOT) + "%";
             persons = Person.list("lower(firstName) like ?1 or lower(lastName) like ?1 "
                     + "or lower(concat(firstName, ' ', lastName)) like ?1 order by lower(lastName), lower(firstName), id", pattern);
         }
@@ -35,10 +35,10 @@ public class PersonService {
         Person p = find(id);
         List<TeamMembershipDto> memberships = TeamMembership.<TeamMembership>list(
                         "person.id = ?1", id).stream()
-                // Neueste Saison zuerst, darin nach dem Teamnamen dieser Saison (SAI-02).
-                .sorted(Comparator.comparing((TeamMembership z) -> z.season.startDate).reversed()
-                        .thenComparing(z -> z.team.nameIn(z.season), String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(z -> z.team.id))
+                // Newest season first, within it by the team name of that season (SAI-02).
+                .sorted(Comparator.comparing((TeamMembership m) -> m.season.startDate).reversed()
+                        .thenComparing(m -> m.team.nameIn(m.season), String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(m -> m.team.id))
                 .map(TeamMembershipDto::of).toList();
         return new PersonDetailDto(p.id, p.firstName, p.lastName, p.email, p.admin, memberships);
     }
@@ -57,8 +57,8 @@ public class PersonService {
     public PersonDto update(CurrentUser user, UUID id, PersonInput input) {
         user.checkAdmin();
         Person p = find(id);
-        boolean futureAdmin = Boolean.TRUE.equals(input.admin());
-        PersonRules.checkAdminRevocation(p.admin, futureAdmin, Person.count("admin", true));
+        boolean staysAdmin = Boolean.TRUE.equals(input.admin());
+        PersonRules.checkAdminRevocation(p.admin, staysAdmin, Person.count("admin", true));
         apply(p, input);
         return PersonDto.of(p);
     }

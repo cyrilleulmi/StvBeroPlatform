@@ -15,11 +15,11 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Formal ungültige Anfragen (Bean Validation) als 400 mit Problem Details und Feldern.
+ * Formally invalid requests (Bean Validation) become 400 with Problem Details and fields.
  *
- * <p>Fehlt der Body ganz (Nachbesserung #31), meldet Bean Validation den Methodenparameter selbst, z.B.
- * «eingabe». Das ist kein Feld der API: Die Antwort nennt dann im {@code detail}, dass die Daten fehlen, und
- * führt den Parameter nicht unter {@code felder}.
+ * <p>If the body is missing entirely (follow-up fix #31), Bean Validation reports the method parameter itself,
+ * e.g. {@code input}. That is not a field of the API: the response then says in {@code detail} that the data is
+ * missing and does not list the parameter under {@code fields}.
  */
 @Provider
 public class ValidationErrorMapper implements ExceptionMapper<ConstraintViolationException> {
@@ -46,13 +46,13 @@ public class ValidationErrorMapper implements ExceptionMapper<ConstraintViolatio
 
     private static String field(ConstraintViolation<?> violation) {
         String path = violation.getPropertyPath().toString();
-        int point = path.lastIndexOf('.');
-        return point >= 0 ? path.substring(point + 1) : path;
+        int dot = path.lastIndexOf('.');
+        return dot >= 0 ? path.substring(dot + 1) : path;
     }
 
     /**
-     * Ob die Verletzung den Body-Parameter selbst betrifft (Pfad «methode.parameter», Parameter ohne
-     * JAX-RS-Annotation wie {@code @QueryParam} oder {@code @PathParam}).
+     * Whether the violation concerns the body parameter itself (path {@code method.parameter}, a parameter
+     * without a JAX-RS annotation such as {@code @QueryParam} or {@code @PathParam}).
      */
     static boolean isBody(ConstraintViolation<?> violation) {
         List<Path.Node> nodes = new ArrayList<>();
@@ -63,12 +63,12 @@ public class ValidationErrorMapper implements ExceptionMapper<ConstraintViolatio
         }
         Path.MethodNode method = nodes.get(0).as(Path.MethodNode.class);
         int index = nodes.get(1).as(Path.ParameterNode.class).getParameterIndex();
-        Method m = method(violation.getRootBeanClass(), method.getName(),
+        Method resourceMethod = method(violation.getRootBeanClass(), method.getName(),
                 method.getParameterTypes().toArray(Class<?>[]::new));
-        if (m == null) {
+        if (resourceMethod == null) {
             return false;
         }
-        for (Annotation annotation : m.getParameterAnnotations()[index]) {
+        for (Annotation annotation : resourceMethod.getParameterAnnotations()[index]) {
             String pkg = annotation.annotationType().getPackageName();
             if (pkg.equals("jakarta.ws.rs") || pkg.startsWith("org.jboss.resteasy.reactive")) {
                 return false;
@@ -78,11 +78,11 @@ public class ValidationErrorMapper implements ExceptionMapper<ConstraintViolatio
     }
 
     private static Method method(Class<?> type, String name, Class<?>[] types) {
-        for (Class<?> k = type; k != null && k != Object.class; k = k.getSuperclass()) {
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
             try {
-                return k.getDeclaredMethod(name, types);
+                return current.getDeclaredMethod(name, types);
             } catch (NoSuchMethodException e) {
-                // in der Oberklasse weitersuchen (z.B. CDI-Unterklasse)
+                // keep searching in the superclass (e.g. a CDI subclass)
             }
         }
         return null;

@@ -6,19 +6,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Die Liste in der App (`/benachrichtigungen`). Gibt es immer (E-56). */
+/** The list in the app ({@code /benachrichtigungen}). Always present (E-56). */
 @ApplicationScoped
 public class AppChannel implements Channel {
 
     @Override
-    public void send(Message n, Instant instant) {
-        Notification b = new Notification();
-        b.id = UUID.randomUUID();
-        b.type = n.type();
-        b.recipient = Person.getEntityManager().getReference(Person.class, n.recipientId());
-        b.text = n.text();
-        b.eventId = n.eventId();
-        b.createdAt = instant;
-        b.persist();
+    public void send(Message message, Instant instant) {
+        Notification notification = new Notification();
+        notification.id = UUID.randomUUID();
+        notification.type = message.type();
+        notification.recipient = Person.getEntityManager().getReference(Person.class, message.recipientId());
+        notification.text = message.text();
+        notification.eventId = message.eventId();
+        notification.createdAt = instant;
+        notification.persist();
     }
 }

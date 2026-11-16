@@ -4,7 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-/** {@link Clock}, die ihre Zeit bei jedem Aufruf von der {@link Uhr} holt. */
+/** A {@link Clock} that asks the {@link BackendClock} for the time on every call. */
 final class ControllableClock extends Clock {
 
     private final BackendClock clock;

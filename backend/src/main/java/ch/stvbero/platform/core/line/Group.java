@@ -17,14 +17,14 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Eine Linie oder die Goalies eines Teams in einer Saison (LIN-03, LIN-05, LIN-11).
- * Linien haben eine Reihenfolge (LIN-09), Goalies nicht.
+ * A line or the goalies of a team in a season (LIN-03, LIN-05, LIN-11).
+ * Lines have a sort order (LIN-09), goalies do not.
  */
 @Entity
 @Table(name = "line_group")
 public class Group extends PanacheEntityBase {
 
-    /** Name der Goalie-Gruppe. */
+    /** Name of the goalie group. */
     public static final String GOALIES = "Goalies";
 
     @Id
@@ -55,17 +55,17 @@ public class Group extends PanacheEntityBase {
     }
 
     private static Group create(Team team, Season season, GroupType type, String name, Integer sortOrder) {
-        Group g = new Group();
-        g.id = UUID.randomUUID();
-        g.team = team;
-        g.season = season;
-        g.type = type;
-        g.name = name;
-        g.sortOrder = sortOrder;
-        return g;
+        Group group = new Group();
+        group.id = UUID.randomUUID();
+        group.team = team;
+        group.season = season;
+        group.type = type;
+        group.name = name;
+        group.sortOrder = sortOrder;
+        return group;
     }
 
-    /** Alle Gruppen eines Teams in einer Saison, in Anzeigereihenfolge (Linien, dann Goalies). */
+    /** All groups of a team in a season, in display order (lines, then goalies). */
     public static List<Group> of(Team team, Season season) {
         return Group.<Group>list("team.id = ?1 and season.id = ?2", team.id, season.id).stream()
                 .sorted(java.util.Comparator.comparing(Group::info, LineRules.DISPLAY))

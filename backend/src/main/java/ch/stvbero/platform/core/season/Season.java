@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Zeitraum, für den Teamzugehörigkeiten und Linien gelten. */
+/** Period for which team memberships and lines apply. */
 @Entity
 @Table(name = "season")
 public class Season extends PanacheEntityBase {
@@ -34,13 +34,13 @@ public class Season extends PanacheEntityBase {
         return find("current", true).firstResultOptional();
     }
 
-    /** Die aktuelle Saison (SAI-03), sonst 409. */
+    /** The current season (SAI-03), otherwise 409. */
     public static Season currentOrFail() {
         return current().orElseThrow(() -> DomainError.conflict("Keine aktuelle Saison",
                 "Es ist keine aktuelle Saison festgelegt.", "SAI-03"));
     }
 
-    /** Die angegebene Saison, ohne Angabe die aktuelle (Parameter {@code saison}). */
+    /** The given season, or the current one if none is given (parameter {@code season}). */
     public static Season orCurrent(UUID id) {
         if (id == null) {
             return currentOrFail();
@@ -50,11 +50,11 @@ public class Season extends PanacheEntityBase {
     }
 
     public boolean isArchived() {
-        return SeasonRules.isArchived(startDate, current, current().map(a -> a.startDate).orElse(null));
+        return SeasonRules.isArchived(startDate, current, current().map(c -> c.startDate).orElse(null));
     }
 
-    /** Teams und Zugehörigkeiten dieser Saison dürfen geändert werden, sonst 409 (SAI-02). */
+    /** Teams and memberships of this season may be changed, otherwise 409 (SAI-02). */
     public void checkWritable() {
-        SeasonRules.checkWritable(startDate, current, current().map(a -> a.startDate).orElse(null));
+        SeasonRules.checkWritable(startDate, current, current().map(c -> c.startDate).orElse(null));
     }
 }

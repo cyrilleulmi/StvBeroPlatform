@@ -50,8 +50,8 @@ public class MeResource {
     @APIResponse(responseCode = "409", description = "Widerspricht dem aktuellen Zustand",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public MeDto get() {
-        CurrentUser signedIn = auth.person();
-        Person person = Person.findById(signedIn.personId());
+        CurrentUser user = auth.person();
+        Person person = Person.findById(user.personId());
         Season season = Season.currentOrFail();
         return new MeDto(person.id, person.firstName, person.lastName, person.email, person.admin,
                 SeasonDto.of(season, season), teams.mine(person.id, season), clock.nowWithOffset());

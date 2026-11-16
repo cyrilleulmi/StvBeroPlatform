@@ -19,7 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/** Verbindung von Person, Team und Funktion in einer Saison (PTF-04, PTF-10). */
+/** Links a person, a team and a team role in one season (PTF-04, PTF-10). */
 @Entity
 @Table(name = "team_membership")
 public class TeamMembership extends PanacheEntityBase {
@@ -44,8 +44,8 @@ public class TeamMembership extends PanacheEntityBase {
     public TeamRole teamRole;
 
     /**
-     * Linie oder Goalies, nur bei Funktion SPIELERIN (LIN-01, LIN-10). Als Menge, damit «mehrere Linien
-     * pro Spielerin» später ohne Umbau geht (LIN-04); heute höchstens eine (LIN-02).
+     * Line or goalies, only for the team role PLAYER (LIN-01, LIN-10). A set, so that "several lines per
+     * player" can be added later without rework (LIN-04); today at most one (LIN-02).
      */
     @ManyToMany
     @JoinTable(name = "group_assignment",
@@ -54,12 +54,12 @@ public class TeamMembership extends PanacheEntityBase {
     public Set<Group> groups = new LinkedHashSet<>();
 
     public static TeamMembership create(Person person, Team team, Season season, TeamRole teamRole) {
-        TeamMembership z = new TeamMembership();
-        z.id = UUID.randomUUID();
-        z.person = person;
-        z.team = team;
-        z.season = season;
-        z.teamRole = teamRole;
-        return z;
+        TeamMembership membership = new TeamMembership();
+        membership.id = UUID.randomUUID();
+        membership.person = person;
+        membership.team = team;
+        membership.season = season;
+        membership.teamRole = teamRole;
+        return membership;
     }
 }

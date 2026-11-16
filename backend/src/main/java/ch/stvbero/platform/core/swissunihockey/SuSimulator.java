@@ -10,9 +10,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simuliert swiss unihockey in den Profilen {@code dev} und {@code test} (docs/testdaten.md, «Simulierte
- * swiss-unihockey-Daten»). Nach dem Reset liefert er für Team-ID {@code 900001} genau Spiel 01 und 02 von
- * Termin 04. Die Test-Hilfe {@code PUT /api/test/swiss-unihockey/spiele} gibt andere Daten oder einen Ausfall vor.
+ * Simulates swiss unihockey in the profiles {@code dev} and {@code test} (docs/test-data.md, simulated
+ * swiss unihockey data). After the reset it delivers exactly match 01 and 02 of event 04 for team ID
+ * {@code 900001}. The test support endpoint {@code PUT /api/test/swiss-unihockey/matches} sets other data or an
+ * outage.
  */
 @ApplicationScoped
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
@@ -23,7 +24,7 @@ public class SuSimulator implements SwissUnihockeySource {
     private static final String MAPS_SEEFELD =
             "https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf";
 
-    /** Spiel 01 und 02 von Termin 04 (docs/testdaten.md). */
+    /** Match 01 and 02 of event 04 (docs/test-data.md). */
     public static final List<SuMatch> SEED = List.of(
             new SuMatch(5000001, LocalDateTime.of(2026, 11, 22, 9, 30).atZone(BackendClock.ZONE).toInstant(),
                     "Team 1", "UHC Musterdorf", "Sporthalle Seefeld", "Musterdorf", MAPS_SEEFELD, null, null, null),
@@ -40,24 +41,24 @@ public class SuSimulator implements SwissUnihockeySource {
         reset();
     }
 
-    /** Zustand nach Reset: Team-ID 900001 mit Spiel 01 und 02, sonst keine Spiele. */
+    /** State after the reset: team ID 900001 with match 01 and 02, no matches otherwise. */
     public final void reset() {
         teams.clear();
         teams.put(TEAM_1, new Data(SEED, false));
     }
 
-    /** Daten für eine Team-ID vorgeben, mit {@code nichtErreichbar} einen Ausfall (SUH-09). */
+    /** Sets the data for a team ID; {@code unavailable} simulates an outage (SUH-09). */
     public void set(int suTeamId, List<SuMatch> matches, boolean unavailable) {
         teams.put(suTeamId, new Data(List.copyOf(matches), unavailable));
     }
 
-    /** Die Saison spielt im Simulator keine Rolle: Er liefert, was vorgegeben ist. */
+    /** The season does not matter in the simulator: it delivers whatever was set. */
     @Override
     public List<SuMatch> matches(int suTeamId, int season) {
-        Data d = teams.getOrDefault(suTeamId, new Data(List.of(), false));
-        if (d.unavailable()) {
-            throw new SuUnavailable("swiss unihockey nicht erreichbar (simuliert)");
+        Data data = teams.getOrDefault(suTeamId, new Data(List.of(), false));
+        if (data.unavailable()) {
+            throw new SuUnavailable("swiss unihockey not reachable (simulated)");
         }
-        return d.matches();
+        return data.matches();
     }
 }

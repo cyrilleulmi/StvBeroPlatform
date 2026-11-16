@@ -1,21 +1,21 @@
 package ch.stvbero.platform.core.notification;
 
-/** Auslöser einer Benachrichtigung, entspricht BEN-01 bis BEN-07. */
+/** Trigger of a notification, matching BEN-01 to BEN-07. */
 public enum NotificationType {
-    /** BEN-01: Antwortfrist rückt näher, noch keine Antwort. */
+    /** BEN-01: the response deadline is getting close and there is no response yet. */
     REMINDER,
-    /** BEN-02: Wechsel weg von «dabei» nach der Antwortfrist. */
+    /** BEN-02: change away from «dabei» after the response deadline. */
     LATE_CANCELLATION,
-    /** BEN-03: Aufgebot veröffentlicht. */
+    /** BEN-03: call-up published. */
     CALL_UP_PUBLISHED,
-    /** BEN-05: veröffentlichtes Aufgebot geändert. */
+    /** BEN-05: published call-up changed. */
     CALL_UP_CHANGED,
-    /** BEN-04: aufgebotene Spielerin meldet sich ab. */
+    /** BEN-04: a called-up player declines. */
     CALLED_UP_PLAYER_DECLINED,
-    /** BEN-06: importiertes Spiel geändert (kommt mit F-07). */
+    /** BEN-06: imported match changed (comes with F-07). */
     MATCH_CHANGED,
-    /** BEN-07: Termin abgesagt. */
+    /** BEN-07: event cancelled. */
     EVENT_CANCELLED,
-    /** BEN-07: Termin verschoben. */
+    /** BEN-07: event rescheduled. */
     EVENT_RESCHEDULED
 }

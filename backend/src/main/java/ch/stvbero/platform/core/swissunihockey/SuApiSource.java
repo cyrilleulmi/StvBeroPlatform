@@ -13,8 +13,8 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Die echte Schnittstelle von swiss unihockey (Profil {@code prod}). In {@code dev} und {@code test} ersetzt sie
- * der {@link SuSimulator}; dort existiert diese Bean nicht. Adresse: {@code stv.swiss-unihockey.url}.
+ * The real swiss unihockey API (profile {@code prod}). In {@code dev} and {@code test} the {@link SuSimulator}
+ * replaces it; this bean does not exist there. Address: {@code stv.swiss-unihockey.url}.
  */
 @ApplicationScoped
 @UnlessBuildProperty(name = "stv.test-support", stringValue = "true")

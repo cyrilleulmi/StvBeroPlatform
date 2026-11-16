@@ -4,10 +4,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Eine Benachrichtigung an eine Person, unabhängig vom Kanal (BEN-11). Jeder {@link Kanal} erhält dieselbe
- * Nachricht.
+ * A notification to one person, independent of the channel (BEN-11). Every {@link Channel} receives the same
+ * message.
  *
- * @param terminId Termin, zu dem die Benachrichtigung führt (BEN-12), oder {@code null}
+ * @param eventId event the notification leads to (BEN-12), or {@code null}
  */
 public record Message(NotificationType type, UUID recipientId, UUID eventId, String text) {
 

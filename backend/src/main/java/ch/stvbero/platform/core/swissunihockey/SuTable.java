@@ -14,42 +14,42 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Übersetzt die Spielliste von swiss unihockey ({@code GET /games?mode=team}) in {@link SuSpiel}e.
+ * Translates the swiss unihockey match list ({@code GET /games?mode=team}) into {@link SuMatch} records.
  * <p>
- * Die Schnittstelle liefert keine fachlichen Objekte, sondern eine generische Tabelle
- * ({@code data.regions[].rows[].cells[].text[]}). Pro Zeile ein Spiel, die Spiel-ID im Link der Zeile
- * ({@code link.ids[0]}). Spalten nach Position: 0 Datum und Zeit, 1 Halle und Ort (mit Kartenlink), 2 Heimteam,
- * 3 Gastteam, 4 Resultat. So lesen auch die öffentlichen Clients der Schnittstelle die Tabelle (O-21).
+ * The API does not deliver domain objects but a generic table ({@code data.regions[].rows[].cells[].text[]}).
+ * One match per row, the match ID in the link of the row ({@code link.ids[0]}). Columns by position: 0 date and
+ * time, 1 hall and town (with a map link), 2 home team, 3 away team, 4 result. The public clients of the API
+ * read the table the same way (O-21).
  * <p>
- * Weicht die Antwort von dieser Form ab, gilt sie als unerwartet ({@link SuNichtErreichbar}, SUH-09): Lieber
- * nichts ändern als falsche Spieltage anlegen.
+ * If the response deviates from this form, it counts as unexpected ({@link SuUnavailable}, SUH-09): better to
+ * change nothing than to create wrong match days.
  */
 final class SuTable {
 
     private static final Pattern DATE = Pattern.compile("(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})");
     private static final Pattern TIME = Pattern.compile("(\\d{1,2}):(\\d{2})");
     private static final Pattern RESULT = Pattern.compile("(\\d{1,2})\\s*:\\s*(\\d{1,2})");
-    private static final DateTimeFormatter TAG = DateTimeFormatter.ofPattern("d.M.yyyy");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d.M.yyyy");
 
     private SuTable() {
     }
 
     /**
-     * @param antwort ganze JSON-Antwort
-     * @param heute   für die relativen Angaben «heute», «gestern», «morgen», die swiss unihockey statt eines
-     *                Datums liefert
+     * @param response the whole JSON response
+     * @param today    for the relative values «heute», «gestern», «morgen» that swiss unihockey delivers instead
+     *                 of a date
      */
     static List<SuMatch> matches(JsonNode response, LocalDate today) {
         JsonNode regions = response.path("data").path("regions");
         if (!regions.isArray()) {
-            throw unexpected("Antwort ohne data.regions");
+            throw unexpected("response without data.regions");
         }
         List<SuMatch> matches = new ArrayList<>();
         for (JsonNode region : regions) {
             for (JsonNode row : region.path("rows")) {
                 JsonNode id = row.path("link").path("ids").path(0);
                 if (!id.canConvertToInt() && !id.isTextual()) {
-                    // Zwischenzeilen ohne Spiel (z.B. Überschriften) überspringen
+                    // skip rows without a match in between (e.g. headings)
                     continue;
                 }
                 matches.add(match(row, id, today));
@@ -61,19 +61,19 @@ final class SuTable {
     private static SuMatch match(JsonNode row, JsonNode id, LocalDate today) {
         JsonNode cells = row.path("cells");
         if (cells.size() < 4) {
-            throw unexpected("Spielzeile mit " + cells.size() + " statt mindestens 4 Spalten");
+            throw unexpected("match row with " + cells.size() + " instead of at least 4 columns");
         }
         int suMatchId;
         try {
             suMatchId = id.isTextual() ? Integer.parseInt(id.asText().strip()) : id.asInt();
         } catch (NumberFormatException e) {
-            throw unexpected("Spiel-ID «" + id.asText() + "» ist keine Zahl");
+            throw unexpected("match ID '" + id.asText() + "' is not a number");
         }
         LocalDateTime startTime = startTime(text(cells.path(0)), today, suMatchId);
         List<String> locationTexts = texts(cells.path(1));
         String hall = locationTexts.isEmpty() ? "" : locationTexts.get(0);
         if (hall.isBlank()) {
-            throw unexpected("Spiel " + suMatchId + " ohne Halle");
+            throw unexpected("match " + suMatchId + " without a hall");
         }
         String location = locationTexts.size() > 1 && !locationTexts.get(1).isBlank() ? locationTexts.get(1) : null;
         JsonNode map = cells.path(1).path("link");
@@ -83,13 +83,13 @@ final class SuTable {
         String home = text(cells.path(2));
         String away = text(cells.path(3));
         if (home.isBlank() || away.isBlank()) {
-            throw unexpected("Spiel " + suMatchId + " ohne Heim- oder Gastteam");
+            throw unexpected("match " + suMatchId + " without a home or away team");
         }
         String result = null;
         if (cells.size() > 4) {
-            Matcher r = RESULT.matcher(text(cells.path(4)));
-            if (r.find()) {
-                result = Integer.parseInt(r.group(1)) + ":" + Integer.parseInt(r.group(2));
+            Matcher resultMatcher = RESULT.matcher(text(cells.path(4)));
+            if (resultMatcher.find()) {
+                result = Integer.parseInt(resultMatcher.group(1)) + ":" + Integer.parseInt(resultMatcher.group(2));
             }
         }
         return new SuMatch(suMatchId, startTime.atZone(BackendClock.ZONE).toInstant(), home, away, hall, location, mapsUrl,
@@ -99,15 +99,15 @@ final class SuTable {
     private static LocalDateTime startTime(String text, LocalDate today, int suMatchId) {
         String lower = text.toLowerCase();
         LocalDate day;
-        int from = 0;
-        Matcher d = DATE.matcher(text);
-        if (d.find()) {
+        int timeFrom = 0;
+        Matcher dateMatcher = DATE.matcher(text);
+        if (dateMatcher.find()) {
             try {
-                day = LocalDate.parse(d.group(1) + "." + d.group(2) + "." + d.group(3), TAG);
+                day = LocalDate.parse(dateMatcher.group(1) + "." + dateMatcher.group(2) + "." + dateMatcher.group(3), DAY);
             } catch (DateTimeException e) {
-                throw unexpected("Spiel " + suMatchId + ": Datum «" + text + "» nicht lesbar");
+                throw unexpected("match " + suMatchId + ": date '" + text + "' not readable");
             }
-            from = d.end();
+            timeFrom = dateMatcher.end();
         } else if (lower.contains("heute")) {
             day = today;
         } else if (lower.contains("gestern")) {
@@ -115,32 +115,33 @@ final class SuTable {
         } else if (lower.contains("morgen")) {
             day = today.plusDays(1);
         } else {
-            throw unexpected("Spiel " + suMatchId + ": Datum «" + text + "» nicht lesbar");
+            throw unexpected("match " + suMatchId + ": date '" + text + "' not readable");
         }
-        // Die Zeit steht nach dem Datum, z.B. «22.11.2026 09:30»
-        Matcher z = TIME.matcher(text.substring(from));
-        if (!z.find()) {
-            throw unexpected("Spiel " + suMatchId + ": Anspielzeit «" + text + "» nicht lesbar");
+        // The time comes after the date, e.g. «22.11.2026 09:30»
+        Matcher timeMatcher = TIME.matcher(text.substring(timeFrom));
+        if (!timeMatcher.find()) {
+            throw unexpected("match " + suMatchId + ": start time '" + text + "' not readable");
         }
         try {
-            return LocalDateTime.of(day, LocalTime.of(Integer.parseInt(z.group(1)), Integer.parseInt(z.group(2))));
+            return LocalDateTime.of(day, LocalTime.of(Integer.parseInt(timeMatcher.group(1)),
+                    Integer.parseInt(timeMatcher.group(2))));
         } catch (DateTimeException e) {
-            throw unexpected("Spiel " + suMatchId + ": Anspielzeit «" + text + "» nicht lesbar");
+            throw unexpected("match " + suMatchId + ": start time '" + text + "' not readable");
         }
     }
 
-    /** Alle Texte einer Zelle, mit Leerzeichen verbunden. */
+    /** All texts of a cell, joined with spaces. */
     private static String text(JsonNode cell) {
         return String.join(" ", texts(cell)).strip();
     }
 
     private static List<String> texts(JsonNode cell) {
         List<String> texts = new ArrayList<>();
-        JsonNode t = cell.path("text");
-        if (t.isArray()) {
-            t.forEach(x -> texts.add(x.isNull() ? "" : x.asText().strip()));
-        } else if (t.isTextual()) {
-            texts.add(t.asText().strip());
+        JsonNode text = cell.path("text");
+        if (text.isArray()) {
+            text.forEach(x -> texts.add(x.isNull() ? "" : x.asText().strip()));
+        } else if (text.isTextual()) {
+            texts.add(text.asText().strip());
         }
         return texts;
     }
@@ -160,6 +161,6 @@ final class SuTable {
     }
 
     private static SuUnavailable unexpected(String reason) {
-        return new SuUnavailable("Unerwartete Antwort von swiss unihockey: " + reason);
+        return new SuUnavailable("Unexpected response from swiss unihockey: " + reason);
     }
 }

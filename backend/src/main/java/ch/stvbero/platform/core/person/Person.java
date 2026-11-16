@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-/** Ein Mensch im Verein. Es gibt jede Person genau einmal (siehe Fachmodell). */
+/** A human being in the club. Every person exists exactly once (see docs/domain-model.md). */
 @Entity
 @Table(name = "person")
 public class Person extends PanacheEntityBase {
@@ -24,6 +24,6 @@ public class Person extends PanacheEntityBase {
 
     public String email;
 
-    /** Admin ist eine Eigenschaft der Person, keine Funktion im Team (RR-04). */
+    /** Admin is a property of the person, not a team role (RR-04). */
     public boolean admin;
 }

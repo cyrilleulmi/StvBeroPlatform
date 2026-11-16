@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.UUID;
 
-/** Anbindung swiss unihockey (SUH-02, SUH-03). Nur Admins (07-rollen-rechte.md). */
+/** Connection to swiss unihockey (SUH-02, SUH-03). Admins only (docs/requirements/07-roles-permissions.md). */
 @Path("/api/teams/{teamId}/swiss-unihockey")
 @Tag(name = "SwissUnihockey")
 public class SwissUnihockeyResource {

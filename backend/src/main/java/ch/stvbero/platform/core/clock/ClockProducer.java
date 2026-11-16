@@ -6,7 +6,7 @@ import jakarta.inject.Singleton;
 
 import java.time.Clock;
 
-/** Stellt die injizierbare {@link Clock} bereit (Zeitzone Europe/Zurich). */
+/** Provides the injectable {@link Clock} (time zone Europe/Zurich). */
 @ApplicationScoped
 public class ClockProducer {
 

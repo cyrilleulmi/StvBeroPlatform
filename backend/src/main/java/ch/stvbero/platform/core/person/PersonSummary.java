@@ -8,7 +8,7 @@ import java.util.UUID;
 @Schema(name = "PersonSummary")
 public record PersonSummary(UUID id, String firstName, String lastName) {
 
-    /** Anzeigereihenfolge: Nachname, dann Vorname (docs/oberflaeche/navigation.md). */
+    /** Display order: last name, then first name (docs/ui/navigation.md). */
     public static final Comparator<PersonSummary> ORDER = Comparator
             .comparing(PersonSummary::lastName, String.CASE_INSENSITIVE_ORDER)
             .thenComparing(PersonSummary::firstName, String.CASE_INSENSITIVE_ORDER)

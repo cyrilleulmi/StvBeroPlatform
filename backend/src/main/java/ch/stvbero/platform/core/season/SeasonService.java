@@ -16,14 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Saisons anlegen, übernehmen und wechseln (SAI-03, SAI-04, SAI-06). */
+/** Creating seasons, carrying them over and switching the current one (SAI-03, SAI-04, SAI-06). */
 @ApplicationScoped
 public class SeasonService {
 
     @Inject
     EntityManager em;
 
-    /** Alle Saisons, neueste zuerst. */
+    /** All seasons, newest first. */
     public List<SeasonDto> list() {
         Season current = Season.current().orElse(null);
         return Season.<Season>list("order by startDate desc").stream().map(s -> SeasonDto.of(s, current)).toList();
@@ -40,41 +40,41 @@ public class SeasonService {
                 .map(s -> new SeasonRules.Period(s.name, s.startDate, s.endDate)).toList();
         SeasonRules.checkNewSeason(new SeasonRules.Period(input.name(), input.startDate(), input.endDate()), existing);
 
-        Season newValue = new Season();
-        newValue.id = UUID.randomUUID();
-        newValue.name = input.name().strip();
-        newValue.startDate = input.startDate();
-        newValue.endDate = input.endDate();
-        newValue.current = false;
-        newValue.persist();
-        // Gleichzeitiges Anlegen derselben Saison (Doppelklick): 409 statt 500 (SAI-01).
+        Season season = new Season();
+        season.id = UUID.randomUUID();
+        season.name = input.name().strip();
+        season.startDate = input.startDate();
+        season.endDate = input.endDate();
+        season.current = false;
+        season.persist();
+        // The same season created twice at the same time (double click): 409 instead of 500 (SAI-01).
         Unique.save(em, "season_name_key",
-                () -> DomainError.conflict("Name vergeben", "Es gibt schon eine Saison «" + newValue.name + "».", "SAI-01"));
+                () -> DomainError.conflict("Name vergeben", "Es gibt schon eine Saison «" + season.name + "».", "SAI-01"));
 
         if (source != null) {
-            apply(source, newValue);
+            carryOver(source, season);
         }
-        return SeasonDto.of(newValue, Season.current().orElse(null));
+        return SeasonDto.of(season, Season.current().orElse(null));
     }
 
-    /** Teams, Teamzugehörigkeiten und Linien der Vorsaison als Ausgangslage (SAI-04, LIN-11). */
-    private void apply(Season source, Season target) {
-        // Das Team behält in der neuen Saison seinen Namen aus der Vorsaison (SAI-02: Namen gelten pro Saison).
+    /** Carry-over: teams, team memberships and lines of the previous season as a starting point (SAI-04, LIN-11). */
+    private void carryOver(Season source, Season target) {
+        // The team keeps its name from the previous season in the new one (SAI-02: names apply per season).
         List<TeamSeason> teams = TeamSeason.list("season.id", source.id);
         for (TeamSeason ts : teams) {
             ts.team.addToSeason(target, ts.name);
         }
         List<TeamMembership> memberships = TeamMembership.list("season.id", source.id);
         Map<TeamMembership, TeamMembership> copies = new LinkedHashMap<>();
-        for (TeamMembership z : memberships) {
-            TeamMembership copy = TeamMembership.create(z.person, z.team, target, z.teamRole);
+        for (TeamMembership membership : memberships) {
+            TeamMembership copy = TeamMembership.create(membership.person, membership.team, target, membership.teamRole);
             copy.persist();
-            copies.put(z, copy);
+            copies.put(membership, copy);
         }
-        LineService.apply(source, target, copies);
+        LineService.carryOver(source, target, copies);
     }
 
-    /** Zur aktuellen Saison machen. Es gibt immer genau eine aktuelle Saison (SAI-03). */
+    /** Makes the season the current one. There is always exactly one current season (SAI-03). */
     @Transactional
     public void activate(CurrentUser user, UUID id) {
         user.checkAdmin();

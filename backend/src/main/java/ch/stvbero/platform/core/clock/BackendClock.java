@@ -8,23 +8,23 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 /**
- * Die Backend-Uhr. «Jetzt» kommt immer von hier, nie direkt aus {@code LocalDateTime.now()}.
+ * The backend clock. "Now" always comes from here, never directly from {@code LocalDateTime.now()}.
  * <p>
- * Im Profil prod läuft sie mit der Systemzeit. In dev/test lässt sie sich über
- * {@code PUT /api/test/uhr} auf einen festen Zeitpunkt setzen. Weil alle Komponenten dieselbe
- * injizierte {@link Clock} verwenden, gilt der Zeitpunkt sofort im ganzen Backend.
+ * In the prod profile it runs with the system time. In dev/test it can be fixed at a point in time
+ * via {@code PUT /api/test/clock}. Because all components use the same injected {@link Clock}, that
+ * point in time applies to the whole backend at once.
  */
 @ApplicationScoped
 public class BackendClock {
 
-    /** Zeitzone der Fachlogik. */
+    /** Time zone of the domain logic. */
     public static final ZoneId ZONE = ZoneId.of("Europe/Zurich");
 
     private volatile Instant fixed;
 
     public Instant now() {
-        Instant f = fixed;
-        return f != null ? f : Instant.now();
+        Instant fixedAt = fixed;
+        return fixedAt != null ? fixedAt : Instant.now();
     }
 
     public OffsetDateTime nowWithOffset() {

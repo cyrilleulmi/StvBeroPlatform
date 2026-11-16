@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.tile;
 
-/** Farbe einer Kachel, entspricht den Design-Tokens (design-grundlagen.md). */
+/** Color of a tile, matching the design tokens (docs/design-principles.md). */
 public enum TileColor {
     primary, blue, mustard, coral
 }

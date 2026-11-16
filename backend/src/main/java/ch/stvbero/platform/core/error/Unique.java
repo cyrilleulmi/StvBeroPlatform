@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Schreibt ausstehende Änderungen sofort in die Datenbank. Verletzt das einen Unique-Constraint, wird daraus ein
- * {@link FachFehler} (409) statt eines 500. Das passiert, wenn zwei gleiche Anfragen gleichzeitig ankommen
- * (z.B. Doppelklick) und beide die fachliche Prüfung bestehen, bevor die erste gespeichert ist.
+ * Writes pending changes to the database right away. If that violates a unique constraint, the result is a
+ * {@link DomainError} (409) instead of a 500. This happens when two identical requests arrive at the same time
+ * (e.g. a double click) and both pass the domain checks before the first one is saved.
  */
 public final class Unique {
 
@@ -21,7 +21,7 @@ public final class Unique {
         save(em, List.of(constraint), error);
     }
 
-    /** Wie oben, für mehrere Constraints, die dieselbe Regel schützen. */
+    /** As above, for several constraints that protect the same rule. */
     public static void save(EntityManager em, List<String> constraints, Supplier<DomainError> error) {
         try {
             em.flush();
@@ -34,9 +34,9 @@ public final class Unique {
     }
 
     static boolean violated(Throwable exception, String constraint) {
-        for (Throwable t = exception; t != null; t = t.getCause()) {
-            if (t instanceof ConstraintViolationException c && c.getConstraintName() != null
-                    && c.getConstraintName().equalsIgnoreCase(constraint)) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation && violation.getConstraintName() != null
+                    && violation.getConstraintName().equalsIgnoreCase(constraint)) {
                 return true;
             }
         }

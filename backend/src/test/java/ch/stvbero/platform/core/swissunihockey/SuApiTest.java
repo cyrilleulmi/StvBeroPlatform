@@ -106,7 +106,7 @@ class SuApiTest {
     void suh09UnexpectedResponse() {
         file.set("games-unerwartet.json");
         SuUnavailable error = assertThrows(SuUnavailable.class, () -> api().matches(900001, 2026, TODAY));
-        assertTrue(error.getMessage().contains("Unerwartete Antwort"), error.getMessage());
+        assertTrue(error.getMessage().contains("Unexpected response"), error.getMessage());
     }
 
     @Test

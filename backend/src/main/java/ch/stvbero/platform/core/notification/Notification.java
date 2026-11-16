@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Benachrichtigung in der App (E-56): ungelesen, bis die Person sie öffnet (zustaende.md). */
+/** Notification in the app (E-56): unread until the person opens it (docs/states.md). */
 @Entity
 @Table(name = "notification")
 public class Notification extends PanacheEntityBase {
@@ -22,7 +22,7 @@ public class Notification extends PanacheEntityBase {
     @Id
     public UUID id;
 
-    /** Stabile Reihenfolge bei gleichem Zeitpunkt; vergibt die Datenbank. */
+    /** Stable order for notifications with the same time; assigned by the database. */
     @Column(name = "sequence_number", insertable = false, updatable = false)
     public Long sequenceNumber;
 

@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Versand und Liste der Benachrichtigungen (BEN). Die Auslöser bestimmen Empfänger und Text und geben die
- * Nachrichten hierher; diese Klasse verteilt sie an alle {@link Kanal}e (BEN-11). Die eigene Liste sieht nur
- * die Person selbst (RR-07).
+ * Sending and listing notifications (BEN). The triggers decide recipients and text and pass the messages
+ * here; this class hands them to every {@link Channel} (BEN-11). Only the person can see their own list
+ * (RR-07).
  */
 @ApplicationScoped
 public class Notifications {
@@ -29,21 +29,21 @@ public class Notifications {
     @Inject
     BackendClock clock;
 
-    /** Nachrichten über alle Kanäle versenden, mit dem Zeitpunkt der Backend-Uhr. */
+    /** Sends the messages through all channels, with the time of the backend clock. */
     @Transactional(Transactional.TxType.MANDATORY)
     public void send(Collection<Message> messages) {
         if (messages.isEmpty()) {
             return;
         }
         Instant now = clock.now();
-        for (Message n : messages) {
-            for (Channel k : channels) {
-                k.send(n, now);
+        for (Message message : messages) {
+            for (Channel channel : channels) {
+                channel.send(message, now);
             }
         }
     }
 
-    /** Eigene Benachrichtigungen, neueste zuerst; mit {@code nurUngelesene} nur die ungelesenen. */
+    /** The user's own notifications, newest first; with {@code onlyUnread} only the unread ones. */
     public List<NotificationDto> own(CurrentUser user, boolean onlyUnread) {
         String filter = onlyUnread ? " and readAt is null" : "";
         return Notification.<Notification>find("recipient.id = ?1" + filter
@@ -52,22 +52,22 @@ public class Notifications {
     }
 
     /**
-     * Als gelesen markieren (zustaende.md, Benachrichtigung). Mehrfach markieren ändert nichts. Die
-     * Benachrichtigung einer anderen Person: 403 (RR-07).
+     * Marks a notification as read (docs/states.md, notification). Marking it again changes nothing. A
+     * notification of another person: 403 (RR-07).
      */
     @Transactional
     public void read(CurrentUser user, UUID id) {
-        Notification b = Notification.<Notification>findByIdOptional(id)
+        Notification notification = Notification.<Notification>findByIdOptional(id)
                 .orElseThrow(() -> DomainError.notFound("Diese Benachrichtigung gibt es nicht."));
-        if (!b.recipient.id.equals(user.personId())) {
+        if (!notification.recipient.id.equals(user.personId())) {
             throw DomainError.forbidden();
         }
-        if (b.readAt == null) {
-            b.readAt = clock.now();
+        if (notification.readAt == null) {
+            notification.readAt = clock.now();
         }
     }
 
-    /** Alle Benachrichtigungen aller Personen in der Reihenfolge ihrer Entstehung (nur Test-Hilfe). */
+    /** All notifications of all persons in the order they were created (test support only). */
     public List<NotificationDto> all() {
         return Notification.<Notification>find("order by createdAt, sequenceNumber")
                 .list().stream().map(NotificationDto::of).toList();

@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Ein Login. Getrennt von der Person (PTF-09); heute gehört zu jedem Konto genau eine Person. */
+/** One login. Separate from the person (PTF-09); today every account belongs to exactly one person. */
 @Entity
 @Table(name = "account")
 public class Account extends PanacheEntityBase {
@@ -23,7 +23,7 @@ public class Account extends PanacheEntityBase {
     @JoinColumn(name = "person_id")
     public Person person;
 
-    /** Schlüssel für die Anmeldung im Testmodus, z.B. «petra». */
+    /** Key for signing in in test mode, e.g. {@code petra}. */
     @Column(name = "login_key")
     public String loginKey;
 

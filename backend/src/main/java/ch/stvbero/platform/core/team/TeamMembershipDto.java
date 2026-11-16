@@ -12,12 +12,12 @@ public record TeamMembershipDto(TeamName team, PersonSummary person, TeamRole te
     }
 
     /**
-     * Teamname aus der Saison der Zugehörigkeit, damit das Archiv den damaligen Namen zeigt (SAI-02).
-     * {@code gruppeId}: Linie oder Goalies, {@code null} = ohne Linie (LIN-02: höchstens eine).
+     * Team name from the season of the membership, so that the archive shows the name of that time (SAI-02).
+     * {@code groupId}: line or goalies, {@code null} = no line (LIN-02: at most one).
      */
-    public static TeamMembershipDto of(TeamMembership z) {
-        UUID groupId = z.groups.stream().map(g -> g.id).findFirst().orElse(null);
-        return new TeamMembershipDto(new TeamName(z.team.id, z.team.nameIn(z.season)), PersonSummary.of(z.person),
-                z.teamRole, z.season.id, groupId);
+    public static TeamMembershipDto of(TeamMembership m) {
+        UUID groupId = m.groups.stream().map(g -> g.id).findFirst().orElse(null);
+        return new TeamMembershipDto(new TeamName(m.team.id, m.team.nameIn(m.season)), PersonSummary.of(m.person),
+                m.teamRole, m.season.id, groupId);
     }
 }

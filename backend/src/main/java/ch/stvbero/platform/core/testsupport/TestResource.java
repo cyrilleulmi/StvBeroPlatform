@@ -39,8 +39,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
- * Test-Hilfen aus docs/testbarkeit.md. Existieren nur in den Profilen dev und test: Im Profil prod
- * ist {@code stv.testhilfen=false}, die Ressource wird gar nicht registriert (404).
+ * Test support from docs/testability.md. Exists only in the profiles dev and test: in the prod profile
+ * {@code stv.test-support=false}, so the resource is not registered at all (404).
  */
 @Path("/api/test")
 @Tag(name = "Test")
@@ -180,7 +180,7 @@ public class TestResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = TestPerson.class)))
     public List<TestPerson> persons() {
         return Account.<Account>find("loginKey is not null order by person.lastName, person.firstName").list().stream()
-                .map(k -> new TestPerson(k.loginKey, k.person.id, k.person.firstName, k.person.lastName, k.person.admin))
+                .map(a -> new TestPerson(a.loginKey, a.person.id, a.person.firstName, a.person.lastName, a.person.admin))
                 .toList();
     }
 }

@@ -24,7 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.UUID;
 
-/** Linien und Goalies eines Teams in der aktuellen Saison (LIN). */
+/** Lines and goalies of a team in the current season (LIN). */
 @Path("/api/teams/{teamId}")
 @Tag(name = "Lines")
 public class LineResource {

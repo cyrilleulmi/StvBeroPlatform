@@ -8,21 +8,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Fachregeln zu Teams und Teamzugehörigkeiten. Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for teams and team memberships. Without a database, so that unit tests can check them. */
 public final class TeamRules {
 
     private TeamRules() {
     }
 
-    /** Eine bestehende Zugehörigkeit im Team (in der Saison). */
+    /** An existing membership in the team (in the season). */
     public record Member(PersonSummary person, TeamRole teamRole) {
     }
 
-    /** Coaches und Spielerinnen getrennt, je nach Nachname, dann Vorname sortiert. */
+    /** Coaches and players separately, each sorted by last name, then first name. */
     public record Split(List<PersonSummary> coaches, List<PersonSummary> players) {
     }
 
-    /** Pro Person und Team genau eine Funktion (PTF-04): eine zweite Aufnahme wird abgelehnt. */
+    /** Exactly one team role per person and team (PTF-04): adding the person a second time is rejected. */
     public static void checkCanAdd(Collection<Member> inTeam, UUID personId) {
         Optional<Member> already = inTeam.stream().filter(m -> m.person().id().equals(personId)).findFirst();
         if (already.isPresent()) {
@@ -34,8 +34,8 @@ public final class TeamRules {
     }
 
     /**
-     * Coaches erscheinen nie bei den Spielerinnen (PTF-07). Nur die Funktion SPIELERIN zählt als
-     * Spielerin; weitere Funktionen (PTF-06) stehen weder hier noch dort.
+     * Coaches never appear among the players (PTF-07). Only the team role PLAYER counts as a player;
+     * further team roles (PTF-06) appear in neither list.
      */
     public static Split split(Collection<Member> members) {
         List<PersonSummary> coaches = members.stream().filter(m -> m.teamRole() == TeamRole.COACH)
@@ -45,8 +45,8 @@ public final class TeamRules {
         return new Split(coaches, players);
     }
 
-    static String label(TeamRole f) {
-        return switch (f) {
+    static String label(TeamRole teamRole) {
+        return switch (teamRole) {
             case PLAYER -> "Spielerin";
             case COACH -> "Coach";
         };

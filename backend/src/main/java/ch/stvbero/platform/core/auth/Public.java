@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Markiert Ressourcen, die ohne Anmeldung erreichbar sind. Alles andere unter /api verlangt eine Sitzung. */
+/** Marks resources that can be reached without signing in. Everything else under /api requires a session. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Public {

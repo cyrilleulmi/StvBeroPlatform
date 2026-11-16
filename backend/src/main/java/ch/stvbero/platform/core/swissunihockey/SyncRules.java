@@ -23,43 +23,43 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Fachregeln des Abgleichs mit swiss unihockey (SUH-02 bis SUH-08). Ohne Datenbank, damit sie als Unit-Test
- * prüfbar sind; {@link Abgleich} wendet sie an.
+ * Domain rules of the sync with swiss unihockey (SUH-02 to SUH-08). Without a database, so that unit tests can
+ * check them; {@link SuSync} applies them.
  */
 public final class SyncRules {
 
     /**
-     * Wie lange ein Spiel dauert, um das Ende eines importierten Spieltags zu bestimmen: Ende = letzte Anspielzeit
-     * plus diese Dauer (Annahme F-07, passt zu Termin 04 im Seed: 11:45 bis 13:00).
+     * How long a match takes, to determine the end of an imported match day: end = last start time plus this
+     * duration (assumption F-07, matches event 04 in the seed: 11:45 to 13:00).
      */
     public static final Duration MATCH_DURATION = Duration.ofMinutes(75);
 
     public static final String TITLE = "Spieltag";
 
     private static final String[] WEEKDAYS = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
-    private static final DateTimeFormatter TAG = DateTimeFormatter.ofPattern("dd.MM.");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd.MM.");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     private SyncRules() {
     }
 
-    // ------------------------------------------------------------------ Wer sind wir?
+    // ------------------------------------------------------------------ Who are we?
 
     /**
-     * Name des eigenen Teams in den Spielen. swiss unihockey liefert die Spiele eines Teams nur mit den Namen von
-     * Heim- und Gastteam. Das eigene Team ist das, das in jedem Spiel vorkommt. Kommen mehrere in jedem Spiel vor
-     * (z.B. bei nur einem Spiel), entscheidet der Name des Teams in der App, sonst das Heimteam des ersten Spiels
-     * (Annahme F-07, O-21).
+     * Name of the own team in the matches. swiss unihockey delivers the matches of a team only with the names of
+     * the home and away team. The own team is the one that appears in every match. If several appear in every
+     * match (e.g. when there is only one match), the name of the team in the app decides, otherwise the home team
+     * of the first match (assumption F-07, O-21).
      *
-     * @return {@code null}, wenn es keine Spiele gibt
+     * @return {@code null} if there are no matches
      */
     public static String ownTeam(List<SuMatch> matches, String teamName) {
         if (matches.isEmpty()) {
             return null;
         }
         Set<String> inAll = null;
-        for (SuMatch s : matches) {
-            Set<String> names = new LinkedHashSet<>(List.of(norm(s.homeTeam()), norm(s.awayTeam())));
+        for (SuMatch match : matches) {
+            Set<String> names = new LinkedHashSet<>(List.of(norm(match.homeTeam()), norm(match.awayTeam())));
             if (inAll == null) {
                 inAll = names;
             } else {
@@ -76,19 +76,19 @@ public final class SyncRules {
         return inAll.isEmpty() ? own : inAll.iterator().next();
     }
 
-    /** Gegner und Heim/Auswärts aus Sicht des eigenen Teams. */
+    /** Opponent and home/away from the view of the own team. */
     public record Side(String opponent, boolean home) {
     }
 
-    public static Side side(SuMatch s, String ownTeam) {
-        boolean away = ownTeam != null && norm(s.awayTeam()).equals(ownTeam)
-                && !norm(s.homeTeam()).equals(ownTeam);
-        return away ? new Side(truncate(s.homeTeam(), 80), false) : new Side(truncate(s.awayTeam(), 80), true);
+    public static Side side(SuMatch match, String ownTeam) {
+        boolean away = ownTeam != null && norm(match.awayTeam()).equals(ownTeam)
+                && !norm(match.homeTeam()).equals(ownTeam);
+        return away ? new Side(truncate(match.homeTeam(), 80), false) : new Side(truncate(match.awayTeam(), 80), true);
     }
 
-    // ------------------------------------------------------------------ Spieltage bilden (SUH-04)
+    // ------------------------------------------------------------------ Forming match days (SUH-04)
 
-    /** Spiele am selben Tag in derselben Halle gehören zu einem Spieltag (SUH-04). */
+    /** Matches on the same day in the same hall belong to one match day (SUH-04). */
     public record Key(LocalDate day, String hall) {
 
         public static Key of(Instant startTime, String hall) {
@@ -96,22 +96,22 @@ public final class SyncRules {
         }
     }
 
-    /** Spiele nach Tag und Halle gruppiert, Gruppen und Spiele nach Anspielzeit. */
+    /** Matches grouped by day and hall; groups and matches ordered by start time. */
     public static Map<Key, List<SuMatch>> groupByDayAndHall(Collection<SuMatch> matches) {
         Map<Key, List<SuMatch>> groups = new LinkedHashMap<>();
         matches.stream()
                 .sorted(Comparator.comparing(SuMatch::startTime).thenComparing(SuMatch::suMatchId))
-                .forEach(s -> groups.computeIfAbsent(Key.of(s.startTime(), s.hall()), k -> new ArrayList<>())
-                        .add(s));
+                .forEach(m -> groups.computeIfAbsent(Key.of(m.startTime(), m.hall()), k -> new ArrayList<>())
+                        .add(m));
         return groups;
     }
 
-    /** Beginn und Ende eines importierten Spieltags. */
+    /** Start and end of an imported match day. */
     public record Period(Instant start, Instant end) {
     }
 
     /**
-     * Beginn ist die erste Anspielzeit (Annahme F-03), Ende die letzte plus {@link #SPIELDAUER}.
+     * The start is the first start time (assumption F-03), the end the last one plus {@link #MATCH_DURATION}.
      */
     public static Period period(Collection<Instant> startTimes) {
         Instant first = startTimes.stream().min(Comparator.naturalOrder()).orElseThrow();
@@ -119,89 +119,89 @@ public final class SyncRules {
         return new Period(first, last.plus(MATCH_DURATION));
     }
 
-    /** Nur Spiele, die in die Saison fallen, werden übernommen. */
+    /** Only matches that fall into the season are imported. */
     public static boolean inSeason(Instant startTime, LocalDate startDate, LocalDate endDate) {
         LocalDate day = EventRules.date(startTime);
         return !day.isBefore(startDate) && !day.isAfter(endDate);
     }
 
-    // ------------------------------------------------------------------ Spielort (SUH-07)
+    // ------------------------------------------------------------------ Venue (SUH-07)
 
     /**
-     * Google-Maps-Link des Spielorts (SUH-07): der von swiss unihockey gelieferte, sonst aus den Koordinaten,
-     * sonst eine Suche nach Halle und Ort.
+     * Google Maps link of the venue (SUH-07): the one delivered by swiss unihockey, otherwise from the
+     * coordinates, otherwise a search for hall and town.
      */
-    public static String mapsUrl(SuMatch s) {
-        if (s.mapsUrl() != null && !s.mapsUrl().isBlank()) {
-            return truncate(s.mapsUrl().strip(), 500);
+    public static String mapsUrl(SuMatch match) {
+        if (match.mapsUrl() != null && !match.mapsUrl().isBlank()) {
+            return truncate(match.mapsUrl().strip(), 500);
         }
-        String search = s.latitude() != null && s.longitude() != null
-                ? s.latitude() + "," + s.longitude()
-                : s.hall().strip() + (s.location() == null ? "" : " " + s.location().strip());
+        String search = match.latitude() != null && match.longitude() != null
+                ? match.latitude() + "," + match.longitude()
+                : match.hall().strip() + (match.location() == null ? "" : " " + match.location().strip());
         return truncate("https://www.google.com/maps/search/?api=1&query=" + URLEncoder.encode(search, StandardCharsets.UTF_8),
                 500);
     }
 
-    // ------------------------------------------------------------------ Benachrichtigung (BEN-06)
+    // ------------------------------------------------------------------ Notification (BEN-06)
 
-    /** Was an einem Spiel für die Spielerinnen zählt (SUH-05): Zeit, Halle, Gegner, Heim/Auswärts. */
+    /** What matters about a match for the players (SUH-05): time, hall, opponent, home/away. */
     public record MatchState(String opponent, Instant startTime, boolean home, String hall) {
     }
 
-    /** Hat sich etwas geändert, worüber das Team benachrichtigt wird (SUH-05, BEN-06)? Das Resultat zählt nicht. */
-    public static boolean significantlyChanged(MatchState old, MatchState fresh) {
-        return !old.startTime().equals(fresh.startTime()) || !old.opponent().equals(fresh.opponent())
-                || old.home() != fresh.home() || !norm(Objects.toString(old.hall(), "")).equals(norm(fresh.hall()));
+    /** Did something change that the team is notified about (SUH-05, BEN-06)? The result does not count. */
+    public static boolean significantlyChanged(MatchState old, MatchState incoming) {
+        return !old.startTime().equals(incoming.startTime()) || !old.opponent().equals(incoming.opponent())
+                || old.home() != incoming.home() || !norm(Objects.toString(old.hall(), "")).equals(norm(incoming.hall()));
     }
 
     /**
-     * Eine Änderung in Worten, z.B. «Spiel gegen Unihockey Beispielstadt neu um 12:15» oder «Spiel um 09:30 neu
+     * A change in words, e.g. «Spiel gegen Unihockey Beispielstadt neu um 12:15» or «Spiel um 09:30 neu
      * gegen UHC Drei, neu in Turnhalle Weid».
      */
-    public static String change(MatchState old, MatchState fresh) {
+    public static String change(MatchState old, MatchState incoming) {
         List<String> parts = new ArrayList<>();
-        if (!old.startTime().equals(fresh.startTime())) {
-            boolean otherDay = !EventRules.date(old.startTime()).equals(EventRules.date(fresh.startTime()));
-            parts.add(otherDay ? "neu am " + instant(fresh.startTime()) : "neu um " + time(fresh.startTime()));
+        if (!old.startTime().equals(incoming.startTime())) {
+            boolean otherDay = !EventRules.date(old.startTime()).equals(EventRules.date(incoming.startTime()));
+            parts.add(otherDay ? "neu am " + dateTime(incoming.startTime()) : "neu um " + time(incoming.startTime()));
         }
-        if (!norm(Objects.toString(old.hall(), "")).equals(norm(fresh.hall()))) {
-            parts.add("neu in " + fresh.hall());
+        if (!norm(Objects.toString(old.hall(), "")).equals(norm(incoming.hall()))) {
+            parts.add("neu in " + incoming.hall());
         }
-        if (!old.opponent().equals(fresh.opponent())) {
-            parts.add("neu gegen " + fresh.opponent());
+        if (!old.opponent().equals(incoming.opponent())) {
+            parts.add("neu gegen " + incoming.opponent());
         }
-        if (old.home() != fresh.home()) {
-            parts.add(fresh.home() ? "neu als Heimspiel" : "neu als Auswärtsspiel");
+        if (old.home() != incoming.home()) {
+            parts.add(incoming.home() ? "neu als Heimspiel" : "neu als Auswärtsspiel");
         }
-        String match = old.opponent().equals(fresh.opponent())
-                ? "Spiel gegen " + fresh.opponent()
+        String match = old.opponent().equals(incoming.opponent())
+                ? "Spiel gegen " + incoming.opponent()
                 : "Spiel um " + time(old.startTime());
         return match + " " + String.join(", ", parts);
     }
 
-    /** «Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.» */
+    /** Notification text, e.g. «Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.» */
     public static String matchChangedText(String title, Instant oldStart, List<String> changes) {
         return NotificationRules.label(title, oldStart) + " wurde geändert: "
                 + String.join("; ", changes) + ".";
     }
 
-    // ------------------------------------------------------------------ Hilfen
+    // ------------------------------------------------------------------ Helpers
 
     static String norm(String name) {
         return name.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
-    static String truncate(String text, int longitude) {
-        String t = text.strip();
-        return t.length() <= longitude ? t : t.substring(0, longitude);
+    static String truncate(String text, int maxLength) {
+        String stripped = text.strip();
+        return stripped.length() <= maxLength ? stripped : stripped.substring(0, maxLength);
     }
 
     private static String time(Instant instant) {
         return TIME.format(instant.atZone(BackendClock.ZONE));
     }
 
-    private static String instant(Instant instant) {
-        ZonedDateTime z = instant.atZone(BackendClock.ZONE);
-        return WEEKDAYS[z.getDayOfWeek().getValue() - 1] + " " + TAG.format(z) + " " + TIME.format(z);
+    private static String dateTime(Instant instant) {
+        ZonedDateTime zoned = instant.atZone(BackendClock.ZONE);
+        return WEEKDAYS[zoned.getDayOfWeek().getValue() - 1] + " " + DAY.format(zoned) + " " + TIME.format(zoned);
     }
 }

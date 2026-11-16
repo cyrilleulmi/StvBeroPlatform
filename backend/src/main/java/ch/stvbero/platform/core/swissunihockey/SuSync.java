@@ -37,14 +37,14 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Abgleich der Spiele eines Teams mit swiss unihockey (SUH-03 bis SUH-10).
+ * Sync of the matches of a team with swiss unihockey (SUH-03 to SUH-10).
  * <ul>
- *   <li>Neue Spiele werden zu Spieltagen: gleicher Tag und gleiche Halle ergeben einen Spieltag (SUH-04).</li>
- *   <li>Geänderte Spiele werden übernommen. Treffpunkt, Hinweise, Antworten und Aufgebot bleiben (SUH-05,
- *       SUH-06); das Team wird benachrichtigt (BEN-06).</li>
- *   <li>Spiele, die swiss unihockey nicht mehr liefert, werden markiert, nicht gelöscht.</li>
- *   <li>Von Hand erfasste Spieltage und Spiele bleiben unberührt (SUH-10).</li>
- *   <li>Ist swiss unihockey nicht erreichbar, ändert sich nichts (502, SUH-09).</li>
+ *   <li>New matches become match days: the same day and the same hall give one match day (SUH-04).</li>
+ *   <li>Changed matches are applied. Meeting point, notes, responses and call-up stay (SUH-05, SUH-06);
+ *       the team is notified (BEN-06).</li>
+ *   <li>Matches that swiss unihockey no longer delivers are marked, not deleted.</li>
+ *   <li>Match days and matches entered by hand stay untouched (SUH-10).</li>
+ *   <li>If swiss unihockey is not reachable, nothing changes (502, SUH-09).</li>
  * </ul>
  */
 @ApplicationScoped
@@ -67,9 +67,9 @@ public class SuSync {
     @Inject
     BackendClock clock;
 
-    // ------------------------------------------------------------------ Verknüpfen (SUH-02)
+    // ------------------------------------------------------------------ Linking (SUH-02)
 
-    /** Team mit swiss unihockey verknüpfen ({@code null} löst die Verknüpfung). Nur Admins. */
+    /** Links a team with swiss unihockey ({@code null} removes the link). Admins only. */
     @Transactional
     public TeamDto link(CurrentUser user, UUID teamId, Integer suTeamId) {
         user.checkAdmin();
@@ -78,25 +78,25 @@ public class SuSync {
             throw DomainError.invalidField("suTeamId", "Die Team-ID ist eine positive Zahl.");
         }
         if (suTeamId != null) {
-            Team.<Team>find("suTeamId = ?1 and id <> ?2", suTeamId, team.id).firstResultOptional().ifPresent(t -> {
+            Team.<Team>find("suTeamId = ?1 and id <> ?2", suTeamId, team.id).firstResultOptional().ifPresent(other -> {
                 throw DomainError.conflict("Schon verknüpft", "Die Team-ID " + suTeamId + " ist schon mit «"
-                        + name(t) + "» verknüpft.", "SUH-02");
+                        + name(other) + "» verknüpft.", "SUH-02");
             });
         }
         team.suTeamId = suTeamId;
         return new TeamDto(team.id, name(team), team.suTeamId, null);
     }
 
-    // ------------------------------------------------------------------ Abgleich
+    // ------------------------------------------------------------------ Sync
 
-    /** Abgleich von Hand auslösen (Admin). */
+    /** Triggers the sync by hand (admin). */
     @Transactional
     public SyncResultDto sync(CurrentUser user, UUID teamId) {
         user.checkAdmin();
         return sync(teamId);
     }
 
-    /** Ein Team abgleichen, in der aktuellen Saison. Wird auch vom täglichen Lauf verwendet. */
+    /** Syncs one team in the current season. Also used by the daily run. */
     @Transactional
     public SyncResultDto sync(UUID teamId) {
         Team team = find(teamId);
@@ -109,20 +109,20 @@ public class SuSync {
             throw DomainError.conflict("Nicht in der aktuellen Saison",
                     "«" + name(team) + "» gehört nicht zur Saison " + season.name + ".", "SUH-03");
         }
-        // Zwei Abgleiche desselben Teams laufen nacheinander, nie gleichzeitig.
+        // Two syncs of the same team run one after the other, never at the same time.
         em.lock(team, LockModeType.PESSIMISTIC_WRITE);
         List<SuMatch> delivered;
         try {
             delivered = source.matches(team.suTeamId, season.startDate.getYear());
         } catch (SuUnavailable e) {
-            LOG.warnf("Abgleich swiss unihockey für Team %s (SU %d) fehlgeschlagen: %s", team.id, team.suTeamId,
+            LOG.warnf("swiss unihockey sync for team %s (SU %d) failed: %s", team.id, team.suTeamId,
                     e.getMessage());
             throw new DomainError(502, "swiss unihockey nicht erreichbar", UNAVAILABLE, "SUH-09");
         }
         return apply(team, season, delivered);
     }
 
-    /** IDs der verknüpften Teams der aktuellen Saison, für den täglichen Lauf. */
+    /** IDs of the linked teams of the current season, for the daily run. */
     @Transactional
     public List<UUID> linkedTeams() {
         return em.createQuery("""
@@ -136,8 +136,8 @@ public class SuSync {
         Instant now = clock.now();
         String own = SyncRules.ownTeam(delivered, team.nameIn(season));
         Map<Integer, SuMatch> byId = new LinkedHashMap<>();
-        delivered.stream().filter(s -> SyncRules.inSeason(s.startTime(), season.startDate, season.endDate))
-                .forEach(s -> byId.put(s.suMatchId(), s));
+        delivered.stream().filter(m -> SyncRules.inSeason(m.startTime(), season.startDate, season.endDate))
+                .forEach(m -> byId.put(m.suMatchId(), m));
 
         List<Match> previous = em.createQuery("""
                         select s from Match s join s.event t join t.teams tm
@@ -146,199 +146,201 @@ public class SuSync {
                 .setParameter("source", MatchSource.SWISS_UNIHOCKEY).setParameter("season", season.id)
                 .setParameter("team", team.id).getResultList();
         Map<Integer, Match> existing = new LinkedHashMap<>();
-        previous.forEach(s -> existing.put(s.suMatchId, s));
-        Set<Integer> atOtherTeams = atOtherTeams(byId.keySet(), existing.keySet());
+        previous.forEach(m -> existing.put(m.suMatchId, m));
+        Set<Integer> ofOtherTeams = ofOtherTeams(byId.keySet(), existing.keySet());
 
-        // Bestehende importierte Spieltage nach Tag und Halle, damit neue Spiele dazukommen (SUH-04)
+        // Existing imported match days by day and hall, so that new matches can join them (SUH-04)
         Map<SyncRules.Key, Event> matchDays = new LinkedHashMap<>();
-        previous.forEach(s -> matchDays.putIfAbsent(key(s.event), s.event));
+        previous.forEach(m -> matchDays.putIfAbsent(key(m.event), m.event));
 
-        Counts z = new Counts();
-        Set<Event> newCreated = new HashSet<>();
-        Set<Event> periodNew = new LinkedHashSet<>();
+        Counts counts = new Counts();
+        Set<Event> createdMatchDays = new HashSet<>();
+        Set<Event> toRecalculate = new LinkedHashSet<>();
         Map<Event, List<String>> changeTexts = new LinkedHashMap<>();
         Map<Event, Instant> oldStart = new LinkedHashMap<>();
-        List<SuMatch> newOnes = new ArrayList<>();
+        List<SuMatch> newMatches = new ArrayList<>();
         Map<Event, List<Move>> moves = new LinkedHashMap<>();
 
-        for (SuMatch g : byId.values()) {
-            if (atOtherTeams.contains(g.suMatchId())) {
-                // Spiel gehört schon zu einem Spieltag eines anderen Teams (z.B. Derby): dort bleibt es.
+        for (SuMatch suMatch : byId.values()) {
+            if (ofOtherTeams.contains(suMatch.suMatchId())) {
+                // The match already belongs to a match day of another team (e.g. a derby): it stays there.
                 continue;
             }
-            Match s = existing.remove(g.suMatchId());
-            if (s == null) {
-                newOnes.add(g);
+            Match match = existing.remove(suMatch.suMatchId());
+            if (match == null) {
+                newMatches.add(suMatch);
                 continue;
             }
-            Event t = s.event;
-            SyncRules.Side side = SyncRules.side(g, own);
-            SyncRules.MatchState old = new SyncRules.MatchState(s.opponent, s.startTime, s.home,
-                    t.location == null ? null : t.location.name);
-            SyncRules.MatchState fresh = new SyncRules.MatchState(side.opponent(), g.startTime(), side.home(),
-                    g.hall());
-            boolean significant = SyncRules.significantlyChanged(old, fresh);
-            // Das Resultat übernimmt der Abgleich nur, wenn swiss unihockey eines liefert (SUH-08, O-47)
-            boolean result = g.result() != null && !g.result().equals(s.result);
-            if (!significant && !result && !s.missingAtSu) {
-                z.unchanged++;
+            Event matchDay = match.event;
+            SyncRules.Side side = SyncRules.side(suMatch, own);
+            SyncRules.MatchState old = new SyncRules.MatchState(match.opponent, match.startTime, match.home,
+                    matchDay.location == null ? null : matchDay.location.name);
+            SyncRules.MatchState incoming = new SyncRules.MatchState(side.opponent(), suMatch.startTime(), side.home(),
+                    suMatch.hall());
+            boolean significant = SyncRules.significantlyChanged(old, incoming);
+            // The sync only takes over the result if swiss unihockey delivers one (SUH-08, O-47)
+            boolean result = suMatch.result() != null && !suMatch.result().equals(match.result);
+            if (!significant && !result && !match.missingAtSu) {
+                counts.unchanged++;
                 continue;
             }
-            z.changed++;
+            counts.changed++;
             if (significant) {
-                if (t.status == EventStatus.PLANNED && !t.isOver(now)) {
-                    oldStart.putIfAbsent(t, t.start);
-                    changeTexts.computeIfAbsent(t, k -> new ArrayList<>()).add(SyncRules.change(old, fresh));
+                if (matchDay.status == EventStatus.PLANNED && !matchDay.isOver(now)) {
+                    oldStart.putIfAbsent(matchDay, matchDay.start);
+                    changeTexts.computeIfAbsent(matchDay, k -> new ArrayList<>()).add(SyncRules.change(old, incoming));
                 }
-                SyncRules.Key target = SyncRules.Key.of(g.startTime(), g.hall());
-                if (!target.equals(key(t))) {
-                    // Erst sammeln, dann umziehen: So zieht ein ganzer Spieltag gemeinsam um (SUH-04, SUH-06).
-                    moves.computeIfAbsent(t, k -> new ArrayList<>()).add(new Move(s, g, target));
+                SyncRules.Key target = SyncRules.Key.of(suMatch.startTime(), suMatch.hall());
+                if (!target.equals(key(matchDay))) {
+                    // Collect first, then move: this way a whole match day moves together (SUH-04, SUH-06).
+                    moves.computeIfAbsent(matchDay, k -> new ArrayList<>()).add(new Move(match, suMatch, target));
                 }
-                periodNew.add(t);
+                toRecalculate.add(matchDay);
             }
-            s.opponent = fresh.opponent();
-            s.startTime = fresh.startTime();
-            s.home = fresh.home();
+            match.opponent = incoming.opponent();
+            match.startTime = incoming.startTime();
+            match.home = incoming.home();
             if (result) {
-                s.result = g.result();
+                match.result = suMatch.result();
             }
-            s.missingAtSu = false;
-            z.affected.add(t.id);
+            match.missingAtSu = false;
+            counts.affected.add(matchDay.id);
         }
 
-        // Spiele an einen anderen Tag oder in eine andere Halle verschieben (SUH-04, SUH-05, SUH-06)
-        moves.forEach((t, list) -> move(team, season, t, list, matchDays, newCreated, periodNew, z));
+        // Move matches to another day or another hall (SUH-04, SUH-05, SUH-06)
+        moves.forEach((matchDay, list) -> move(team, season, matchDay, list, matchDays, createdMatchDays,
+                toRecalculate, counts));
 
-        // Nicht mehr geliefert: markieren, nicht löschen. Die Coach entscheidet (zustaende.md).
-        for (Match s : existing.values()) {
-            z.missing++;
-            if (!s.missingAtSu) {
-                s.missingAtSu = true;
-                z.affected.add(s.event.id);
+        // No longer delivered: mark, do not delete. The coach decides (docs/states.md).
+        for (Match match : existing.values()) {
+            counts.missing++;
+            if (!match.missingAtSu) {
+                match.missingAtSu = true;
+                counts.affected.add(match.event.id);
             }
         }
 
-        // Neue Spiele: zu einem bestehenden Spieltag am selben Tag in derselben Halle, sonst ein neuer (SUH-04)
-        SyncRules.groupByDayAndHall(newOnes).forEach((key, group) -> {
-            Event t = matchDays.get(key);
-            if (t == null) {
-                t = newMatchDay(team, season, group.get(0));
-                newCreated.add(t);
-                matchDays.put(key, t);
+        // New matches: join an existing match day on the same day in the same hall, otherwise a new one (SUH-04)
+        SyncRules.groupByDayAndHall(newMatches).forEach((key, group) -> {
+            Event matchDay = matchDays.get(key);
+            if (matchDay == null) {
+                matchDay = newMatchDay(team, season, group.get(0));
+                createdMatchDays.add(matchDay);
+                matchDays.put(key, matchDay);
             }
-            for (SuMatch g : group) {
-                SyncRules.Side side = SyncRules.side(g, own);
-                Match s = Match.create(t);
-                s.source = MatchSource.SWISS_UNIHOCKEY;
-                s.suMatchId = g.suMatchId();
-                s.opponent = side.opponent();
-                s.home = side.home();
-                s.startTime = g.startTime();
-                s.result = g.result();
-                s.persist();
-                z.fresh++;
+            for (SuMatch suMatch : group) {
+                SyncRules.Side side = SyncRules.side(suMatch, own);
+                Match match = Match.create(matchDay);
+                match.source = MatchSource.SWISS_UNIHOCKEY;
+                match.suMatchId = suMatch.suMatchId();
+                match.opponent = side.opponent();
+                match.home = side.home();
+                match.startTime = suMatch.startTime();
+                match.result = suMatch.result();
+                match.persist();
+                counts.created++;
             }
-            periodNew.add(t);
-            z.affected.add(t.id);
+            toRecalculate.add(matchDay);
+            counts.affected.add(matchDay.id);
         });
 
-        // Beginn und Ende der betroffenen Spieltage aus ihren Spielen
-        for (Event t : periodNew) {
-            List<Instant> times = Match.of(t.id).stream().map(s -> s.startTime).toList();
+        // Start and end of the affected match days from their matches
+        for (Event matchDay : toRecalculate) {
+            List<Instant> times = Match.of(matchDay.id).stream().map(m -> m.startTime).toList();
             if (times.isEmpty()) {
                 continue;
             }
-            SyncRules.Period zr = SyncRules.period(times);
-            if (!newCreated.contains(t)) {
-                t.rescheduled = EventRules.rescheduled(t.rescheduled, t.start, zr.start());
+            SyncRules.Period period = SyncRules.period(times);
+            if (!createdMatchDays.contains(matchDay)) {
+                matchDay.rescheduled = EventRules.rescheduled(matchDay.rescheduled, matchDay.start, period.start());
             }
-            t.start = zr.start();
-            t.end = zr.end();
+            matchDay.start = period.start();
+            matchDay.end = period.end();
         }
 
-        // Team über geänderte Spiele benachrichtigen (BEN-06)
+        // Notify the team about changed matches (BEN-06)
         List<Message> messages = new ArrayList<>();
-        changeTexts.forEach((t, texts) -> {
-            String text = SyncRules.matchChangedText(t.title, oldStart.get(t), texts);
-            EventNotifications.members(t)
-                    .forEach(p -> messages.add(new Message(NotificationType.MATCH_CHANGED, p, t.id, text)));
+        changeTexts.forEach((matchDay, texts) -> {
+            String text = SyncRules.matchChangedText(matchDay.title, oldStart.get(matchDay), texts);
+            EventNotifications.members(matchDay)
+                    .forEach(p -> messages.add(new Message(NotificationType.MATCH_CHANGED, p, matchDay.id, text)));
         });
         notifications.send(messages);
 
-        LOG.infof("Abgleich swiss unihockey Team %s: %d neu, %d geändert, %d nicht mehr vorhanden, %d unverändert",
-                team.id, z.fresh, z.changed, z.missing, z.unchanged);
-        return new SyncResultDto(z.fresh, z.changed, z.missing, z.unchanged,
-                List.copyOf(z.affected));
+        LOG.infof("swiss unihockey sync team %s: %d new, %d changed, %d no longer delivered, %d unchanged",
+                team.id, counts.created, counts.changed, counts.missing, counts.unchanged);
+        return new SyncResultDto(counts.created, counts.changed, counts.missing, counts.unchanged,
+                List.copyOf(counts.affected));
     }
 
-    /** Ein Spiel, das an einen anderen Tag oder in eine andere Halle wechselt. */
+    /** A match that moves to another day or another hall. */
     private record Move(Match match, SuMatch delivered, SyncRules.Key target) {
     }
 
     /**
-     * Verschiebt die Spiele eines Spieltags, die an einen anderen Tag oder in eine andere Halle wechseln.
+     * Moves the matches of a match day that change to another day or another hall.
      * <p>
-     * Bleibt kein Spiel am bisherigen Tag in der bisherigen Halle, zieht der Spieltag selbst mit und behält
-     * Treffpunkt, Hinweise, Antworten und Aufgebot (SUH-06). Er zieht dorthin, wo die meisten seiner Spiele
-     * hingehen (bei Gleichstand dorthin, wo das früheste Spiel stattfindet), sofern dort noch kein anderer
-     * Spieltag ist. Die übrigen Spiele kommen zum Spieltag am Ziel oder in einen neuen. Ein Tag und eine Halle
-     * gehören so immer zu höchstens einem Spieltag (SUH-04).
+     * If no match stays on the previous day in the previous hall, the match day itself moves along and keeps
+     * meeting point, notes, responses and call-up (SUH-06). It moves to where most of its matches go (on a tie,
+     * to where the earliest match takes place), provided there is no other match day there yet. The remaining
+     * matches join the match day at their target or a new one. This way a day and a hall always belong to at
+     * most one match day (SUH-04).
      */
-    private static void move(Team team, Season season, Event t, List<Move> list,
-                                 Map<SyncRules.Key, Event> matchDays, Set<Event> newCreated,
-                                 Set<Event> periodNew, Counts z) {
+    private static void move(Team team, Season season, Event matchDay, List<Move> list,
+                                 Map<SyncRules.Key, Event> matchDays, Set<Event> createdMatchDays,
+                                 Set<Event> toRecalculate, Counts counts) {
         Map<SyncRules.Key, List<Move>> byTarget = new LinkedHashMap<>();
         list.stream()
-                .sorted(Comparator.comparing((Move u) -> u.delivered().startTime())
-                        .thenComparing(u -> u.delivered().suMatchId()))
-                .forEach(u -> byTarget.computeIfAbsent(u.target(), k -> new ArrayList<>()).add(u));
+                .sorted(Comparator.comparing((Move move) -> move.delivered().startTime())
+                        .thenComparing(move -> move.delivered().suMatchId()))
+                .forEach(move -> byTarget.computeIfAbsent(move.target(), k -> new ArrayList<>()).add(move));
 
-        SyncRules.Key moveAlong = null;
-        if (Match.count("event.id", t.id) == list.size()) {
+        SyncRules.Key matchDayTarget = null;
+        if (Match.count("event.id", matchDay.id) == list.size()) {
             int most = 0;
-            for (var e : byTarget.entrySet()) {
-                Event there = matchDays.get(e.getKey());
-                if ((there == null || there == t) && e.getValue().size() > most) {
-                    most = e.getValue().size();
-                    moveAlong = e.getKey();
+            for (var entry : byTarget.entrySet()) {
+                Event atTarget = matchDays.get(entry.getKey());
+                if ((atTarget == null || atTarget == matchDay) && entry.getValue().size() > most) {
+                    most = entry.getValue().size();
+                    matchDayTarget = entry.getKey();
                 }
             }
         }
-        if (moveAlong != null) {
-            matchDays.remove(key(t), t);
-            setLocation(t, byTarget.get(moveAlong).get(0).delivered());
-            matchDays.put(moveAlong, t);
+        if (matchDayTarget != null) {
+            matchDays.remove(key(matchDay), matchDay);
+            setLocation(matchDay, byTarget.get(matchDayTarget).get(0).delivered());
+            matchDays.put(matchDayTarget, matchDay);
         }
-        periodNew.add(t);
-        for (var e : byTarget.entrySet()) {
-            if (e.getKey().equals(moveAlong)) {
+        toRecalculate.add(matchDay);
+        for (var entry : byTarget.entrySet()) {
+            if (entry.getKey().equals(matchDayTarget)) {
                 continue;
             }
-            Event target = matchDays.get(e.getKey());
+            Event target = matchDays.get(entry.getKey());
             if (target == null) {
-                target = newMatchDay(team, season, e.getValue().get(0).delivered());
-                newCreated.add(target);
-                matchDays.put(e.getKey(), target);
+                target = newMatchDay(team, season, entry.getValue().get(0).delivered());
+                createdMatchDays.add(target);
+                matchDays.put(entry.getKey(), target);
             }
-            for (Move u : e.getValue()) {
-                u.match().event = target;
+            for (Move move : entry.getValue()) {
+                move.match().event = target;
             }
-            periodNew.add(target);
-            z.affected.add(target.id);
+            toRecalculate.add(target);
+            counts.affected.add(target.id);
         }
     }
 
     private static final class Counts {
-        int fresh;
+        int created;
         int changed;
         int missing;
         int unchanged;
         final Set<UUID> affected = new LinkedHashSet<>();
     }
 
-    private Set<Integer> atOtherTeams(Set<Integer> delivered, Set<Integer> own) {
-        List<Integer> unknown = delivered.stream().filter(id -> !own.contains(id)).toList();
+    /** Delivered match IDs that are not ours but already belong to a match day of another team. */
+    private Set<Integer> ofOtherTeams(Set<Integer> deliveredIds, Set<Integer> ownIds) {
+        List<Integer> unknown = deliveredIds.stream().filter(id -> !ownIds.contains(id)).toList();
         if (unknown.isEmpty()) {
             return Set.of();
         }
@@ -346,32 +348,32 @@ public class SuSync {
                 .setParameter("ids", unknown).getResultList());
     }
 
-    private static SyncRules.Key key(Event t) {
-        return SyncRules.Key.of(t.start, t.location == null ? null : t.location.name);
+    private static SyncRules.Key key(Event matchDay) {
+        return SyncRules.Key.of(matchDay.start, matchDay.location == null ? null : matchDay.location.name);
     }
 
     private static Event newMatchDay(Team team, Season season, SuMatch first) {
-        Event t = Event.create();
-        t.season = season;
-        t.type = EventType.MATCH_DAY;
-        t.title = SyncRules.TITLE;
-        t.start = first.startTime();
-        t.end = first.startTime().plus(SyncRules.MATCH_DURATION);
-        setLocation(t, first);
-        t.teams.add(team);
-        t.persist();
-        return t;
+        Event matchDay = Event.create();
+        matchDay.season = season;
+        matchDay.type = EventType.MATCH_DAY;
+        matchDay.title = SyncRules.TITLE;
+        matchDay.start = first.startTime();
+        matchDay.end = first.startTime().plus(SyncRules.MATCH_DURATION);
+        setLocation(matchDay, first);
+        matchDay.teams.add(team);
+        matchDay.persist();
+        return matchDay;
     }
 
-    /** Spielort aus swiss unihockey, mit Google-Maps-Link (SUH-07). */
-    private static void setLocation(Event t, SuMatch g) {
-        Location o = new Location();
-        o.name = SyncRules.truncate(g.hall(), 120);
-        o.address = g.location() == null ? null : SyncRules.truncate(g.location(), 200);
-        o.mapsUrl = SyncRules.mapsUrl(g);
-        o.latitude = g.latitude();
-        o.longitude = g.longitude();
-        t.location = o;
+    /** Venue from swiss unihockey, with a Google Maps link (SUH-07). */
+    private static void setLocation(Event matchDay, SuMatch suMatch) {
+        Location location = new Location();
+        location.name = SyncRules.truncate(suMatch.hall(), 120);
+        location.address = suMatch.location() == null ? null : SyncRules.truncate(suMatch.location(), 200);
+        location.mapsUrl = SyncRules.mapsUrl(suMatch);
+        location.latitude = suMatch.latitude();
+        location.longitude = suMatch.longitude();
+        matchDay.location = location;
     }
 
     private static Team find(UUID id) {
@@ -379,7 +381,7 @@ public class SuSync {
                 .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es nicht."));
     }
 
-    /** Name in der aktuellen Saison, sonst der zuletzt verwendete. */
+    /** Name in the current season, otherwise the most recently used one. */
     private static String name(Team team) {
         return Season.current().flatMap(team::in).map(ts -> ts.name)
                 .orElseGet(() -> team.seasons.stream().max(Comparator.comparing((TeamSeason ts) -> ts.season.startDate))

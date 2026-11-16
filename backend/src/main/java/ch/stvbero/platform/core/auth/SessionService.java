@@ -12,7 +12,7 @@ import java.time.Clock;
 import java.util.Base64;
 import java.util.Optional;
 
-/** Sitzungen über das Cookie {@value #COOKIE}. Das produktive Anmeldeverfahren ist offen (O-01). */
+/** Sessions via the cookie {@value #COOKIE}. The production login method is still open (O-01). */
 @ApplicationScoped
 public class SessionService {
 
@@ -43,13 +43,14 @@ public class SessionService {
             return Optional.empty();
         }
         return Session.<Session>findByIdOptional(token)
-                .map(s -> new CurrentUser(s.account.id, s.account.person.id, s.account.person.firstName, s.account.person.admin));
+                .map(session -> new CurrentUser(session.account.id, session.account.person.id,
+                        session.account.person.firstName, session.account.person.admin));
     }
 
     /**
-     * Beendet die Sitzung, idempotent: Ist sie schon gelöscht (z.B. zweite, gleichzeitige
-     * Abmeldung), passiert nichts. Darum ein Bulk-Delete statt Laden und Entfernen, das bei
-     * einer inzwischen gelöschten Zeile eine OptimisticLockException wirft (Nachbesserung #26).
+     * Ends the session, idempotently: if it is already deleted (e.g. a second, simultaneous
+     * log out), nothing happens. That is why this is a bulk delete instead of load and remove, which
+     * throws an OptimisticLockException for a row deleted in the meantime (follow-up fix #26).
      */
     @Transactional
     public void end(String token) {

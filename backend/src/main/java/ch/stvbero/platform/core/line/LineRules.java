@@ -15,21 +15,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Fachregeln zu Linien und Goalies (LIN). Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for lines and goalies (LIN). Without a database, so that unit tests can check them. */
 public final class LineRules {
 
     /**
-     * Höchstens so viele Gruppen pro Spielerin und Team (LIN-02). Die Begrenzung ist eine Regel, keine
-     * feste Struktur (LIN-04): Für «mehrere Linien pro Spielerin» wird nur diese Zahl (und der Index
-     * {@code gruppenzuweisung_eine_gruppe}) angepasst.
+     * At most this many groups per player and team (LIN-02). The limit is a rule, not a fixed structure
+     * (LIN-04): for "several lines per player" only this number (and the index
+     * {@code group_assignment_one_group}) has to change.
      */
     public static final int MAX_GROUPS_PER_TEAM = 1;
 
-    /** Eine Gruppe ohne Datenbank. */
+    /** A group without the database. */
     public record GroupInfo(UUID id, GroupType type, String name, Integer sortOrder) {
     }
 
-    /** Anzeigereihenfolge: Linien nach Reihenfolge, dann Goalies (LIN-09, Abschnitt «Anzeige-Reihenfolge»). */
+    /** Display order: lines by sort order, then goalies (LIN-09, display order section). */
     public static final Comparator<GroupInfo> DISPLAY = Comparator
             .comparing((GroupInfo g) -> g.type() == GroupType.GOALIES ? 1 : 0)
             .thenComparing(g -> g.sortOrder() == null ? Integer.MAX_VALUE : g.sortOrder())
@@ -39,21 +39,21 @@ public final class LineRules {
     private LineRules() {
     }
 
-    /** Linien verwalten und Spielerinnen zuweisen: Coach des Teams oder Admin (LIN-07, RR-03, RR-07). */
+    /** Managing lines and assigning players: coach of the team or admin (LIN-07, RR-03, RR-07). */
     public static void checkCanEdit(boolean admin, TeamRole teamRoleInTeam) {
         if (!admin && teamRoleInTeam != TeamRole.COACH) {
             throw DomainError.forbidden();
         }
     }
 
-    /** Einteilung ansehen: Mitglieder des Teams (jede Funktion) und Admins. */
+    /** Viewing the lineup: members of the team (any team role) and admins. */
     public static void checkCanView(boolean admin, TeamRole teamRoleInTeam) {
         if (!admin && teamRoleInTeam == null) {
             throw DomainError.forbidden();
         }
     }
 
-    /** Nur Spielerinnen des Teams können einer Linie oder den Goalies zugewiesen werden (LIN-10). */
+    /** Only players of the team can be assigned to a line or to the goalies (LIN-10). */
     public static void checkAssignable(PersonSummary person, TeamRole teamRoleInTeam) {
         if (teamRoleInTeam != TeamRole.PLAYER) {
             throw DomainError.conflict("Keine Spielerin",
@@ -62,7 +62,7 @@ public final class LineRules {
         }
     }
 
-    /** Goalies gibt es pro Team genau einmal: nicht löschen, nicht umbenennen, nicht verschieben (LIN-05). */
+    /** Every team has exactly one goalie group: it cannot be deleted, renamed or moved (LIN-05). */
     public static void checkIsLine(GroupInfo group, String action) {
         if (group.type() == GroupType.GOALIES) {
             throw DomainError.conflict("Goalies bleiben",
@@ -70,53 +70,53 @@ public final class LineRules {
         }
     }
 
-    /** Namen sind pro Team eindeutig, auch gegenüber «Goalies» (Annahme zu LIN-09). */
+    /** Names are unique per team, also compared with «Goalies» (assumption for LIN-09). */
     public static void checkName(Collection<GroupInfo> groups, String name, UUID except) {
-        String n = name.strip();
+        String stripped = name.strip();
         boolean taken = groups.stream()
-                .anyMatch(g -> !g.id().equals(except) && g.name().strip().equalsIgnoreCase(n));
+                .anyMatch(g -> !g.id().equals(except) && g.name().strip().equalsIgnoreCase(stripped));
         if (taken) {
-            throw DomainError.conflict("Name vergeben", "In diesem Team gibt es schon eine Gruppe «" + n + "».", "LIN-09");
+            throw DomainError.conflict("Name vergeben", "In diesem Team gibt es schon eine Gruppe «" + stripped + "».", "LIN-09");
         }
     }
 
     /**
-     * Neue Zuweisungen einer Spielerin in einem Team. {@code ziel = null} heisst «ohne Linie».
-     * Sind es mehr als {@link #HOECHSTENS_GRUPPEN_PRO_TEAM}, fallen die ältesten weg: Bei einer Gruppe
-     * pro Team ersetzt die neue Zuweisung die bisherige (LIN-02).
+     * New assignments of a player in a team. {@code target = null} means "no line".
+     * If there are more than {@link #MAX_GROUPS_PER_TEAM}, the oldest ones are dropped: with one group
+     * per team the new assignment replaces the previous one (LIN-02).
      */
     public static Set<UUID> assign(List<UUID> previous, UUID target) {
         if (target == null) {
             return Set.of();
         }
-        List<UUID> newValue = new ArrayList<>(previous);
-        newValue.remove(target);
-        newValue.add(target);
-        while (newValue.size() > MAX_GROUPS_PER_TEAM) {
-            newValue.remove(0);
+        List<UUID> assigned = new ArrayList<>(previous);
+        assigned.remove(target);
+        assigned.add(target);
+        while (assigned.size() > MAX_GROUPS_PER_TEAM) {
+            assigned.remove(0);
         }
-        return new LinkedHashSet<>(newValue);
+        return new LinkedHashSet<>(assigned);
     }
 
     /**
-     * Reihenfolge nach dem Verschieben einer Linie an Position {@code ziel} (1 = zuoberst). Positionen
-     * ausserhalb werden auf den gültigen Bereich begrenzt. Ergebnis: Linien-IDs, Position = Index + 1.
+     * Order after moving a line to position {@code target} (1 = top). Positions outside the valid range
+     * are clamped to it. Result: line IDs, position = index + 1.
      */
     public static List<UUID> move(List<UUID> linesInSortOrder, UUID id, int target) {
-        List<UUID> newValue = new ArrayList<>(linesInSortOrder);
-        if (!newValue.remove(id)) {
-            throw new IllegalArgumentException("Linie nicht in der Liste: " + id);
+        List<UUID> reordered = new ArrayList<>(linesInSortOrder);
+        if (!reordered.remove(id)) {
+            throw new IllegalArgumentException("Line not in the list: " + id);
         }
-        int index = Math.max(0, Math.min(target - 1, newValue.size()));
-        newValue.add(index, id);
-        return newValue;
+        int index = Math.max(0, Math.min(target - 1, reordered.size()));
+        reordered.add(index, id);
+        return reordered;
     }
 
     /**
-     * Einteilung eines Teams für die Anzeige: alle Gruppen (auch leere) in Anzeigereihenfolge, darin die
-     * Spielerinnen nach Nachname, dann Vorname. Spielerinnen ohne Gruppe stehen unter «Ohne Linie» (LIN-06).
+     * Lineup of a team for display: all groups (empty ones too) in display order, within each the players
+     * by last name, then first name. Players without a group are listed under «Ohne Linie» (LIN-06).
      *
-     * @param zuweisungen Person-ID → Gruppen-IDs dieser Person im Team
+     * @param assignments person ID → group IDs of this person in the team
      */
     public static TeamDetailDto.Lineup buildLineup(Collection<GroupInfo> groups,
                                                             Collection<PersonSummary> players,
@@ -124,14 +124,14 @@ public final class LineRules {
         List<GroupInfo> sorted = groups.stream().sorted(DISPLAY).toList();
         List<TeamDetailDto.GroupWithPlayers> result = new ArrayList<>();
         for (GroupInfo g : sorted) {
-            List<PersonSummary> inIt = players.stream()
+            List<PersonSummary> inGroup = players.stream()
                     .filter(p -> assignments.getOrDefault(p.id(), Set.of()).contains(g.id()))
                     .sorted(PersonSummary.ORDER).toList();
-            result.add(new TeamDetailDto.GroupWithPlayers(g.id(), g.type(), g.name(), g.sortOrder(), inIt));
+            result.add(new TeamDetailDto.GroupWithPlayers(g.id(), g.type(), g.name(), g.sortOrder(), inGroup));
         }
-        Set<UUID> groupsIds = sorted.stream().map(GroupInfo::id).collect(java.util.stream.Collectors.toSet());
+        Set<UUID> groupIds = sorted.stream().map(GroupInfo::id).collect(java.util.stream.Collectors.toSet());
         List<PersonSummary> noLine = players.stream()
-                .filter(p -> assignments.getOrDefault(p.id(), Set.of()).stream().noneMatch(groupsIds::contains))
+                .filter(p -> assignments.getOrDefault(p.id(), Set.of()).stream().noneMatch(groupIds::contains))
                 .sorted(PersonSummary.ORDER).toList();
         return new TeamDetailDto.Lineup(result, noLine);
     }

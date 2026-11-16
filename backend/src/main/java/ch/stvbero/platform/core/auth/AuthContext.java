@@ -5,7 +5,7 @@ import jakarta.enterprise.context.RequestScoped;
 
 import java.util.Optional;
 
-/** Hält die angemeldete Person der laufenden Anfrage. Wird vom {@link AnmeldeFilter} gesetzt. */
+/** Holds the signed-in user of the current request. Set by the {@link AuthFilter}. */
 @RequestScoped
 public class AuthContext {
 
@@ -21,7 +21,7 @@ public class AuthContext {
         return Optional.ofNullable(signedIn);
     }
 
-    /** Die angemeldete Person, sonst 401. */
+    /** The signed-in user, otherwise 401. */
     public CurrentUser person() {
         if (signedIn == null) {
             throw DomainError.notSignedIn();

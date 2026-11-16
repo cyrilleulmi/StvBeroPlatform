@@ -6,7 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
 
-/** Team mit Coaches und Spielerinnen. Coaches stehen nie bei den Spielerinnen (PTF-07). */
+/** Team with coaches and players. Coaches are never listed among the players (PTF-07). */
 @Schema(name = "TeamDetail")
 public record TeamDetailDto(UUID id, String name, Integer suTeamId, TeamRole myTeamRole,
                             List<PersonSummary> coaches, Lineup lineup) {

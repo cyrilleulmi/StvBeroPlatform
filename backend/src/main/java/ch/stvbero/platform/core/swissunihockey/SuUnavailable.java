@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.swissunihockey;
 
-/** swiss unihockey ist nicht erreichbar oder liefert unerwartete Daten (SUH-09). Der Abgleich ändert dann nichts. */
+/** swiss unihockey is not reachable or delivers unexpected data (SUH-09). The sync then changes nothing. */
 public class SuUnavailable extends RuntimeException {
 
     public SuUnavailable(String message) {

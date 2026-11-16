@@ -14,8 +14,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Ein Team in einer Saison (SAI-01, SAI-04), mit dem Namen, den es in dieser Saison trägt.
- * Der Name hängt an der Saison, damit das Archiv den damaligen Namen behält (SAI-02).
+ * A team in a season (SAI-01, SAI-04), with the name it has in this season.
+ * The name belongs to the season, so that the archive keeps the name of that time (SAI-02).
  */
 @Entity
 @Table(name = "team_season")
@@ -42,14 +42,14 @@ public class TeamSeason extends PanacheEntityBase {
         return ts;
     }
 
-    /** Zusammengesetzter Schlüssel (team_id, saison_id). */
+    /** Composite key (team_id, season_id). */
     public static class Key implements Serializable {
         public UUID team;
         public UUID season;
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Key s && Objects.equals(team, s.team) && Objects.equals(season, s.season);
+            return o instanceof Key other && Objects.equals(team, other.team) && Objects.equals(season, other.season);
         }
 
         @Override

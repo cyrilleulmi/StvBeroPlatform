@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-/** Name und (freiwillig) Position einer Linie. Ohne Reihenfolge kommt eine neue Linie ans Ende (LIN-09). */
+/** Name and (optional) position of a line. Without a sort order a new line goes to the end (LIN-09). */
 @Schema(name = "LineInput")
 public record LineInput(
         @NotBlank(message = "Bitte einen Namen eingeben.") @Size(max = 30, message = "Höchstens 30 Zeichen.") String name,

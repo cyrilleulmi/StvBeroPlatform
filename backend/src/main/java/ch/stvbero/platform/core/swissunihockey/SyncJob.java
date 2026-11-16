@@ -9,10 +9,10 @@ import org.jboss.logging.Logger;
 import java.util.UUID;
 
 /**
- * Täglicher Abgleich aller verknüpften Teams (SUH-03). Zeitpunkt: {@code stv.swiss-unihockey.abgleich.cron}
- * (Standard 04:30 Uhr Schweizer Zeit). Jedes Team läuft in einer eigenen Transaktion: Ist swiss unihockey für
- * ein Team gestört, ändert sich dort nichts, die anderen laufen weiter; der nächste Lauf versucht es wieder
- * (SUH-09). Im Profil {@code test} ist der Scheduler aus, Tests rufen {@link #alleAbgleichen()} direkt auf.
+ * Daily sync of all linked teams (SUH-03). Schedule: {@code stv.swiss-unihockey.sync.cron} (default 04:30
+ * Swiss time). Every team runs in its own transaction: if swiss unihockey fails for one team, nothing changes
+ * there and the others continue; the next run tries again (SUH-09). In the {@code test} profile the scheduler
+ * is off and tests call {@link #syncAll()} directly.
  */
 @ApplicationScoped
 public class SyncJob {
@@ -28,7 +28,7 @@ public class SyncJob {
         syncAll();
     }
 
-    /** Gleicht alle verknüpften Teams der aktuellen Saison ab. Gibt die Anzahl der erfolgreichen zurück. */
+    /** Syncs all linked teams of the current season. Returns the number of successful ones. */
     public int syncAll() {
         int successful = 0;
         for (UUID team : sync.linkedTeams()) {
@@ -36,9 +36,9 @@ public class SyncJob {
                 sync.sync(team);
                 successful++;
             } catch (DomainError e) {
-                LOG.warnf("Täglicher Abgleich für Team %s nicht möglich: %s", team, e.getMessage());
+                LOG.warnf("Daily sync for team %s not possible: %s", team, e.getMessage());
             } catch (RuntimeException e) {
-                LOG.errorf(e, "Täglicher Abgleich für Team %s fehlgeschlagen", team);
+                LOG.errorf(e, "Daily sync for team %s failed", team);
             }
         }
         return successful;

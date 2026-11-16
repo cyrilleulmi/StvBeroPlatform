@@ -7,7 +7,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.OffsetDateTime;
 
-/** Vereinfachte Form eines Spiels, wie sie der Simulator liefert (Test-Hilfe). */
+/** Simplified form of a match as the simulator delivers it (test support). */
 @Schema(name = "SuMatch", description = "Vereinfachte Form eines Spiels, wie sie der Simulator liefert")
 public record SuMatchDto(@NotNull @Positive Integer suMatchId,
                          @NotNull OffsetDateTime startTime,
@@ -25,7 +25,7 @@ public record SuMatchDto(@NotNull @Positive Integer suMatchId,
                 empty(location), empty(mapsUrl), latitude, longitude, empty(result));
     }
 
-    private static String empty(String s) {
-        return s == null || s.isBlank() ? null : s.strip();
+    private static String empty(String text) {
+        return text == null || text.isBlank() ? null : text.strip();
     }
 }

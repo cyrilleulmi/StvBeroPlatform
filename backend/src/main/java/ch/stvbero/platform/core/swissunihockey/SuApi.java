@@ -13,12 +13,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * HTTP-Zugriff auf die Schnittstelle von swiss unihockey. Ohne CDI, damit der Test sie gegen einen lokalen
- * Server mit aufgezeichneten Antworten laufen lassen kann (F-07, Kriterium 2).
+ * HTTP access to the swiss unihockey API. Without CDI, so that the test can run it against a local server
+ * with recorded responses (F-07, criterion 2).
  * <p>
- * Abgefragt wird die Spielliste eines Teams: {@code GET <basis>/games?mode=team&team_id=…&season=…}.
- * Jede Störung (Netz, Zeitüberschreitung, HTTP-Status ausser 200, kein JSON, unerwartete Tabelle) wird zu
- * {@link SuNichtErreichbar} (SUH-09).
+ * It fetches the match list of a team: {@code GET <base>/games?mode=team&team_id=…&season=…}.
+ * Every failure (network, timeout, HTTP status other than 200, no JSON, unexpected table) becomes
+ * {@link SuUnavailable} (SUH-09).
  */
 public class SuApi {
 
@@ -27,7 +27,7 @@ public class SuApi {
     private final HttpClient http;
     private final ObjectMapper json = new ObjectMapper();
 
-    /** @param basis z.B. {@code https://api-v2.swissunihockey.ch/api}, ohne abschliessenden Schrägstrich */
+    /** @param base e.g. {@code https://api-v2.swissunihockey.ch/api}, without a trailing slash */
     public SuApi(URI base, Duration timeout) {
         this.base = base;
         this.timeout = timeout;
@@ -44,18 +44,18 @@ public class SuApi {
         try {
             response = http.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new SuUnavailable("swiss unihockey nicht erreichbar: " + e.getMessage(), e);
+            throw new SuUnavailable("swiss unihockey not reachable: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SuUnavailable("Abfrage bei swiss unihockey unterbrochen", e);
+            throw new SuUnavailable("Request to swiss unihockey interrupted", e);
         }
         if (response.statusCode() != 200) {
-            throw new SuUnavailable("swiss unihockey antwortet mit HTTP " + response.statusCode());
+            throw new SuUnavailable("swiss unihockey answered with HTTP " + response.statusCode());
         }
         try {
             return SuTable.matches(json.readTree(response.body()), today);
         } catch (JsonProcessingException e) {
-            throw new SuUnavailable("Unerwartete Antwort von swiss unihockey: kein JSON", e);
+            throw new SuUnavailable("Unexpected response from swiss unihockey: not JSON", e);
         }
     }
 }

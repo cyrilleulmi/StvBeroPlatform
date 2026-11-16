@@ -4,13 +4,13 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Ein Spiel, wie es swiss unihockey (oder im Test der Simulator) für ein Team liefert. Fachlich neutral: Wer
- * «wir» sind, bestimmt erst der Abgleich ({@link AbgleichRegeln#eigenesTeam}).
+ * A match as swiss unihockey (or the simulator in tests) delivers it for a team. Neutral: which side is "us"
+ * is only decided by the sync ({@link SyncRules#ownTeam}).
  *
- * @param halle   Name der Halle, z.B. «Sporthalle Seefeld»
- * @param ort     Ortschaft der Halle, z.B. «Musterdorf», oder {@code null}
- * @param mapsUrl Google-Maps-Link, falls geliefert (SUH-07)
- * @param resultat Heim:Gast, z.B. «5:3», oder {@code null}, solange keines vorliegt (SUH-08)
+ * @param hall     name of the hall, e.g. «Sporthalle Seefeld»
+ * @param location town of the hall, e.g. «Musterdorf», or {@code null}
+ * @param mapsUrl  Google Maps link, if delivered (SUH-07)
+ * @param result   home:away, e.g. «5:3», or {@code null} as long as there is none (SUH-08)
  */
 public record SuMatch(int suMatchId, Instant startTime, String homeTeam, String awayTeam, String hall, String location,
                       String mapsUrl, Double latitude, Double longitude, String result) {

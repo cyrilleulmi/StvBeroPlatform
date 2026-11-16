@@ -10,11 +10,11 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import java.util.List;
 
 /**
- * Nicht lesbare Anfragen (ungültiges JSON, falscher Typ, falsches Datumsformat) als 400 mit Problem Details statt
- * eines leeren Bodys (Nachbesserung #16, docs/api/README.md «Fehler»).
+ * Unreadable requests (invalid JSON, wrong type, wrong date format) become 400 with Problem Details instead of
+ * an empty body (follow-up fix #16, docs/api/README.md, errors section).
  *
- * <p>Quarkus REST meldet Syntaxfehler als {@link WebApplicationException} mit einer Jackson-Ursache und
- * Typfehler als {@link MismatchedInputException}. Beides landet hier.
+ * <p>Quarkus REST reports syntax errors as a {@link WebApplicationException} with a Jackson cause and
+ * type errors as a {@link MismatchedInputException}. Both end up here.
  */
 public class UnreadableRequestMapper {
 
@@ -26,17 +26,17 @@ public class UnreadableRequestMapper {
         return response(exception);
     }
 
-    /** Eigene Methode, weil Quarkus für diesen Typ einen eingebauten Mapper ohne Problem Details mitbringt. */
+    /** A separate method, because Quarkus ships a built-in mapper without Problem Details for this type. */
     @ServerExceptionMapper
     public Response type(MismatchedInputException exception) {
         return response(exception);
     }
 
-    /** Alle anderen WebApplicationExceptions behalten ihre eigene Antwort (z.B. 404, 405, 415). */
+    /** All other WebApplicationExceptions keep their own response (e.g. 404, 405, 415). */
     @ServerExceptionMapper
     public Response webApplication(WebApplicationException exception) {
-        for (Throwable t = exception.getCause(); t != null; t = t.getCause()) {
-            if (t instanceof JsonProcessingException json) {
+        for (Throwable cause = exception.getCause(); cause != null; cause = cause.getCause()) {
+            if (cause instanceof JsonProcessingException json) {
                 return response(json);
             }
         }
@@ -50,7 +50,7 @@ public class UnreadableRequestMapper {
         return Response.status(400).type(Problem.MEDIA_TYPE).entity(error).build();
     }
 
-    /** Name des letzten Felds im JSON-Pfad, z.B. «von». Null, wenn kein Feld bestimmbar ist (Syntaxfehler). */
+    /** Name of the last field in the JSON path, e.g. {@code startDate}. Null if no field can be found (syntax error). */
     private static String field(JsonProcessingException exception) {
         if (!(exception instanceof JsonMappingException mapping)) {
             return null;

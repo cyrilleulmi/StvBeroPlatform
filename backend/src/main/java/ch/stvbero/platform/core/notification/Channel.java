@@ -3,15 +3,15 @@ package ch.stvbero.platform.core.notification;
 import java.time.Instant;
 
 /**
- * Ein Weg, auf dem Benachrichtigungen ankommen (BEN-11). Heute gibt es die Liste in der App
- * ({@link AppKanal}, E-56). E-Mail oder Push (BEN-10, offen) kommen als weitere Implementierung dazu,
- * ohne dass sich die Auslöser ändern: {@link Benachrichtigungen} gibt jede Nachricht an alle Kanäle.
+ * A way in which notifications reach people (BEN-11). Today there is the list in the app
+ * ({@link AppChannel}, E-56). Email or push (BEN-10, open) are added as further implementations
+ * without changing the triggers: {@link Notifications} passes every message to all channels.
  */
 public interface Channel {
 
     /**
-     * Nachricht zustellen. Läuft in der Transaktion der auslösenden Änderung; wird sie zurückgerollt, gilt
-     * die Nachricht als nicht versandt.
+     * Delivers the message. Runs in the transaction of the triggering change; if that is rolled back, the
+     * message counts as not sent.
      */
     void send(Message message, Instant instant);
 }

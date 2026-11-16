@@ -23,14 +23,14 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Der feste Ausgangszustand aus docs/testdaten.md. Nur in den Profilen dev und test.
- * Beim Start und bei {@code POST /api/test/reset} wird die Datenbank geleert und neu befüllt.
+ * The fixed starting point from docs/test-data.md. Only in the profiles dev and test.
+ * On start and on {@code POST /api/test/reset} the database is emptied and filled again.
  */
 @ApplicationScoped
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
 public class Seed {
 
-    /** Standard-«Jetzt» nach Reset: Montag, 16.11.2026, 06:00 Europe/Zurich. */
+    /** Default "now" after a reset: Monday, 16.11.2026, 06:00 Europe/Zurich. */
     public static final LocalDateTime DEFAULT_NOW = LocalDateTime.of(2026, 11, 16, 6, 0);
 
     record SeedPerson(int nr, String loginKey, String firstName, String lastName, boolean admin) {
@@ -46,7 +46,7 @@ public class Seed {
     record SeedTeam(int nr, String name, Integer suTeamId) {
     }
 
-    /** Teamzugehörigkeit: Person, Team, Saison (Nummern), Funktion, Gruppe (Nummer, {@code null} = ohne Linie). */
+    /** Team membership: person, team, season (numbers), team role, group (number, {@code null} = no line). */
     record SeedMembership(int person, int team, int season, String teamRole, Integer group) {
 
         SeedMembership(int person, int team, int season, String teamRole) {
@@ -54,7 +54,7 @@ public class Seed {
         }
     }
 
-    /** Linie oder Goalies (docs/testdaten.md, «Gruppen»). Reihenfolge nur bei Linien. */
+    /** Line or goalies (docs/test-data.md, groups). Sort order only for lines. */
     record SeedGroup(int nr, int team, int season, String type, String name, Integer sortOrder) {
     }
 
@@ -70,7 +70,7 @@ public class Seed {
             new SeedGroup(6, 2, 2, G, "Goalies", null),
             new SeedGroup(7, 3, 2, L, "Linie 1", 1),
             new SeedGroup(8, 3, 2, G, "Goalies", null),
-            // Goalies von Team 1 im Archiv 2025/26 (jedes Team hat pro Saison Goalies, LIN-05)
+            // Goalies of team 1 in the 2025/26 archive (every team has goalies in every season, LIN-05)
             new SeedGroup(9, 1, 1, G, "Goalies", null));
 
     static final List<SeedTeam> TEAMS = List.of(
@@ -82,33 +82,33 @@ public class Seed {
         return TEAMS.stream().filter(t -> t.nr() == nr).findFirst().orElseThrow().name();
     }
 
-    /** Welche Teams in welcher Saison bestehen: Team, Saison. Der Name gilt pro Saison (SAI-02). */
+    /** Which teams exist in which season: team, season. The name applies per season (SAI-02). */
     static final List<int[]> TEAM_SEASONS = List.of(
             new int[]{1, 1},
             new int[]{1, 2}, new int[]{2, 2}, new int[]{3, 2});
 
-    private static final String S = "PLAYER";
+    private static final String P = "PLAYER";
     private static final String C = "COACH";
 
     static final List<SeedMembership> MEMBERSHIPS = List.of(
-            // Saison 2026/27 (aktuell)
-            new SeedMembership(2, 1, 2, C), new SeedMembership(2, 2, 2, S, 4),
+            // Season 2026/27 (current)
+            new SeedMembership(2, 1, 2, C), new SeedMembership(2, 2, 2, P, 4),
             new SeedMembership(3, 2, 2, C),
             new SeedMembership(4, 3, 2, C),
-            new SeedMembership(5, 1, 2, S, 1),
-            new SeedMembership(6, 1, 2, S, 1), new SeedMembership(6, 2, 2, S, 5),
-            new SeedMembership(7, 1, 2, S, 1),
-            new SeedMembership(8, 1, 2, S, 2),
-            new SeedMembership(9, 1, 2, S, 2),
-            new SeedMembership(10, 1, 2, S, 3),
-            new SeedMembership(11, 1, 2, S),
-            new SeedMembership(12, 2, 2, S, 4),
-            new SeedMembership(13, 2, 2, S, 4),
-            new SeedMembership(14, 2, 2, S, 5),
-            new SeedMembership(15, 2, 2, S, 6),
-            new SeedMembership(16, 3, 2, S, 7),
-            // Saison 2025/26 (Archiv)
-            new SeedMembership(17, 1, 1, S));
+            new SeedMembership(5, 1, 2, P, 1),
+            new SeedMembership(6, 1, 2, P, 1), new SeedMembership(6, 2, 2, P, 5),
+            new SeedMembership(7, 1, 2, P, 1),
+            new SeedMembership(8, 1, 2, P, 2),
+            new SeedMembership(9, 1, 2, P, 2),
+            new SeedMembership(10, 1, 2, P, 3),
+            new SeedMembership(11, 1, 2, P),
+            new SeedMembership(12, 2, 2, P, 4),
+            new SeedMembership(13, 2, 2, P, 4),
+            new SeedMembership(14, 2, 2, P, 5),
+            new SeedMembership(15, 2, 2, P, 6),
+            new SeedMembership(16, 3, 2, P, 7),
+            // Season 2025/26 (archive)
+            new SeedMembership(17, 1, 1, P));
 
     static final List<SeedPerson> PERSONS = List.of(
             new SeedPerson(1, "alex", "Alex", "Admin", true),
@@ -129,7 +129,7 @@ public class Seed {
             new SeedPerson(16, "tina", "Tina", "Bucher", false),
             new SeedPerson(17, "vera", "Vera", "Studer", false));
 
-    /** Serie (docs/testdaten.md, «Serien»). Teams und Saison als Nummern. */
+    /** Series (docs/test-data.md, series). Teams and season as numbers. */
     record SeedSeries(int nr, String weekday, DayOfWeek day, LocalTime start, LocalTime end, String location,
                      LocalDate startDate, LocalDate endDate, List<Integer> teams, SeedException exception) {
     }
@@ -148,46 +148,46 @@ public class Seed {
             new SeedSeries(3, "WEDNESDAY", DayOfWeek.WEDNESDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), "Turnhalle Dorf",
                     LocalDate.of(2026, 8, 19), LocalDate.of(2027, 4, 28), List.of(3), null));
 
-    /** Serientermine mit fester ID (docs/testdaten.md, «Termine mit festen IDs»): Serie, Datum → Termin-Nummer. */
+    /** Series events with a fixed ID (docs/test-data.md, events with fixed IDs): series, date → event number. */
     static final Map<String, Integer> FIXED_SERIES_EVENTS = Map.of(
             "1:2026-11-17", 1,
             "2:2026-11-19", 2,
             "1:2026-11-24", 3,
             "1:2026-11-10", 7);
 
-    /** Abgesagte Seed-Termine: Nummer → Grund. */
+    /** Cancelled seed events: number → reason. */
     static final Map<Integer, String> CANCELLED = Map.of(3, "Halle besetzt");
 
-    /** Antwort im Seed (F-04): Termin-Nummer, Person-Nummer, Status, Kommentar. */
+    /** Response in the seed (F-04): event number, person number, status, comment. */
     record SeedResponse(int event, int person, String status, String comment) {
     }
 
-    /** Zeitpunkt aller Seed-Antworten: vor dem Standard-«Jetzt» und vor jeder Antwortfrist. */
+    /** Time of all seed responses: before the default "now" and before every response deadline. */
     static final LocalDateTime RESPONDED_AT = LocalDateTime.of(2026, 11, 15, 20, 0);
 
-    private static final String D = "ATTENDING";
-    private static final String N = "DECLINED";
-    private static final String V = "MAYBE";
+    private static final String A = "ATTENDING";
+    private static final String D = "DECLINED";
+    private static final String M = "MAYBE";
 
-    /** Antworten gemäss docs/testdaten.md. Wer fehlt, ist «offen». */
+    /** Responses as in docs/test-data.md. Whoever is missing is pending. */
     static final List<SeedResponse> RESPONSES = List.of(
-            // Termin 01: Hauptbeispiel, alle Antwortstatus (Nina und Ella offen)
-            new SeedResponse(1, 5, D, null), new SeedResponse(1, 6, D, null), new SeedResponse(1, 7, N, "Krank"),
-            new SeedResponse(1, 8, D, null), new SeedResponse(1, 10, D, null), new SeedResponse(1, 11, D, null),
-            new SeedResponse(1, 2, D, null), new SeedResponse(1, 12, V, "Komme evtl. später"),
-            new SeedResponse(1, 13, D, null), new SeedResponse(1, 14, N, null), new SeedResponse(1, 3, N, "Ferien"),
-            // Termin 02: nur Anna
-            new SeedResponse(2, 5, D, null),
-            // Termin 04: Spieltag Team 1
-            new SeedResponse(4, 5, D, null), new SeedResponse(4, 6, D, null), new SeedResponse(4, 7, V, "Muss evtl. arbeiten"),
-            new SeedResponse(4, 8, D, null), new SeedResponse(4, 10, D, null), new SeedResponse(4, 11, N, null),
-            new SeedResponse(4, 2, D, null),
-            // Termin 05: Spieltag Team 2
-            new SeedResponse(5, 2, D, null), new SeedResponse(5, 6, D, null), new SeedResponse(5, 12, D, null),
-            new SeedResponse(5, 13, D, null), new SeedResponse(5, 14, N, null), new SeedResponse(5, 15, D, null),
-            new SeedResponse(5, 3, D, null));
+            // Event 01: main example, every response status (Nina and Ella pending)
+            new SeedResponse(1, 5, A, null), new SeedResponse(1, 6, A, null), new SeedResponse(1, 7, D, "Krank"),
+            new SeedResponse(1, 8, A, null), new SeedResponse(1, 10, A, null), new SeedResponse(1, 11, A, null),
+            new SeedResponse(1, 2, A, null), new SeedResponse(1, 12, M, "Komme evtl. später"),
+            new SeedResponse(1, 13, A, null), new SeedResponse(1, 14, D, null), new SeedResponse(1, 3, D, "Ferien"),
+            // Event 02: only Anna
+            new SeedResponse(2, 5, A, null),
+            // Event 04: match day team 1
+            new SeedResponse(4, 5, A, null), new SeedResponse(4, 6, A, null), new SeedResponse(4, 7, M, "Muss evtl. arbeiten"),
+            new SeedResponse(4, 8, A, null), new SeedResponse(4, 10, A, null), new SeedResponse(4, 11, D, null),
+            new SeedResponse(4, 2, A, null),
+            // Event 05: match day team 2
+            new SeedResponse(5, 2, A, null), new SeedResponse(5, 6, A, null), new SeedResponse(5, 12, A, null),
+            new SeedResponse(5, 13, A, null), new SeedResponse(5, 14, D, null), new SeedResponse(5, 15, A, null),
+            new SeedResponse(5, 3, A, null));
 
-    /** Einzeltermin. Ort mit Adresse und Google-Maps-Link optional, Treffpunkt nur bei Spieltagen. */
+    /** Single event. Venue with address and Google Maps link optional, meeting point only for match days. */
     record SeedEvent(int nr, int season, String type, String title, LocalDateTime start, LocalDateTime end,
                       String location, String address, String mapsUrl, String notes, LocalDateTime meetingPointTime,
                       String meetingPointLocation, List<Integer> teams) {
@@ -208,7 +208,7 @@ public class Seed {
             new SeedEvent(8, 1, "PRACTICE", "Training", LocalDateTime.of(2026, 5, 12, 18, 30),
                     LocalDateTime.of(2026, 5, 12, 20, 0), NORTH_HALL, null, null, null, null, null, List.of(1)));
 
-    /** Spiel (docs/testdaten.md, Termin 04 und 05): Nummer, Termin, Anspielzeit, Gegner, Heim, SU-Spiel-ID. */
+    /** Match (docs/test-data.md, events 04 and 05): number, event, start time, opponent, home, SU match ID. */
     record SeedMatch(int nr, int event, LocalDateTime startTime, String opponent, boolean home, Integer suMatchId) {
     }
 
@@ -217,19 +217,19 @@ public class Seed {
             new SeedMatch(2, 4, LocalDateTime.of(2026, 11, 22, 11, 45), "Unihockey Beispielstadt", false, 5000002),
             new SeedMatch(3, 5, LocalDateTime.of(2026, 11, 28, 14, 0), "UH Testingen", true, null));
 
-    /** Aufgebot (F-05): Termin, aufgebotene Personen, veröffentlicht am ({@code null} = Entwurf). */
+    /** Call-up (F-05): event, called-up persons, published at ({@code null} = draft). */
     record SeedCallUp(int event, List<Integer> persons, LocalDateTime publishedAt) {
     }
 
     static final List<SeedCallUp> CALL_UPS = List.of(
-            // Termin 04: Entwurf mit Anna, Lea, Mia, Sara, Jana
+            // Event 04: draft with Anna, Lea, Mia, Sara, Jana
             new SeedCallUp(4, List.of(5, 6, 7, 8, 10), null),
-            // Termin 05: veröffentlicht mit Petra, Eva, Lara, Ella (Lea nicht aufgeboten)
+            // Event 05: published with Petra, Eva, Lara, Ella (Lea not called up)
             new SeedCallUp(5, List.of(2, 12, 13, 15), LocalDateTime.of(2026, 11, 15, 21, 0)));
 
     /**
-     * Benachrichtigung (F-06): Nummer, Art, Empfänger, Termin, erstellt am, gelesen am ({@code null} = ungelesen),
-     * bei Aufgeboten: aufgeboten ja/nein.
+     * Notification (F-06): number, type, recipient, event, created at, read at ({@code null} = unread),
+     * for call-ups: called up yes/no.
      */
     record SeedNotification(int nr, String type, int recipient, int event, LocalDateTime createdAt,
                                 LocalDateTime readAt, boolean calledUp) {
@@ -239,7 +239,7 @@ public class Seed {
     private static final LocalDateTime PUBLISHED_AT = LocalDateTime.of(2026, 11, 15, 21, 0);
 
     static final List<SeedNotification> NOTIFICATIONS = List.of(
-            // Termin 03 von Petra abgesagt: alle Mitglieder von Team 1 und Team 2 ausser Petra. Mia hat sie gelesen.
+            // Event 03 cancelled by Petra: all members of team 1 and team 2 except Petra. Mia has read it.
             new SeedNotification(1, "EVENT_CANCELLED", 3, 3, CANCELLED_AT, null, false),
             new SeedNotification(2, "EVENT_CANCELLED", 5, 3, CANCELLED_AT, null, false),
             new SeedNotification(3, "EVENT_CANCELLED", 6, 3, CANCELLED_AT, null, false),
@@ -252,7 +252,7 @@ public class Seed {
             new SeedNotification(10, "EVENT_CANCELLED", 13, 3, CANCELLED_AT, null, false),
             new SeedNotification(11, "EVENT_CANCELLED", 14, 3, CANCELLED_AT, null, false),
             new SeedNotification(12, "EVENT_CANCELLED", 15, 3, CANCELLED_AT, null, false),
-            // Aufgebot Termin 05 von Marc veröffentlicht: alle Spielerinnen von Team 2. Petra hat sie gelesen.
+            // Call-up for event 05 published by Marc: all players of team 2. Petra has read it.
             new SeedNotification(13, "CALL_UP_PUBLISHED", 2, 5, PUBLISHED_AT,
                     LocalDateTime.of(2026, 11, 15, 21, 30), true),
             new SeedNotification(14, "CALL_UP_PUBLISHED", 6, 5, PUBLISHED_AT, null, false),
@@ -271,7 +271,7 @@ public class Seed {
         reset();
     }
 
-    /** Leert alle Tabellen (ausser der Flyway-Historie), befüllt den Seed und setzt die Uhr auf Standard. */
+    /** Empties all tables (except the Flyway history), fills in the seed and sets the clock to the default. */
     @Transactional
     public void reset() {
         @SuppressWarnings("unchecked")
@@ -320,26 +320,26 @@ public class Seed {
                     .setParameter(3, seasonId(g.season())).setParameter(4, g.type()).setParameter(5, g.name())
                     .executeUpdate();
         }
-        for (SeedMembership z : MEMBERSHIPS) {
-            UUID id = UUID.nameUUIDFromBytes(("tz-" + z.person() + "-" + z.team() + "-" + z.season()).getBytes());
+        for (SeedMembership m : MEMBERSHIPS) {
+            UUID id = UUID.nameUUIDFromBytes(("tz-" + m.person() + "-" + m.team() + "-" + m.season()).getBytes());
             em.createNativeQuery("insert into team_membership (id, person_id, team_id, season_id, team_role) values (?, ?, ?, ?, ?)")
                     .setParameter(1, id)
-                    .setParameter(2, personId(z.person())).setParameter(3, teamId(z.team()))
-                    .setParameter(4, seasonId(z.season())).setParameter(5, z.teamRole())
+                    .setParameter(2, personId(m.person())).setParameter(3, teamId(m.team()))
+                    .setParameter(4, seasonId(m.season())).setParameter(5, m.teamRole())
                     .executeUpdate();
-            if (z.group() != null) {
+            if (m.group() != null) {
                 em.createNativeQuery("insert into group_assignment (team_membership_id, group_id) values (?, ?)")
-                        .setParameter(1, id).setParameter(2, groupId(z.group()))
+                        .setParameter(1, id).setParameter(2, groupId(m.group()))
                         .executeUpdate();
             }
         }
         seriesAndEvents();
-        for (SeedResponse a : RESPONSES) {
+        for (SeedResponse r : RESPONSES) {
             em.createNativeQuery("""
                             insert into response (event_id, person_id, status, comment, changed_at, late_cancellation)
                             values (?, ?, ?, ?, ?, false)""")
-                    .setParameter(1, eventId(a.event())).setParameter(2, personId(a.person()))
-                    .setParameter(3, a.status()).setParameter(4, a.comment()).setParameter(5, zurich(RESPONDED_AT))
+                    .setParameter(1, eventId(r.event())).setParameter(2, personId(r.person()))
+                    .setParameter(3, r.status()).setParameter(4, r.comment()).setParameter(5, zurich(RESPONDED_AT))
                     .executeUpdate();
         }
         matchesAndCallUps();
@@ -349,7 +349,7 @@ public class Seed {
         clock.fixAt(DEFAULT_NOW.atZone(BackendClock.ZONE).toInstant());
     }
 
-    /** Serien mit allen ihren Terminen (auch vergangenen) und die Einzeltermine (F-03). */
+    /** Series with all their events (past ones too) and the single events (F-03). */
     private void seriesAndEvents() {
         for (SeedSeries s : SERIES) {
             em.createNativeQuery("""
@@ -367,12 +367,12 @@ public class Seed {
             }
             List<EventRules.Period> exceptions = List.of();
             if (s.exception() != null) {
-                SeedException a = s.exception();
+                SeedException exception = s.exception();
                 em.createNativeQuery("insert into series_exception (id, series_id, start_date, end_date, reason) values (?, ?, ?, ?, ?)")
                         .setParameter(1, UUID.nameUUIDFromBytes(("ausnahme-" + s.nr()).getBytes()))
-                        .setParameter(2, seriesId(s.nr())).setParameter(3, a.startDate()).setParameter(4, a.endDate())
-                        .setParameter(5, a.reason()).executeUpdate();
-                exceptions = List.of(new EventRules.Period(a.startDate(), a.endDate()));
+                        .setParameter(2, seriesId(s.nr())).setParameter(3, exception.startDate())
+                        .setParameter(4, exception.endDate()).setParameter(5, exception.reason()).executeUpdate();
+                exceptions = List.of(new EventRules.Period(exception.startDate(), exception.endDate()));
             }
             for (LocalDate day : EventRules.dates(s.day(), s.startDate(), s.endDate(), exceptions)) {
                 Integer nr = FIXED_SERIES_EVENTS.get(s.nr() + ":" + day);
@@ -389,81 +389,81 @@ public class Seed {
                         .setParameter(7, s.location()).setParameter(8, EventRules.DEFAULT_RESPONSE_DEADLINE)
                         .setParameter(9, seriesId(s.nr())).setParameter(10, day)
                         .executeUpdate();
-                teamsAssign(id, s.teams());
+                assignTeams(id, s.teams());
             }
         }
-        for (SeedEvent t : SINGLE_EVENTS) {
+        for (SeedEvent e : SINGLE_EVENTS) {
             em.createNativeQuery("""
                             insert into event (id, season_id, type, title, starts_at, ends_at, status, location_name, location_address,
                                                 location_maps_url, notes, response_deadline_hours, meeting_point_time, meeting_point_location)
                             values (?, ?, ?, ?, ?, ?, 'PLANNED', ?, ?, ?, ?, ?, ?, ?)""")
-                    .setParameter(1, eventId(t.nr())).setParameter(2, seasonId(t.season()))
-                    .setParameter(3, t.type()).setParameter(4, t.title())
-                    .setParameter(5, zurich(t.start())).setParameter(6, zurich(t.end()))
-                    .setParameter(7, t.location()).setParameter(8, t.address()).setParameter(9, t.mapsUrl())
-                    .setParameter(10, t.notes()).setParameter(11, EventRules.DEFAULT_RESPONSE_DEADLINE)
-                    .setParameter(12, t.meetingPointTime() == null ? null : zurich(t.meetingPointTime()))
-                    .setParameter(13, t.meetingPointLocation())
+                    .setParameter(1, eventId(e.nr())).setParameter(2, seasonId(e.season()))
+                    .setParameter(3, e.type()).setParameter(4, e.title())
+                    .setParameter(5, zurich(e.start())).setParameter(6, zurich(e.end()))
+                    .setParameter(7, e.location()).setParameter(8, e.address()).setParameter(9, e.mapsUrl())
+                    .setParameter(10, e.notes()).setParameter(11, EventRules.DEFAULT_RESPONSE_DEADLINE)
+                    .setParameter(12, e.meetingPointTime() == null ? null : zurich(e.meetingPointTime()))
+                    .setParameter(13, e.meetingPointLocation())
                     .executeUpdate();
-            teamsAssign(eventId(t.nr()), t.teams());
+            assignTeams(eventId(e.nr()), e.teams());
         }
     }
 
-    /** Spiele und Aufgebote der Spieltage 04 und 05 (F-05). */
+    /** Matches and call-ups of the match days 04 and 05 (F-05). */
     private void matchesAndCallUps() {
-        for (SeedMatch sp : MATCHES) {
+        for (SeedMatch m : MATCHES) {
             em.createNativeQuery("""
                             insert into match (id, event_id, opponent, start_time, home, source, su_match_id)
                             values (?, ?, ?, ?, ?, ?, ?)""")
-                    .setParameter(1, matchId(sp.nr())).setParameter(2, eventId(sp.event()))
-                    .setParameter(3, sp.opponent()).setParameter(4, zurich(sp.startTime())).setParameter(5, sp.home())
-                    .setParameter(6, sp.suMatchId() == null ? "MANUAL" : "SWISS_UNIHOCKEY")
-                    .setParameter(7, sp.suMatchId())
+                    .setParameter(1, matchId(m.nr())).setParameter(2, eventId(m.event()))
+                    .setParameter(3, m.opponent()).setParameter(4, zurich(m.startTime())).setParameter(5, m.home())
+                    .setParameter(6, m.suMatchId() == null ? "MANUAL" : "SWISS_UNIHOCKEY")
+                    .setParameter(7, m.suMatchId())
                     .executeUpdate();
         }
-        for (SeedCallUp a : CALL_UPS) {
+        for (SeedCallUp c : CALL_UPS) {
             em.createNativeQuery("insert into call_up (event_id, published_at) values (?, ?)")
-                    .setParameter(1, eventId(a.event()))
-                    .setParameter(2, a.publishedAt() == null ? null : zurich(a.publishedAt()))
+                    .setParameter(1, eventId(c.event()))
+                    .setParameter(2, c.publishedAt() == null ? null : zurich(c.publishedAt()))
                     .executeUpdate();
-            for (int person : a.persons()) {
+            for (int person : c.persons()) {
                 em.createNativeQuery("insert into call_up_entry (event_id, person_id) values (?, ?)")
-                        .setParameter(1, eventId(a.event())).setParameter(2, personId(person)).executeUpdate();
+                        .setParameter(1, eventId(c.event())).setParameter(2, personId(person)).executeUpdate();
             }
         }
     }
 
-    /** Benachrichtigungen zu Termin 03 (Absage) und Termin 05 (Aufgebot), Texte wie im Betrieb (F-06). */
+    /** Notifications for event 03 (cancellation) and event 05 (call-up), with the same texts as in production (F-06). */
     private void notifications() {
-        for (SeedNotification b : NOTIFICATIONS) {
+        for (SeedNotification n : NOTIFICATIONS) {
             Object[] event = (Object[]) em.createNativeQuery("select title, starts_at, cancellation_reason from event where id = ?")
-                    .setParameter(1, eventId(b.event())).getSingleResult();
+                    .setParameter(1, eventId(n.event())).getSingleResult();
             String label = NotificationRules.label((String) event[0], instant(event[1]));
-            String text = "EVENT_CANCELLED".equals(b.type())
+            String text = "EVENT_CANCELLED".equals(n.type())
                     ? NotificationRules.cancelledText(label, (String) event[2])
-                    : NotificationRules.publishedText(label, b.calledUp());
+                    : NotificationRules.publishedText(label, n.calledUp());
             em.createNativeQuery("""
                             insert into notification (id, type, recipient_id, text, event_id, created_at, read_at)
                             values (?, ?, ?, ?, ?, ?, ?)""")
-                    .setParameter(1, notificationId(b.nr())).setParameter(2, b.type())
-                    .setParameter(3, personId(b.recipient())).setParameter(4, text)
-                    .setParameter(5, eventId(b.event())).setParameter(6, zurich(b.createdAt()))
-                    .setParameter(7, b.readAt() == null ? null : zurich(b.readAt()))
+                    .setParameter(1, notificationId(n.nr())).setParameter(2, n.type())
+                    .setParameter(3, personId(n.recipient())).setParameter(4, text)
+                    .setParameter(5, eventId(n.event())).setParameter(6, zurich(n.createdAt()))
+                    .setParameter(7, n.readAt() == null ? null : zurich(n.readAt()))
                     .executeUpdate();
         }
     }
 
     private static Instant instant(Object value) {
-        if (value instanceof Instant i) {
-            return i;
+        if (value instanceof Instant instant) {
+            return instant;
         }
-        if (value instanceof OffsetDateTime o) {
-            return o.toInstant();
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime.toInstant();
         }
         return ((Timestamp) value).toInstant();
     }
 
-    private void teamsAssign(UUID eventId, List<Integer> teams) {
+    private void assignTeams(UUID eventId, List<Integer> teams) {
         for (int team : teams) {
             em.createNativeQuery("insert into event_team (event_id, team_id) values (?, ?)")
                     .setParameter(1, eventId).setParameter(2, teamId(team)).executeUpdate();

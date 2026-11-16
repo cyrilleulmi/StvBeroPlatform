@@ -21,7 +21,7 @@ import java.util.List;
 public class TileResource {
 
     @Inject
-    TileRegistry register;
+    TileRegistry registry;
 
     @Inject
     AuthContext auth;
@@ -34,6 +34,6 @@ public class TileResource {
     @APIResponse(responseCode = "401", description = "Nicht angemeldet",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<Tile> get() {
-        return register.visibleFor(auth.person());
+        return registry.visibleFor(auth.person());
     }
 }

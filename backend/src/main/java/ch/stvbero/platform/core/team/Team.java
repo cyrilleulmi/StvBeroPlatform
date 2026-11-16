@@ -17,8 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Eine Mannschaft des Vereins (PTF-02). Gehört zu einer oder mehreren Saisons.
- * Der Name gilt pro Saison ({@link TeamSaison}), damit das Archiv unverändert bleibt (SAI-02).
+ * A team of the club (PTF-02). Belongs to one or more seasons.
+ * The name applies per season ({@link TeamSeason}), so that the archive stays unchanged (SAI-02).
  */
 @Entity
 @Table(name = "team")
@@ -27,7 +27,7 @@ public class Team extends PanacheEntityBase {
     @Id
     public UUID id;
 
-    /** Team-ID bei swiss unihockey (F-07). */
+    /** Team ID at swiss unihockey (F-07). */
     @Column(name = "su_team_id")
     public Integer suTeamId;
 
@@ -42,15 +42,15 @@ public class Team extends PanacheEntityBase {
         return in(season).isPresent();
     }
 
-    /** Name in dieser Saison. */
+    /** Name in this season. */
     public String nameIn(Season season) {
         return in(season).map(ts -> ts.name)
                 .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es in der Saison " + season.name + " nicht."));
     }
 
     /**
-     * Team in die Saison aufnehmen, mit dem angegebenen Namen. Es bekommt dort seine Goalies (LIN-05).
-     * Ist es schon dabei, bleibt alles, wie es ist.
+     * Adds the team to the season with the given name. It gets its goalies there (LIN-05).
+     * If it already belongs to the season, everything stays as it is.
      */
     public void addToSeason(Season season, String name) {
         if (!belongsTo(season)) {

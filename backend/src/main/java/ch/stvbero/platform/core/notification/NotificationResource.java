@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 
-/** Eigene Benachrichtigungen in der App (BEN, E-56). */
+/** The user's own notifications in the app (BEN, E-56). */
 @Path("/api/notifications")
 @Tag(name = "Notifications")
 public class NotificationResource {

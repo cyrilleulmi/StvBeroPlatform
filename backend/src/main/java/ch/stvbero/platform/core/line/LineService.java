@@ -23,8 +23,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Linien und Goalies eines Teams in der aktuellen Saison (LIN). Verwalten dürfen die Coaches des Teams
- * und Admins (LIN-07, RR-03), ansehen alle Mitglieder des Teams.
+ * Lines and goalies of a team in the current season (LIN). The coaches of the team and admins may manage
+ * them (LIN-07, RR-03); all members of the team may view them.
  */
 @ApplicationScoped
 public class LineService {
@@ -34,50 +34,50 @@ public class LineService {
     @Inject
     EntityManager em;
 
-    /** Einteilung eines Teams in einer Saison: Gruppen in Anzeigereihenfolge, dann «Ohne Linie». */
+    /** Lineup of a team in a season: groups in display order, then «Ohne Linie». */
     public static TeamDetailDto.Lineup lineup(Team team, Season season,
                                                              List<TeamMembership> memberships) {
         List<TeamMembership> players = memberships.stream()
-                .filter(z -> z.teamRole == TeamRole.PLAYER).toList();
+                .filter(m -> m.teamRole == TeamRole.PLAYER).toList();
         Map<UUID, Set<UUID>> assignments = new HashMap<>();
-        for (TeamMembership z : players) {
-            assignments.put(z.person.id, z.groups.stream().map(g -> g.id).collect(Collectors.toSet()));
+        for (TeamMembership player : players) {
+            assignments.put(player.person.id, player.groups.stream().map(g -> g.id).collect(Collectors.toSet()));
         }
         return LineRules.buildLineup(Group.of(team, season).stream().map(Group::info).toList(),
-                players.stream().map(z -> PersonSummary.of(z.person)).toList(), assignments);
+                players.stream().map(m -> PersonSummary.of(m.person)).toList(), assignments);
     }
 
     public TeamDetailDto.Lineup get(CurrentUser user, UUID teamId) {
-        Context k = context(user, teamId);
-        LineRules.checkCanView(user.admin(), k.myTeamRole());
-        return lineup(k.team(), k.season(), k.memberships());
+        Context ctx = context(user, teamId);
+        LineRules.checkCanView(user.admin(), ctx.myTeamRole());
+        return lineup(ctx.team(), ctx.season(), ctx.memberships());
     }
 
-    /** Neue Linie, ohne Angabe ans Ende (LIN-07, LIN-09). */
+    /** New line; without a sort order it goes to the end (LIN-07, LIN-09). */
     @Transactional
     public GroupDto create(CurrentUser user, UUID teamId, LineInput input) {
-        Context k = editable(user, teamId);
-        List<Group> groups = Group.of(k.team(), k.season());
+        Context ctx = editable(user, teamId);
+        List<Group> groups = Group.of(ctx.team(), ctx.season());
         String name = input.name().strip();
         LineRules.checkName(groups.stream().map(Group::info).toList(), name, null);
         List<Group> lines = lines(groups);
-        Group newValue = Group.line(k.team(), k.season(), name, lines.size() + 1);
-        newValue.persist();
+        Group line = Group.line(ctx.team(), ctx.season(), name, lines.size() + 1);
+        line.persist();
         if (input.sortOrder() != null) {
             List<Group> withNew = new java.util.ArrayList<>(lines);
-            withNew.add(newValue);
-            order(withNew, LineRules.move(ids(withNew), newValue.id, input.sortOrder()));
+            withNew.add(line);
+            order(withNew, LineRules.move(ids(withNew), line.id, input.sortOrder()));
         }
-        // Gleichzeitiges Anlegen derselben Linie (Doppelklick): 409 statt 500.
+        // The same line created twice at the same time (double click): 409 instead of 500.
         Unique.save(em, NAME_TAKEN, () -> nameTaken(name));
-        return GroupDto.of(newValue);
+        return GroupDto.of(line);
     }
 
-    /** Linie umbenennen und/oder an eine andere Position schieben (LIN-07, LIN-09). */
+    /** Renames a line and/or moves it to another position (LIN-07, LIN-09). */
     @Transactional
     public GroupDto update(CurrentUser user, UUID teamId, UUID groupId, LineInput input) {
-        Context k = editable(user, teamId);
-        List<Group> groups = Group.of(k.team(), k.season());
+        Context ctx = editable(user, teamId);
+        List<Group> groups = Group.of(ctx.team(), ctx.season());
         Group group = find(groups, groupId);
         String name = input.name().strip();
         boolean rename = !name.equals(group.name);
@@ -100,15 +100,15 @@ public class LineService {
         return GroupDto.of(group);
     }
 
-    /** Linie löschen. Ihre Spielerinnen sind danach «ohne Linie» (LIN-06). Goalies bleiben (LIN-05). */
+    /** Deletes a line. Its players then have no line (LIN-06). The goalies stay (LIN-05). */
     @Transactional
     public void delete(CurrentUser user, UUID teamId, UUID groupId) {
-        Context k = editable(user, teamId);
-        List<Group> groups = Group.of(k.team(), k.season());
+        Context ctx = editable(user, teamId);
+        List<Group> groups = Group.of(ctx.team(), ctx.season());
         Group group = find(groups, groupId);
         LineRules.checkIsLine(group.info(), "löschen");
-        for (TeamMembership z : k.memberships()) {
-            z.groups.removeIf(g -> g.id.equals(group.id));
+        for (TeamMembership membership : ctx.memberships()) {
+            membership.groups.removeIf(g -> g.id.equals(group.id));
         }
         group.delete();
         List<Group> rest = lines(groups).stream().filter(g -> !g.id.equals(group.id)).toList();
@@ -116,55 +116,56 @@ public class LineService {
     }
 
     /**
-     * Spielerin einer Gruppe zuweisen oder (mit {@code null}) auf «ohne Linie» setzen. Eine bestehende
-     * Zuweisung im Team wird ersetzt (LIN-02). Nur Spielerinnen des Teams (LIN-10).
+     * Assigns a player to a group or (with {@code null}) sets them to "no line". An existing assignment
+     * in the team is replaced (LIN-02). Only players of the team (LIN-10).
      */
     @Transactional
     public void assign(CurrentUser user, UUID teamId, UUID personId, UUID groupId) {
-        Context k = editable(user, teamId);
-        TeamMembership z = k.memberships().stream().filter(t -> t.person.id.equals(personId)).findFirst()
+        Context ctx = editable(user, teamId);
+        TeamMembership membership = ctx.memberships().stream().filter(m -> m.person.id.equals(personId)).findFirst()
                 .orElseThrow(() -> DomainError.notFound("Diese Person ist nicht in diesem Team."));
-        LineRules.checkAssignable(PersonSummary.of(z.person), z.teamRole);
-        List<Group> groups = Group.of(k.team(), k.season());
+        LineRules.checkAssignable(PersonSummary.of(membership.person), membership.teamRole);
+        List<Group> groups = Group.of(ctx.team(), ctx.season());
         if (groupId != null) {
             find(groups, groupId);
         }
-        Set<UUID> newValue = LineRules.assign(z.groups.stream().map(g -> g.id).toList(), groupId);
-        z.groups.removeIf(g -> !newValue.contains(g.id));
-        // Erst die alte Zuweisung entfernen, dann die neue einfügen (Index gruppenzuweisung_eine_gruppe).
+        Set<UUID> assigned = LineRules.assign(membership.groups.stream().map(g -> g.id).toList(), groupId);
+        membership.groups.removeIf(g -> !assigned.contains(g.id));
+        // Remove the old assignment first, then insert the new one (index group_assignment_one_group).
         em.flush();
         for (Group g : groups) {
-            if (newValue.contains(g.id) && z.groups.stream().noneMatch(x -> x.id.equals(g.id))) {
-                z.groups.add(g);
+            if (assigned.contains(g.id) && membership.groups.stream().noneMatch(x -> x.id.equals(g.id))) {
+                membership.groups.add(g);
             }
         }
-        // Zwei gleichzeitige Zuweisungen derselben Spielerin: 409 statt 500 (LIN-02).
+        // Two simultaneous assignments of the same player: 409 instead of 500 (LIN-02).
         Unique.save(em, List.of("group_assignment_one_group", "group_assignment_pkey"), () -> DomainError.conflict("Gleichzeitig geändert",
                 "Die Linie wurde gerade gleichzeitig geändert. Bitte lade die Seite neu.", "LIN-02"));
     }
 
     /**
-     * Neue Saison mit Übernahme (SAI-04): Linien mit Namen und Reihenfolge kopieren und die Spielerinnen
-     * ihren Linien bzw. den Goalies zuweisen. Die Goalies des Ziels bestehen schon ({@code Team.aufnehmenIn}).
+     * New season with carry-over (SAI-04): copies the lines with name and sort order and assigns the
+     * players to their lines or to the goalies. The goalies of the target already exist
+     * ({@link Team#addToSeason}).
      *
-     * @param kopien Teamzugehörigkeit der Quelle → ihre Kopie im Ziel
+     * @param copies team membership in the source → its copy in the target
      */
-    public static void apply(Season source, Season target, Map<TeamMembership, TeamMembership> copies) {
-        Map<UUID, Group> newGroup = new HashMap<>();
+    public static void carryOver(Season source, Season target, Map<TeamMembership, TeamMembership> copies) {
+        Map<UUID, Group> copiedGroups = new HashMap<>();
         for (Group g : Group.<Group>list("season.id", source.id)) {
-            Group newValue;
+            Group copy;
             if (g.type == GroupType.GOALIES) {
-                newValue = Group.<Group>find("team.id = ?1 and season.id = ?2 and type = ?3", g.team.id, target.id,
+                copy = Group.<Group>find("team.id = ?1 and season.id = ?2 and type = ?3", g.team.id, target.id,
                         GroupType.GOALIES).firstResult();
             } else {
-                newValue = Group.line(g.team, target, g.name, g.sortOrder);
-                newValue.persist();
+                copy = Group.line(g.team, target, g.name, g.sortOrder);
+                copy.persist();
             }
-            newGroup.put(g.id, newValue);
+            copiedGroups.put(g.id, copy);
         }
-        copies.forEach((old, copy) -> {
+        copies.forEach((original, copy) -> {
             if (copy.teamRole == TeamRole.PLAYER) {
-                old.groups.stream().map(g -> newGroup.get(g.id)).filter(java.util.Objects::nonNull)
+                original.groups.stream().map(g -> copiedGroups.get(g.id)).filter(java.util.Objects::nonNull)
                         .forEach(copy.groups::add);
             }
         });
@@ -173,15 +174,15 @@ public class LineService {
     private record Context(Team team, Season season, List<TeamMembership> memberships, TeamRole myTeamRole) {
     }
 
-    /** Team in der aktuellen Saison, mit Zugehörigkeiten und Funktion der angemeldeten Person. */
+    /** Team in the current season, with its memberships and the team role of the signed-in user. */
     private Context context(CurrentUser user, UUID teamId) {
         Season season = Season.currentOrFail();
         Team team = Team.<Team>findByIdOptional(teamId)
                 .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es nicht."));
         List<TeamMembership> memberships = TeamMembership.list("team.id = ?1 and season.id = ?2",
                 team.id, season.id);
-        TeamRole mine = memberships.stream().filter(z -> z.person.id.equals(user.personId()))
-                .map(z -> z.teamRole).findFirst().orElse(null);
+        TeamRole mine = memberships.stream().filter(m -> m.person.id.equals(user.personId()))
+                .map(m -> m.teamRole).findFirst().orElse(null);
         if (!team.belongsTo(season)) {
             LineRules.checkCanView(user.admin(), mine);
             throw DomainError.notFound("Dieses Team gibt es in der Saison " + season.name + " nicht.");
@@ -190,10 +191,10 @@ public class LineService {
     }
 
     private Context editable(CurrentUser user, UUID teamId) {
-        Context k = context(user, teamId);
-        LineRules.checkCanEdit(user.admin(), k.myTeamRole());
-        k.season().checkWritable();
-        return k;
+        Context ctx = context(user, teamId);
+        LineRules.checkCanEdit(user.admin(), ctx.myTeamRole());
+        ctx.season().checkWritable();
+        return ctx;
     }
 
     private static Group find(List<Group> groups, UUID id) {
@@ -209,7 +210,7 @@ public class LineService {
         return groups.stream().map(g -> g.id).toList();
     }
 
-    /** Reihenfolge 1, 2, 3, … nach der angegebenen Ordnung. */
+    /** Sets the sort order 1, 2, 3, … following the given order. */
     private static void order(List<Group> lines, List<UUID> order) {
         for (Group g : lines) {
             g.sortOrder = order.indexOf(g.id) + 1;

@@ -2,33 +2,33 @@ package ch.stvbero.platform.core.person;
 
 import ch.stvbero.platform.core.error.DomainError;
 
-/** Fachregeln zu Personen. Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for persons. Without a database, so that unit tests can check them. */
 public final class PersonRules {
 
     private PersonRules() {
     }
 
     /**
-     * Es braucht immer mindestens eine Person mit Admin-Rechten, sonst kann niemand mehr Personen,
-     * Teams und Saisons verwalten (RR-04).
+     * There must always be at least one person with admin rights, otherwise nobody can manage persons,
+     * teams and seasons any more (RR-04).
      *
-     * @param bisherAdmin  ob die Person bisher Admin ist
-     * @param kuenftigAdmin ob sie nach der Änderung Admin ist
-     * @param anzahlAdmins Anzahl Admins vor der Änderung
+     * @param wasAdmin   whether the person is an admin so far
+     * @param staysAdmin whether the person is an admin after the change
+     * @param adminCount number of admins before the change
      */
-    public static void checkAdminRevocation(boolean previousAdmin, boolean futureAdmin, long countAdmins) {
-        if (previousAdmin && !futureAdmin && countAdmins <= 1) {
+    public static void checkAdminRevocation(boolean wasAdmin, boolean staysAdmin, long adminCount) {
+        if (wasAdmin && !staysAdmin && adminCount <= 1) {
             throw DomainError.conflict("Letzter Admin",
                     "Es braucht mindestens eine Person mit Admin-Rechten.", "RR-04");
         }
     }
 
-    /** Leerzeichen am Rand entfernen, leere E-Mail als «keine». */
+    /** Strips surrounding whitespace; an empty text (e.g. an empty email) becomes {@code null}. */
     public static String clean(String text) {
         if (text == null) {
             return null;
         }
-        String t = text.strip();
-        return t.isEmpty() ? null : t;
+        String stripped = text.strip();
+        return stripped.isEmpty() ? null : stripped;
     }
 }
