@@ -1,30 +1,30 @@
--- F-01 · Personen, Teams, Saisons (PTF, SAI)
+-- F-01 · Persons, teams, seasons (PTF, SAI)
 
 create table team (
     id          uuid primary key,
     name        varchar(60) not null,
-    -- Verknüpfung mit swiss unihockey (F-07)
+    -- Link to swiss unihockey (F-07)
     su_team_id  integer
 );
 
--- Teams gehören zu Saisons (SAI-01, SAI-04). Ein Team kann über mehrere Saisons bestehen.
-create table team_saison (
+-- Teams belong to seasons (SAI-01, SAI-04). A team can exist over several seasons.
+create table team_season (
     team_id   uuid not null references team (id) on delete cascade,
-    saison_id uuid not null references saison (id) on delete cascade,
-    primary key (team_id, saison_id)
+    season_id uuid not null references season (id) on delete cascade,
+    primary key (team_id, season_id)
 );
 
--- Verbindung von Person, Team und Funktion in einer Saison (PTF-10).
--- Funktion als Text, damit weitere Funktionen ohne Umbau dazukommen (PTF-06).
-create table teamzugehoerigkeit (
+-- Link between person, team and team role in a season (PTF-10).
+-- The team role is stored as text, so further roles can be added without rework (PTF-06).
+create table team_membership (
     id         uuid primary key,
     person_id  uuid        not null references person (id) on delete cascade,
     team_id    uuid        not null references team (id) on delete cascade,
-    saison_id  uuid        not null references saison (id) on delete cascade,
-    funktion   varchar(30) not null,
-    -- Pro Person, Team und Saison genau eine Funktion (PTF-04)
-    constraint teamzugehoerigkeit_eine_funktion unique (person_id, team_id, saison_id)
+    season_id  uuid        not null references season (id) on delete cascade,
+    team_role  varchar(30) not null,
+    -- Exactly one team role per person, team and season (PTF-04)
+    constraint team_membership_one_role unique (person_id, team_id, season_id)
 );
 
-create index teamzugehoerigkeit_saison_team on teamzugehoerigkeit (saison_id, team_id);
-create index teamzugehoerigkeit_person on teamzugehoerigkeit (person_id);
+create index team_membership_season_team on team_membership (season_id, team_id);
+create index team_membership_person on team_membership (person_id);
