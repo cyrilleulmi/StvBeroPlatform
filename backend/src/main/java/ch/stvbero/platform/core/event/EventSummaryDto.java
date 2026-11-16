@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/** Eintrag in der Terminliste, mit eigener Antwort (TER-13). */
+/** Entry in the event list, with the caller's own response (TER-13). */
 @Schema(name = "EventSummary")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EventSummaryDto(UUID id, EventType type, String title, OffsetDateTime start, OffsetDateTime end,

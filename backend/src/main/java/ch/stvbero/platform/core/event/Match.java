@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Einzelne Partie eines Spieltags mit Gegner, Anspielzeit, Heim/Auswärts und Resultat (AUF-14, AUF-15). */
+/** A single match of a match day with opponent, start time, home/away and result (AUF-14, AUF-15). */
 @Entity
 @Table(name = "match")
 public class Match extends PanacheEntityBase {
@@ -33,7 +33,7 @@ public class Match extends PanacheEntityBase {
 
     public boolean home;
 
-    /** Heim:Gast, z.B. «5:3». */
+    /** Home:away, e.g. «5:3». */
     public String result;
 
     @Enumerated(EnumType.STRING)
@@ -46,13 +46,13 @@ public class Match extends PanacheEntityBase {
     public boolean missingAtSu;
 
     public static Match create(Event event) {
-        Match s = new Match();
-        s.id = UUID.randomUUID();
-        s.event = event;
-        return s;
+        Match match = new Match();
+        match.id = UUID.randomUUID();
+        match.event = event;
+        return match;
     }
 
-    /** Spiele eines Spieltags nach Anspielzeit (AUF-14). */
+    /** Matches of a match day by start time (AUF-14). */
     public static List<Match> of(UUID eventId) {
         return list("event.id = ?1 order by startTime, opponent, id", eventId);
     }

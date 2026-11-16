@@ -7,8 +7,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.time.OffsetDateTime;
 
 /**
- * Antwort einer Person auf einen Termin. Ohne Antwort: Status OFFEN. Felder, die jemand nicht sehen darf
- * (Kommentar, ANM-07), fehlen in der Antwort der API.
+ * Response of a person to an event. Without a response: status PENDING. Fields the caller may not see
+ * (comment, ANM-07) are left out of the API response.
  */
 @Schema(name = "Response")
 @JsonInclude(JsonInclude.Include.NON_NULL)

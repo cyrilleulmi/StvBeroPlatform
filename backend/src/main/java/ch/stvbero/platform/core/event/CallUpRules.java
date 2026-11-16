@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 
-/** Fachregeln zum Aufgebot eines Spieltags (AUF). Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for the call-up of a match day (AUF). No database, so they can be checked in unit tests. */
 public final class CallUpRules {
 
     public static final String ONLY_MATCH_DAY = "Nur ein Spieltag hat ein Aufgebot.";
@@ -18,14 +18,14 @@ public final class CallUpRules {
     private CallUpRules() {
     }
 
-    /** Ein Aufgebot gibt es nur bei Spieltagen (AUF-01, AUF-02). */
+    /** Only match days have a call-up (AUF-01, AUF-02). */
     public static void checkMatchDay(EventType type) {
         if (type != EventType.MATCH_DAY) {
             throw DomainError.conflict("Kein Spieltag", ONLY_MATCH_DAY, "AUF-02");
         }
     }
 
-    /** Aufgebot ansehen, erstellen und veröffentlichen: Coaches des Teams und Admins (RR-03, Rechte-Tabelle). */
+    /** View, create and publish a call-up: coaches of the team and admins (RR-03, permission table). */
     public static boolean canEdit(boolean admin, Collection<TeamRole> teamRolesInTeam) {
         return admin || teamRolesInTeam.contains(TeamRole.COACH);
     }
@@ -37,8 +37,8 @@ public final class CallUpRules {
     }
 
     /**
-     * Aufbieten lassen sich alle Spielerinnen des Teams, unabhängig von ihrer Antwort (AUF-22), aber keine
-     * Coaches (AUF-28) und niemand ausserhalb des Teams: 422.
+     * All players of the team can be called up, regardless of their response (AUF-22), but no coaches
+     * (AUF-28) and nobody outside the team: 422.
      */
     public static void checkCanBeCalledUp(Collection<UUID> selection, Set<UUID> players) {
         if (!players.containsAll(selection)) {
@@ -46,7 +46,7 @@ public final class CallUpRules {
         }
     }
 
-    /** Veröffentlicht wird ein Entwurf mit mindestens einer Spielerin, und nur einmal (AUF-23): sonst 409. */
+    /** Only a draft with at least one player is published, and only once (AUF-23): otherwise 409. */
     public static void checkPublishable(CallUpStatus status) {
         switch (status) {
             case PUBLISHED -> throw DomainError.conflict("Schon veröffentlicht", ALREADY_PUBLISHED, "AUF-23");
@@ -57,7 +57,7 @@ public final class CallUpRules {
         }
     }
 
-    /** KEINES ohne Auswahl, ENTWURF bis zur Veröffentlichung, danach VEROEFFENTLICHT (zustaende.md). */
+    /** NONE without a selection, DRAFT until it is published, PUBLISHED afterwards (docs/states.md). */
     public static CallUpStatus status(boolean published, int calledUpCount) {
         if (published) {
             return CallUpStatus.PUBLISHED;
@@ -66,8 +66,8 @@ public final class CallUpRules {
     }
 
     /**
-     * Was jemand vom Stand des Aufgebots sieht: Coaches und Admins den echten Stand, alle anderen erst nach
-     * der Veröffentlichung etwas (AUF-23, Annahme: auch dass es einen Entwurf gibt, bleibt verborgen).
+     * What someone sees of the call-up status: coaches and admins see the real status, everyone else sees
+     * something only after it is published (AUF-23, assumption: even the existence of a draft stays hidden).
      */
     public static CallUpStatus visibleStatus(CallUpStatus status, boolean coachOrAdmin) {
         if (coachOrAdmin || status == CallUpStatus.PUBLISHED) {
@@ -76,7 +76,7 @@ public final class CallUpRules {
         return CallUpStatus.NONE;
     }
 
-    /** Sicht einer Spielerin (AUF-24): vor der Veröffentlichung «noch kein Aufgebot». */
+    /** View of a player (AUF-24): before publication «noch kein Aufgebot». */
     public static MyCallUp myCallUp(CallUpStatus status, boolean calledUp) {
         if (status != CallUpStatus.PUBLISHED) {
             return MyCallUp.NO_CALL_UP_YET;

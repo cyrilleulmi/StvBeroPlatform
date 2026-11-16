@@ -26,7 +26,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Termine (TER). */
+/** Events (TER). */
 @Path("/api/events")
 @Tag(name = "Events")
 public class EventResource {
@@ -44,10 +44,10 @@ public class EventResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = EventSummaryDto.class)))
     @APIResponse(responseCode = "401", description = "Nicht angemeldet",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
-    public List<EventSummaryDto> list(@QueryParam("from") LocalDate startDate, @QueryParam("to") LocalDate endDate,
+    public List<EventSummaryDto> list(@QueryParam("from") LocalDate from, @QueryParam("to") LocalDate to,
                                      @QueryParam("team") UUID team, @QueryParam("type") EventType type,
                                      @QueryParam("view") String view) {
-        return events.list(auth.person(), startDate, endDate, team, type, view);
+        return events.list(auth.person(), from, to, team, type, view);
     }
 
     @POST

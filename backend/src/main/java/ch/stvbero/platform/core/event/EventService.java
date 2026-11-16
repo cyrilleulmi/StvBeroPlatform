@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Termine erfassen, ändern, verschieben und absagen (TER). Erfassen und bearbeiten dürfen Coaches eines
- * beteiligten Teams und Admins (TER-11, RR-06), ansehen alle Mitglieder der beteiligten Teams.
+ * Create, change, reschedule and cancel events (TER). Coaches of a participating team and admins may create
+ * and edit (TER-11, RR-06); all members of the participating teams may view.
  */
 @ApplicationScoped
 public class EventService {
@@ -44,10 +44,10 @@ public class EventService {
     EventNotifications notifications;
 
     /**
-     * Termine der eigenen Teams (TER-13). Kommende aufsteigend ab «jetzt», vergangene absteigend.
-     * Eigene Teams heisst: Mitglied eines beteiligten Teams in der Saison des Termins.
+     * Events of the caller's own teams (TER-13). Upcoming ones ascending from "now", past ones descending.
+     * Own teams means: member of a participating team in the season of the event.
      */
-    public List<EventSummaryDto> list(CurrentUser user, LocalDate startDate, LocalDate endDate, UUID teamId, EventType type,
+    public List<EventSummaryDto> list(CurrentUser user, LocalDate from, LocalDate to, UUID teamId, EventType type,
                                      String view) {
         boolean past = PAST.equals(view);
         if (view != null && !past && !UPCOMING.equals(view)) {
@@ -59,29 +59,29 @@ public class EventService {
                 where exists (select z.id from TeamMembership z
                               where z.person.id = :person and z.season = t.season and z.team member of t.teams)
                 """);
-        Map<String, Object> parameter = new HashMap<>();
-        parameter.put("person", user.personId());
-        parameter.put("now", now);
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("person", user.personId());
+        parameters.put("now", now);
         jpql.append(past ? " and t.end <= :now" : " and t.end > :now");
-        if (startDate != null) {
+        if (from != null) {
             jpql.append(" and t.start >= :startDate");
-            parameter.put("startDate", startDate.atStartOfDay(BackendClock.ZONE).toInstant());
+            parameters.put("startDate", from.atStartOfDay(BackendClock.ZONE).toInstant());
         }
-        if (endDate != null) {
+        if (to != null) {
             jpql.append(" and t.start < :endDate");
-            parameter.put("endDate", endDate.plusDays(1).atStartOfDay(BackendClock.ZONE).toInstant());
+            parameters.put("endDate", to.plusDays(1).atStartOfDay(BackendClock.ZONE).toInstant());
         }
         if (teamId != null) {
             jpql.append(" and exists (select x.id from Event t2 join t2.teams x where t2 = t and x.id = :team)");
-            parameter.put("team", teamId);
+            parameters.put("team", teamId);
         }
         if (type != null) {
             jpql.append(" and t.type = :type");
-            parameter.put("type", type);
+            parameters.put("type", type);
         }
         jpql.append(past ? " order by t.start desc, t.id" : " order by t.start, t.id");
         TypedQuery<Event> query = em.createQuery(jpql.toString(), Event.class);
-        parameter.forEach(query::setParameter);
+        parameters.forEach(query::setParameter);
         List<Event> events = query.getResultList();
         EventReader reader = new EventReader(em, user, events);
         return events.stream().map(reader::summary).toList();
@@ -95,7 +95,7 @@ public class EventService {
         return reader.full(event, canEdit(user, event, mine));
     }
 
-    /** Einzeltermin erfassen, auch für mehrere Teams (TER-01, TER-04, TER-11). */
+    /** Create a single event, also for several teams (TER-01, TER-04, TER-11). */
     @Transactional
     public EventDto create(CurrentUser user, EventInput input) {
         Instant start = input.start().toInstant();
@@ -104,78 +104,78 @@ public class EventService {
         Season season = seasonOn(EventRules.date(start), null);
         EventRules.checkCanCreate(user.admin(), teamRoles(user, teams, season));
         checkInput(input.type(), start, end, teams, season);
-        Event t = Event.create();
-        t.season = season;
-        apply(t, input, teams);
-        t.persist();
-        return get(user, t.id);
+        Event event = Event.create();
+        event.season = season;
+        apply(event, input, teams);
+        event.persist();
+        return get(user, event.id);
     }
 
     /**
-     * Termin ändern. Eine andere Beginnzeit ist eine Verschiebung (TER-06). Bei einem Serientermin gilt die
-     * Änderung nur für diesen Termin; spätere Änderungen der Serie übernimmt er nicht mehr. Antworten bleiben.
+     * Change an event. A different start time is a rescheduling (TER-06). For a series event the change applies
+     * only to this event; it no longer takes over later changes of the series. Responses are kept.
      */
     @Transactional
     public EventDto update(CurrentUser user, UUID eventId, EventInput input) {
-        Event t = find(eventId);
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, t.teams, t.season));
-        EventRules.checkChangeable(t.status, t.end, clock.now());
+        Event event = find(eventId);
+        EventRules.checkCanCreate(user.admin(), teamRoles(user, event.teams, event.season));
+        EventRules.checkChangeable(event.status, event.end, clock.now());
         Instant start = input.start().toInstant();
         Instant end = input.end().toInstant();
         Set<Team> teams = teams(input.teamIds());
-        Season season = seasonOn(EventRules.date(start), t.season);
-        // Auch nach der Änderung muss die Person Coach eines beteiligten Teams sein.
+        Season season = seasonOn(EventRules.date(start), event.season);
+        // After the change, the person must still be coach of a participating team.
         EventRules.checkCanCreate(user.admin(), teamRoles(user, teams, season));
         checkInput(input.type(), start, end, teams, season);
-        List<Match> matches = t.type == EventType.MATCH_DAY ? Match.of(t.id) : List.of();
-        EventRules.checkTypeChange(t.type, input.type(), !matches.isEmpty() || CallUp.findById(t.id) != null);
-        MatchRules.checkReschedulable(matches.stream().anyMatch(s -> s.source == MatchSource.SWISS_UNIHOCKEY),
-                t.start, start);
-        Instant oldStart = t.start;
-        String oldLabel = EventNotifications.label(t);
-        List<UUID> previousMembers = EventNotifications.members(t);
-        long days = ChronoUnit.DAYS.between(EventRules.date(t.start), EventRules.date(start));
+        List<Match> matches = event.type == EventType.MATCH_DAY ? Match.of(event.id) : List.of();
+        EventRules.checkTypeChange(event.type, input.type(), !matches.isEmpty() || CallUp.findById(event.id) != null);
+        MatchRules.checkReschedulable(matches.stream().anyMatch(match -> match.source == MatchSource.SWISS_UNIHOCKEY),
+                event.start, start);
+        Instant oldStart = event.start;
+        String oldLabel = EventNotifications.label(event);
+        List<UUID> previousMembers = EventNotifications.members(event);
+        long days = ChronoUnit.DAYS.between(EventRules.date(event.start), EventRules.date(start));
         if (days != 0) {
-            // Von Hand erfasste Spiele ziehen mit, wenn der Spieltag auf einen anderen Tag verschoben wird (AUF-01).
-            matches.stream().filter(s -> s.source == MatchSource.MANUAL)
-                    .forEach(s -> s.startTime = s.startTime.atZone(BackendClock.ZONE).plusDays(days).toInstant());
+            // Matches created by hand move along when the match day is moved to another day (AUF-01).
+            matches.stream().filter(match -> match.source == MatchSource.MANUAL)
+                    .forEach(match -> match.startTime = match.startTime.atZone(BackendClock.ZONE).plusDays(days).toInstant());
         }
-        t.rescheduled = EventRules.rescheduled(t.rescheduled, t.start, start);
-        t.season = season;
-        apply(t, input, teams);
-        if (t.series != null) {
-            t.individuallyChanged = true;
+        event.rescheduled = EventRules.rescheduled(event.rescheduled, event.start, start);
+        event.season = season;
+        apply(event, input, teams);
+        if (event.series != null) {
+            event.individuallyChanged = true;
         }
-        if (NotificationRules.rescheduled(oldStart, t.start)) {
-            notifications.rescheduled(user, t, oldLabel, previousMembers);
+        if (NotificationRules.rescheduled(oldStart, event.start)) {
+            notifications.rescheduled(user, event, oldLabel, previousMembers);
         }
-        return get(user, t.id);
+        return get(user, event.id);
     }
 
     /**
-     * Termin absagen (TER-06). Danach sind keine Änderungen und keine Antworten mehr möglich. Alle Mitglieder
-     * der beteiligten Teams werden benachrichtigt (BEN-07).
+     * Cancel an event (TER-06). Afterwards no changes and no responses are possible. All members of the
+     * participating teams are notified (BEN-07).
      */
     @Transactional
     public EventDto cancel(CurrentUser user, UUID eventId, String reason) {
-        Event t = find(eventId);
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, t.teams, t.season));
-        EventRules.checkChangeable(t.status, t.end, clock.now());
-        t.season.checkWritable();
-        t.status = EventStatus.CANCELLED;
-        t.cancellationReason = reason.strip();
-        notifications.cancelled(user, t);
-        return get(user, t.id);
+        Event event = find(eventId);
+        EventRules.checkCanCreate(user.admin(), teamRoles(user, event.teams, event.season));
+        EventRules.checkChangeable(event.status, event.end, clock.now());
+        event.season.checkWritable();
+        event.status = EventStatus.CANCELLED;
+        event.cancellationReason = reason.strip();
+        notifications.cancelled(user, event);
+        return get(user, event.id);
     }
 
-    // ------------------------------------------------------------------ gemeinsam mit SerieService
+    // ------------------------------------------------------------------ shared with SeriesService
 
     static Event find(UUID id) {
         return Event.<Event>findByIdOptional(id)
                 .orElseThrow(() -> DomainError.notFound("Diesen Termin gibt es nicht."));
     }
 
-    /** Teams zu den IDs. Unbekannte IDs: 400. */
+    /** Teams for the IDs. Unknown IDs: 400. */
     static Set<Team> teams(Collection<UUID> ids) {
         Set<Team> teams = new LinkedHashSet<>();
         for (UUID id : new LinkedHashSet<>(ids)) {
@@ -185,24 +185,25 @@ public class EventService {
         return teams;
     }
 
-    /** Funktionen der Person in diesen Teams in dieser Saison (leer, wenn sie in keinem Mitglied ist). */
+    /** Team roles of the person in these teams in this season (empty if she is a member of none of them). */
     static Set<TeamRole> teamRoles(CurrentUser user, Collection<Team> teams, Season season) {
         if (teams.isEmpty()) {
             return Set.of();
         }
         Set<TeamRole> teamRoles = new LinkedHashSet<>();
         TeamMembership.<TeamMembership>list("person.id = ?1 and season.id = ?2 and team.id in ?3",
-                user.personId(), season.id, teams.stream().map(t -> t.id).toList()).forEach(z -> teamRoles.add(z.teamRole));
+                        user.personId(), season.id, teams.stream().map(team -> team.id).toList())
+                .forEach(m -> teamRoles.add(m.teamRole));
         return teamRoles;
     }
 
-    /** Die Saison, in die der Tag fällt; sonst die angegebene bzw. die aktuelle. */
+    /** The season the day falls into; otherwise the given one, or the current one. */
     static Season seasonOn(LocalDate day, Season otherwise) {
         return Season.<Season>find("startDate <= ?1 and endDate >= ?1", day).firstResultOptional()
                 .orElseGet(() -> otherwise != null ? otherwise : Season.currentOrFail());
     }
 
-    /** Alle Teams gehören in der Saison zum Verein, die Saison ist nicht im Archiv (SAI-02). */
+    /** All teams belong to the club in the season, and the season is not archived (SAI-02). */
     static void checkTeamsInSeason(Collection<Team> teams, Season season) {
         for (Team team : teams) {
             if (!team.belongsTo(season)) {
@@ -212,9 +213,9 @@ public class EventService {
         season.checkWritable();
     }
 
-    private boolean canEdit(CurrentUser user, Event t, Set<TeamRole> mine) {
-        return EventRules.canEdit(user.admin(), mine) && t.status == EventStatus.PLANNED
-                && !t.isOver(clock.now()) && !t.season.isArchived();
+    private boolean canEdit(CurrentUser user, Event event, Set<TeamRole> mine) {
+        return EventRules.canEdit(user.admin(), mine) && event.status == EventStatus.PLANNED
+                && !event.isOver(clock.now()) && !event.season.isArchived();
     }
 
     private void checkInput(EventType type, Instant start, Instant end, Set<Team> teams, Season season) {
@@ -224,17 +225,17 @@ public class EventService {
         checkTeamsInSeason(teams, season);
     }
 
-    private static void apply(Event t, EventInput e, Set<Team> teams) {
-        t.type = e.type();
-        t.title = e.title().strip();
-        t.start = e.start().toInstant();
-        t.end = e.end().toInstant();
-        t.location = Location.of(e.location());
-        t.notes = EventRules.blankToNull(e.notes());
-        t.responseDeadlineHours = EventRules.responseDeadline(e.responseDeadlineHours());
-        t.meetingPointTime = e.meetingPoint() == null ? null : e.meetingPoint().time().toInstant();
-        t.meetingPointLocation = e.meetingPoint() == null ? null : e.meetingPoint().location().strip();
-        t.teams.clear();
-        t.teams.addAll(teams);
+    private static void apply(Event event, EventInput input, Set<Team> teams) {
+        event.type = input.type();
+        event.title = input.title().strip();
+        event.start = input.start().toInstant();
+        event.end = input.end().toInstant();
+        event.location = Location.of(input.location());
+        event.notes = EventRules.blankToNull(input.notes());
+        event.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
+        event.meetingPointTime = input.meetingPoint() == null ? null : input.meetingPoint().time().toInstant();
+        event.meetingPointLocation = input.meetingPoint() == null ? null : input.meetingPoint().location().strip();
+        event.teams.clear();
+        event.teams.addAll(teams);
     }
 }

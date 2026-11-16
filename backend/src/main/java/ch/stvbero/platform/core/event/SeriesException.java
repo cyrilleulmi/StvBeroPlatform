@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/** Zeitraum, der von einer Serie ausgenommen ist, z.B. Ferien (TER-07). */
+/** Period that is excluded from a series, e.g. holidays (TER-07). */
 @Entity
 @Table(name = "series_exception")
 public class SeriesException extends PanacheEntityBase {

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Aufgebot eines Spieltags für die Coach: alle Spielerinnen des Teams, gruppiert wie in der Übersicht, mit
- * Antwortstatus und Auswahl (AUF-21, AUF-22). Coaches stehen nicht darin (AUF-28).
+ * Call-up of a match day for the coach: all players of the team, grouped as in the overview, with response
+ * status and selection (AUF-21, AUF-22). Coaches are not part of it (AUF-28).
  */
 @Schema(name = "CallUp")
 public record CallUpDto(UUID eventId, CallUpStatus status, OffsetDateTime publishedAt,

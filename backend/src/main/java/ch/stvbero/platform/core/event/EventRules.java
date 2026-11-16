@@ -19,50 +19,50 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** Fachregeln zu Terminen und Serien (TER). Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for events and series (TER). No database, so they can be checked in unit tests. */
 public final class EventRules {
 
-    /** Standard-Antwortfrist in Stunden vor Beginn (TER-10, Annahme zu O-11). */
+    /** Default response deadline in hours before the start (TER-10, assumption for O-11). */
     public static final int DEFAULT_RESPONSE_DEADLINE = 24;
 
-    /** Längste Antwortfrist: zwei Wochen. */
+    /** Longest response deadline: two weeks. */
     public static final int MAX_RESPONSE_DEADLINE = 336;
     public static final String MIN_RESPONSE_DEADLINE_TEXT = "Mindestens 0 Stunden.";
     public static final String MAX_RESPONSE_DEADLINE_TEXT = "Höchstens 336 Stunden (14 Tage).";
 
-    /** Längster Gültigkeitszeitraum einer Serie in Tagen, damit nicht versehentlich Jahre erzeugt werden. */
+    /** Longest validity period of a series in days, so that years of events are not created by accident. */
     public static final int MAX_SERIES_DAYS = 366;
 
-    /** Uhrzeit «18:30». */
+    /** Time of day, e.g. «18:30». */
     public static final String TIME_PATTERN = "^([01]\\d|2[0-3]):[0-5]\\d$";
 
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
 
-    /** Ein Zeitraum von Tag bis Tag, beide eingeschlossen. */
+    /** A period from one day to another, both inclusive. */
     public record Period(LocalDate startDate, LocalDate endDate) {
         public boolean contains(LocalDate day) {
             return !day.isBefore(startDate) && !day.isAfter(endDate);
         }
     }
 
-    /** Was mit einem künftigen Serientermin geschieht, der in eine neue Ausnahme fällt (TER-07, O-19). */
+    /** What happens to a future series event that falls into a new series exception (TER-07, O-19). */
     public enum Outcome {
-        /** Ohne Antworten: der Termin verschwindet. */
+        /** No responses: the event is removed. */
         REMOVE,
-        /** Mit Antworten: der Termin wird abgesagt, Grund = Grund der Ausnahme. So geht keine Antwort verloren. */
+        /** With responses: the event is cancelled with the reason of the exception. This way no response is lost. */
         CANCEL
     }
 
-    /** Zustand eines bestehenden künftigen Serientermins beim Abgleich mit der geänderten Serie. */
+    /** State of an existing future series event when it is synced with the changed series. */
     public record Existing(boolean planned, boolean individuallyChanged) {
     }
 
     /**
-     * Ergebnis des Abgleichs einer geänderten Serie mit ihren künftigen Terminen (TER-08).
+     * Result of syncing a changed series with its future events (TER-08).
      *
-     * @param erzeugen     Daten, für die ein neuer Termin entsteht
-     * @param uebernehmen  Daten, deren Termin die neuen Angaben der Serie übernimmt
-     * @param wegfallen    Daten, deren Termin nicht mehr zur Serie passt (entfernen bzw. absagen, siehe {@link Folge})
+     * @param create dates for which a new event is created
+     * @param apply  dates whose event takes over the new details of the series
+     * @param drop   dates whose event no longer fits the series (removed or cancelled, see {@link Outcome})
      */
     public record SuSync(List<LocalDate> create, List<LocalDate> apply, List<LocalDate> drop) {
     }
@@ -70,33 +70,33 @@ public final class EventRules {
     private EventRules() {
     }
 
-    // ------------------------------------------------------------------ Rechte
+    // ------------------------------------------------------------------ Permissions
 
     /**
-     * Termine und Serien erfassen: Admins oder Coach in mindestens einem der Teams (TER-11, RR-03, RR-06).
-     * So kann die Coach von Team 1 ein gemeinsames Training mit Team 2 erfassen (TER-01).
+     * Create events and series: admins, or coach in at least one of the teams (TER-11, RR-03, RR-06).
+     * This way the coach of team 1 can create a joint practice with team 2 (TER-01).
      */
-    public static void checkCanCreate(boolean admin, Collection<TeamRole> teamRolesInTheTeams) {
-        if (!canEdit(admin, teamRolesInTheTeams)) {
+    public static void checkCanCreate(boolean admin, Collection<TeamRole> teamRolesInTeams) {
+        if (!canEdit(admin, teamRolesInTeams)) {
             throw DomainError.forbidden();
         }
     }
 
-    /** Bearbeiten und absagen: Admins oder Coach eines beteiligten Teams (TER-11, RR-06). */
-    public static boolean canEdit(boolean admin, Collection<TeamRole> teamRolesInTheTeams) {
-        return admin || teamRolesInTheTeams.contains(TeamRole.COACH);
+    /** Edit and cancel: admins, or coach of a participating team (TER-11, RR-06). */
+    public static boolean canEdit(boolean admin, Collection<TeamRole> teamRolesInTeams) {
+        return admin || teamRolesInTeams.contains(TeamRole.COACH);
     }
 
-    /** Ansehen: Mitglieder eines beteiligten Teams (jede Funktion) und Admins (RR-02, RR-07). */
-    public static void checkCanView(boolean admin, Collection<TeamRole> teamRolesInTheTeams) {
-        if (!admin && teamRolesInTheTeams.isEmpty()) {
+    /** View: members of a participating team (any team role) and admins (RR-02, RR-07). */
+    public static void checkCanView(boolean admin, Collection<TeamRole> teamRolesInTeams) {
+        if (!admin && teamRolesInTeams.isEmpty()) {
             throw DomainError.forbidden();
         }
     }
 
-    // ------------------------------------------------------------------ Zustand
+    // ------------------------------------------------------------------ State
 
-    /** Abgesagte und vergangene Termine lassen sich nicht mehr ändern oder absagen (409, TER-06). */
+    /** Cancelled and past events can no longer be changed or cancelled (409, TER-06). */
     public static void checkChangeable(EventStatus status, Instant end, Instant now) {
         if (status == EventStatus.CANCELLED) {
             throw DomainError.conflict("Termin abgesagt", "Der Termin ist abgesagt und lässt sich nicht mehr ändern.", "TER-06");
@@ -106,24 +106,24 @@ public final class EventRules {
         }
     }
 
-    /** Eine geänderte Beginnzeit gilt als Verschiebung (TER-06). Einmal verschoben, bleibt der Hinweis. */
-    public static boolean rescheduled(boolean previous, Instant oldStart, Instant newStart) {
-        return previous || !oldStart.equals(newStart);
+    /** A changed start time counts as rescheduling (TER-06). Once rescheduled, the flag stays. */
+    public static boolean rescheduled(boolean alreadyRescheduled, Instant oldStart, Instant newStart) {
+        return alreadyRescheduled || !oldStart.equals(newStart);
     }
 
-    /** Antwortfrist: X Stunden vor Beginn (TER-09). */
+    /** Response deadline: X hours before the start (TER-09). */
     public static Instant responseDeadline(Instant start, int hours) {
         return start.minus(Duration.ofHours(hours));
     }
 
-    /** Ohne Angabe gilt die Standard-Antwortfrist von 24 Stunden (TER-10). */
+    /** Without a value, the default response deadline of 24 hours applies (TER-10). */
     public static int responseDeadline(Integer hours) {
         return hours == null ? DEFAULT_RESPONSE_DEADLINE : hours;
     }
 
-    // ------------------------------------------------------------------ Eingaben
+    // ------------------------------------------------------------------ Input
 
-    /** Ein Termin, der schon vorbei ist, wird weder erfasst noch dorthin verschoben. */
+    /** An event that is already over can neither be created nor be rescheduled into the past. */
     public static void checkNotOver(Instant end, Instant now) {
         if (!end.isAfter(now)) {
             throw DomainError.invalidField("end", "Der Termin liegt in der Vergangenheit.");
@@ -136,16 +136,16 @@ public final class EventRules {
         }
     }
 
-    /** Ein Spieltag gehört zu genau einem Team (AUF-03, O-14). */
-    public static void checkTeams(EventType type, int countTeams) {
-        if (type == EventType.MATCH_DAY && countTeams != 1) {
+    /** A match day belongs to exactly one team (AUF-03, O-14). */
+    public static void checkTeams(EventType type, int teamCount) {
+        if (type == EventType.MATCH_DAY && teamCount != 1) {
             throw DomainError.invalidField("teamIds", "Ein Spieltag gehört zu genau einem Team.");
         }
     }
 
-    /** Ein Spieltag mit Spielen oder Aufgebot bleibt ein Spieltag (409, AUF-01). */
-    public static void checkTypeChange(EventType previous, EventType newValue, boolean hasMatchesOrCallUp) {
-        if (previous == EventType.MATCH_DAY && newValue != EventType.MATCH_DAY && hasMatchesOrCallUp) {
+    /** A match day with matches or a call-up stays a match day (409, AUF-01). */
+    public static void checkTypeChange(EventType previousType, EventType newType, boolean hasMatchesOrCallUp) {
+        if (previousType == EventType.MATCH_DAY && newType != EventType.MATCH_DAY && hasMatchesOrCallUp) {
             throw DomainError.conflict("Spieltag", "Ein Spieltag mit Spielen oder Aufgebot bleibt ein Spieltag.", "AUF-01");
         }
     }
@@ -168,11 +168,11 @@ public final class EventRules {
         }
     }
 
-    // ------------------------------------------------------------------ Serien
+    // ------------------------------------------------------------------ Series
 
     /**
-     * Alle Daten einer Serie: jeder {@code tag} im Gültigkeitszeitraum, ohne die Daten in einer Ausnahme
-     * (TER-05, TER-07). Aufsteigend sortiert.
+     * All dates of a series: every {@code day} of the week in the validity period, except the dates in a
+     * series exception (TER-05, TER-07). Sorted ascending.
      */
     public static List<LocalDate> dates(DayOfWeek day, LocalDate startDate, LocalDate endDate, Collection<Period> exceptions) {
         List<LocalDate> dates = new ArrayList<>();
@@ -185,26 +185,26 @@ public final class EventRules {
     }
 
     public static boolean inException(LocalDate day, Collection<Period> exceptions) {
-        return exceptions.stream().anyMatch(a -> a.contains(day));
+        return exceptions.stream().anyMatch(p -> p.contains(day));
     }
 
-    /** Zeitpunkt eines Serientermins in der Zeitzone der Fachlogik (Sommer- und Winterzeit richtig). */
+    /** Instant of a series event in the time zone of the domain logic (handles summer and winter time). */
     public static Instant instant(LocalDate day, LocalTime time) {
         return day.atTime(time).atZone(BackendClock.ZONE).toInstant();
     }
 
-    /** Neue Ausnahme: Termin ohne Antworten entfernen, mit Antworten absagen (TER-07, zustaende.md). */
+    /** New series exception: remove an event without responses, cancel one with responses (TER-07, docs/states.md). */
     public static Outcome onException(boolean hasResponses) {
         return hasResponses ? Outcome.CANCEL : Outcome.REMOVE;
     }
 
     /**
-     * Abgleich nach einer Änderung der Serie (TER-08). Betrachtet werden nur künftige Daten.
-     * Einzeln geänderte oder abgesagte Termine bleiben, wie sie sind (TER-06). Für ein Datum, das schon
-     * einen Termin hat (auch einen abgesagten), entsteht kein zweiter.
+     * Sync after a change of the series (TER-08). Only future dates are considered.
+     * Individually changed or cancelled events stay as they are (TER-06). A date that already has an event
+     * (even a cancelled one) does not get a second one.
      *
-     * @param bestehend künftige Termine der Serie nach ihrem Seriendatum
-     * @param soll      künftige Daten der geänderten Serie
+     * @param existing future events of the series by their series date
+     * @param target   future dates of the changed series
      */
     public static SuSync sync(Map<LocalDate, Existing> existing, Collection<LocalDate> target) {
         Set<LocalDate> targetDates = new TreeSet<>(target);
@@ -212,31 +212,31 @@ public final class EventRules {
         List<LocalDate> apply = new ArrayList<>();
         List<LocalDate> drop = new ArrayList<>();
         for (LocalDate d : targetDates) {
-            Existing b = existing.get(d);
-            if (b == null) {
+            Existing e = existing.get(d);
+            if (e == null) {
                 create.add(d);
-            } else if (b.planned() && !b.individuallyChanged()) {
+            } else if (e.planned() && !e.individuallyChanged()) {
                 apply.add(d);
             }
         }
         new TreeSet<>(existing.keySet()).forEach(d -> {
-            Existing b = existing.get(d);
-            if (!targetDates.contains(d) && b.planned() && !b.individuallyChanged()) {
+            Existing e = existing.get(d);
+            if (!targetDates.contains(d) && e.planned() && !e.individuallyChanged()) {
                 drop.add(d);
             }
         });
         return new SuSync(create, apply, drop);
     }
 
-    // ------------------------------------------------------------------ Anzeige
+    // ------------------------------------------------------------------ Display
 
-    /** Anzahl Spielerinnen pro Antwortstatus. Jede Spielerin zählt einmal, auch in mehreren Teams. */
-    public static CountsDto count(Collection<ResponseStatus> responsesThePlayers) {
+    /** Number of players per response status. Each player counts once, even if she is in several teams. */
+    public static CountsDto count(Collection<ResponseStatus> playerResponses) {
         int attending = 0;
         int declined = 0;
         int maybe = 0;
         int pending = 0;
-        for (ResponseStatus s : responsesThePlayers) {
+        for (ResponseStatus s : playerResponses) {
             switch (s) {
                 case ATTENDING -> attending++;
                 case DECLINED -> declined++;
@@ -247,7 +247,7 @@ public final class EventRules {
         return new CountsDto(attending, declined, maybe, pending);
     }
 
-    /** Kalendertag eines Zeitpunkts in der Zeitzone der Fachlogik. */
+    /** Calendar day of an instant in the time zone of the domain logic. */
     public static LocalDate date(Instant instant) {
         return instant.atZone(BackendClock.ZONE).toLocalDate();
     }

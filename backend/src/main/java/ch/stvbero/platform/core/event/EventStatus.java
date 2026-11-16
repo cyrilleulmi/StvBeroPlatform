@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.event;
 
-/** Gespeicherter Zustand eines Termins. «Vorbei» ergibt sich aus dem Ende und der Backend-Uhr. */
+/** Stored state of an event. Whether it is over follows from its end and the backend clock. */
 public enum EventStatus {
     PLANNED, CANCELLED
 }

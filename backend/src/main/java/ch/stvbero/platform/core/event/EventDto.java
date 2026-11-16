@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Termin mit allen Angaben (TER-04). Spiele, Stand des Aufgebots und eigener Aufgebotsstatus gibt es nur bei
- * Spieltagen (AUF-14, AUF-23, AUF-24).
+ * Event with all details (TER-04). Matches, call-up status and the caller's own call-up status exist only for
+ * match days (AUF-14, AUF-23, AUF-24).
  */
 @Schema(name = "Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)

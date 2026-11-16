@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/** Einzeltermin erfassen oder ändern (TER-04, TER-10, TER-11). */
+/** Create or change a single event (TER-04, TER-10, TER-11). */
 @Schema(name = "EventInput")
 public record EventInput(
         @NotNull EventType type,

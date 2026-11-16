@@ -5,10 +5,10 @@ import ch.stvbero.platform.core.error.DomainError;
 import java.time.Instant;
 import java.util.Objects;
 
-/** Fachregeln zu Spielen eines Spieltags (AUF-14, AUF-15, SUH-06). Ohne Datenbank. */
+/** Domain rules for the matches of a match day (AUF-14, AUF-15, SUH-06). No database. */
 public final class MatchRules {
 
-    /** Resultat Heim:Gast, z.B. «5:3». */
+    /** Result as home:away, e.g. «5:3». */
     public static final String RESULT_PATTERN = "^\\d{1,2}:\\d{1,2}$";
     public static final String RESULT_TEXT = "Resultat bitte als Heim:Gast, z.B. 5:3.";
     public static final String ON_MATCH_DAY = "Das Spiel muss am Tag des Spieltags stattfinden.";
@@ -21,7 +21,7 @@ public final class MatchRules {
     private MatchRules() {
     }
 
-    /** Spiele gibt es nur bei Spieltagen (AUF-01, AUF-14). */
+    /** Only match days have matches (AUF-01, AUF-14). */
     public static void checkMatchDay(EventType type) {
         if (type != EventType.MATCH_DAY) {
             throw DomainError.conflict("Kein Spieltag", ONLY_MATCH_DAY, "AUF-01");
@@ -29,53 +29,53 @@ public final class MatchRules {
     }
 
     /**
-     * Beim Ändern eines Spiels gilt die Tagesregel nur für eine neue Anspielzeit. Ein Resultat lässt sich damit
-     * immer erfassen (AUF-15), auch wenn ein früherer Stand die Regel nicht erfüllt.
+     * When a match is changed, the same-day rule only applies to a new start time. This way a result can always
+     * be entered (AUF-15), even if an earlier state does not meet the rule.
      */
-    public static void checkOnMatchDayWhenChanging(Instant startTimeOld, Instant startTimeNew, Instant startMatchDay) {
-        if (!startTimeOld.equals(startTimeNew)) {
-            checkOnMatchDay(startTimeNew, startMatchDay);
+    public static void checkOnMatchDayWhenChanging(Instant oldStartTime, Instant newStartTime, Instant matchDayStart) {
+        if (!oldStartTime.equals(newStartTime)) {
+            checkOnMatchDay(newStartTime, matchDayStart);
         }
     }
 
     /**
-     * Ein Spieltag mit Spielen aus swiss unihockey lässt sich nicht auf einen anderen Tag verschieben: Datum und
-     * Zeit der Spiele kommen von swiss unihockey (SUH-05, SUH-06), sie ziehen nicht mit (O-48). 422 beim Feld
-     * {@code beginn}.
+     * A match day with matches from swiss unihockey cannot be moved to another day: date and time of the
+     * matches come from swiss unihockey (SUH-05, SUH-06), they do not move along (O-48). 422 on the field
+     * {@code start}.
      */
-    public static void checkReschedulable(boolean hasImportedMatches, Instant startOld, Instant startNew) {
-        if (hasImportedMatches && !EventRules.date(startOld).equals(EventRules.date(startNew))) {
+    public static void checkReschedulable(boolean hasImportedMatches, Instant oldStart, Instant newStart) {
+        if (hasImportedMatches && !EventRules.date(oldStart).equals(EventRules.date(newStart))) {
             throw DomainError.ruleViolation("start", "Spiele von swiss unihockey", IMPORTED_RESCHEDULE, "SUH-05");
         }
     }
 
-    /** Ein Spieltag findet an einem Tag statt (AUF-01): Spiele liegen am Datum seines Beginns. */
-    public static void checkOnMatchDay(Instant startTime, Instant startMatchDay) {
-        if (!EventRules.date(startTime).equals(EventRules.date(startMatchDay))) {
+    /** A match day takes place on one day (AUF-01): its matches are on the date of its start. */
+    public static void checkOnMatchDay(Instant startTime, Instant matchDayStart) {
+        if (!EventRules.date(startTime).equals(EventRules.date(matchDayStart))) {
             throw DomainError.invalidField("startTime", ON_MATCH_DAY);
         }
     }
 
     /**
-     * Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409). Das
-     * Resultat lässt sich erfassen (AUF-15); der Abgleich kann es später überschreiben.
+     * For matches from swiss unihockey, opponent, start time and home/away are read-only (409). The result can
+     * be entered (AUF-15); the sync may overwrite it later.
      */
-    public static void checkChangeable(MatchSource source, String opponentOld, Instant startTimeOld, boolean homeOld,
-                                       String opponentNew, Instant startTimeNew, boolean homeNew) {
-        if (source == MatchSource.SWISS_UNIHOCKEY && (!Objects.equals(opponentOld, opponentNew)
-                || !startTimeOld.equals(startTimeNew) || homeOld != homeNew)) {
+    public static void checkChangeable(MatchSource source, String oldOpponent, Instant oldStartTime, boolean oldHome,
+                                       String newOpponent, Instant newStartTime, boolean newHome) {
+        if (source == MatchSource.SWISS_UNIHOCKEY && (!Objects.equals(oldOpponent, newOpponent)
+                || !oldStartTime.equals(newStartTime) || oldHome != newHome)) {
             throw DomainError.conflict("Importiertes Spiel", IMPORTED, "SUH-06");
         }
     }
 
-    /** Von Hand erfasste Spiele lassen sich löschen, importierte erst, wenn SU sie nicht mehr liefert (409). */
+    /** Matches created by hand can be deleted, imported ones only once SU no longer delivers them (409). */
     public static void checkDeletable(MatchSource source, boolean missingAtSu) {
         if (source == MatchSource.SWISS_UNIHOCKEY && !missingAtSu) {
             throw DomainError.conflict("Importiertes Spiel", NOT_DELETABLE, "SUH-06");
         }
     }
 
-    /** Ein abgesagter Spieltag nimmt keine Änderungen an Spielen an (409, TER-06). */
+    /** A cancelled match day accepts no changes to its matches (409, TER-06). */
     public static void checkNotCancelled(EventStatus status) {
         if (status == EventStatus.CANCELLED) {
             throw DomainError.conflict("Termin abgesagt", CANCELLED, "TER-06");

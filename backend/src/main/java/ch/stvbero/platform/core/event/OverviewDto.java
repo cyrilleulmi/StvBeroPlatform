@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Übersicht eines Termins (ANM-20 bis ANM-32): Teams nach Name, darin Linien, Goalies und «Ohne Linie»,
- * dazu der Coach-Block und die Zähler. Kommentare nur für Berechtigte (ANM-07).
+ * Overview of an event (ANM-20 to ANM-32): teams by name, each with lines, goalies and «Ohne Linie», plus the
+ * coach block and the counts. Comments only for those allowed to see them (ANM-07).
  */
 @Schema(name = "Overview")
 public record OverviewDto(UUID eventId, CountsDto total, List<TeamBlock> teams, List<CoachEntry> coaches) {

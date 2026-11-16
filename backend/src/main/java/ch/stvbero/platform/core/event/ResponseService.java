@@ -30,8 +30,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Antworten auf Termine (ANM): eigene Antwort, stellvertretende Antwort und die Übersicht nach Team und
- * Linie. Rechte nach RR-02, RR-03 und RR-06, durchgesetzt hier im Backend (RR-07).
+ * Responses to events (ANM): own response, response on behalf and the overview by team and line.
+ * Permissions according to RR-02, RR-03 and RR-06, enforced here in the backend (RR-07).
  */
 @ApplicationScoped
 public class ResponseService {
@@ -47,21 +47,21 @@ public class ResponseService {
     @Inject
     EventNotifications notifications;
 
-    /** Gespeicherte Antwort, wie sie in der Tabelle steht. */
+    /** Stored response, as it is in the table. */
     record Stored(ResponseStatus status, String comment, Instant changedAt, UUID enteredBy,
                        boolean lateCancellation) {
     }
 
-    // ------------------------------------------------------------------ Schreiben
+    // ------------------------------------------------------------------ Write
 
     /**
-     * Antwort setzen oder ändern (ANM-01 bis ANM-12). {@code personId == null} oder die eigene ID: für sich
-     * selbst, sonst stellvertretend (ANM-11, RR-06) mit «eingetragen von» (ANM-12).
+     * Set or change a response (ANM-01 to ANM-12). {@code personId == null} or the caller's own ID: for
+     * oneself, otherwise on behalf (ANM-11, RR-06) with «eingetragen von» (ANM-12).
      */
     @Transactional
     public ResponseDto set(CurrentUser user, UUID eventId, UUID personId, ResponseInput input) {
-        Event t = EventService.find(eventId);
-        List<TeamMembership> members = members(t);
+        Event event = EventService.find(eventId);
+        List<TeamMembership> members = members(event);
         Map<UUID, TeamRole> mine = teamRoles(members, user.personId());
         UUID respondent;
         UUID enteredBy;
@@ -73,24 +73,24 @@ public class ResponseService {
             EventRules.checkCanView(user.admin(), mine.values());
             Person.<Person>findByIdOptional(personId)
                     .orElseThrow(() -> DomainError.notFound("Diese Person gibt es nicht."));
-            Map<UUID, TeamRole> her = teamRoles(members, personId);
-            if (her.isEmpty() && (user.admin() || mine.containsValue(TeamRole.COACH))) {
+            Map<UUID, TeamRole> theirs = teamRoles(members, personId);
+            if (theirs.isEmpty() && (user.admin() || mine.containsValue(TeamRole.COACH))) {
                 throw DomainError.notFound("Diese Person gehört zu keinem Team dieses Termins.");
             }
-            ResponseRules.checkCanRespondOnBehalf(user.admin(), mine, her);
+            ResponseRules.checkCanRespondOnBehalf(user.admin(), mine, theirs);
             respondent = personId;
             enteredBy = user.personId();
         }
         Instant now = clock.now();
-        ResponseRules.checkOpenForResponses(t.status, t.end, now);
-        t.season.checkWritable();
-        ResponseStatus newValue = input.status().status();
-        ResponseRules.checkComment(newValue, input.comment());
+        ResponseRules.checkOpenForResponses(event.status, event.end, now);
+        event.season.checkWritable();
+        ResponseStatus newStatus = input.status().status();
+        ResponseRules.checkComment(newStatus, input.comment());
 
-        Stored previous = locked(t.id, respondent);
+        Stored previous = locked(event.id, respondent);
         boolean lateCancellation = ResponseRules.lateCancellation(
-                previous == null ? ResponseStatus.PENDING : previous.status(), previous != null && previous.lateCancellation(), newValue,
-                EventRules.responseDeadline(t.start, t.responseDeadlineHours), now);
+                previous == null ? ResponseStatus.PENDING : previous.status(), previous != null && previous.lateCancellation(), newStatus,
+                EventRules.responseDeadline(event.start, event.responseDeadlineHours), now);
         String comment = EventRules.blankToNull(input.comment());
         em.createNativeQuery("""
                         insert into response (event_id, person_id, status, comment, changed_at, entered_by, late_cancellation)
@@ -99,51 +99,51 @@ public class ResponseService {
                         set status = excluded.status, comment = excluded.comment, changed_at = excluded.changed_at,
                             entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation
                         """)
-                .setParameter(1, t.id).setParameter(2, respondent).setParameter(3, newValue.name()).setParameter(4, comment)
+                .setParameter(1, event.id).setParameter(2, respondent).setParameter(3, newStatus.name()).setParameter(4, comment)
                 .setParameter(5, now).setParameter(6, enteredBy).setParameter(7, lateCancellation)
                 .executeUpdate();
-        notifications.responseChanged(user, t, members, respondent,
-                previous == null ? ResponseStatus.PENDING : previous.status(), newValue, lateCancellation);
-        return new ResponseDto(newValue, comment, EventReader.time(now),
+        notifications.responseChanged(user, event, members, respondent,
+                previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation);
+        return new ResponseDto(newStatus, comment, EventReader.time(now),
                 enteredBy == null ? null : PersonSummary.of(Person.findById(enteredBy)), lateCancellation);
     }
 
-    // ------------------------------------------------------------------ Lesen
+    // ------------------------------------------------------------------ Read
 
-    /** Übersicht nach Team und Gruppe mit Coach-Block und Zählern (ANM-20 bis ANM-32). */
+    /** Overview by team and group with coach block and counts (ANM-20 to ANM-32). */
     public OverviewDto overview(CurrentUser user, UUID eventId) {
-        Event t = EventService.find(eventId);
-        List<TeamMembership> members = members(t);
+        Event event = EventService.find(eventId);
+        List<TeamMembership> members = members(event);
         Map<UUID, TeamRole> mine = teamRoles(members, user.personId());
         EventRules.checkCanView(user.admin(), mine.values());
 
-        Map<UUID, Stored> responses = responses(t.id);
+        Map<UUID, Stored> responses = responses(event.id);
         Map<UUID, PersonSummary> persons = new HashMap<>();
-        members.forEach(z -> persons.put(z.person.id, PersonSummary.of(z.person)));
+        members.forEach(m -> persons.put(m.person.id, PersonSummary.of(m.person)));
 
-        List<OverviewDto.TeamName> teams = teamNames(t);
+        List<OverviewDto.TeamName> teams = teamNames(event);
         List<OverviewDto.TeamBlock> blocks = new ArrayList<>();
         List<OverviewDto.CoachEntry> coaches = new ArrayList<>();
         Set<UUID> allPlayers = new LinkedHashSet<>();
         for (OverviewDto.TeamName team : teams) {
             boolean commentsVisible = ResponseRules.commentVisible(user.admin(), false, mine.get(team.id()));
-            List<TeamMembership> inTeam = members.stream().filter(z -> z.team.id.equals(team.id())).toList();
-            List<TeamMembership> players = inTeam.stream().filter(z -> z.teamRole == TeamRole.PLAYER).toList();
-            players.forEach(z -> allPlayers.add(z.person.id));
+            List<TeamMembership> inTeam = members.stream().filter(m -> m.team.id.equals(team.id())).toList();
+            List<TeamMembership> players = inTeam.stream().filter(m -> m.teamRole == TeamRole.PLAYER).toList();
+            players.forEach(m -> allPlayers.add(m.person.id));
 
             Map<UUID, List<OverviewDto.Entry>> perGroup = new LinkedHashMap<>();
             List<OverviewDto.Entry> noLine = new ArrayList<>();
-            for (TeamMembership z : players) {
-                OverviewDto.Entry entry = new OverviewDto.Entry(persons.get(z.person.id),
-                        response(responses.get(z.person.id), commentsVisible || z.person.id.equals(user.personId()), persons));
-                if (z.groups.isEmpty()) {
+            for (TeamMembership m : players) {
+                OverviewDto.Entry entry = new OverviewDto.Entry(persons.get(m.person.id),
+                        response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons));
+                if (m.groups.isEmpty()) {
                     noLine.add(entry);
                 } else {
-                    z.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(entry));
+                    m.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(entry));
                 }
             }
             List<OverviewDto.Group> groups = new ArrayList<>();
-            for (Group g : Group.of(Team.findById(team.id()), t.season)) {
+            for (Group g : Group.of(Team.findById(team.id()), event.season)) {
                 List<OverviewDto.Entry> entries = perGroup.get(g.id);
                 if (entries != null && !entries.isEmpty()) {
                     groups.add(new OverviewDto.Group(g.id, g.type == GroupType.GOALIES
@@ -153,44 +153,44 @@ public class ResponseService {
             if (!noLine.isEmpty()) {
                 groups.add(new OverviewDto.Group(null, OverviewDto.Type.NO_LINE, NO_LINE, sorted(noLine)));
             }
-            blocks.add(new OverviewDto.TeamBlock(team, counts(players.stream().map(z -> z.person.id).toList(), responses), groups));
+            blocks.add(new OverviewDto.TeamBlock(team, counts(players.stream().map(m -> m.person.id).toList(), responses), groups));
 
-            inTeam.stream().filter(z -> z.teamRole == TeamRole.COACH)
-                    .map(z -> new OverviewDto.CoachEntry(persons.get(z.person.id), team,
-                            response(responses.get(z.person.id), commentsVisible || z.person.id.equals(user.personId()), persons)))
+            inTeam.stream().filter(m -> m.teamRole == TeamRole.COACH)
+                    .map(m -> new OverviewDto.CoachEntry(persons.get(m.person.id), team,
+                            response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons)))
                     .sorted(Comparator.comparing(OverviewDto.CoachEntry::person, PersonSummary.ORDER))
                     .forEach(coaches::add);
         }
-        return new OverviewDto(t.id, counts(allPlayers, responses), blocks, coaches);
+        return new OverviewDto(event.id, counts(allPlayers, responses), blocks, coaches);
     }
 
-    // ------------------------------------------------------------------ Hilfen
+    // ------------------------------------------------------------------ Helpers
 
-    /** Mitglieder aller beteiligten Teams in der Saison des Termins, mit Person und Gruppen. */
-    List<TeamMembership> members(Event t) {
-        List<UUID> teams = t.teams.stream().map(team -> team.id).toList();
+    /** Members of all participating teams in the season of the event, with person and groups. */
+    List<TeamMembership> members(Event event) {
+        List<UUID> teams = event.teams.stream().map(team -> team.id).toList();
         if (teams.isEmpty()) {
             return List.of();
         }
         return em.createQuery("""
                         select distinct z from TeamMembership z join fetch z.person left join fetch z.groups
                         where z.season.id = :season and z.team.id in :teams""", TeamMembership.class)
-                .setParameter("season", t.season.id).setParameter("teams", teams).getResultList();
+                .setParameter("season", event.season.id).setParameter("teams", teams).getResultList();
     }
 
-    /** Funktion einer Person pro beteiligtem Team (leer: in keinem Team des Termins). */
+    /** Team role of a person per participating team (empty: in no team of the event). */
     private static Map<UUID, TeamRole> teamRoles(List<TeamMembership> members, UUID person) {
         Map<UUID, TeamRole> teamRoles = new HashMap<>();
-        members.stream().filter(z -> z.person.id.equals(person)).forEach(z -> teamRoles.put(z.team.id, z.teamRole));
+        members.stream().filter(m -> m.person.id.equals(person)).forEach(m -> teamRoles.put(m.team.id, m.teamRole));
         return teamRoles;
     }
 
-    /** Teams des Termins nach Name, mit dem Namen in der Saison des Termins (SAI-02). */
-    private static List<OverviewDto.TeamName> teamNames(Event t) {
+    /** Teams of the event by name, with the name in the season of the event (SAI-02). */
+    private static List<OverviewDto.TeamName> teamNames(Event event) {
         Map<UUID, String> names = new HashMap<>();
-        List<UUID> ids = t.teams.stream().map(team -> team.id).toList();
+        List<UUID> ids = event.teams.stream().map(team -> team.id).toList();
         if (!ids.isEmpty()) {
-            TeamSeason.<TeamSeason>list("season.id = ?1 and team.id in ?2", t.season.id, ids)
+            TeamSeason.<TeamSeason>list("season.id = ?1 and team.id in ?2", event.season.id, ids)
                     .forEach(ts -> names.put(ts.team.id, ts.name));
         }
         return ids.stream().map(id -> new OverviewDto.TeamName(id, names.getOrDefault(id, "")))
@@ -206,13 +206,13 @@ public class ResponseService {
                         from response where event_id = ?""")
                 .setParameter(1, eventId).getResultList();
         Map<UUID, Stored> responses = new HashMap<>();
-        for (Object[] z : rows) {
-            responses.put((UUID) z[0], stored(z, 1));
+        for (Object[] row : rows) {
+            responses.put((UUID) row[0], stored(row, 1));
         }
         return responses;
     }
 
-    /** Bisherige Antwort, für die Dauer der Transaktion gesperrt (gleichzeitige Wechsel, ANM-10). */
+    /** Previous response, locked for the duration of the transaction (concurrent changes, ANM-10). */
     private Stored locked(UUID eventId, UUID personId) {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
@@ -222,23 +222,23 @@ public class ResponseService {
         return rows.isEmpty() ? null : stored(rows.get(0), 1);
     }
 
-    private static Stored stored(Object[] z, int from) {
-        return new Stored(ResponseStatus.valueOf((String) z[from]), (String) z[from + 1], instant(z[from + 2]),
-                (UUID) z[from + 3], Boolean.TRUE.equals(z[from + 4]));
+    private static Stored stored(Object[] row, int offset) {
+        return new Stored(ResponseStatus.valueOf((String) row[offset]), (String) row[offset + 1], instant(row[offset + 2]),
+                (UUID) row[offset + 3], Boolean.TRUE.equals(row[offset + 4]));
     }
 
-    /** Antwort für die Anzeige. Ohne Berechtigung fehlt der Kommentar (ANM-07). */
-    static ResponseDto response(Stored a, boolean withComment, Map<UUID, PersonSummary> persons) {
-        if (a == null) {
+    /** Response for display. Without permission the comment is left out (ANM-07). */
+    static ResponseDto response(Stored stored, boolean withComment, Map<UUID, PersonSummary> persons) {
+        if (stored == null) {
             return ResponseDto.PENDING;
         }
-        PersonSummary startDate = null;
-        if (a.enteredBy() != null) {
-            startDate = persons.computeIfAbsent(a.enteredBy(),
+        PersonSummary enteredBy = null;
+        if (stored.enteredBy() != null) {
+            enteredBy = persons.computeIfAbsent(stored.enteredBy(),
                     id -> Person.<Person>findByIdOptional(id).map(PersonSummary::of).orElse(null));
         }
-        return new ResponseDto(a.status(), withComment ? a.comment() : null, EventReader.time(a.changedAt()),
-                startDate, a.lateCancellation());
+        return new ResponseDto(stored.status(), withComment ? stored.comment() : null, EventReader.time(stored.changedAt()),
+                enteredBy, stored.lateCancellation());
     }
 
     private static List<OverviewDto.Entry> sorted(List<OverviewDto.Entry> entries) {

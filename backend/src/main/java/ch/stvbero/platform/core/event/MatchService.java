@@ -11,8 +11,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Spiele eines Spieltags von Hand erfassen, ändern (z.B. Resultat) und löschen (AUF-14 bis AUF-16).
- * Nur Coaches des Teams und Admins (TER-11, RR-06).
+ * Create, change (e.g. the result) and delete the matches of a match day by hand (AUF-14 to AUF-16).
+ * Only coaches of the team and admins (TER-11, RR-06).
  */
 @ApplicationScoped
 public class MatchService {
@@ -22,62 +22,62 @@ public class MatchService {
 
     @Transactional
     public MatchDto add(CurrentUser user, UUID eventId, MatchInput input) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        MatchRules.checkMatchDay(t.type);
-        EventRules.checkChangeable(t.status, t.end, clock.now());
-        t.season.checkWritable();
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        MatchRules.checkMatchDay(event.type);
+        EventRules.checkChangeable(event.status, event.end, clock.now());
+        event.season.checkWritable();
         Instant startTime = input.startTime().toInstant();
-        MatchRules.checkOnMatchDay(startTime, t.start);
-        Match s = Match.create(t);
-        apply(s, input);
-        s.persist();
-        return s.dto();
+        MatchRules.checkOnMatchDay(startTime, event.start);
+        Match match = Match.create(event);
+        apply(match, input);
+        match.persist();
+        return match.dto();
     }
 
     /**
-     * Spiel ändern. Das Resultat lässt sich auch nach dem Spieltag erfassen (AUF-15), deshalb gilt hier nur
-     * «nicht abgesagt». Bei importierten Spielen sind Gegner, Anspielzeit und Heim/Auswärts geschützt.
+     * Change a match. The result can also be entered after the match day (AUF-15), so the only check here is
+     * "not cancelled". For imported matches, opponent, start time and home/away are protected.
      */
     @Transactional
     public MatchDto update(CurrentUser user, UUID eventId, UUID matchId, MatchInput input) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        Match s = find(t, matchId);
-        MatchRules.checkNotCancelled(t.status);
-        t.season.checkWritable();
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        Match match = find(event, matchId);
+        MatchRules.checkNotCancelled(event.status);
+        event.season.checkWritable();
         Instant startTime = input.startTime().toInstant();
-        MatchRules.checkChangeable(s.source, s.opponent, s.startTime, s.home,
+        MatchRules.checkChangeable(match.source, match.opponent, match.startTime, match.home,
                 input.opponent().strip(), startTime, input.home());
-        MatchRules.checkOnMatchDayWhenChanging(s.startTime, startTime, t.start);
-        apply(s, input);
-        return s.dto();
+        MatchRules.checkOnMatchDayWhenChanging(match.startTime, startTime, event.start);
+        apply(match, input);
+        return match.dto();
     }
 
     @Transactional
     public void delete(CurrentUser user, UUID eventId, UUID matchId) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        Match s = find(t, matchId);
-        EventRules.checkChangeable(t.status, t.end, clock.now());
-        t.season.checkWritable();
-        MatchRules.checkDeletable(s.source, s.missingAtSu);
-        s.delete();
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        Match match = find(event, matchId);
+        EventRules.checkChangeable(event.status, event.end, clock.now());
+        event.season.checkWritable();
+        MatchRules.checkDeletable(match.source, match.missingAtSu);
+        match.delete();
     }
 
-    private static void checkCanEdit(CurrentUser user, Event t) {
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, t.teams, t.season));
+    private static void checkCanEdit(CurrentUser user, Event event) {
+        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, event.teams, event.season));
     }
 
-    private static Match find(Event t, UUID matchId) {
-        return Match.<Match>findByIdOptional(matchId).filter(s -> s.event.id.equals(t.id))
+    private static Match find(Event event, UUID matchId) {
+        return Match.<Match>findByIdOptional(matchId).filter(match -> match.event.id.equals(event.id))
                 .orElseThrow(() -> DomainError.notFound("Dieses Spiel gibt es nicht."));
     }
 
-    private static void apply(Match s, MatchInput e) {
-        s.opponent = e.opponent().strip();
-        s.startTime = e.startTime().toInstant();
-        s.home = e.home();
-        s.result = EventRules.blankToNull(e.result());
+    private static void apply(Match match, MatchInput input) {
+        match.opponent = input.opponent().strip();
+        match.startTime = input.startTime().toInstant();
+        match.home = input.home();
+        match.result = EventRules.blankToNull(input.result());
     }
 }

@@ -22,8 +22,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Etwas, wofür man sich an- oder abmeldet (TER-02). Gehört zu einem oder mehreren Teams (TER-01, TER-03)
- * und zur Saison, in die sein Datum fällt. Gespeichert wird nur GEPLANT oder ABGESAGT.
+ * Something people respond to (TER-02). Belongs to one or more teams (TER-01, TER-03) and to the season its
+ * date falls into. Only PLANNED or CANCELLED is stored.
  */
 @Entity
 @Table(name = "event")
@@ -73,11 +73,11 @@ public class Event extends PanacheEntityBase {
     @JoinColumn(name = "series_id")
     public Series series;
 
-    /** Datum in der Serie, das diesen Termin erzeugt hat. Bleibt beim Verschieben gleich. */
+    /** Date in the series that created this event. Stays the same when the event is rescheduled. */
     @Column(name = "series_date")
     public LocalDate seriesDate;
 
-    /** Einzeln geändert: Änderungen an der Serie gelten für diesen Termin nicht mehr (TER-06). */
+    /** Individually changed: changes to the series no longer apply to this event (TER-06). */
     @Column(name = "individually_changed")
     public boolean individuallyChanged;
 
@@ -88,9 +88,9 @@ public class Event extends PanacheEntityBase {
     public Set<Team> teams = new LinkedHashSet<>();
 
     public static Event create() {
-        Event t = new Event();
-        t.id = UUID.randomUUID();
-        return t;
+        Event event = new Event();
+        event.id = UUID.randomUUID();
+        return event;
     }
 
     public boolean isOver(Instant now) {

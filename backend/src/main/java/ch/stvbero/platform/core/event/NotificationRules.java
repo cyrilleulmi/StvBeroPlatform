@@ -12,28 +12,27 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Wann wer benachrichtigt wird (BEN-01 bis BEN-07, BEN-13) und mit welchem Text. Reine Fachlogik ohne
- * Datenbank; die Auslöser in den Services wenden sie an.
+ * When who is notified (BEN-01 to BEN-07, BEN-13) and with which text. Pure domain logic without a database;
+ * the triggers in the services apply it.
  */
 public final class NotificationRules {
 
-    /** Die Erinnerung geht 12 Stunden vor der Antwortfrist raus (Annahme O-18). */
+    /** The reminder goes out 12 hours before the response deadline (assumption O-18). */
     public static final Duration REMINDER_BEFORE_DEADLINE = Duration.ofHours(12);
 
     private static final String[] WEEKDAYS = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
-    private static final DateTimeFormatter TAG = DateTimeFormatter.ofPattern("dd.MM.");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd.MM.");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     private NotificationRules() {
     }
 
-    // ------------------------------------------------------------------ Wann
+    // ------------------------------------------------------------------ When
 
     /**
-     * Erinnerung fällig (BEN-01): Der Termin ist geplant und «jetzt» liegt im Fenster ab 12 Stunden vor der
-     * Antwortfrist bis zur Frist. Danach nicht mehr: Wer nach der Frist noch nicht geantwortet hat, wird
-     * nicht nachträglich erinnert. Dass es pro Person nur eine gibt (BEN-13), stellt die Tabelle
-     * {@code erinnerung} sicher.
+     * Reminder due (BEN-01): the event is planned and "now" lies in the window from 12 hours before the
+     * response deadline up to the deadline. Not afterwards: whoever has not responded by the deadline is not
+     * reminded later. The table {@code reminder} makes sure there is only one per person (BEN-13).
      */
     public static boolean reminderDue(EventStatus status, Instant start, int deadlineHours, Instant now) {
         if (status != EventStatus.PLANNED) {
@@ -44,49 +43,50 @@ public final class NotificationRules {
     }
 
     /**
-     * Kurzfristige Absage (BEN-02, ANM-10): der Wechsel weg von «dabei» nach der Frist. Nur dieser Wechsel
-     * benachrichtigt; bleibt die Antwort danach kurzfristig (z.B. von «vielleicht» auf «nicht dabei»), nicht
-     * nochmals.
+     * Late cancellation (BEN-02, ANM-10): the change away from «dabei» after the deadline. Only this change
+     * notifies; if the response stays a late cancellation afterwards (e.g. from «vielleicht» to «nicht dabei»),
+     * there is no second notification.
      */
-    public static boolean lateCancellationNotice(ResponseStatus previous, ResponseStatus added, boolean lateCancellation) {
-        return lateCancellation && previous == ResponseStatus.ATTENDING && added != ResponseStatus.ATTENDING;
+    public static boolean lateCancellationNotice(ResponseStatus previousStatus, ResponseStatus newStatus,
+                                                 boolean lateCancellation) {
+        return lateCancellation && previousStatus == ResponseStatus.ATTENDING && newStatus != ResponseStatus.ATTENDING;
     }
 
     /**
-     * Eine aufgebotene Spielerin meldet sich ab (BEN-04, AUF-26), auch vor der Frist: Nach der Veröffentlichung
-     * wechselt sie von «dabei» oder «offen» auf «nicht dabei» oder «vielleicht», oder von «vielleicht» auf
-     * «nicht dabei». Ein Entwurf zählt nicht, den sehen die Spielerinnen nicht (AUF-23).
+     * A called-up player declines (BEN-04, AUF-26), also before the deadline: after publication she changes
+     * from «dabei» or «offen» to «nicht dabei» or «vielleicht», or from «vielleicht» to «nicht dabei». A draft
+     * does not count, because players do not see it (AUF-23).
      */
-    public static boolean calledUpPlayerDeclined(boolean calledUp, boolean published, ResponseStatus previous,
-                                               ResponseStatus added) {
-        if (!calledUp || !published || previous == added) {
+    public static boolean calledUpPlayerDeclined(boolean calledUp, boolean published, ResponseStatus previousStatus,
+                                                 ResponseStatus newStatus) {
+        if (!calledUp || !published || previousStatus == newStatus) {
             return false;
         }
-        return switch (added) {
+        return switch (newStatus) {
             case DECLINED -> true;
-            case MAYBE -> previous == ResponseStatus.ATTENDING || previous == ResponseStatus.PENDING;
+            case MAYBE -> previousStatus == ResponseStatus.ATTENDING || previousStatus == ResponseStatus.PENDING;
             case ATTENDING, PENDING -> false;
         };
     }
 
-    /** Eine andere Beginnzeit ist eine Verschiebung (BEN-07, TER-06). */
+    /** A different start time is a rescheduling (BEN-07, TER-06). */
     public static boolean rescheduled(Instant oldStart, Instant newStart) {
         return !oldStart.equals(newStart);
     }
 
-    // ------------------------------------------------------------------ Wer
+    // ------------------------------------------------------------------ Who
 
     /**
-     * Wer etwas auslöst, wird darüber nicht benachrichtigt (Annahme F-06): Die Coach, die einen Termin absagt,
-     * oder die Spielerin, die sich abmeldet, weiss es schon. Reihenfolge bleibt, Doppelte fallen weg.
+     * Whoever triggers something is not notified about it (assumption F-06): the coach who cancels an event or
+     * the player who declines already knows. The order stays, duplicates are removed.
      */
-    public static Set<UUID> withoutTrigger(Collection<UUID> recipient, UUID trigger) {
-        Set<UUID> result = new LinkedHashSet<>(recipient);
+    public static Set<UUID> withoutTrigger(Collection<UUID> recipients, UUID trigger) {
+        Set<UUID> result = new LinkedHashSet<>(recipients);
         result.remove(trigger);
         return result;
     }
 
-    /** Neu aufgebotene und nicht mehr aufgebotene Spielerinnen bei einer Änderung (BEN-05). */
+    /** Newly called-up players and players no longer called up after a change (BEN-05). */
     public record Change(Set<UUID> added, Set<UUID> removed) {
     }
 
@@ -98,32 +98,32 @@ public final class NotificationRules {
         return new Change(added, removed);
     }
 
-    // ------------------------------------------------------------------ Texte
+    // ------------------------------------------------------------------ Texts
 
     /** «Training Di 17.11.» */
     public static String label(String title, Instant start) {
-        ZonedDateTime z = start.atZone(BackendClock.ZONE);
-        return title + " " + WEEKDAYS[z.getDayOfWeek().getValue() - 1] + " " + TAG.format(z);
+        ZonedDateTime zoned = start.atZone(BackendClock.ZONE);
+        return title + " " + WEEKDAYS[zoned.getDayOfWeek().getValue() - 1] + " " + DAY.format(zoned);
     }
 
     /** «Mo 16.11. 18:30» */
     static String instant(Instant instant) {
-        ZonedDateTime z = instant.atZone(BackendClock.ZONE);
-        return WEEKDAYS[z.getDayOfWeek().getValue() - 1] + " " + TAG.format(z) + " " + TIME.format(z);
+        ZonedDateTime zoned = instant.atZone(BackendClock.ZONE);
+        return WEEKDAYS[zoned.getDayOfWeek().getValue() - 1] + " " + DAY.format(zoned) + " " + TIME.format(zoned);
     }
 
     public static String reminderText(String event, Instant deadline) {
         return "Erinnerung: Bitte gib bis " + instant(deadline) + " Bescheid, ob du bei " + event + " dabei bist.";
     }
 
-    public static String lateCancellationText(String person, String event, ResponseStatus added) {
-        return added == ResponseStatus.MAYBE
+    public static String lateCancellationText(String person, String event, ResponseStatus newStatus) {
+        return newStatus == ResponseStatus.MAYBE
                 ? person + " ist bei " + event + " kurzfristig nur noch «vielleicht» dabei."
                 : person + " hat sich kurzfristig für " + event + " abgemeldet.";
     }
 
-    public static String calledUpDeclinedText(String person, String event, ResponseStatus added) {
-        return added == ResponseStatus.MAYBE
+    public static String calledUpDeclinedText(String person, String event, ResponseStatus newStatus) {
+        return newStatus == ResponseStatus.MAYBE
                 ? person + " ist für " + event + " aufgeboten und jetzt nur «vielleicht» dabei."
                 : person + " ist für " + event + " aufgeboten und hat sich abgemeldet.";
     }

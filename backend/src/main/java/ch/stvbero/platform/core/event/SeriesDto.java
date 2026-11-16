@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Serie mit ihren Ausnahmen (TER-05, TER-07) und allen Teams mit Namen (TER-11). */
+/** Series with its exceptions (TER-05, TER-07) and all teams with their names (TER-11). */
 @Schema(name = "Series")
 public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamIds, List<TeamDto> teams,
                        Weekday weekday, String startTime, String endTime, LocalDate validFrom,
@@ -24,11 +24,14 @@ public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamI
         return new SeriesDto(s.id, s.type, s.title, s.teams.stream().map(t -> t.id).sorted().toList(), teams(s, user),
                 s.weekday, EventRules.time(s.startTime), EventRules.time(s.endTime), s.validFrom,
                 s.validUntil, s.location == null ? null : s.location.dto(), s.responseDeadlineHours,
-                s.exceptions.stream().sorted(Comparator.comparing((SeriesException a) -> a.startDate).thenComparing(a -> a.endDate))
-                        .map(a -> new SeriesExceptionDto(a.startDate, a.endDate, a.reason)).toList());
+                s.exceptions.stream().sorted(Comparator.comparing((SeriesException e) -> e.startDate).thenComparing(e -> e.endDate))
+                        .map(e -> new SeriesExceptionDto(e.startDate, e.endDate, e.reason)).toList());
     }
 
-    /** Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (SAI-02) und der eigenen Funktion. */
+    /**
+     * All teams of the series by name, with the name in the season of the series (SAI-02) and the caller's own
+     * team role.
+     */
     private static List<TeamDto> teams(Series s, CurrentUser user) {
         List<UUID> ids = s.teams.stream().map(t -> t.id).toList();
         if (ids.isEmpty()) {
@@ -36,7 +39,7 @@ public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamI
         }
         Map<UUID, TeamRole> mine = new HashMap<>();
         TeamMembership.<TeamMembership>list("person.id = ?1 and season.id = ?2 and team.id in ?3",
-                user.personId(), s.season.id, ids).forEach(z -> mine.putIfAbsent(z.team.id, z.teamRole));
+                user.personId(), s.season.id, ids).forEach(m -> mine.putIfAbsent(m.team.id, m.teamRole));
         return TeamSeason.<TeamSeason>list("season.id = ?1 and team.id in ?2", s.season.id, ids).stream()
                 .map(ts -> TeamDto.of(ts, mine.get(ts.team.id)))
                 .sorted(Comparator.comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id))

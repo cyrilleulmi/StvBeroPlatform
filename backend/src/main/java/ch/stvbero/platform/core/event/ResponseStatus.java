@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.event;
 
-/** Antwort einer Person auf einen Termin. Ohne Antwort ist der Status OFFEN (ANM). */
+/** Response of a person to an event. Without a response the status is PENDING (ANM). */
 public enum ResponseStatus {
     PENDING, ATTENDING, DECLINED, MAYBE
 }

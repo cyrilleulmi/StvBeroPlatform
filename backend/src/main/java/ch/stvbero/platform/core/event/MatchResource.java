@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.UUID;
 
-/** Spiele und Aufgebot eines Spieltags (AUF). */
+/** Matches and call-up of a match day (AUF). */
 @Path("/api/events/{eventId}")
 @Tag(name = "MatchDays")
 public class MatchResource {

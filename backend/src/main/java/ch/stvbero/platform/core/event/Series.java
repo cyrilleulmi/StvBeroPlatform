@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** Regel, die wiederkehrende Termine erzeugt, z.B. «jeden Dienstag 18:30» (TER-05). */
+/** Rule that creates recurring events, e.g. «jeden Dienstag 18:30» (TER-05). */
 @Entity
 @Table(name = "series")
 public class Series extends PanacheEntityBase {
@@ -73,6 +73,6 @@ public class Series extends PanacheEntityBase {
     public List<SeriesException> exceptions = new ArrayList<>();
 
     public List<EventRules.Period> exceptionPeriods() {
-        return exceptions.stream().map(a -> new EventRules.Period(a.startDate, a.endDate)).toList();
+        return exceptions.stream().map(e -> new EventRules.Period(e.startDate, e.endDate)).toList();
     }
 }

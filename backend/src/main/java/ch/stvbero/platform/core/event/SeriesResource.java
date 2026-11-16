@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.UUID;
 
-/** Serien (TER-05, TER-07, TER-08). */
+/** Series (TER-05, TER-07, TER-08). */
 @Path("/api/series")
 @Tag(name = "Events")
 public class SeriesResource {

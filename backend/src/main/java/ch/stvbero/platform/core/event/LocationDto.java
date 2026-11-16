@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-/** Ort mit optionalem Google-Maps-Link (AUF-10), der mit https:// beginnen muss. */
+/** Location with an optional Google Maps link (AUF-10) that must start with https://. */
 @Schema(name = "Location")
 public record LocationDto(
         @NotBlank @Size(max = 120) String name,

@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.event;
 
-/** Antworten, die eine Person geben kann. «Offen» ist keine Antwort, sondern das Fehlen einer (ANM-03, ANM-06). */
+/** Responses a person can give. PENDING is not a response but the absence of one (ANM-03, ANM-06). */
 public enum ResponseChoice {
     ATTENDING, DECLINED, MAYBE;
 

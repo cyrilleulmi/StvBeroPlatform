@@ -18,9 +18,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Auslöser der Benachrichtigungen rund um Termine, Antworten und Aufgebote (BEN-02 bis BEN-05, BEN-07).
- * Bestimmt Empfänger und Text nach {@link BenachrichtigungsRegeln} und versendet in der Transaktion der
- * Änderung über {@link Benachrichtigungen}.
+ * Triggers the notifications about events, responses and call-ups (BEN-02 to BEN-05, BEN-07). Determines
+ * recipients and text according to {@link NotificationRules} and sends them through {@link Notifications}
+ * in the transaction of the change.
  */
 @ApplicationScoped
 public class EventNotifications {
@@ -29,79 +29,80 @@ public class EventNotifications {
     Notifications notifications;
 
     /**
-     * Nach einer gespeicherten Antwort: Abmeldung einer Aufgebotenen (BEN-04) oder kurzfristige Absage
-     * (BEN-02) an die Coaches der Teams, in denen die Person beim Termin Spielerin ist (O-17). Trifft beides
-     * zu, geht nur die Abmeldung der Aufgebotenen raus.
+     * After a saved response: a called-up player declining (BEN-04) or a late cancellation (BEN-02) goes to
+     * the coaches of the teams in which the person is a player for this event (O-17). If both apply, only the
+     * notice about the called-up player is sent.
      */
-    void responseChanged(CurrentUser user, Event t, List<TeamMembership> members, UUID personId,
-                          ResponseStatus previous, ResponseStatus newValue, boolean lateCancellation) {
-        CallUp a = t.type == EventType.MATCH_DAY ? CallUp.findById(t.id) : null;
-        boolean calledUp = a != null && a.personIds.contains(personId);
+    void responseChanged(CurrentUser user, Event event, List<TeamMembership> members, UUID personId,
+                          ResponseStatus previousStatus, ResponseStatus newStatus, boolean lateCancellation) {
+        CallUp callUp = event.type == EventType.MATCH_DAY ? CallUp.findById(event.id) : null;
+        boolean calledUp = callUp != null && callUp.personIds.contains(personId);
         NotificationType type;
-        if (NotificationRules.calledUpPlayerDeclined(calledUp, a != null && a.publishedAt != null, previous, newValue)) {
+        boolean published = callUp != null && callUp.publishedAt != null;
+        if (NotificationRules.calledUpPlayerDeclined(calledUp, published, previousStatus, newStatus)) {
             type = NotificationType.CALLED_UP_PLAYER_DECLINED;
-        } else if (NotificationRules.lateCancellationNotice(previous, newValue, lateCancellation)) {
+        } else if (NotificationRules.lateCancellationNotice(previousStatus, newStatus, lateCancellation)) {
             type = NotificationType.LATE_CANCELLATION;
         } else {
             return;
         }
         Set<UUID> teams = new LinkedHashSet<>();
-        members.stream().filter(z -> z.person.id.equals(personId) && z.teamRole == TeamRole.PLAYER)
-                .forEach(z -> teams.add(z.team.id));
+        members.stream().filter(m -> m.person.id.equals(personId) && m.teamRole == TeamRole.PLAYER)
+                .forEach(m -> teams.add(m.team.id));
         List<UUID> coaches = members.stream()
-                .filter(z -> z.teamRole == TeamRole.COACH && teams.contains(z.team.id))
-                .map(z -> z.person.id).toList();
-        Set<UUID> recipient = NotificationRules.withoutTrigger(coaches, user.personId());
-        recipient.remove(personId);
+                .filter(m -> m.teamRole == TeamRole.COACH && teams.contains(m.team.id))
+                .map(m -> m.person.id).toList();
+        Set<UUID> recipients = NotificationRules.withoutTrigger(coaches, user.personId());
+        recipients.remove(personId);
         String person = name(personId);
-        String event = label(t);
+        String eventLabel = label(event);
         String text = type == NotificationType.CALLED_UP_PLAYER_DECLINED
-                ? NotificationRules.calledUpDeclinedText(person, event, newValue)
-                : NotificationRules.lateCancellationText(person, event, newValue);
-        send(recipient, p -> new Message(type, p, t.id, text));
+                ? NotificationRules.calledUpDeclinedText(person, eventLabel, newStatus)
+                : NotificationRules.lateCancellationText(person, eventLabel, newStatus);
+        send(recipients, p -> new Message(type, p, event.id, text));
     }
 
-    /** Aufgebot veröffentlicht: alle Spielerinnen des Teams, je mit «aufgeboten» oder «nicht aufgeboten» (BEN-03). */
-    void published(CurrentUser user, Event t, Collection<UUID> players, Set<UUID> calledUp) {
-        String event = label(t);
+    /** Call-up published: all players of the team, each with «aufgeboten» or «nicht aufgeboten» (BEN-03). */
+    void published(CurrentUser user, Event event, Collection<UUID> players, Set<UUID> calledUp) {
+        String eventLabel = label(event);
         send(NotificationRules.withoutTrigger(players, user.personId()),
-                p -> new Message(NotificationType.CALL_UP_PUBLISHED, p, t.id,
-                        NotificationRules.publishedText(event, calledUp.contains(p))));
+                p -> new Message(NotificationType.CALL_UP_PUBLISHED, p, event.id,
+                        NotificationRules.publishedText(eventLabel, calledUp.contains(p))));
     }
 
-    /** Veröffentlichtes Aufgebot geändert: nur wer neu dazukommt oder herausfällt (BEN-05, AUF-27). */
-    void callUpChanged(CurrentUser user, Event t, Set<UUID> previous, Set<UUID> now) {
+    /** Published call-up changed: only those who are added or removed (BEN-05, AUF-27). */
+    void callUpChanged(CurrentUser user, Event event, Set<UUID> previous, Set<UUID> now) {
         NotificationRules.Change change = NotificationRules.callUpChanged(previous, now);
         Set<UUID> affected = new LinkedHashSet<>(change.added());
         affected.addAll(change.removed());
-        String event = label(t);
+        String eventLabel = label(event);
         send(NotificationRules.withoutTrigger(affected, user.personId()),
-                p -> new Message(NotificationType.CALL_UP_CHANGED, p, t.id,
-                        NotificationRules.callUpChangedText(event, change.added().contains(p))));
+                p -> new Message(NotificationType.CALL_UP_CHANGED, p, event.id,
+                        NotificationRules.callUpChangedText(eventLabel, change.added().contains(p))));
     }
 
-    /** Termin abgesagt: alle Mitglieder der beteiligten Teams (BEN-07, TER-12). */
-    void cancelled(CurrentUser user, Event t) {
-        String text = NotificationRules.cancelledText(label(t), t.cancellationReason);
-        send(NotificationRules.withoutTrigger(members(t), user.personId()),
-                p -> new Message(NotificationType.EVENT_CANCELLED, p, t.id, text));
+    /** Event cancelled: all members of the participating teams (BEN-07, TER-12). */
+    void cancelled(CurrentUser user, Event event) {
+        String text = NotificationRules.cancelledText(label(event), event.cancellationReason);
+        send(NotificationRules.withoutTrigger(members(event), user.personId()),
+                p -> new Message(NotificationType.EVENT_CANCELLED, p, event.id, text));
     }
 
     /**
-     * Termin verschoben: alle Mitglieder der beteiligten Teams (BEN-07, TER-12), vor und nach der Änderung,
-     * damit auch ein entferntes Team davon erfährt. Bezeichnung mit dem bisherigen Datum.
+     * Event rescheduled: all members of the participating teams (BEN-07, TER-12), before and after the change,
+     * so that a removed team learns about it as well. The label uses the previous date.
      */
-    void rescheduled(CurrentUser user, Event t, String oldLabel, Collection<UUID> previousMembers) {
+    void rescheduled(CurrentUser user, Event event, String oldLabel, Collection<UUID> previousMembers) {
         Set<UUID> all = new LinkedHashSet<>(previousMembers);
-        all.addAll(members(t));
-        String text = NotificationRules.rescheduledText(oldLabel, t.start);
+        all.addAll(members(event));
+        String text = NotificationRules.rescheduledText(oldLabel, event.start);
         send(NotificationRules.withoutTrigger(all, user.personId()),
-                p -> new Message(NotificationType.EVENT_RESCHEDULED, p, t.id, text));
+                p -> new Message(NotificationType.EVENT_RESCHEDULED, p, event.id, text));
     }
 
-    /** Alle Mitglieder (jede Funktion) der beteiligten Teams in der Saison des Termins, nach Name. */
-    public static List<UUID> members(Event t) {
-        List<UUID> teams = t.teams.stream().map(team -> team.id).toList();
+    /** All members (any team role) of the participating teams in the season of the event, by name. */
+    public static List<UUID> members(Event event) {
+        List<UUID> teams = event.teams.stream().map(team -> team.id).toList();
         if (teams.isEmpty()) {
             return List.of();
         }
@@ -109,22 +110,22 @@ public class EventNotifications {
                         select distinct z.person.id, z.person.lastName, z.person.firstName from TeamMembership z
                         where z.season.id = :season and z.team.id in :teams
                         order by z.person.lastName, z.person.firstName, z.person.id""", Object[].class)
-                .setParameter("season", t.season.id).setParameter("teams", teams).getResultList()
-                .stream().map(z -> (UUID) z[0]).toList();
+                .setParameter("season", event.season.id).setParameter("teams", teams).getResultList()
+                .stream().map(row -> (UUID) row[0]).toList();
     }
 
-    static String label(Event t) {
-        return NotificationRules.label(t.title, t.start);
+    static String label(Event event) {
+        return NotificationRules.label(event.title, event.start);
     }
 
     private static String name(UUID personId) {
-        Person p = Person.findById(personId);
-        return p.firstName + " " + p.lastName;
+        Person person = Person.findById(personId);
+        return person.firstName + " " + person.lastName;
     }
 
-    private void send(Collection<UUID> recipient, java.util.function.Function<UUID, Message> message) {
+    private void send(Collection<UUID> recipients, java.util.function.Function<UUID, Message> message) {
         List<Message> messages = new ArrayList<>();
-        recipient.forEach(p -> messages.add(message.apply(p)));
+        recipients.forEach(p -> messages.add(message.apply(p)));
         notifications.send(messages);
     }
 }

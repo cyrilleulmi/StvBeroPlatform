@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Aufgebot eines Spieltags (AUF-21 bis AUF-28): Auswahl nach Linien mit Antwortstatus, speichern und
- * veröffentlichen. Nur Coaches des Teams und Admins (RR-03), durchgesetzt hier im Backend (RR-07).
+ * Call-up of a match day (AUF-21 to AUF-28): selection by line with response status, save and publish.
+ * Only coaches of the team and admins (RR-03), enforced here in the backend (RR-07).
  */
 @ApplicationScoped
 public class CallUpService {
@@ -44,99 +44,99 @@ public class CallUpService {
     EventNotifications notifications;
 
     public CallUpDto get(CurrentUser user, UUID eventId) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        CallUpRules.checkMatchDay(t.type);
-        return dto(t, CallUp.findById(t.id));
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        CallUpRules.checkMatchDay(event.type);
+        return dto(event, CallUp.findById(event.id));
     }
 
     /**
-     * Auswahl speichern (AUF-21, AUF-22). Jede Spielerin des Teams lässt sich aufbieten, unabhängig von
-     * ihrer Antwort; Coaches nicht (AUF-28). Ist das Aufgebot veröffentlicht, bleibt es das, und wer neu
-     * dazukommt oder herausfällt, wird benachrichtigt (AUF-27, BEN-05).
+     * Save the selection (AUF-21, AUF-22). Every player of the team can be called up, regardless of her
+     * response; coaches cannot (AUF-28). If the call-up is published, it stays published, and whoever is
+     * added or removed is notified (AUF-27, BEN-05).
      */
     @Transactional
     public CallUpDto set(CurrentUser user, UUID eventId, CallUpInput input) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        CallUpRules.checkMatchDay(t.type);
-        EventRules.checkChangeable(t.status, t.end, clock.now());
-        t.season.checkWritable();
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        CallUpRules.checkMatchDay(event.type);
+        EventRules.checkChangeable(event.status, event.end, clock.now());
+        event.season.checkWritable();
         Set<UUID> selection = new LinkedHashSet<>(input.personIds());
-        CallUpRules.checkCanBeCalledUp(selection, players(t));
-        CallUp a = locked(t.id);
-        Set<UUID> previous = new LinkedHashSet<>(a.personIds);
-        a.personIds.clear();
-        a.personIds.addAll(selection);
-        if (a.publishedAt != null) {
-            notifications.callUpChanged(user, t, previous, selection);
+        CallUpRules.checkCanBeCalledUp(selection, players(event));
+        CallUp callUp = locked(event.id);
+        Set<UUID> previousSelection = new LinkedHashSet<>(callUp.personIds);
+        callUp.personIds.clear();
+        callUp.personIds.addAll(selection);
+        if (callUp.publishedAt != null) {
+            notifications.callUpChanged(user, event, previousSelection, selection);
         }
-        return dto(t, a);
+        return dto(event, callUp);
     }
 
     /**
-     * Aufgebot veröffentlichen (AUF-23, AUF-24). Danach sehen alle Spielerinnen des Teams, ob sie aufgeboten
-     * sind und werden benachrichtigt (BEN-03).
+     * Publish the call-up (AUF-23, AUF-24). Afterwards all players of the team see whether they are called up
+     * and are notified (BEN-03).
      */
     @Transactional
     public CallUpDto publish(CurrentUser user, UUID eventId) {
-        Event t = EventService.find(eventId);
-        checkCanEdit(user, t);
-        CallUpRules.checkMatchDay(t.type);
-        EventRules.checkChangeable(t.status, t.end, clock.now());
-        t.season.checkWritable();
-        CallUp a = locked(t.id);
-        a.personIds.retainAll(players(t));
-        CallUpRules.checkPublishable(a.status());
-        a.publishedAt = clock.now();
-        notifications.published(user, t, players(t), a.personIds);
-        return dto(t, a);
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        CallUpRules.checkMatchDay(event.type);
+        EventRules.checkChangeable(event.status, event.end, clock.now());
+        event.season.checkWritable();
+        CallUp callUp = locked(event.id);
+        callUp.personIds.retainAll(players(event));
+        CallUpRules.checkPublishable(callUp.status());
+        callUp.publishedAt = clock.now();
+        notifications.published(user, event, players(event), callUp.personIds);
+        return dto(event, callUp);
     }
 
-    private void checkCanEdit(CurrentUser user, Event t) {
-        CallUpRules.checkCanEdit(user.admin(), EventService.teamRoles(user, t.teams, t.season));
+    private void checkCanEdit(CurrentUser user, Event event) {
+        CallUpRules.checkCanEdit(user.admin(), EventService.teamRoles(user, event.teams, event.season));
     }
 
-    /** Aufgebot des Termins, für die Transaktion gesperrt; zwei gleichzeitige Anfragen ergeben nie 500. */
+    /** Call-up of the event, locked for the transaction; two concurrent requests never result in a 500. */
     private CallUp locked(UUID eventId) {
         em.createNativeQuery("insert into call_up (event_id) values (?) on conflict do nothing")
                 .setParameter(1, eventId).executeUpdate();
         return em.find(CallUp.class, eventId, LockModeType.PESSIMISTIC_WRITE);
     }
 
-    /** Personen mit Funktion Spielerin im Team des Spieltags (in seiner Saison). */
-    private Set<UUID> players(Event t) {
+    /** Persons with the team role player in the team of the match day (in its season). */
+    private Set<UUID> players(Event event) {
         Set<UUID> ids = new LinkedHashSet<>();
-        responses.members(t).stream().filter(z -> z.teamRole == TeamRole.PLAYER).forEach(z -> ids.add(z.person.id));
+        responses.members(event).stream().filter(m -> m.teamRole == TeamRole.PLAYER).forEach(m -> ids.add(m.person.id));
         return ids;
     }
 
-    /** Alle Spielerinnen nach Linie, dann Goalies, dann «Ohne Linie»; leere Gruppen fehlen (wie die Übersicht). */
-    private CallUpDto dto(Event t, CallUp a) {
-        Set<UUID> calledUp = a == null ? Set.of() : a.personIds;
-        Map<UUID, ResponseService.Stored> stored = responses.responses(t.id);
-        List<TeamMembership> players = responses.members(t).stream()
-                .filter(z -> z.teamRole == TeamRole.PLAYER).toList();
+    /** All players by line, then goalies, then «Ohne Linie»; empty groups are left out (like the overview). */
+    private CallUpDto dto(Event event, CallUp callUp) {
+        Set<UUID> calledUp = callUp == null ? Set.of() : callUp.personIds;
+        Map<UUID, ResponseService.Stored> stored = responses.responses(event.id);
+        List<TeamMembership> players = responses.members(event).stream()
+                .filter(m -> m.teamRole == TeamRole.PLAYER).toList();
         Map<UUID, PersonSummary> persons = new HashMap<>();
-        players.forEach(z -> persons.put(z.person.id, PersonSummary.of(z.person)));
+        players.forEach(m -> persons.put(m.person.id, PersonSummary.of(m.person)));
 
         Map<UUID, List<CallUpDto.Entry>> perGroup = new LinkedHashMap<>();
         List<CallUpDto.Entry> noLine = new ArrayList<>();
         int count = 0;
-        for (TeamMembership z : players) {
-            boolean yes = calledUp.contains(z.person.id);
-            count += yes ? 1 : 0;
-            CallUpDto.Entry e = new CallUpDto.Entry(persons.get(z.person.id),
-                    ResponseService.response(stored.get(z.person.id), true, persons), yes);
-            if (z.groups.isEmpty()) {
-                noLine.add(e);
+        for (TeamMembership m : players) {
+            boolean selected = calledUp.contains(m.person.id);
+            count += selected ? 1 : 0;
+            CallUpDto.Entry entry = new CallUpDto.Entry(persons.get(m.person.id),
+                    ResponseService.response(stored.get(m.person.id), true, persons), selected);
+            if (m.groups.isEmpty()) {
+                noLine.add(entry);
             } else {
-                z.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(e));
+                m.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(entry));
             }
         }
         List<CallUpDto.Group> groups = new ArrayList<>();
-        for (Team team : t.teams) {
-            for (Group g : Group.of(team, t.season)) {
+        for (Team team : event.teams) {
+            for (Group g : Group.of(team, event.season)) {
                 List<CallUpDto.Entry> entries = perGroup.get(g.id);
                 if (entries != null && !entries.isEmpty()) {
                     groups.add(new CallUpDto.Group(g.id, g.type == GroupType.GOALIES
@@ -148,9 +148,9 @@ public class CallUpService {
             groups.add(new CallUpDto.Group(null, OverviewDto.Type.NO_LINE, ResponseService.NO_LINE,
                     sorted(noLine)));
         }
-        boolean published = a != null && a.publishedAt != null;
-        return new CallUpDto(t.id, CallUpRules.status(published, count),
-                a == null ? null : EventReader.time(a.publishedAt), count, groups);
+        boolean published = callUp != null && callUp.publishedAt != null;
+        return new CallUpDto(event.id, CallUpRules.status(published, count),
+                callUp == null ? null : EventReader.time(callUp.publishedAt), count, groups);
     }
 
     private static List<CallUpDto.Entry> sorted(List<CallUpDto.Entry> entries) {

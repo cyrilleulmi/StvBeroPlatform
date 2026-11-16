@@ -15,7 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/** Aufgebot eines Spieltags (AUF-02): die ausgewählten Spielerinnen und ob es veröffentlicht ist (AUF-23). */
+/** Call-up of a match day (AUF-02): the selected players and whether it is published (AUF-23). */
 @Entity
 @Table(name = "call_up")
 public class CallUp extends PanacheEntityBase {

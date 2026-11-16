@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-/** Fachregeln zu Antworten (ANM, RR-06). Ohne Datenbank, damit sie als Unit-Test prüfbar sind. */
+/** Domain rules for responses (ANM, RR-06). No database, so they can be checked in unit tests. */
 public final class ResponseRules {
 
     public static final String COMMENT_REQUIRED = "Bei «vielleicht» bitte kurz begründen.";
@@ -17,9 +17,9 @@ public final class ResponseRules {
     private ResponseRules() {
     }
 
-    // ------------------------------------------------------------------ Rechte
+    // ------------------------------------------------------------------ Permissions
 
-    /** Für sich antworten: Mitglied eines beteiligten Teams, in jeder Funktion (ANM-01, RR-02). */
+    /** Respond for oneself: member of a participating team, in any team role (ANM-01, RR-02). */
     public static void checkCanRespondForSelf(boolean member) {
         if (!member) {
             throw DomainError.forbidden();
@@ -27,11 +27,11 @@ public final class ResponseRules {
     }
 
     /**
-     * Stellvertretend antworten (ANM-11, RR-03, RR-06): Admins für jedes Mitglied eines beteiligten Teams,
-     * Coaches nur für Personen, die in einem Team Spielerin sind, in dem die Coach Coach ist.
+     * Respond on behalf (ANM-11, RR-03, RR-06): admins for every member of a participating team, coaches only
+     * for persons who are a player in a team in which the coach is coach.
      *
-     * @param meineFunktionen    Funktion der anfragenden Person pro beteiligtem Team
-     * @param funktionenPerson   Funktion der Person, für die geantwortet wird, pro beteiligtem Team
+     * @param myTeamRoles     team role of the requesting person per participating team
+     * @param teamRolesPerson team role of the person the response is for, per participating team
      */
     public static boolean canRespondOnBehalf(boolean admin, Map<UUID, TeamRole> myTeamRoles,
                                              Map<UUID, TeamRole> teamRolesPerson) {
@@ -50,16 +50,16 @@ public final class ResponseRules {
     }
 
     /**
-     * Kommentare und Gründe sehen die Person selbst, Coaches des Teams, in dem der Eintrag steht, und
-     * Admins (ANM-07, RR-06).
+     * Comments and reasons are visible to the person themselves, to coaches of the team the entry is in, and
+     * to admins (ANM-07, RR-06).
      */
     public static boolean commentVisible(boolean admin, boolean ownResponse, TeamRole myTeamRoleInTeam) {
         return admin || ownResponse || myTeamRoleInTeam == TeamRole.COACH;
     }
 
-    // ------------------------------------------------------------------ Zustand und Eingabe
+    // ------------------------------------------------------------------ State and input
 
-    /** Abgesagte und vergangene Termine nehmen keine Antworten an (409, TER-06). */
+    /** Cancelled and past events accept no responses (409, TER-06). */
     public static void checkOpenForResponses(EventStatus status, Instant end, Instant now) {
         if (status == EventStatus.CANCELLED) {
             throw DomainError.conflict("Termin abgesagt", CANCELLED, "TER-06");
@@ -69,7 +69,7 @@ public final class ResponseRules {
         }
     }
 
-    /** «Vielleicht» verlangt einen Kommentar (ANM-04). Bei «nicht dabei» ist er freiwillig (ANM-05). */
+    /** «vielleicht» requires a comment (ANM-04). For «nicht dabei» it is optional (ANM-05). */
     public static void checkComment(ResponseStatus status, String comment) {
         if (status == ResponseStatus.PENDING) {
             throw DomainError.invalidField("status", "Die Antwort ist «dabei», «nicht dabei» oder «vielleicht».");
@@ -80,20 +80,20 @@ public final class ResponseRules {
     }
 
     /**
-     * Kurzfristige Absage (ANM-10): Wechsel weg von «dabei» nach der Antwortfrist. Die Markierung bleibt
-     * bei weiteren Wechseln zwischen «nicht dabei» und «vielleicht» bestehen und fällt mit «dabei» weg.
+     * Late cancellation (ANM-10): a change away from «dabei» after the response deadline. The flag stays on
+     * further changes between «nicht dabei» and «vielleicht» and is cleared by «dabei».
      *
-     * @param bisher             bisherige Antwort, {@code OFFEN} ohne Antwort
-     * @param bisherKurzfristig  bisherige Antwort war schon eine kurzfristige Absage
+     * @param previousStatus previous response, {@code PENDING} without a response
+     * @param previousLate   the previous response was already a late cancellation
      */
-    public static boolean lateCancellation(ResponseStatus previous, boolean previousLate, ResponseStatus newValue,
-                                      Instant responseDeadline, Instant now) {
-        if (newValue == ResponseStatus.ATTENDING) {
+    public static boolean lateCancellation(ResponseStatus previousStatus, boolean previousLate, ResponseStatus newStatus,
+                                           Instant responseDeadline, Instant now) {
+        if (newStatus == ResponseStatus.ATTENDING) {
             return false;
         }
         if (previousLate) {
             return true;
         }
-        return previous == ResponseStatus.ATTENDING && !now.isBefore(responseDeadline);
+        return previousStatus == ResponseStatus.ATTENDING && !now.isBefore(responseDeadline);
     }
 }

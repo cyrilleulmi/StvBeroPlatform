@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.event;
 
-/** Typen, die eine Serie erzeugen kann. Spieltage kommen einzeln (AUF) oder aus swiss unihockey (SUH). */
+/** Types a series can create. Match days are created one by one (AUF) or come from swiss unihockey (SUH). */
 public enum SeriesType {
     PRACTICE, OTHER;
 

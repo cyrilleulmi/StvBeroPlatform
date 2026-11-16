@@ -8,7 +8,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.OffsetDateTime;
 
-/** Spiel erfassen oder ändern, z.B. das Resultat (AUF-14, AUF-15). */
+/** Create or change a match, e.g. its result (AUF-14, AUF-15). */
 @Schema(name = "MatchInput")
 public record MatchInput(
         @NotBlank @Size(max = 80) String opponent,

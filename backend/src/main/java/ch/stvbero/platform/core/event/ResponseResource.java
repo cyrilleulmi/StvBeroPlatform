@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.UUID;
 
-/** Antworten und Übersicht eines Termins (ANM). */
+/** Responses and overview of an event (ANM). */
 @Path("/api/events/{eventId}")
 @Tag(name = "Responses")
 public class ResponseResource {

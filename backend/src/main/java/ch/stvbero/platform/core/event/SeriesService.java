@@ -19,8 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Serien: einmal erfasst, erzeugen sie die Termine im Gültigkeitszeitraum (TER-05). Änderungen gelten für
- * künftige Termine (TER-08), Ausnahmen nehmen Zeiträume aus (TER-07). Rechte wie bei Terminen (TER-11, RR-06).
+ * Series: once created, they create the events in their validity period (TER-05). Changes apply to future
+ * events (TER-08), series exceptions exclude periods (TER-07). Permissions as for events (TER-11, RR-06).
  */
 @ApplicationScoped
 public class SeriesService {
@@ -28,7 +28,7 @@ public class SeriesService {
     @Inject
     EventNotifications notifications;
 
-    /** Grund, mit dem ein Termin abgesagt wird, der nach einer Änderung nicht mehr zur Serie passt. */
+    /** Reason used to cancel an event that no longer fits the series after a change. */
     static final String REASON_SERIES_CHANGED = "Serie geändert";
 
     @Inject
@@ -37,7 +37,7 @@ public class SeriesService {
     @Inject
     BackendClock clock;
 
-    /** Serie anlegen und ihre künftigen Termine erzeugen (TER-05). */
+    /** Create a series and its future events (TER-05). */
     @Transactional
     public SeriesDto create(CurrentUser user, SeriesInput input) {
         Set<Team> teams = EventService.teams(input.teamIds());
@@ -65,9 +65,9 @@ public class SeriesService {
     }
 
     /**
-     * Serie ändern (TER-08). Künftige Termine übernehmen die neuen Angaben, Antworten bleiben erhalten.
-     * Einzeln geänderte und abgesagte Termine bleiben, wie sie sind (TER-06). Termine, die nicht mehr zur
-     * Serie passen, verschwinden bzw. werden abgesagt, wenn schon jemand geantwortet hat.
+     * Change a series (TER-08). Future events take over the new details, responses are kept. Individually
+     * changed and cancelled events stay as they are (TER-06). Events that no longer fit the series are removed,
+     * or cancelled if someone has already responded.
      */
     @Transactional
     public SeriesDto update(CurrentUser user, UUID seriesId, SeriesInput input) {
@@ -81,10 +81,10 @@ public class SeriesService {
         Instant now = clock.now();
         Map<LocalDate, Event> all = new HashMap<>();
         Map<LocalDate, EventRules.Existing> future = new HashMap<>();
-        for (Event t : events(s)) {
-            all.put(t.seriesDate, t);
-            if (t.start.isAfter(now)) {
-                future.put(t.seriesDate, new EventRules.Existing(t.status == EventStatus.PLANNED, t.individuallyChanged));
+        for (Event event : events(s)) {
+            all.put(event.seriesDate, event);
+            if (event.start.isAfter(now)) {
+                future.put(event.seriesDate, new EventRules.Existing(event.status == EventStatus.PLANNED, event.individuallyChanged));
             }
         }
         List<LocalDate> target = dates(s).stream()
@@ -106,8 +106,8 @@ public class SeriesService {
     }
 
     /**
-     * Zeitraum ausnehmen, z.B. Ferien (TER-07). Künftige geplante Termine der Serie in diesem Zeitraum
-     * verschwinden; haben sie schon Antworten, werden sie mit dem Grund der Ausnahme abgesagt.
+     * Exclude a period, e.g. holidays (TER-07). Future planned events of the series in this period are
+     * removed; if they already have responses, they are cancelled with the reason of the exception.
      */
     @Transactional
     public SeriesDto createException(CurrentUser user, UUID seriesId, SeriesExceptionDto input) {
@@ -115,20 +115,20 @@ public class SeriesService {
         EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, s.teams, s.season));
         EventRules.checkException(input.startDate(), input.endDate());
         s.season.checkWritable();
-        SeriesException a = new SeriesException();
-        a.id = UUID.randomUUID();
-        a.series = s;
-        a.startDate = input.startDate();
-        a.endDate = input.endDate();
-        a.reason = input.reason().strip();
-        s.exceptions.add(a);
+        SeriesException exception = new SeriesException();
+        exception.id = UUID.randomUUID();
+        exception.series = s;
+        exception.startDate = input.startDate();
+        exception.endDate = input.endDate();
+        exception.reason = input.reason().strip();
+        s.exceptions.add(exception);
 
         Instant now = clock.now();
-        EventRules.Period period = new EventRules.Period(a.startDate, a.endDate);
-        for (Event t : events(s)) {
-            if (t.status == EventStatus.PLANNED && t.start.isAfter(now)
-                    && period.contains(EventRules.date(t.start))) {
-                drop(user, t, a.reason);
+        EventRules.Period period = new EventRules.Period(exception.startDate, exception.endDate);
+        for (Event event : events(s)) {
+            if (event.status == EventStatus.PLANNED && event.start.isAfter(now)
+                    && period.contains(EventRules.date(event.start))) {
+                drop(user, event, exception.reason);
             }
         }
         return SeriesDto.of(s, user);
@@ -147,61 +147,61 @@ public class SeriesService {
         return EventRules.dates(s.weekday.day, s.validFrom, s.validUntil, s.exceptionPeriods());
     }
 
-    private static void checkInput(SeriesInput e, Set<Team> teams, Season season) {
-        EventRules.checkSeries(EventRules.time(e.startTime()), EventRules.time(e.endTime()),
-                e.validFrom(), e.validUntil());
+    private static void checkInput(SeriesInput input, Set<Team> teams, Season season) {
+        EventRules.checkSeries(EventRules.time(input.startTime()), EventRules.time(input.endTime()),
+                input.validFrom(), input.validUntil());
         EventService.checkTeamsInSeason(teams, season);
     }
 
-    private static void apply(Series s, SeriesInput e, Set<Team> teams) {
-        s.type = e.type();
-        s.title = e.title().strip();
-        s.weekday = e.weekday();
-        s.startTime = EventRules.time(e.startTime());
-        s.endTime = EventRules.time(e.endTime());
-        s.validFrom = e.validFrom();
-        s.validUntil = e.validUntil();
-        s.location = Location.of(e.location());
-        s.responseDeadlineHours = EventRules.responseDeadline(e.responseDeadlineHours());
+    private static void apply(Series s, SeriesInput input, Set<Team> teams) {
+        s.type = input.type();
+        s.title = input.title().strip();
+        s.weekday = input.weekday();
+        s.startTime = EventRules.time(input.startTime());
+        s.endTime = EventRules.time(input.endTime());
+        s.validFrom = input.validFrom();
+        s.validUntil = input.validUntil();
+        s.location = Location.of(input.location());
+        s.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
         s.teams.clear();
         s.teams.addAll(teams);
     }
 
-    /** Neuer Termin der Serie an diesem Tag. */
+    /** New event of the series on this day. */
     private static Event create(Series s, LocalDate day) {
-        Event t = Event.create();
-        t.series = s;
-        t.seriesDate = day;
-        t.season = EventService.seasonOn(day, s.season);
-        apply(t, s, day);
-        return t;
+        Event event = Event.create();
+        event.series = s;
+        event.seriesDate = day;
+        event.season = EventService.seasonOn(day, s.season);
+        apply(event, s, day);
+        return event;
     }
 
-    /** Angaben der Serie auf den Termin übertragen. */
-    private static void apply(Event t, Series s, LocalDate day) {
-        t.type = s.type.eventType();
-        t.title = s.title;
-        t.start = EventRules.instant(day, s.startTime);
-        t.end = EventRules.instant(day, s.endTime);
-        t.location = s.location == null ? null : Location.of(s.location.dto());
-        t.responseDeadlineHours = s.responseDeadlineHours;
-        t.teams.clear();
-        t.teams.addAll(s.teams);
+    /** Copy the details of the series to the event. */
+    private static void apply(Event event, Series s, LocalDate day) {
+        event.type = s.type.eventType();
+        event.title = s.title;
+        event.start = EventRules.instant(day, s.startTime);
+        event.end = EventRules.instant(day, s.endTime);
+        event.location = s.location == null ? null : Location.of(s.location.dto());
+        event.responseDeadlineHours = s.responseDeadlineHours;
+        event.teams.clear();
+        event.teams.addAll(s.teams);
     }
 
     /**
-     * Termin entfernen oder, wenn schon jemand geantwortet hat, absagen (TER-07, zustaende.md). Eine Absage
-     * benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
+     * Remove the event or, if someone has already responded, cancel it (TER-07, docs/states.md). A cancellation
+     * notifies all members of the participating teams (BEN-07).
      */
-    private void drop(CurrentUser user, Event t, String reason) {
-        Number responses = (Number) em.createNativeQuery("select count(*) from response where event_id = ?1")
-                .setParameter(1, t.id).getSingleResult();
-        switch (EventRules.onException(responses.longValue() > 0)) {
-            case REMOVE -> t.delete();
+    private void drop(CurrentUser user, Event event, String reason) {
+        Number responseCount = (Number) em.createNativeQuery("select count(*) from response where event_id = ?1")
+                .setParameter(1, event.id).getSingleResult();
+        switch (EventRules.onException(responseCount.longValue() > 0)) {
+            case REMOVE -> event.delete();
             case CANCEL -> {
-                t.status = EventStatus.CANCELLED;
-                t.cancellationReason = reason;
-                notifications.cancelled(user, t);
+                event.status = EventStatus.CANCELLED;
+                event.cancellationReason = reason;
+                notifications.cancelled(user, event);
             }
         }
     }

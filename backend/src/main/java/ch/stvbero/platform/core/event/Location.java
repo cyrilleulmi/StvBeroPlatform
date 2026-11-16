@@ -3,7 +3,7 @@ package ch.stvbero.platform.core.event;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
-/** Ort eines Termins oder einer Serie (TER-04), gespeichert in den Spalten {@code ort_*}. */
+/** Location of an event or a series (TER-04), stored in the columns {@code location_*}. */
 @Embeddable
 public class Location {
 
@@ -26,13 +26,13 @@ public class Location {
         if (dto == null) {
             return null;
         }
-        Location o = new Location();
-        o.name = dto.name().strip();
-        o.address = EventRules.blankToNull(dto.address());
-        o.mapsUrl = EventRules.blankToNull(dto.mapsUrl());
-        o.latitude = dto.latitude();
-        o.longitude = dto.longitude();
-        return o;
+        Location location = new Location();
+        location.name = dto.name().strip();
+        location.address = EventRules.blankToNull(dto.address());
+        location.mapsUrl = EventRules.blankToNull(dto.mapsUrl());
+        location.latitude = dto.latitude();
+        location.longitude = dto.longitude();
+        return location;
     }
 
     public LocationDto dto() {

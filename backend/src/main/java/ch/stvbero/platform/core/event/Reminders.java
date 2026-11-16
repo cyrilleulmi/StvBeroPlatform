@@ -18,11 +18,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Erinnerung vor der Antwortfrist (BEN-01): an alle Mitglieder der beteiligten Teams, die noch nicht
- * geantwortet haben. Pro Person und Termin höchstens einmal (BEN-13), festgehalten in der Tabelle
- * {@code erinnerung}; zwei gleichzeitige Prüfungen erinnern deshalb nicht doppelt.
+ * Reminder before the response deadline (BEN-01): to all members of the participating teams who have not
+ * responded yet. At most once per person and event (BEN-13), recorded in the table {@code reminder}; two
+ * concurrent checks therefore never remind twice.
  * <p>
- * Läuft jede Minute. Wird die Uhr in dev/test gesetzt, prüft die Test-Hilfe sofort.
+ * Runs every minute. When the clock is set in dev/test, the test support checks right away.
  */
 @ApplicationScoped
 public class Reminders {
@@ -44,38 +44,38 @@ public class Reminders {
         check();
     }
 
-    /** Fällige Erinnerungen versenden. Gibt die Anzahl der neu versandten zurück. */
+    /** Send the reminders that are due. Returns the number of newly sent ones. */
     @Transactional
     public int check() {
         Instant now = clock.now();
-        // Grobe Vorauswahl: Beginn nach «jetzt», höchstens längste Frist plus 12 Stunden entfernt.
-        Instant endDate = now.plus(Duration.ofHours(EventRules.MAX_RESPONSE_DEADLINE))
+        // Rough preselection: start after "now", at most the longest deadline plus 12 hours away.
+        Instant latestStart = now.plus(Duration.ofHours(EventRules.MAX_RESPONSE_DEADLINE))
                 .plus(NotificationRules.REMINDER_BEFORE_DEADLINE);
         List<Event> events = em.createQuery("""
                         select distinct t from Event t left join fetch t.teams join fetch t.season
                         where t.status = :status and t.start > :now and t.start <= :endDate
                         order by t.start, t.id""", Event.class)
-                .setParameter("status", EventStatus.PLANNED).setParameter("now", now).setParameter("endDate", endDate)
+                .setParameter("status", EventStatus.PLANNED).setParameter("now", now).setParameter("endDate", latestStart)
                 .getResultList();
         List<Message> messages = new ArrayList<>();
-        for (Event t : events) {
-            if (!NotificationRules.reminderDue(t.status, t.start, t.responseDeadlineHours, now)) {
+        for (Event event : events) {
+            if (!NotificationRules.reminderDue(event.status, event.start, event.responseDeadlineHours, now)) {
                 continue;
             }
-            Map<UUID, ResponseService.Stored> stored = responses.responses(t.id);
-            String text = NotificationRules.reminderText(EventNotifications.label(t),
-                    EventRules.responseDeadline(t.start, t.responseDeadlineHours));
-            for (UUID person : EventNotifications.members(t)) {
-                ResponseService.Stored a = stored.get(person);
-                if (a != null && a.status() != ResponseStatus.PENDING) {
+            Map<UUID, ResponseService.Stored> stored = responses.responses(event.id);
+            String text = NotificationRules.reminderText(EventNotifications.label(event),
+                    EventRules.responseDeadline(event.start, event.responseDeadlineHours));
+            for (UUID person : EventNotifications.members(event)) {
+                ResponseService.Stored response = stored.get(person);
+                if (response != null && response.status() != ResponseStatus.PENDING) {
                     continue;
                 }
-                int newValue = em.createNativeQuery("""
+                int inserted = em.createNativeQuery("""
                                 insert into reminder (event_id, person_id, reminded_at) values (?, ?, ?)
                                 on conflict do nothing""")
-                        .setParameter(1, t.id).setParameter(2, person).setParameter(3, now).executeUpdate();
-                if (newValue == 1) {
-                    messages.add(new Message(NotificationType.REMINDER, person, t.id, text));
+                        .setParameter(1, event.id).setParameter(2, person).setParameter(3, now).executeUpdate();
+                if (inserted == 1) {
+                    messages.add(new Message(NotificationType.REMINDER, person, event.id, text));
                 }
             }
         }

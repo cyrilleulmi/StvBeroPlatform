@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Serie anlegen oder ändern (TER-05, TER-08, TER-10). */
+/** Create or change a series (TER-05, TER-08, TER-10). */
 @Schema(name = "SeriesInput")
 public record SeriesInput(
         @NotNull SeriesType type,

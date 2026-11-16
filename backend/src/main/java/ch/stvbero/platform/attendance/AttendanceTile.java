@@ -4,7 +4,7 @@ import ch.stvbero.platform.core.tile.TileDefinition;
 import ch.stvbero.platform.core.tile.TileColor;
 import jakarta.enterprise.context.ApplicationScoped;
 
-/** Kachel «Anwesenheit»: Termine und An-/Abmeldung. Sichtbar für alle Angemeldeten. */
+/** Tile «Anwesenheit»: events and responses. Visible to everyone who is logged in. */
 @ApplicationScoped
 public class AttendanceTile implements TileDefinition {
 

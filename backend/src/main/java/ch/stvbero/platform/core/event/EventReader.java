@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Macht aus Terminen die Antworten der API. Lädt Teamnamen, Teamzugehörigkeiten und Antworten für alle
- * Termine auf einmal, damit die Terminliste nicht pro Termin die Datenbank fragt.
+ * Turns events into API responses. Loads team names, team memberships and responses for all events at once,
+ * so that the event list does not query the database once per event.
  */
 final class EventReader {
 
@@ -48,15 +48,15 @@ final class EventReader {
     EventReader(EntityManager em, CurrentUser user, Collection<Event> events) {
         this.user = user;
         Set<UUID> seasons = new LinkedHashSet<>();
-        events.forEach(t -> seasons.add(t.season.id));
+        events.forEach(event -> seasons.add(event.season.id));
         if (!seasons.isEmpty()) {
             TeamSeason.<TeamSeason>list("season.id in ?1", seasons)
                     .forEach(ts -> names.put(new TeamInSeason(ts.team.id, ts.season.id), ts.name));
-            TeamMembership.<TeamMembership>list("season.id in ?1", seasons).forEach(z -> members
-                    .computeIfAbsent(new TeamInSeason(z.team.id, z.season.id), k -> new ArrayList<>())
-                    .add(new Member(z.person.id, z.teamRole)));
+            TeamMembership.<TeamMembership>list("season.id in ?1", seasons).forEach(m -> members
+                    .computeIfAbsent(new TeamInSeason(m.team.id, m.season.id), key -> new ArrayList<>())
+                    .add(new Member(m.person.id, m.teamRole)));
         }
-        List<UUID> ids = events.stream().map(t -> t.id).toList();
+        List<UUID> ids = events.stream().map(event -> event.id).toList();
         if (!ids.isEmpty()) {
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery("""
@@ -64,19 +64,19 @@ final class EventReader {
                             from response where event_id in (:ids)
                             """)
                     .setParameter("ids", ids).getResultList();
-            for (Object[] z : rows) {
-                responses.computeIfAbsent((UUID) z[0], k -> new HashMap<>()).put((UUID) z[1],
-                        new StoredResponse(ResponseStatus.valueOf((String) z[2]), (String) z[3], instant(z[4]),
-                                (UUID) z[5], Boolean.TRUE.equals(z[6])));
+            for (Object[] row : rows) {
+                responses.computeIfAbsent((UUID) row[0], key -> new HashMap<>()).put((UUID) row[1],
+                        new StoredResponse(ResponseStatus.valueOf((String) row[2]), (String) row[3], instant(row[4]),
+                                (UUID) row[5], Boolean.TRUE.equals(row[6])));
             }
         }
     }
 
-    /** Funktionen der angemeldeten Person in den Teams des Termins (in der Saison des Termins). */
-    Set<TeamRole> myTeamRoles(Event t) {
+    /** Team roles of the logged-in person in the teams of the event (in the season of the event). */
+    Set<TeamRole> myTeamRoles(Event event) {
         Set<TeamRole> teamRoles = new LinkedHashSet<>();
-        for (Team team : t.teams) {
-            for (Member m : members.getOrDefault(new TeamInSeason(team.id, t.season.id), List.of())) {
+        for (Team team : event.teams) {
+            for (Member m : members.getOrDefault(new TeamInSeason(team.id, event.season.id), List.of())) {
                 if (m.person().equals(user.personId())) {
                     teamRoles.add(m.teamRole());
                 }
@@ -85,28 +85,30 @@ final class EventReader {
         return teamRoles;
     }
 
-    EventSummaryDto summary(Event t) {
-        return new EventSummaryDto(t.id, t.type, t.title, time(t.start), time(t.end), t.status, t.cancellationReason,
-                t.rescheduled, teams(t), t.location == null ? null : t.location.dto(),
-                time(EventRules.responseDeadline(t.start, t.responseDeadlineHours)), myResponse(t), counts(t),
-                t.series == null ? null : t.series.id);
+    EventSummaryDto summary(Event event) {
+        return new EventSummaryDto(event.id, event.type, event.title, time(event.start), time(event.end),
+                event.status, event.cancellationReason, event.rescheduled, teams(event),
+                event.location == null ? null : event.location.dto(),
+                time(EventRules.responseDeadline(event.start, event.responseDeadlineHours)), myResponse(event),
+                counts(event), event.series == null ? null : event.series.id);
     }
 
     /**
-     * Termin mit allen Angaben. Bei Spieltagen mit Spielen nach Anspielzeit, Stand des Aufgebots (vor der
-     * Veröffentlichung nur für Coaches und Admins, AUF-23) und eigenem Aufgebotsstatus für Spielerinnen (AUF-24).
+     * Event with all details. For match days also the matches by start time, the call-up status (before
+     * publication only for coaches and admins, AUF-23) and the player's own call-up status (AUF-24).
      */
-    EventDto full(Event t, boolean canEdit) {
-        EventSummaryDto k = summary(t);
-        boolean matchDay = t.type == EventType.MATCH_DAY;
-        MeetingPointDto meetingPoint = t.meetingPointTime == null ? null : new MeetingPointDto(time(t.meetingPointTime), t.meetingPointLocation);
+    EventDto full(Event event, boolean canEdit) {
+        EventSummaryDto base = summary(event);
+        boolean matchDay = event.type == EventType.MATCH_DAY;
+        MeetingPointDto meetingPoint = event.meetingPointTime == null ? null
+                : new MeetingPointDto(time(event.meetingPointTime), event.meetingPointLocation);
         List<MatchDto> matches = null;
         CallUpStatus callUpStatus = null;
         MyCallUp myCallUp = null;
         if (matchDay) {
-            matches = Match.of(t.id).stream().map(Match::dto).toList();
-            CallUp callUp = CallUp.findById(t.id);
-            Set<TeamRole> mine = myTeamRoles(t);
+            matches = Match.of(event.id).stream().map(Match::dto).toList();
+            CallUp callUp = CallUp.findById(event.id);
+            Set<TeamRole> mine = myTeamRoles(event);
             CallUpStatus status = callUp == null ? CallUpStatus.NONE : callUp.status();
             callUpStatus = CallUpRules.visibleStatus(status,
                     CallUpRules.canEdit(user.admin(), mine));
@@ -115,44 +117,46 @@ final class EventReader {
                         callUp != null && callUp.personIds.contains(user.personId()));
             }
         }
-        return new EventDto(k.id(), k.type(), k.title(), k.start(), k.end(), k.status(), k.cancellationReason(),
-                k.rescheduled(), k.teams(), k.location(), k.responseDeadline(), k.myResponse(), k.counts(), k.seriesId(),
-                t.notes, t.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit);
+        return new EventDto(base.id(), base.type(), base.title(), base.start(), base.end(), base.status(),
+                base.cancellationReason(), base.rescheduled(), base.teams(), base.location(), base.responseDeadline(),
+                base.myResponse(), base.counts(), base.seriesId(),
+                event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit);
     }
 
-    /** Teams nach Name, mit dem Namen in der Saison des Termins (SAI-02) und der eigenen Funktion. */
-    private List<TeamDto> teams(Event t) {
+    /** Teams by name, with the name in the season of the event (SAI-02) and the caller's own team role. */
+    private List<TeamDto> teams(Event event) {
         List<TeamDto> teams = new ArrayList<>();
-        for (Team team : t.teams) {
-            TeamInSeason k = new TeamInSeason(team.id, t.season.id);
-            TeamRole mine = members.getOrDefault(k, List.of()).stream()
+        for (Team team : event.teams) {
+            TeamInSeason key = new TeamInSeason(team.id, event.season.id);
+            TeamRole mine = members.getOrDefault(key, List.of()).stream()
                     .filter(m -> m.person().equals(user.personId())).map(Member::teamRole).findFirst().orElse(null);
-            teams.add(new TeamDto(team.id, names.getOrDefault(k, ""), team.suTeamId, mine));
+            teams.add(new TeamDto(team.id, names.getOrDefault(key, ""), team.suTeamId, mine));
         }
         teams.sort(Comparator.comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id));
         return teams;
     }
 
-    private ResponseDto myResponse(Event t) {
-        StoredResponse a = responses.getOrDefault(t.id, Map.of()).get(user.personId());
-        if (a == null) {
+    private ResponseDto myResponse(Event event) {
+        StoredResponse stored = responses.getOrDefault(event.id, Map.of()).get(user.personId());
+        if (stored == null) {
             return ResponseDto.PENDING;
         }
-        PersonSummary startDate = a.enteredBy() == null ? null
-                : Person.<Person>findByIdOptional(a.enteredBy()).map(PersonSummary::of).orElse(null);
-        return new ResponseDto(a.status(), a.comment(), time(a.changedAt()), startDate, a.lateCancellation());
+        PersonSummary enteredBy = stored.enteredBy() == null ? null
+                : Person.<Person>findByIdOptional(stored.enteredBy()).map(PersonSummary::of).orElse(null);
+        return new ResponseDto(stored.status(), stored.comment(), time(stored.changedAt()), enteredBy,
+                stored.lateCancellation());
     }
 
-    /** Gesamtzähler: jede Spielerin eines beteiligten Teams einmal, Coaches zählen nicht (PTF-07). */
-    private CountsDto counts(Event t) {
+    /** Total counts: each player of a participating team once, coaches do not count (PTF-07). */
+    private CountsDto counts(Event event) {
         Set<UUID> players = new LinkedHashSet<>();
-        for (Team team : t.teams) {
-            members.getOrDefault(new TeamInSeason(team.id, t.season.id), List.of()).stream()
+        for (Team team : event.teams) {
+            members.getOrDefault(new TeamInSeason(team.id, event.season.id), List.of()).stream()
                     .filter(m -> m.teamRole() == TeamRole.PLAYER).forEach(m -> players.add(m.person()));
         }
-        Map<UUID, StoredResponse> toTheEvent = responses.getOrDefault(t.id, Map.of());
+        Map<UUID, StoredResponse> eventResponses = responses.getOrDefault(event.id, Map.of());
         return EventRules.count(players.stream()
-                .map(p -> toTheEvent.containsKey(p) ? toTheEvent.get(p).status() : ResponseStatus.PENDING).toList());
+                .map(p -> eventResponses.containsKey(p) ? eventResponses.get(p).status() : ResponseStatus.PENDING).toList());
     }
 
     static OffsetDateTime time(Instant instant) {

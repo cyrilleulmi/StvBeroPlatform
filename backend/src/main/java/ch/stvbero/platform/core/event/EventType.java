@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.event;
 
-/** Termintypen (TER-02). Die An- und Abmeldung funktioniert bei allen gleich. */
+/** Event types (TER-02). Responding works the same way for all of them. */
 public enum EventType {
     PRACTICE, MATCH_DAY, OTHER
 }
