@@ -46,8 +46,9 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 
 | F-03 | Serien 01–03 mit allen ihren Terminen im Gültigkeitszeitraum (auch vergangenen), Ausnahme «Weihnachtsferien» bei Serie 01, Termine 01–08 gemäss Tabelle «Termine mit festen IDs». Termin 03 abgesagt («Halle besetzt»). Spieltage 04 und 05 mit Spielort, Google-Maps-Link und Treffpunkt, noch ohne Spiele und Aufgebot. Antwortfrist überall 24 Stunden |
 | F-04 | Antworten zu den Terminen 01, 02, 04 und 05 gemäss den Tabellen unten (Termin 02: Anna «dabei»), alle eingetragen am 15.11.2026 20:00 von der Person selbst, keine kurzfristig. Übrige Termine ohne Antworten |
+| F-05 | Spiele 01–03 und die Aufgebote der Termine 04 (Entwurf) und 05 (veröffentlicht am 15.11.2026 21:00) gemäss den Tabellen unten. Spiele 01 und 02 stammen aus swiss unihockey (SU-Spiel-ID `5000001` bzw. `5000002`), Spiel 03 ist von Hand erfasst. Noch ohne Resultate |
 
-Spiele und Aufgebote folgen mit F-05. Die Tabellen unten sind das Zielbild.
+Benachrichtigungen folgen mit F-06, der Abgleich mit swiss unihockey mit F-07.
 
 Serientermine ohne feste ID haben die ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, z.B. für Serie 02 am 26.11.2026 `termin-2-2026-11-26`. Sie heissen «Training», Ort wie die Serie.
 
@@ -189,12 +190,24 @@ Coaches        Petra ✓ (Team 1)   Marc ✗ (Team 2)
 | Spielort | Sporthalle Seefeld, Musterdorf, mit Google-Maps-Link |
 | Treffpunkt | 08:00, Parkplatz Sporthalle Nord |
 | Hinweise | «Weisse Trikots mitnehmen» |
-| Spiel 01 | 09:30 · Team 1 – UHC Musterdorf (Heim) |
-| Spiel 02 | 11:45 · Unihockey Beispielstadt – Team 1 (Auswärts) |
+| Spiel 01 | 09:30 · Team 1 – UHC Musterdorf (Heim), SU-Spiel-ID `5000001` |
+| Spiel 02 | 11:45 · Unihockey Beispielstadt – Team 1 (Auswärts), SU-Spiel-ID `5000002` |
 
 Antworten: Anna dabei, Lea dabei, Mia vielleicht («Muss evtl. arbeiten»), Sara dabei, Nina offen, Jana dabei, Kim nicht dabei, Petra (Coach) dabei.
 
-Aufgebot im Entwurf: Anna, Lea, Mia, Sara, Jana.
+Aufgebot im Entwurf: Anna, Lea, Mia, Sara, Jana. Spielerinnen sehen «noch kein Aufgebot».
+
+**Erwarteter Aufgebot-Screen** (`/termine/40000000-0000-4000-8000-000000000004/aufgebot` als `petra`):
+
+```
+Entwurf · 5 aufgeboten
+Linie 1      ☑ Mia ~ «Muss evtl. arbeiten»   ☑ Lea ✓   ☑ Anna ✓
+Linie 2      ☑ Sara ✓   ☐ Nina ?
+Goalies      ☑ Jana ✓
+Ohne Linie   ☐ Kim ✗
+```
+
+Petra (Coach) steht nicht in der Auswahl (AUF-28).
 
 ### Termin 05: Spieltag Sa 28.11.2026, Team 2
 
@@ -207,7 +220,7 @@ Aufgebot im Entwurf: Anna, Lea, Mia, Sara, Jana.
 
 Antworten: Petra dabei, Lea dabei, Eva dabei, Lara dabei, Zoe nicht dabei, Ella dabei, Marc (Coach) dabei.
 
-Aufgebot veröffentlicht: Petra, Eva, Lara, Ella. Lea ist «nicht aufgeboten».
+Aufgebot veröffentlicht am Sa 15.11.2026 21:00: Petra, Eva, Lara, Ella. Lea ist «nicht aufgeboten».
 
 ## Simulierte swiss-unihockey-Daten
 
@@ -227,7 +240,7 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S6 | Erinnerung | Uhr auf 16.11.2026 06:31 | Nina und Ella erhalten eine Erinnerung zu Termin 01, sonst niemand | BEN-01, BEN-13 |
 | S7 | Stellvertretend antworten | Als `petra` für Nina bei Termin 01 «nicht dabei» eintragen | Gespeichert, bei Nina ist «eingetragen von Petra Keller» sichtbar | ANM-11, ANM-12 |
 | S8 | Kein Stellvertreten für fremde Teams | Als `marc` bei Termin 01 für Anna antworten wollen | Aktion nicht angeboten, API antwortet 403 | RR-06 |
-| S9 | Aufgebot veröffentlichen | Als `petra` Termin 04 → Aufgebot → veröffentlichen | Alle 7 Spielerinnen von Team 1 werden benachrichtigt. Anna sieht «aufgeboten», Kim «nicht aufgeboten» | AUF-23, AUF-24 |
+| S9 | Aufgebot veröffentlichen | Als `petra` Termin 04 → Aufgebot → veröffentlichen | Anna sieht «aufgeboten», Kim «nicht aufgeboten». Alle 7 Spielerinnen von Team 1 werden benachrichtigt (ab F-06) | AUF-23, AUF-24 |
 | S10 | Aufgebotene meldet sich ab | Als `eva` bei Termin 05 auf «nicht dabei» wechseln | Marc wird benachrichtigt | AUF-26, BEN-04 |
 | S11 | Aufgebot nur für Coaches | Als `anna` `/termine/40000000-0000-4000-8000-000000000004/aufgebot` öffnen | Hinweis «Keine Berechtigung», API 403 | RR-03 |
 | S12 | Verschiebung durch swiss unihockey | Simulator: Spiel 02 auf 12:15. Abgleich auslösen | Spiel 02 zeigt 12:15, Treffpunkt und Aufgebot unverändert, Team 1 wird benachrichtigt | SUH-05, SUH-06 |
@@ -247,4 +260,6 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S27 | Termin für zwei Teams | Als `petra` unter `/termine/neu` einen Termin für Team 1 + Team 2 erfassen | Erscheint bei `anna` und `eva`. Als `marc` nur für Team 1: API 403 | TER-01, TER-11 |
 | S28 | Ferien ausnehmen | Als `petra` bei Serie 01 Ausnahme 30.11.–06.12.2026 | Training Di 01.12. verschwindet (keine Antworten). Mit Antwort: abgesagt mit Grund der Ausnahme | TER-07 |
 | S29 | Serientermin verschieben | Als `petra` Termin 02 auf Fr 20.11. 19:00 | «verschoben», Serie 02 unverändert, Do 26.11. bleibt | TER-06 |
+| S30 | Spieltag erfassen | Als `petra` unter `/termine/neu` Art «Spieltag», Team 1, Spielort mit Google-Maps-Link, Treffpunkt, Hinweise, zwei Spiele | Termin zeigt Spiele nach Anspielzeit, Treffpunkt und «In Google Maps öffnen» (neuer Tab) | AUF-10–AUF-16 |
+| S31 | Resultat erfassen | Als `petra` Termin 04 → «Resultat für Team 1 – UHC Musterdorf erfassen» → 5:3 | Spiel 01 zeigt «Resultat 5:3», auch für `anna`. Gegner eines Spiels aus swiss unihockey ändern: API 409 Regel SUH-06 | AUF-15 |
 | S19 | Darstellung | Als `anna` unter `/profil` «Dunkel» wählen, neu laden | Bleibt dunkel. «System» folgt der Systemeinstellung | NF-06 |

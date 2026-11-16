@@ -558,7 +558,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Spiel zu einem Spieltag hinzufügen (AUF-14, Coach) */
+        /**
+         * Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
+         * @description Nur bei Spieltagen (sonst 409, Regel AUF-02), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
+         *     Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
+         */
         post: operations["spielHinzufuegen"];
         delete?: never;
         options?: never;
@@ -577,10 +581,18 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409). */
+        /**
+         * Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
+         * @description Das Resultat (Heim:Gast) lässt sich auch nach dem Spieltag erfassen; nur ein abgesagter Spieltag ergibt 409 (TER-06).
+         *     Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409, Regel SUH-06).
+         */
         put: operations["spielAendern"];
         post?: never;
-        /** Von Hand erfasstes Spiel löschen (Coach) */
+        /**
+         * Von Hand erfasstes Spiel löschen (Coach)
+         * @description Spiele aus swiss unihockey nur, wenn swiss unihockey sie nicht mehr liefert (sonst 409, Regel SUH-06).
+         *     Abgesagte oder vergangene Spieltage: 409 (TER-06).
+         */
         delete: operations["spielLoeschen"];
         options?: never;
         head?: never;
@@ -596,9 +608,18 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach) */
+        /**
+         * Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
+         * @description Nur Coaches des Teams und Admins (sonst 403). Kein Spieltag: 409 (Regel AUF-02). Coaches stehen nicht in der
+         *     Auswahl (AUF-28). Gruppen wie in der Übersicht, leere Gruppen fehlen.
+         */
         get: operations["aufgebotLesen"];
-        /** Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27). */
+        /**
+         * Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
+         * @description Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
+         *     Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
+         *     Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Die Benachrichtigung der Betroffenen kommt mit F-06.
+         */
         put: operations["aufgebotSetzen"];
         post?: never;
         delete?: never;
@@ -618,7 +639,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach) */
+        /**
+         * Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
+         * @description Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
+         *     Spielerinnen `meinAufgebot`. Die Benachrichtigung (BEN-03) kommt mit F-06.
+         */
         post: operations["aufgebotVeroeffentlichen"];
         delete?: never;
         options?: never;
@@ -1078,6 +1103,7 @@ export interface components {
             treffpunkt?: components["schemas"]["Treffpunkt"] | null;
             /** @description Nur bei SPIELTAG, nach Anspielzeit sortiert */
             spiele?: components["schemas"]["Spiel"][];
+            /** @description Nur bei SPIELTAG. Wer nicht Coach des Teams oder Admin ist, sieht vor der Veröffentlichung KEINES (AUF-23). */
             aufgebotStatus?: components["schemas"]["AufgebotStatus"];
             /** @description Nur bei SPIELTAG und Funktion SPIELERIN */
             meinAufgebot?: components["schemas"]["MeinAufgebot"] | null;
@@ -2344,6 +2370,7 @@ export interface operations {
             };
             400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
+            404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
         };
     };
@@ -2372,6 +2399,7 @@ export interface operations {
                     "application/json": components["schemas"]["Spiel"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
@@ -2452,8 +2480,10 @@ export interface operations {
                     "application/json": components["schemas"]["Aufgebot"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
+            409: components["responses"]["Konflikt"];
             422: components["responses"]["Regelverletzung"];
         };
     };

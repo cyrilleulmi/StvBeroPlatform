@@ -20,6 +20,11 @@ export const ANWESENHEIT_ROUTES: Routes = [
     loadComponent: () => import('./termin').then((m) => m.Termin),
   },
   {
+    path: ':terminId/aufgebot',
+    title: titel('Aufgebot'),
+    loadComponent: () => import('./aufgebot').then((m) => m.Aufgebot),
+  },
+  {
     path: ':terminId/bearbeiten',
     title: titel('Termin bearbeiten'),
     loadComponent: () => import('./termin-formular').then((m) => m.TerminFormular),

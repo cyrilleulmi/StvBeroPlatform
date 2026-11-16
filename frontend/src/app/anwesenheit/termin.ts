@@ -17,17 +17,19 @@ import { fehlerstatus, fehlertext } from '../kern/fehlertext';
 import { RueckmeldungService } from '../kern/rueckmeldung.service';
 import { TEXTE } from '../kern/texte';
 import { MeineAntwort } from './meine-antwort';
+import { Spieltag } from './spieltag';
 import { Uebersicht } from './uebersicht';
 import { jahrVon, terminDatum, uhrzeit } from './zeit';
 
 /**
  * Termin (`/termine/:terminId`): Angaben, Status (abgesagt mit Grund, verschoben), für Coaches der Link
  * zum Bearbeiten (TER-04, TER-06), die eigene Antwort und die Übersicht nach Team und Linie (F-04, ANM).
+ * Bei Spieltagen zusätzlich Aufgebot und Spiele (F-05, AUF).
  */
 @Component({
   selector: 'app-termin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MeineAntwort, Uebersicht],
+  imports: [RouterLink, MeineAntwort, Spieltag, Uebersicht],
   template: `
     <div class="kopf">
       <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
@@ -70,6 +72,14 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
               (geaendert)="nachladen()"
             />
           </section>
+        }
+        @if (t.typ === 'SPIELTAG') {
+          <app-spieltag
+            [termin]="t"
+            [darfAufgebot]="coachOderAdmin()"
+            [darfResultat]="coachOderAdmin() && t.status !== 'ABGESAGT'"
+            (geaendert)="nachladen()"
+          />
         }
         <section class="karte" aria-labelledby="termin-angaben">
           <h2 id="termin-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
@@ -183,6 +193,11 @@ export class Termin {
   /** Teams des Termins, in denen die angemeldete Person Coach ist (RR-06). */
   protected readonly coachIn = computed(() =>
     (this.termin()?.teams ?? []).filter((t) => t.meineFunktion === 'COACH').map((t) => t.id),
+  );
+
+  /** Coach eines beteiligten Teams oder Admin: Aufgebot und Resultate (RR-03). */
+  protected readonly coachOderAdmin = computed(
+    () => this.coachIn().length > 0 || (this.anmeldung.ich()?.admin ?? false),
   );
 
   /** Erklärung, warum nicht mehr geantwortet werden kann (TER-06), sonst `null`. */

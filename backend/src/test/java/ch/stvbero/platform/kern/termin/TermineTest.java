@@ -106,7 +106,8 @@ class TermineTest {
                 .body("treffpunkt.zeit", equalTo("2026-11-22T08:00:00+01:00"))
                 .body("hinweise", equalTo("Weisse Trikots mitnehmen"))
                 .body("ort.mapsUrl", equalTo("https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf"))
-                .body("spiele", empty())
+                // Spiele und Aufgebot im Entwurf ab F-05 (AUF-23: für Anna noch kein Aufgebot)
+                .body("spiele.size()", equalTo(2))
                 .body("meinAufgebot", equalTo("NOCH_KEIN_AUFGEBOT"));
         given().cookie("stv_sitzung", petra).get("/api/serien/" + SERIE_1).then().statusCode(200)
                 .body("wochentag", equalTo("DIENSTAG"))
