@@ -14,9 +14,39 @@ public final class SpielRegeln {
     public static final String AM_SPIELTAG = "Das Spiel muss am Tag des Spieltags stattfinden.";
     public static final String IMPORTIERT = "Gegner, Anspielzeit und Heim/Auswärts kommen von swiss unihockey und lassen sich nicht ändern.";
     public static final String NICHT_LOESCHBAR = "Spiele von swiss unihockey lassen sich nur löschen, wenn swiss unihockey sie nicht mehr liefert.";
+    public static final String NUR_SPIELTAG = "Nur ein Spieltag hat Spiele.";
+    public static final String IMPORTIERT_VERSCHIEBEN = "Der Spieltag hat Spiele von swiss unihockey. Er lässt sich nur am selben Tag verschieben; das Datum kommt von swiss unihockey.";
     public static final String ABGESAGT = "Der Spieltag ist abgesagt. Spiele lassen sich nicht mehr ändern.";
 
     private SpielRegeln() {
+    }
+
+    /** Spiele gibt es nur bei Spieltagen (AUF-01, AUF-14). */
+    public static void pruefeSpieltag(TerminTyp typ) {
+        if (typ != TerminTyp.SPIELTAG) {
+            throw FachFehler.konflikt("Kein Spieltag", NUR_SPIELTAG, "AUF-01");
+        }
+    }
+
+    /**
+     * Beim Ändern eines Spiels gilt die Tagesregel nur für eine neue Anspielzeit. Ein Resultat lässt sich damit
+     * immer erfassen (AUF-15), auch wenn ein früherer Stand die Regel nicht erfüllt.
+     */
+    public static void pruefeAmSpieltagBeimAendern(Instant anspielzeitAlt, Instant anspielzeitNeu, Instant beginnSpieltag) {
+        if (!anspielzeitAlt.equals(anspielzeitNeu)) {
+            pruefeAmSpieltag(anspielzeitNeu, beginnSpieltag);
+        }
+    }
+
+    /**
+     * Ein Spieltag mit Spielen aus swiss unihockey lässt sich nicht auf einen anderen Tag verschieben: Datum und
+     * Zeit der Spiele kommen von swiss unihockey (SUH-05, SUH-06), sie ziehen nicht mit (O-48). 422 beim Feld
+     * {@code beginn}.
+     */
+    public static void pruefeVerschiebbar(boolean hatImportierteSpiele, Instant beginnAlt, Instant beginnNeu) {
+        if (hatImportierteSpiele && !TerminRegeln.datum(beginnAlt).equals(TerminRegeln.datum(beginnNeu))) {
+            throw FachFehler.regelverletzung("beginn", "Spiele von swiss unihockey", IMPORTIERT_VERSCHIEBEN, "SUH-05");
+        }
     }
 
     /** Ein Spieltag findet an einem Tag statt (AUF-01): Spiele liegen am Datum seines Beginns. */

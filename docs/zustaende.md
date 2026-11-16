@@ -144,8 +144,8 @@ stateDiagram-v2
 | Regel | Bezug |
 |---|---|
 | Spiele haben Gegner, Anspielzeit, Heim/Auswärts und optional ein Resultat Heim:Gast (z.B. 5:3). Die API liefert sie nach Anspielzeit. | AUF-14, AUF-15 |
-| Erfassen, ändern und löschen dürfen Coaches des Teams und Admins (403). Nur bei Spieltagen (409, AUF-02). | TER-11, RR-06 |
-| Die Anspielzeit liegt am Tag des Spieltags (400 beim Feld `anspielzeit`). Wird der Spieltag auf einen anderen Tag verschoben, ziehen von Hand erfasste Spiele mit (Annahme O-48). | AUF-01 |
+| Erfassen, ändern und löschen dürfen Coaches des Teams und Admins (403). Nur bei Spieltagen (409, Regel AUF-01). | TER-11, RR-06 |
+| Die Anspielzeit liegt am Tag des Spieltags (400 beim Feld `anspielzeit`). Beim Ändern eines Spiels gilt das nur für eine neue Anspielzeit, das Resultat lässt sich also immer erfassen. Wird der Spieltag auf einen anderen Tag verschoben, ziehen von Hand erfasste Spiele mit. Hat er Spiele aus swiss unihockey, lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05); deren Datum kommt von swiss unihockey (Annahme O-48). | AUF-01, SUH-05 |
 | Hinzufügen und löschen nur, solange der Spieltag geplant und nicht vorbei ist (409, TER-06). Ändern, z.B. das Resultat, auch danach; nur ein abgesagter Spieltag ergibt 409 (Annahme O-47). | AUF-15, TER-06 |
 | Spiele aus swiss unihockey: Gegner, Anspielzeit und Heim/Auswärts sind schreibgeschützt, Löschen nur, wenn swiss unihockey sie nicht mehr liefert (409, Regel SUH-06). Das Resultat lässt sich erfassen. | SUH-06 |
 | Ein Spieltag mit Spielen oder Aufgebot lässt sich nicht in einen anderen Typ ändern (409, Regel AUF-01). | AUF-01 |

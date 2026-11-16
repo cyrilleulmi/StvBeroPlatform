@@ -285,7 +285,8 @@ class SpieltageTest {
                 {"gegner":"UHC Drei","anspielzeit":"2026-11-22T12:30:00+01:00","heim":true}""";
         spielHinzufuegen(anmelden("anna"), T04, spiel).statusCode(403);
         spielHinzufuegen(anmelden("marc"), T04, spiel).statusCode(403);
-        spielHinzufuegen(petra, T01, spiel).statusCode(409).body("regel", equalTo("AUF-02"));
+        spielHinzufuegen(petra, T01, spiel).statusCode(409).body("regel", equalTo("AUF-01"))
+                .body("detail", equalTo("Nur ein Spieltag hat Spiele."));
         spielHinzufuegen(petra, T04, """
                 {"gegner":"UHC Drei","anspielzeit":"2026-11-23T12:30:00+01:00","heim":true}""")
                 .statusCode(400).body("felder[0].feld", equalTo("anspielzeit"));
@@ -344,6 +345,28 @@ class SpieltageTest {
                          "ende":"2026-11-29T16:00:00+01:00","teamIds":["10000000-0000-4000-8000-000000000002"]}""")
                 .put("/api/termine/" + T05).then().statusCode(200)
                 .body("spiele[0].anspielzeit", equalTo("2026-11-29T14:00:00+01:00"));
+    }
+
+    @Test
+    void o48ImportierterSpieltagNurAmSelbenTagVerschiebbarResultatBleibtErfassbar() {
+        String petra = anmelden("petra");
+        String verschoben = """
+                {"typ":"SPIELTAG","titel":"Spieltag","beginn":"2026-11-29T09:30:00+01:00",
+                 "ende":"2026-11-29T13:00:00+01:00","teamIds":["%s"]}""".formatted(TEAM_1);
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON).body(verschoben)
+                .put("/api/termine/" + T04).then().statusCode(422)
+                .body("regel", equalTo("SUH-05")).body("felder[0].feld", equalTo("beginn"));
+        // Spieltag und Spiele bleiben am 22.11.
+        termin(petra, T04).body("beginn", equalTo("2026-11-22T09:30:00+01:00"))
+                .body("spiele[0].anspielzeit", equalTo("2026-11-22T09:30:00+01:00"));
+        // Am selben Tag verschieben geht
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON).body("""
+                        {"typ":"SPIELTAG","titel":"Spieltag","beginn":"2026-11-22T09:00:00+01:00",
+                         "ende":"2026-11-22T13:00:00+01:00","teamIds":["%s"]}""".formatted(TEAM_1))
+                .put("/api/termine/" + T04).then().statusCode(200);
+        spielAendern(petra, T04, SPIEL_01, """
+                {"gegner":"UHC Musterdorf","anspielzeit":"2026-11-22T09:30:00+01:00","heim":true,"resultat":"2:1"}""")
+                .statusCode(200).body("resultat", equalTo("2:1"));
     }
 
     @Test

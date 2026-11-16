@@ -126,6 +126,8 @@ public class TerminService {
         pruefeEingabe(eingabe.typ(), beginn, ende, teams, saison);
         List<Spiel> spiele = t.typ == TerminTyp.SPIELTAG ? Spiel.von(t.id) : List.of();
         TerminRegeln.pruefeTypWechsel(t.typ, eingabe.typ(), !spiele.isEmpty() || Aufgebot.findById(t.id) != null);
+        SpielRegeln.pruefeVerschiebbar(spiele.stream().anyMatch(s -> s.quelle == Quelle.SWISS_UNIHOCKEY),
+                t.beginn, beginn);
         long tage = ChronoUnit.DAYS.between(TerminRegeln.datum(t.beginn), TerminRegeln.datum(beginn));
         if (tage != 0) {
             // Von Hand erfasste Spiele ziehen mit, wenn der Spieltag auf einen anderen Tag verschoben wird (AUF-01).

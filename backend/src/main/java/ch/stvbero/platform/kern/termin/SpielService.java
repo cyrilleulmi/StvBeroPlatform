@@ -24,7 +24,7 @@ public class SpielService {
     public SpielDto hinzufuegen(Angemeldet wer, UUID terminId, SpielSchreiben eingabe) {
         Termin t = TerminService.finden(terminId);
         pruefeDarf(wer, t);
-        AufgebotRegeln.pruefeSpieltag(t.typ);
+        SpielRegeln.pruefeSpieltag(t.typ);
         TerminRegeln.pruefeAenderbar(t.status, t.ende, uhr.jetzt());
         t.saison.pruefeBeschreibbar();
         Instant anspielzeit = eingabe.anspielzeit().toInstant();
@@ -49,7 +49,7 @@ public class SpielService {
         Instant anspielzeit = eingabe.anspielzeit().toInstant();
         SpielRegeln.pruefeAenderbar(s.quelle, s.gegner, s.anspielzeit, s.heim,
                 eingabe.gegner().strip(), anspielzeit, eingabe.heim());
-        SpielRegeln.pruefeAmSpieltag(anspielzeit, t.beginn);
+        SpielRegeln.pruefeAmSpieltagBeimAendern(s.anspielzeit, anspielzeit, t.beginn);
         uebernehmen(s, eingabe);
         return s.dto();
     }

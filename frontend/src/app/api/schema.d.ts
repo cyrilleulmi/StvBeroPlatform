@@ -377,6 +377,8 @@ export interface paths {
          * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Betroffenen (ab F-06).
          *     Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
          *     Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
+         *     Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
+         *     lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05, Annahme O-48).
          */
         put: operations["terminAendern"];
         post?: never;
@@ -560,7 +562,7 @@ export interface paths {
         put?: never;
         /**
          * Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
-         * @description Nur bei Spieltagen (sonst 409, Regel AUF-02), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
+         * @description Nur bei Spieltagen (sonst 409, Regel AUF-01), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
          *     Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
          */
         post: operations["spielHinzufuegen"];
@@ -2111,6 +2113,7 @@ export interface operations {
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
+            422: components["responses"]["Regelverletzung"];
         };
     };
     terminAbsagen: {

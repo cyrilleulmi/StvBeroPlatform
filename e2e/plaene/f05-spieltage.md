@@ -39,7 +39,7 @@ T04 Spieltag Team 1 `…004`, T05 Spieltag Team 2 `…005`. Spiele `50000000-000
 | G7 | Typ wechseln | API `PUT …/T04` mit `typ: TRAINING` | 409 Regel AUF-01 |
 | G8 | Doppelklick | Checkbox schnell zweimal; «Veröffentlichen» im Dialog doppelt | während der Anfrage alle Checkboxen gesperrt, höchstens ein `POST …/veroeffentlichen` |
 | G9 | Dunkel | Aufgebot-Screen, Termin T04/T05, Dialoge | gut lesbar, Statusfarben und Chips erkennbar |
-| G10 | Importierten Spieltag verschieben (O-48) | `petra` → `/termine/<T04>/bearbeiten` → Datum 29.11.2026 → speichern → «Resultat für Team 1 – UHC Musterdorf erfassen» → «2:1»; API `PUT …/T04/spiele/<Spiel 01>` mit Resultat | Spiele und Spieltag liegen am selben Tag (oder Verschieben wird verhindert); Resultat lässt sich speichern, kein 400 «Das Spiel muss am Tag des Spieltags stattfinden.» |
+| G10 | Importierten Spieltag verschieben (O-48) | `petra` → `/termine/<T04>/bearbeiten` → Datum 29.11.2026 → speichern → «Resultat für Team 1 – UHC Musterdorf erfassen» → «2:1»; API `PUT …/T04/spiele/<Spiel 01>` mit Resultat | Speichern wird verhindert: Meldung beim Feld «Datum» «Der Spieltag hat Spiele von swiss unihockey. Er lässt sich nur am selben Tag verschieben; …» (API 422, Regel SUH-05, Feld `beginn`). Spieltag und Spiele bleiben am 22.11., Resultat 2:1 lässt sich speichern. |
 | G11 | Hand erfassten Spieltag verschieben | `marc` → API `PUT …/T05` mit Datum 29.11. | Spiel 03 zieht mit (29.11. 14:00) |
 | G12 | Aufgebot nach Veröffentlichen ändern | `petra` → Aufgebot T04 veröffentlichen, dann Kim anhaken; `kim` → T04 | Status bleibt «veröffentlicht», Kim sieht sofort «aufgeboten» |
 | G13 | Rechte Spiele/Resultat | `anna`, `marc` → API `PUT …/T04/spiele/<Spiel 01>` | 403; Admin `alex` darf Aufgebot ansehen und ändern |

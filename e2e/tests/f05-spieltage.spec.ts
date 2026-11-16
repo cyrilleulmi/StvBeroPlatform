@@ -277,6 +277,34 @@ test('F-05 SUH-06: Spiele aus swiss unihockey sind im Formular nicht änderbar',
   await expect(page.getByRole('button', { name: 'Spiel 1 entfernen' })).toHaveCount(0);
 });
 
+test.describe('Importierter Spieltag verschieben', () => {
+  test.use({ erwarteteKonsolenfehler: [/status of 422/] });
+
+  test('F-05 SUH-05 AUF-15 O-48: Importierter Spieltag nur am selben Tag verschiebbar, Resultat bleibt erfassbar', async ({
+    page,
+  }) => {
+    await anmelden(page, 'petra');
+    await page.goto(`/termine/${T04}/bearbeiten`);
+    const datum = page.getByLabel('Datum', { exact: true });
+    await datum.fill('2026-11-29');
+    await page.getByRole('button', { name: 'Änderungen speichern' }).click();
+    await expect(datum).toHaveAttribute('aria-invalid', 'true');
+    await expect(datum).toBeFocused();
+    await expect(datum).toHaveAccessibleDescription(
+      'Der Spieltag hat Spiele von swiss unihockey. Er lässt sich nur am selben Tag verschieben; das Datum kommt von swiss unihockey.',
+    );
+    await expect(page).toHaveURL(`/termine/${T04}/bearbeiten`);
+
+    await page.goto(`/termine/${T04}`);
+    await page.getByRole('button', { name: 'Resultat für Team 1 – UHC Musterdorf erfassen' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Resultat: Team 1 – UHC Musterdorf' });
+    await dialog.getByLabel('Resultat (Heim:Gast, z.B. 5:3)').fill('2:1');
+    await dialog.getByRole('button', { name: 'Resultat speichern' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toContainText('Resultat 2:1');
+  });
+});
+
 test('F-05 K8 AUF-15: Resultat pro Spiel erfassen', async ({ page }) => {
   await anmelden(page, 'petra');
   await page.goto(`/termine/${T04}`);

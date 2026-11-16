@@ -26,7 +26,7 @@ import type {
   Treffpunkt,
 } from '../api/typen';
 import { AnmeldungService } from '../kern/anmeldung.service';
-import { feldfehler, fehlerstatus, fehlertext } from '../kern/fehlertext';
+import { feldfehler, fehlerregel, fehlerstatus, fehlertext } from '../kern/fehlertext';
 import { RueckmeldungService } from '../kern/rueckmeldung.service';
 import { TEXTE } from '../kern/texte';
 import { eingabe, zurich } from './zeit';
@@ -290,7 +290,9 @@ export class TerminFormular {
     feld: F,
     wert: SpielZeile[F],
   ): void {
-    this.spiele.update((z) => z.map((x) => (x.schluessel === schluessel ? { ...x, [feld]: wert } : x)));
+    this.spiele.update((z) =>
+      z.map((x) => (x.schluessel === schluessel ? { ...x, [feld]: wert } : x)),
+    );
     const k = `${schluessel}-${feld}`;
     if (this.spielFehler()[k]) {
       this.spielFehler.update((f) => {
@@ -302,7 +304,9 @@ export class TerminFormular {
   }
 
   protected spielFehlerId(schluessel: number, feld: 'gegner' | 'zeit'): string | null {
-    return this.spielFehler()[`${schluessel}-${feld}`] ? `spiel-${schluessel}-${feld}-fehler` : null;
+    return this.spielFehler()[`${schluessel}-${feld}`]
+      ? `spiel-${schluessel}-${feld}-fehler`
+      : null;
   }
 
   protected teamUmschalten(teamId: string, an: boolean): void {
@@ -537,7 +541,8 @@ export class TerminFormular {
     }
     this.spielFehler.set(sf);
     const frist = Number(w.antwortfrist);
-    if (w.antwortfrist.trim() === '' || !Number.isInteger(frist)) f.antwortfrist = pflicht('eine ganze Zahl');
+    if (w.antwortfrist.trim() === '' || !Number.isInteger(frist))
+      f.antwortfrist = pflicht('eine ganze Zahl');
     else if (frist < 0) f.antwortfrist = TEXTE.terminFormular.antwortfristMindestens;
     else if (frist > 336) f.antwortfrist = TEXTE.terminFormular.antwortfristHoechstens;
     this.feldFehler.set(f);
@@ -557,8 +562,13 @@ export class TerminFormular {
   private fehlerAnzeigen(e: unknown): void {
     const felder = feldfehler(e);
     const zugeordnet: Partial<Record<Feld, string>> = {};
+    // Spieltag mit Spielen aus swiss unihockey: nur am selben Tag verschiebbar, die Meldung gehört zum Datum (SUH-05).
+    const datumsregel = fehlerregel(e) === 'SUH-05';
     for (const [feld, meldung] of Object.entries(felder)) {
-      const ziel = API_FELDER[feld] ?? (feld.startsWith('ort.') ? 'ort' : undefined);
+      const ziel =
+        datumsregel && feld === 'beginn'
+          ? 'datum'
+          : (API_FELDER[feld] ?? (feld.startsWith('ort.') ? 'ort' : undefined));
       if (ziel) zugeordnet[ziel] = meldung;
     }
     if (Object.keys(zugeordnet).length > 0) {

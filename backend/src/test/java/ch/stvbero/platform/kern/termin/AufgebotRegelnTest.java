@@ -96,6 +96,37 @@ class AufgebotRegelnTest {
     }
 
     @Test
+    void o48TagesregelBeimAendernNurFuerEineNeueAnspielzeit() {
+        Instant spielAmAltenTag = SPIELTAG;
+        Instant spieltagVerschoben = SPIELTAG.plusSeconds(7 * 24 * 3600);
+        // Resultat erfassen: Anspielzeit unverändert, auch wenn sie nicht (mehr) am Tag des Spieltags liegt
+        assertDoesNotThrow(() -> SpielRegeln.pruefeAmSpieltagBeimAendern(spielAmAltenTag, spielAmAltenTag, spieltagVerschoben));
+        FachFehler f = assertThrows(FachFehler.class, () -> SpielRegeln.pruefeAmSpieltagBeimAendern(spielAmAltenTag,
+                spielAmAltenTag.plusSeconds(60), spieltagVerschoben));
+        assertEquals(400, f.status());
+        assertEquals("anspielzeit", f.alsFehler().felder().get(0).feld());
+    }
+
+    @Test
+    void suh05SpieltagMitImportiertenSpielenNurAmSelbenTagVerschiebbar() {
+        Instant andererTag = SPIELTAG.plusSeconds(7 * 24 * 3600);
+        assertDoesNotThrow(() -> SpielRegeln.pruefeVerschiebbar(true, SPIELTAG, SPIELTAG.plusSeconds(3600)));
+        assertDoesNotThrow(() -> SpielRegeln.pruefeVerschiebbar(false, SPIELTAG, andererTag));
+        FachFehler f = assertThrows(FachFehler.class, () -> SpielRegeln.pruefeVerschiebbar(true, SPIELTAG, andererTag));
+        assertEquals(422, f.status());
+        assertEquals("SUH-05", f.regel());
+        assertEquals("beginn", f.alsFehler().felder().get(0).feld());
+    }
+
+    @Test
+    void spieleNurBeiSpieltagen() {
+        assertDoesNotThrow(() -> SpielRegeln.pruefeSpieltag(TerminTyp.SPIELTAG));
+        FachFehler f = assertThrows(FachFehler.class, () -> SpielRegeln.pruefeSpieltag(TerminTyp.TRAINING));
+        assertEquals(409, f.status());
+        assertEquals(SpielRegeln.NUR_SPIELTAG, f.getMessage());
+    }
+
+    @Test
     void suh06ImportierteFelderSindGeschuetztDasResultatNicht() {
         assertDoesNotThrow(() -> SpielRegeln.pruefeAenderbar(Quelle.SWISS_UNIHOCKEY, "UHC Musterdorf", SPIELTAG, true,
                 "UHC Musterdorf", SPIELTAG, true));
