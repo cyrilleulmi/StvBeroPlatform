@@ -43,3 +43,5 @@ T04 Spieltag Team 1 `…004`, T05 Spieltag Team 2 `…005`. Spiele `50000000-000
 | G11 | Hand erfassten Spieltag verschieben | `marc` → API `PUT …/T05` mit Datum 29.11. | Spiel 03 zieht mit (29.11. 14:00) |
 | G12 | Aufgebot nach Veröffentlichen ändern | `petra` → Aufgebot T04 veröffentlichen, dann Kim anhaken; `kim` → T04 | Status bleibt «veröffentlicht», Kim sieht sofort «aufgeboten» |
 | G13 | Rechte Spiele/Resultat | `anna`, `marc` → API `PUT …/T04/spiele/<Spiel 01>` | 403; Admin `alex` darf Aufgebot ansehen und ändern |
+| G14 | Importierten Spieltag am selben Tag verschieben | `petra` → `/termine/<T04>/bearbeiten` → Datum 29.11. → speichern (abgelehnt) → Datum zurück auf 22.11., Beginn 09:00 → speichern → «Resultat für Team 1 – UHC Musterdorf erfassen» → «2:1» (Doppelklick auf «Resultat speichern») | 200, «Der Termin ist verschoben.», Spiele bleiben 09:30/11:45, genau ein `PUT …/spiele/<Spiel 01>` → 200, «Resultat 2:1» bleibt nach Neuladen |
+| G15 | Spiele bei Training | API `POST …/<T01>/spiele` | 409 «Nur ein Spieltag hat Spiele.», Regel AUF-01 |
