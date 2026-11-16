@@ -1,0 +1,34 @@
+{
+  "type": "table",
+  "subtype": "games",
+  "data": {
+    "context": { "team_id": "900001", "season": "2026", "mode": "team" },
+    "regions": [
+      {
+        "text": null,
+        "rows": [
+          {
+            "cells": [
+              { "text": ["heute", "19:15"] },
+              { "text": ["Sporthalle Nord", "Beromünster"] },
+              { "text": ["STV Beromünster I"] },
+              { "text": ["UHC Drei"] },
+              { "text": ["2:2 n.V."] }
+            ],
+            "link": { "type": "page", "page": "game_detail", "ids": [5000010] }
+          },
+          {
+            "cells": [
+              { "text": ["morgen", "10:00"] },
+              { "text": ["Sporthalle Nord", "Beromünster"] },
+              { "text": ["UHC Vier"] },
+              { "text": ["STV Beromünster I"] },
+              { "text": ["-"] }
+            ],
+            "link": { "type": "page", "page": "game_detail", "ids": [5000011] }
+          }
+        ]
+      }
+    ]
+  }
+}

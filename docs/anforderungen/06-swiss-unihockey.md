@@ -40,6 +40,13 @@ Dokumentation:
 - Teams: https://api-v2.swissunihockey.ch/api/teams/doc
 - Calendars: https://api-v2.swissunihockey.ch/api/calendars/doc
 
+## Stand nach F-07
+
+- Im Profil `dev`/`test` spricht die App mit einem Simulator ([testdaten.md](../testdaten.md#simulierte-swiss-unihockey-daten)), im Profil `prod` mit der Adresse aus `STV_SU_URL` (Standard `https://api-v2.swissunihockey.ch/api`).
+- Laut öffentlichen Clients der Schnittstelle (Stand Herbst 2026) verlangt `api-v2` inzwischen Zugangsdaten. Frei ist `https://wc.swissunihockey.ch` mit demselben Antwortformat, siehe [O-20 und O-24](../offene-punkte.md#swiss-unihockey).
+- Spalten der Spielliste und die Gruppierung von Turnieren: [O-21](../offene-punkte.md#swiss-unihockey).
+- Der Abgleich ist in [zustaende.md](../zustaende.md#spiel-aus-swiss-unihockey) beschrieben.
+
 ## Noch zu prüfen
 
 | Punkt | Warum |
@@ -49,4 +56,4 @@ Dokumentation:
 | Wie sind Spieltage in Turnierform abgebildet? | Entscheidet, wie zuverlässig SUH-04 gruppieren kann. |
 | Club-ID des STV Beromünster und Team-IDs | Nötig für die Verknüpfung (SUH-02). |
 | Nutzungsbedingungen | Klären, ob der regelmässige Abruf für eine Vereins-App erlaubt ist. |
-| Gibt es eine neuere Schnittstelle? | Ein unabhängiges WordPress-Plugin erwähnt die Hosts `wc.swissunihockey.ch` (frei) und `office.swissunihockey.ch` (Partner). Ungeprüft. |
+| Gibt es eine neuere Schnittstelle? | Ein unabhängiges WordPress-Plugin erwähnt die Hosts `wc.swissunihockey.ch` (frei) und `office.swissunihockey.ch` (Partner). Laut weiteren Clients nutzen die offiziellen Web-Komponenten `wc.swissunihockey.ch`. Nicht live geprüft (O-24). |

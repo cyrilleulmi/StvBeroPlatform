@@ -134,7 +134,8 @@ export const TEXTE = {
     resultatErfassen: 'Resultat erfassen',
     resultatErfassenFuer: (paarung: string) => `Resultat für ${paarung} erfassen`,
     resultatTitel: (paarung: string) => `Resultat: ${paarung}`,
-    resultatText: 'Zuerst die Tore des Heimteams, dann die des Gastteams. Leer lassen, um es zu entfernen.',
+    resultatText:
+      'Zuerst die Tore des Heimteams, dann die des Gastteams. Leer lassen, um es zu entfernen.',
     resultatFeld: 'Resultat (Heim:Gast, z.B. 5:3)',
     resultatFormat: 'Resultat bitte als Heim:Gast, z.B. 5:3.',
     resultatSpeichern: 'Resultat speichern',
@@ -170,7 +171,8 @@ export const TEXTE = {
     },
     veroeffentlichtAm: (datum: string, zeit: string) => `veröffentlicht am ${datum} ${zeit}`,
     entwurfHinweis: 'Die Spielerinnen sehen das Aufgebot erst, wenn du es veröffentlichst.',
-    veroeffentlichtHinweis: 'Die Spielerinnen sehen, ob sie aufgeboten sind. Änderungen sehen sie sofort.',
+    veroeffentlichtHinweis:
+      'Die Spielerinnen sehen, ob sie aufgeboten sind. Änderungen sehen sie sofort.',
     anzahl: (n: number) => (n === 1 ? '1 aufgeboten' : `${n} aufgeboten`),
     aufgeboten: 'aufgeboten',
     gespeichert: (name: string, ja: boolean) =>
@@ -184,7 +186,8 @@ export const TEXTE = {
     leer: 'Wähle zuerst mindestens eine Spielerin aus.',
     keineSpielerinnen: 'Dieses Team hat noch keine Spielerinnen.',
     nurSpieltag: 'Nur ein Spieltag hat ein Aufgebot.',
-    nichtAenderbar: 'Der Spieltag ist abgesagt oder vorbei. Das Aufgebot lässt sich nicht mehr ändern.',
+    nichtAenderbar:
+      'Der Spieltag ist abgesagt oder vorbei. Das Aufgebot lässt sich nicht mehr ändern.',
   },
   terminFormular: {
     neuTitel: 'Termin erfassen',
@@ -408,6 +411,30 @@ export const TEXTE = {
     alleTeams: 'Alle Teams',
     personPflicht: 'Bitte eine Person wählen.',
     namePflicht: 'Bitte einen Namen eingeben.',
+  },
+  swissUnihockey: {
+    titel: 'swiss unihockey',
+    chip: 'swiss unihockey',
+    erklaerung:
+      'Ist das Team verknüpft, kommen seine Spieltage automatisch von swiss unihockey. Der Abgleich läuft jeden Tag.',
+    verknuepftMit: (id: number) => `Verknüpft mit Team-ID ${id}.`,
+    nichtVerknuepft: 'Nicht verknüpft.',
+    feld: 'Team-ID bei swiss unihockey',
+    feldHilfe: 'Die Zahl am Ende der Adresse der Team-Seite auf swissunihockey.ch.',
+    feldPflicht: 'Bitte eine Team-ID eingeben (nur Ziffern).',
+    verknuepfen: 'Verknüpfen',
+    verknuepft: (id: number) => `Das Team ist mit Team-ID ${id} verknüpft.`,
+    loesen: 'Verknüpfung lösen',
+    geloest: 'Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.',
+    abgleichen: 'Jetzt abgleichen',
+    abgeglichen: (e: {
+      neu: number;
+      geaendert: number;
+      nichtMehrVorhanden: number;
+      unveraendert: number;
+    }) =>
+      `Abgleich fertig: ${e.neu} neu, ${e.geaendert} geändert, ` +
+      `${e.nichtMehrVorhanden} nicht mehr bei swiss unihockey, ${e.unveraendert} unverändert.`,
   },
   saisons: {
     titel: 'Saisons',

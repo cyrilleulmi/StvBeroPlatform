@@ -67,8 +67,8 @@ flowchart LR
 | `/verwaltung/personen` | Personen | Admin | Liste nach Nachname, Suche `?suche=`, Link «Person erfassen» | F-01 |
 | `/verwaltung/personen/neu` | Person erfassen | Admin | Vorname, Nachname, E-Mail, Admin. Nach dem Speichern weiter auf `/verwaltung/personen/:id` | F-01 |
 | `/verwaltung/personen/:id` | Person bearbeiten | Admin | Angaben ändern, Teamzugehörigkeiten aller Saisons | F-01 |
-| `/verwaltung/teams` | Teams verwalten | Admin | Auswahl «Saison» (`?saison=<id>`), Teams der Saison, «Team anlegen». Archiv nur lesend. Ab F-07: Verknüpfung swiss unihockey | F-01, F-07 |
-| `/verwaltung/teams/:id` | Team verwalten | Admin | Umbenennen, Coaches und Spielerinnen mit Auswahl «Funktion von <Name>» und «<Name> entfernen», «Person aufnehmen». `?saison=<id>`; Archiv nur lesend | F-01 |
+| `/verwaltung/teams` | Teams verwalten | Admin | Auswahl «Saison» (`?saison=<id>`), Teams der Saison, «Team anlegen». Archiv nur lesend. Verknüpfte Teams mit Chip «swiss unihockey» (`su-verknuepft-<teamId>`) | F-01, F-07 |
+| `/verwaltung/teams/:id` | Team verwalten | Admin | Umbenennen, Abschnitt «swiss unihockey» (Feld «Team-ID bei swiss unihockey», «Verknüpfen», «Verknüpfung lösen», «Jetzt abgleichen» mit Ergebnis als `role="status"`, Störung als `role="alert"`; nicht im Archiv), Coaches und Spielerinnen mit Auswahl «Funktion von <Name>» und «<Name> entfernen», «Person aufnehmen». `?saison=<id>`; Archiv nur lesend | F-01, F-07 |
 | `/verwaltung/saisons` | Saisons | Admin | Saisons mit Status (aktuell, Archiv, geplant), «Teams ansehen», «Zur aktuellen Saison machen», Formular «Neue Saison» mit Übernahme | F-01 |
 
 Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert"`) statt eines leeren Bildschirms. Ohne Anmeldung leitet jede Route auf `/anmelden` (bzw. im Testmodus `/dev-login`) mit `?ziel=<ursprüngliche Route>` und nach der Anmeldung dorthin zurück. Ob jemand angemeldet ist, prüft das Frontend über `GET /api/sitzung` (immer 200), damit ohne Anmeldung keine Fehler in der Konsole entstehen.
@@ -117,6 +117,9 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | `team-<teamId>` | Eintrag in `/verwaltung/teams` |
 | `saison-<saisonId>` | Eintrag in `/verwaltung/saisons` (`li` mit Saisonname als `aria-label`) |
 | `saison-status` | Status einer Saison: «aktuell», «Archiv», «geplant» |
+| `swiss-unihockey` | Abschnitt «swiss unihockey» in `/verwaltung/teams/:id` (`section`, Name «swiss unihockey») |
+| `su-status` | «Verknüpft mit Team-ID <ID>.» bzw. «Nicht verknüpft.» |
+| `su-verknuepft-<teamId>` | Chip «swiss unihockey» neben einem verknüpften Team in `/verwaltung/teams` |
 
 Erfolgsmeldungen haben `role="status"`, Fehler `role="alert"`. In «Person aufnehmen» sind Personen, die schon im Team sind, mit «(schon im Team)» markiert und nicht wählbar (PTF-04).
 

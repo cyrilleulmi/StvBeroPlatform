@@ -1,0 +1,62 @@
+{
+  "type": "table",
+  "subtype": "games",
+  "doc": "https://api-v2.swissunihockey.ch/api/games/doc",
+  "data": {
+    "context": { "team_id": "900001", "season": "2026", "mode": "team" },
+    "headers": [
+      { "text": "Datum", "key": "date", "long": "Datum", "short": "Datum", "prefer": "fit", "align": "left" },
+      { "text": "Ort", "key": "location", "long": "Ort", "short": "Ort", "prefer": "fit", "align": "left" },
+      { "text": "Heimteam", "key": "home_team", "long": "Heimteam", "short": "Heim", "prefer": "fit", "align": "left" },
+      { "text": "Gastteam", "key": "away_team", "long": "Gastteam", "short": "Gast", "prefer": "fit", "align": "left" },
+      { "text": "Resultat", "key": "result", "long": "Resultat", "short": "Res.", "prefer": "fit", "align": "center" }
+    ],
+    "title": "STV Beromünster I – Spiele 2026/27",
+    "regions": [
+      {
+        "text": null,
+        "rows": [
+          {
+            "highlight": 0,
+            "cells": [
+              { "text": ["Spieltag 4"] }
+            ]
+          },
+          {
+            "highlight": 0,
+            "cells": [
+              { "text": ["So, 22.11.2026", "09:30"] },
+              { "text": ["Sporthalle Seefeld", "Musterdorf"], "link": { "type": "map", "x": "8.1662", "y": "47.2141" } },
+              { "text": ["STV Beromünster I"] },
+              { "text": ["UHC Musterdorf"] },
+              { "text": [""] }
+            ],
+            "link": { "type": "page", "page": "game_detail", "ids": [5000001] }
+          },
+          {
+            "highlight": 0,
+            "cells": [
+              { "text": ["So, 22.11.2026", "11:45"] },
+              { "text": ["Sporthalle Seefeld", "Musterdorf"], "link": { "type": "map", "x": "8.1662", "y": "47.2141" } },
+              { "text": ["Unihockey Beispielstadt"] },
+              { "text": ["STV Beromünster I"] },
+              { "text": [""] }
+            ],
+            "link": { "type": "page", "page": "game_detail", "ids": [5000002] }
+          },
+          {
+            "highlight": 0,
+            "cells": [
+              { "text": ["Sa, 10.10.2026", "14:00"] },
+              { "text": ["Turnhalle Weid", "Beispielstadt"] },
+              { "text": ["UH Testingen"] },
+              { "text": ["STV Beromünster I"] },
+              { "text": ["3:5"] }
+            ],
+            "link": { "type": "page", "page": "game_detail", "ids": ["5000003"] }
+          }
+        ]
+      }
+    ]
+  }
+}

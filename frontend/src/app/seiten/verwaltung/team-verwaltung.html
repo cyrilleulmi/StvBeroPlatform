@@ -63,6 +63,72 @@
       </form>
     }
 
+    @if (!nurLesen()) {
+      <section class="karte formular" aria-labelledby="su-titel" data-testid="swiss-unihockey">
+        <h2 id="su-titel">{{ texte.swissUnihockey.titel }}</h2>
+        <p class="nebentext">{{ texte.swissUnihockey.erklaerung }}</p>
+        <p data-testid="su-status">
+          {{
+            t.suTeamId
+              ? texte.swissUnihockey.verknuepftMit(t.suTeamId)
+              : texte.swissUnihockey.nichtVerknuepft
+          }}
+        </p>
+        <form class="formular" (submit)="verknuepfen($event)" novalidate>
+          <div class="feld">
+            <label for="su-team-id">{{ texte.swissUnihockey.feld }}</label>
+            <input
+              id="su-team-id"
+              type="text"
+              inputmode="numeric"
+              maxlength="10"
+              autocomplete="off"
+              [value]="suTeamId()"
+              (input)="suTeamId.set($any($event.target).value)"
+              [attr.aria-invalid]="suTeamIdFehler() ? 'true' : null"
+              [attr.aria-describedby]="
+                suTeamIdFehler() ? 'su-team-id-hilfe su-team-id-fehler' : 'su-team-id-hilfe'
+              "
+            />
+            <p class="nebentext" id="su-team-id-hilfe">{{ texte.swissUnihockey.feldHilfe }}</p>
+            @if (suTeamIdFehler(); as m) {
+              <p class="feldfehler" id="su-team-id-fehler">{{ m }}</p>
+            }
+          </div>
+          <div class="su-knoepfe">
+            <button
+              type="submit"
+              class="button button-sekundaer button-klein"
+              [disabled]="speichert()"
+              [attr.aria-busy]="laufendeAktion() === 'verknuepfen' ? 'true' : null"
+            >
+              {{ texte.swissUnihockey.verknuepfen }}
+            </button>
+            @if (t.suTeamId) {
+              <button
+                type="button"
+                class="button button-sekundaer button-klein"
+                [disabled]="speichert()"
+                [attr.aria-busy]="laufendeAktion() === 'loesen' ? 'true' : null"
+                (click)="verknuepfungLoesen()"
+              >
+                {{ texte.swissUnihockey.loesen }}
+              </button>
+              <button
+                type="button"
+                class="button button-primaer button-klein"
+                [disabled]="speichert()"
+                [attr.aria-busy]="laufendeAktion() === 'abgleichen' ? 'true' : null"
+                (click)="abgleichen()"
+              >
+                {{ texte.swissUnihockey.abgleichen }}
+              </button>
+            }
+          </div>
+        </form>
+      </section>
+    }
+
     @for (
       block of [
         {
@@ -117,7 +183,9 @@
                     type="button"
                     class="button button-sekundaer button-klein"
                     [disabled]="speichert()"
-                    [attr.aria-busy]="laufendeAktion() === 'entfernen:' + m.person.id ? 'true' : null"
+                    [attr.aria-busy]="
+                      laufendeAktion() === 'entfernen:' + m.person.id ? 'true' : null
+                    "
                     (click)="entfernen(m)"
                   >
                     {{ texte.teamVerwaltung.entfernen(name(m.person)) }}

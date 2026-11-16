@@ -167,8 +167,13 @@ stateDiagram-v2
 ```
 
 - Der Abgleich überschreibt nur importierte Felder: Gegner, Anspielzeit, Heim/Auswärts, Spielort, Resultat. Treffpunkt, Hinweise, Antworten und Aufgebot bleiben unberührt (SUH-06).
-- Spiele desselben Teams am selben Tag in derselben Halle bilden einen Spieltag (SUH-04).
-- Ist swiss unihockey nicht erreichbar, ändert sich nichts. Der nächste Lauf versucht es wieder (SUH-09).
+- Spiele desselben Teams am selben Tag in derselben Halle bilden einen Spieltag (SUH-04). Ein neues Spiel kommt zu einem bestehenden importierten Spieltag mit gleichem Tag und gleicher Halle, sonst entsteht ein neuer Spieltag «Spieltag». Von Hand erfasste Spieltage bekommen nie Spiele aus dem Abgleich (SUH-10).
+- Beginn und Ende eines betroffenen Spieltags folgen seinen Spielen: Beginn ist die erste Anspielzeit, Ende die letzte plus 75 Minuten (Annahme F-07). Ändert sich dadurch der Beginn, gilt der Spieltag als verschoben.
+- Wechseln Spiele auf einen anderen Tag oder in eine andere Halle, betrachtet der Abgleich alle Spiele eines Spieltags gemeinsam: Bleibt keines am bisherigen Tag in der bisherigen Halle (z.B. ganzes Turnier eine Woche später), zieht der Spieltag mit allen seinen Spielen mit (Spielort und Zeit neu, Treffpunkt, Hinweise, Antworten und Aufgebot bleiben, Annahme F-07). Gehen die Spiele an verschiedene Ziele, zieht er dorthin, wo die meisten hingehen, bei Gleichstand zum frühesten Spiel. Die übrigen Spiele wechseln in den passenden oder einen neuen Spieltag. Bleibt mindestens ein Spiel, bleibt auch der Spieltag. Ein Tag und eine Halle gehören immer zu höchstens einem importierten Spieltag (SUH-04).
+- Benachrichtigt werden alle Mitglieder des Teams (BEN-06), einmal pro Spieltag und Abgleich, wenn sich Zeit, Halle, Gegner oder Heim/Auswärts eines Spiels geändert haben und der Spieltag geplant und nicht vorbei ist. Ein neues Resultat (SUH-08) oder eine Markierung «nicht mehr vorhanden» benachrichtigt nicht.
+- Das Resultat überschreibt der Abgleich nur, wenn swiss unihockey eines liefert; ein von Hand erfasstes bleibt sonst (O-47).
+- Ist swiss unihockey nicht erreichbar oder liefert es Unerwartetes, ändert sich nichts. Der Abgleich von Hand meldet es (502, Regel SUH-09), der tägliche Lauf (04:30) versucht es am nächsten Tag wieder; ein gestörtes Team hält die anderen nicht auf (SUH-09).
+- Abgeglichen wird die aktuelle Saison. Ein Team ohne Verknüpfung oder ausserhalb der aktuellen Saison: 409.
 
 ## Benachrichtigung
 

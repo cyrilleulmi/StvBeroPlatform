@@ -41,3 +41,4 @@ export type AufgebotStatus = components['schemas']['AufgebotStatus'];
 export type MeinAufgebot = components['schemas']['MeinAufgebot'];
 export type Treffpunkt = components['schemas']['Treffpunkt'];
 export type Benachrichtigung = components['schemas']['Benachrichtigung'];
+export type AbgleichErgebnis = components['schemas']['AbgleichErgebnis'];

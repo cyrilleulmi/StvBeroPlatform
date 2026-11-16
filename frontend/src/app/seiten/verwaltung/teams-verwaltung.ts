@@ -67,7 +67,7 @@ import { TEXTE } from '../../kern/texte';
         } @else {
           <ul class="liste" [attr.aria-label]="texte.teamVerwaltung.teamsListe">
             @for (t of teams(); track t.id) {
-              <li [attr.data-testid]="'team-' + t.id">
+              <li class="team-zeile" [attr.data-testid]="'team-' + t.id">
                 <a
                   class="zeile-link"
                   [routerLink]="['/verwaltung/teams', t.id]"
@@ -76,6 +76,11 @@ import { TEXTE } from '../../kern/texte';
                   <span class="zeile-titel">{{ t.name }}</span>
                   <app-icon name="chevron-right" [groesse]="20" />
                 </a>
+                @if (t.suTeamId) {
+                  <span class="chip" [attr.data-testid]="'su-verknuepft-' + t.id">{{
+                    texte.swissUnihockey.chip
+                  }}</span>
+                }
               </li>
             }
           </ul>
@@ -121,6 +126,15 @@ import { TEXTE } from '../../kern/texte';
   styles: `
     form .button {
       justify-self: start;
+    }
+    .team-zeile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .team-zeile .zeile-link {
+      flex: 1 1 auto;
+      min-width: 0;
     }
   `,
 })

@@ -100,7 +100,7 @@ public class TerminBenachrichtigungen {
     }
 
     /** Alle Mitglieder (jede Funktion) der beteiligten Teams in der Saison des Termins, nach Name. */
-    static List<UUID> mitglieder(Termin t) {
+    public static List<UUID> mitglieder(Termin t) {
         List<UUID> teams = t.teams.stream().map(team -> team.id).toList();
         if (teams.isEmpty()) {
             return List.of();
