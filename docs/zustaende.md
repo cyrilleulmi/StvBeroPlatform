@@ -68,8 +68,8 @@ stateDiagram-v2
 | Ende vor Beginn, kein Team, Spieltag mit mehr als einem Team, unbekanntes Team oder ein Termin in der Vergangenheit: 400 mit Feld. Termin in einer Saison im Archiv: 409 (SAI-02). | TER-04, AUF-03 |
 | Abgesagte oder vergangene Termine lassen sich weder ändern noch nochmals absagen: 409, Regel TER-06. | TER-06 |
 | Eine andere Beginnzeit setzt `verschoben` (bleibt danach gesetzt). Ein so geänderter Serientermin übernimmt spätere Änderungen der Serie nicht mehr. | TER-06 |
-| Antwortfrist = Beginn minus `antwortfristStunden` (0 bis 336, Standard 24). | TER-09, TER-10 |
-| Liste: kommende = Ende nach «jetzt», aufsteigend; vergangene = Ende erreicht, absteigend. `?team=` zeigt die eigenen Termine, an denen dieses Team beteiligt ist. | TER-13 |
+| Antwortfrist = Beginn minus `antwortfristStunden` (0 bis 336, Standard 24). Ausserhalb: «Mindestens 0 Stunden.» bzw. «Höchstens 336 Stunden (14 Tage).», im Formular und in der API. | TER-09, TER-10 |
+| Liste: kommende = Ende nach «jetzt», aufsteigend; vergangene = Ende erreicht, absteigend. `?team=` zeigt die eigenen Termine, an denen dieses Team beteiligt ist. Ist es kein eigenes Team (z.B. geteilter Link), erscheint es zusätzlich in der Auswahl «Team», damit Auswahl und Liste übereinstimmen. | TER-13 |
 
 ## Serie
 

@@ -45,3 +45,14 @@ Grenzfälle aus zustaende.md (verbotene Übergänge) und Robustheit. Ausgangslag
 | G11 | Lange Eingaben | Titel, Ort, Hinweise mit 600 Zeichen ohne Leerzeichen (z.B. ein eingefügter Link) | Gekürzt auf die Maximallänge; Detailseite mobil ohne horizontales Scrollen |
 | G12 | Filter fremdes Team | `petra` → `/termine?team=<Team 3>` | Auswahl «Team» zeigt, was gefiltert ist (oder der Filter wird ignoriert); Anzeige und Liste stimmen überein |
 | G13 | Dark und Desktop | `/termine`, `/termine/<T03>`, `/termine/neu?art=serie`, `/serien/<01>`, Dialog «Termin absagen» dunkel, 375 und 1280 | Gut lesbar, nichts Weisses auf Weiss |
+
+## Nacharbeit Runde 1
+
+Automatisiert in `e2e/tests/f03-termine.spec.ts` (Abschnitt «Befunde aus dem Test») und `backend/.../TermineTest.java`.
+
+| Befund | Fall | Test |
+|---|---|---|
+| Fehler 1 / G9 | `anna`, `marc` → `/serien/<01>` zeigt «Team 1 + Team 2» | E2E «Serie nennt alle ihre Teams», `ter11SerieNenntAlleTeamsAuchFremde` |
+| Beobachtung 1 / G4, G5 | Antwortfrist 337 bzw. 400 und -1 im Formular (Termin und Serie), API 337 | E2E «Antwortfrist ausserhalb 0 bis 336 Stunden», `ter10AntwortfristHoechstensZweiWochenMitDeutscherMeldung` |
+| Beobachtung 2 / G11 | Langer Titel, Ort, Hinweise ohne Leerzeichen, Detailseite | E2E «Lange Wörter … brechen um» (mobil und desktop) |
+| Beobachtung 3 / G12 | `petra` → `/termine?team=<Team 3>`: Auswahl «Team 3» | E2E K9 (Ende) |
