@@ -773,6 +773,9 @@ paths:
       tags: [Spieltage]
       operationId: spielHinzufuegen
       summary: Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
+      description: |
+        Nur bei Spieltagen (sonst 409, Regel AUF-02), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
+        Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
       requestBody:
         required: true
         content:
@@ -786,6 +789,7 @@ paths:
               schema: { $ref: '#/components/schemas/Spiel' }
         '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
+        '404': { $ref: '#/components/responses/NichtGefunden' }
         '409': { $ref: '#/components/responses/Konflikt' }
   /api/termine/{terminId}/spiele/{spielId}:
     parameters:
@@ -795,6 +799,9 @@ paths:
       tags: [Spieltage]
       operationId: spielAendern
       summary: Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
+      description: |
+        Das Resultat (Heim:Gast) lässt sich auch nach dem Spieltag erfassen; nur ein abgesagter Spieltag ergibt 409 (TER-06).
+        Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409, Regel SUH-06).
       requestBody:
         required: true
         content:
@@ -806,6 +813,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Spiel' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
         '409': { $ref: '#/components/responses/Konflikt' }
@@ -813,6 +821,9 @@ paths:
       tags: [Spieltage]
       operationId: spielLoeschen
       summary: Von Hand erfasstes Spiel löschen (Coach)
+      description: |
+        Spiele aus swiss unihockey nur, wenn swiss unihockey sie nicht mehr liefert (sonst 409, Regel SUH-06).
+        Abgesagte oder vergangene Spieltage: 409 (TER-06).
       responses:
         '204': { description: Gelöscht }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
@@ -825,6 +836,9 @@ paths:
       tags: [Spieltage]
       operationId: aufgebotLesen
       summary: Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
+      description: |
+        Nur Coaches des Teams und Admins (sonst 403). Kein Spieltag: 409 (Regel AUF-02). Coaches stehen nicht in der
+        Auswahl (AUF-28). Gruppen wie in der Übersicht, leere Gruppen fehlen.
       responses:
         '200':
           description: OK
@@ -838,6 +852,10 @@ paths:
       tags: [Spieltage]
       operationId: aufgebotSetzen
       summary: Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
+      description: |
+        Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
+        Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
+        Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Die Benachrichtigung der Betroffenen kommt mit F-06.
       requestBody:
         required: true
         content:
@@ -856,8 +874,10 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Aufgebot' }
+        '400': { $ref: '#/components/responses/Ungueltig' }
         '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
+        '409': { $ref: '#/components/responses/Konflikt' }
         '422': { $ref: '#/components/responses/Regelverletzung' }
   /api/termine/{terminId}/aufgebot/veroeffentlichen:
     parameters:
@@ -866,6 +886,9 @@ paths:
       tags: [Spieltage]
       operationId: aufgebotVeroeffentlichen
       summary: Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
+      description: |
+        Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
+        Spielerinnen `meinAufgebot`. Die Benachrichtigung (BEN-03) kommt mit F-06.
       responses:
         '200':
           description: Veröffentlicht
@@ -1480,7 +1503,9 @@ components:
               type: array
               description: Nur bei SPIELTAG, nach Anspielzeit sortiert
               items: { $ref: '#/components/schemas/Spiel' }
-            aufgebotStatus: { $ref: '#/components/schemas/AufgebotStatus' }
+            aufgebotStatus:
+              $ref: '#/components/schemas/AufgebotStatus'
+              description: Nur bei SPIELTAG. Wer nicht Coach des Teams oder Admin ist, sieht vor der Veröffentlichung KEINES (AUF-23).
             meinAufgebot:
               oneOf:
                 - $ref: '#/components/schemas/MeinAufgebot'

@@ -205,6 +205,25 @@ public class Seed {
             new SeedTermin(8, 1, "TRAINING", "Training", LocalDateTime.of(2026, 5, 12, 18, 30),
                     LocalDateTime.of(2026, 5, 12, 20, 0), NORD, null, null, null, null, null, List.of(1)));
 
+    /** Spiel (docs/testdaten.md, Termin 04 und 05): Nummer, Termin, Anspielzeit, Gegner, Heim, SU-Spiel-ID. */
+    record SeedSpiel(int nr, int termin, LocalDateTime anspielzeit, String gegner, boolean heim, Integer suSpielId) {
+    }
+
+    static final List<SeedSpiel> SPIELE = List.of(
+            new SeedSpiel(1, 4, LocalDateTime.of(2026, 11, 22, 9, 30), "UHC Musterdorf", true, 5000001),
+            new SeedSpiel(2, 4, LocalDateTime.of(2026, 11, 22, 11, 45), "Unihockey Beispielstadt", false, 5000002),
+            new SeedSpiel(3, 5, LocalDateTime.of(2026, 11, 28, 14, 0), "UH Testingen", true, null));
+
+    /** Aufgebot (F-05): Termin, aufgebotene Personen, veröffentlicht am ({@code null} = Entwurf). */
+    record SeedAufgebot(int termin, List<Integer> personen, LocalDateTime veroeffentlichtAm) {
+    }
+
+    static final List<SeedAufgebot> AUFGEBOTE = List.of(
+            // Termin 04: Entwurf mit Anna, Lea, Mia, Sara, Jana
+            new SeedAufgebot(4, List.of(5, 6, 7, 8, 10), null),
+            // Termin 05: veröffentlicht mit Petra, Eva, Lara, Ella (Lea nicht aufgeboten)
+            new SeedAufgebot(5, List.of(2, 12, 13, 15), LocalDateTime.of(2026, 11, 15, 21, 0)));
+
     @Inject
     EntityManager em;
 
@@ -286,6 +305,7 @@ public class Seed {
                     .setParameter(3, a.status()).setParameter(4, a.kommentar()).setParameter(5, zurich(ANTWORTEN_AM))
                     .executeUpdate();
         }
+        spieleUndAufgebote();
         em.clear();
 
         uhr.festsetzen(STANDARD_JETZT.atZone(Uhr.ZONE).toInstant());
@@ -351,6 +371,30 @@ public class Seed {
         }
     }
 
+    /** Spiele und Aufgebote der Spieltage 04 und 05 (F-05). */
+    private void spieleUndAufgebote() {
+        for (SeedSpiel sp : SPIELE) {
+            em.createNativeQuery("""
+                            insert into spiel (id, termin_id, gegner, anspielzeit, heim, quelle, su_spiel_id)
+                            values (?, ?, ?, ?, ?, ?, ?)""")
+                    .setParameter(1, spielId(sp.nr())).setParameter(2, terminId(sp.termin()))
+                    .setParameter(3, sp.gegner()).setParameter(4, zurich(sp.anspielzeit())).setParameter(5, sp.heim())
+                    .setParameter(6, sp.suSpielId() == null ? "MANUELL" : "SWISS_UNIHOCKEY")
+                    .setParameter(7, sp.suSpielId())
+                    .executeUpdate();
+        }
+        for (SeedAufgebot a : AUFGEBOTE) {
+            em.createNativeQuery("insert into aufgebot (termin_id, veroeffentlicht_am) values (?, ?)")
+                    .setParameter(1, terminId(a.termin()))
+                    .setParameter(2, a.veroeffentlichtAm() == null ? null : zurich(a.veroeffentlichtAm()))
+                    .executeUpdate();
+            for (int person : a.personen()) {
+                em.createNativeQuery("insert into aufgebot_eintrag (termin_id, person_id) values (?, ?)")
+                        .setParameter(1, terminId(a.termin())).setParameter(2, personId(person)).executeUpdate();
+            }
+        }
+    }
+
     private void teamsZuordnen(UUID terminId, List<Integer> teams) {
         for (int team : teams) {
             em.createNativeQuery("insert into termin_team (termin_id, team_id) values (?, ?)")
@@ -376,6 +420,10 @@ public class Seed {
 
     public static UUID terminId(int nr) {
         return id("4", nr);
+    }
+
+    public static UUID spielId(int nr) {
+        return id("5", nr);
     }
 
     public static UUID serieId(int nr) {

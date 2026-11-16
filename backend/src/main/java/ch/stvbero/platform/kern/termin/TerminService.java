@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -123,6 +124,14 @@ public class TerminService {
         // Auch nach der Änderung muss die Person Coach eines beteiligten Teams sein.
         TerminRegeln.pruefeDarfErfassen(wer.admin(), funktionen(wer, teams, saison));
         pruefeEingabe(eingabe.typ(), beginn, ende, teams, saison);
+        List<Spiel> spiele = t.typ == TerminTyp.SPIELTAG ? Spiel.von(t.id) : List.of();
+        TerminRegeln.pruefeTypWechsel(t.typ, eingabe.typ(), !spiele.isEmpty() || Aufgebot.findById(t.id) != null);
+        long tage = ChronoUnit.DAYS.between(TerminRegeln.datum(t.beginn), TerminRegeln.datum(beginn));
+        if (tage != 0) {
+            // Von Hand erfasste Spiele ziehen mit, wenn der Spieltag auf einen anderen Tag verschoben wird (AUF-01).
+            spiele.stream().filter(s -> s.quelle == Quelle.MANUELL)
+                    .forEach(s -> s.anspielzeit = s.anspielzeit.atZone(Uhr.ZONE).plusDays(tage).toInstant());
+        }
         t.verschoben = TerminRegeln.verschoben(t.verschoben, t.beginn, beginn);
         t.saison = saison;
         uebernehmen(t, eingabe, teams);

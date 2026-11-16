@@ -163,7 +163,7 @@ public class AntwortService {
     // ------------------------------------------------------------------ Hilfen
 
     /** Mitglieder aller beteiligten Teams in der Saison des Termins, mit Person und Gruppen. */
-    private List<Teamzugehoerigkeit> mitglieder(Termin t) {
+    List<Teamzugehoerigkeit> mitglieder(Termin t) {
         List<UUID> teams = t.teams.stream().map(team -> team.id).toList();
         if (teams.isEmpty()) {
             return List.of();
@@ -195,7 +195,7 @@ public class AntwortService {
                 .toList();
     }
 
-    private Map<UUID, Gespeichert> antworten(UUID terminId) {
+    Map<UUID, Gespeichert> antworten(UUID terminId) {
         @SuppressWarnings("unchecked")
         List<Object[]> zeilen = em.createNativeQuery("""
                         select person_id, status, kommentar, geaendert_am, eingetragen_von, kurzfristig
@@ -224,7 +224,7 @@ public class AntwortService {
     }
 
     /** Antwort für die Anzeige. Ohne Berechtigung fehlt der Kommentar (ANM-07). */
-    private static AntwortDto antwort(Gespeichert a, boolean mitKommentar, Map<UUID, PersonKurz> personen) {
+    static AntwortDto antwort(Gespeichert a, boolean mitKommentar, Map<UUID, PersonKurz> personen) {
         if (a == null) {
             return AntwortDto.OFFEN;
         }

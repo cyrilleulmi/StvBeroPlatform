@@ -92,17 +92,32 @@ final class TerminLeser {
                 t.serie == null ? null : t.serie.id);
     }
 
+    /**
+     * Termin mit allen Angaben. Bei Spieltagen mit Spielen nach Anspielzeit, Stand des Aufgebots (vor der
+     * Veröffentlichung nur für Coaches und Admins, AUF-23) und eigenem Aufgebotsstatus für Spielerinnen (AUF-24).
+     */
     TerminDto voll(Termin t, boolean darfBearbeiten) {
         TerminKurzDto k = kurz(t);
         boolean spieltag = t.typ == TerminTyp.SPIELTAG;
         TreffpunktDto treffpunkt = t.treffpunktZeit == null ? null : new TreffpunktDto(zeit(t.treffpunktZeit), t.treffpunktOrt);
-        // Spiele und Aufgebot kommen mit F-05.
-        MeinAufgebot meinAufgebot = spieltag && meineFunktionen(t).contains(Funktion.SPIELERIN)
-                ? MeinAufgebot.NOCH_KEIN_AUFGEBOT : null;
+        List<SpielDto> spiele = null;
+        AufgebotStatus aufgebotStatus = null;
+        MeinAufgebot meinAufgebot = null;
+        if (spieltag) {
+            spiele = Spiel.von(t.id).stream().map(Spiel::dto).toList();
+            Aufgebot aufgebot = Aufgebot.findById(t.id);
+            Set<Funktion> meine = meineFunktionen(t);
+            AufgebotStatus status = aufgebot == null ? AufgebotStatus.KEINES : aufgebot.status();
+            aufgebotStatus = AufgebotRegeln.sichtbarerStatus(status,
+                    AufgebotRegeln.darfBearbeiten(wer.admin(), meine));
+            if (meine.contains(Funktion.SPIELERIN)) {
+                meinAufgebot = AufgebotRegeln.meinAufgebot(status,
+                        aufgebot != null && aufgebot.personIds.contains(wer.personId()));
+            }
+        }
         return new TerminDto(k.id(), k.typ(), k.titel(), k.beginn(), k.ende(), k.status(), k.absagegrund(),
                 k.verschoben(), k.teams(), k.ort(), k.antwortfrist(), k.meineAntwort(), k.zaehler(), k.serieId(),
-                t.hinweise, t.antwortfristStunden, treffpunkt, spieltag ? List.of() : null,
-                spieltag ? AufgebotStatus.KEINES : null, meinAufgebot, darfBearbeiten);
+                t.hinweise, t.antwortfristStunden, treffpunkt, spiele, aufgebotStatus, meinAufgebot, darfBearbeiten);
     }
 
     /** Teams nach Name, mit dem Namen in der Saison des Termins (SAI-02) und der eigenen Funktion. */
