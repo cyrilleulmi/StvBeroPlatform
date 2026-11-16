@@ -2,12 +2,13 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`) F-04 (Antworten in `/`, `/termine` und `/termine/:id`, Übersicht nach Team und Linie) und F-05 (Spieltag im Formular mit Spielen, Treffpunkt und Google-Maps-Link, Spiele, Resultate und Aufgebotsstatus in `/termine/:id`, `/termine/:id/aufgebot`).
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`) F-04 (Antworten in `/`, `/termine` und `/termine/:id`, Übersicht nach Team und Linie) F-05 (Spieltag im Formular mit Spielen, Treffpunkt und Google-Maps-Link, Spiele, Resultate und Aufgebotsstatus in `/termine/:id`, `/termine/:id/aufgebot`) und F-06 (`/benachrichtigungen`, Glocke mit Zähler in der Navigation).
 
 ## Navigation
 
 - **Mobil:** Bottom-Navigation mit Start, Termine, Teams, Profil. Admins sehen zusätzlich «Verwaltung».
 - **Desktop (ab 1024px):** dieselben Einträge als Seitennavigation links.
+- **Benachrichtigungen (F-06):** eigener Link in der Navigation, ausserhalb der Liste der Haupteinträge. Mobil eine runde Glocke oben rechts (Name «Benachrichtigungen», Beschriftung nur für Screenreader), ab 1024px ein Eintrag «Benachrichtigungen» über «Start». Mit Ungelesenen zeigt er die Anzahl (`benachrichtigungen-zaehler`), der Name lautet dann z.B. «Benachrichtigungen 2 ungelesen». Der Zähler wird bei jedem Seitenwechsel neu geladen.
 - Der aktive Eintrag hat `aria-current="page"`.
 - Die Navigation ist ein `nav` mit `aria-label="Hauptnavigation"`.
 - Reihenfolge: Start, Termine, Teams, Profil, (Verwaltung). Seitentitel im Browser: «<Seite> · STV Bero».
@@ -29,6 +30,8 @@ flowchart LR
     Teams --> Team["/teams/:id"]
     Team --> Linien["/teams/:id/linien (Coach)"]
     Start --> Profil["/profil"]
+    Start --> Benachrichtigungen["/benachrichtigungen"]
+    Benachrichtigungen -->|Klick| Detail
     Start --> Verwaltung["/verwaltung (Admin)"]
     Verwaltung --> Personen["/verwaltung/personen"]
     Personen --> PersonNeu["/verwaltung/personen/neu"]
@@ -56,7 +59,7 @@ flowchart LR
 | `/teams` | Meine Teams | angemeldet | Eigene Teams der aktuellen Saison mit eigener Funktion (PTF-12), Link auf `/teams/:id` | F-01 |
 | `/teams/:id` | Team | Mitglieder, Admin | Coaches und Spielerinnen getrennt (PTF-07), Spielerinnen nach Linie (Listen mit dem Gruppennamen, leere Gruppen fehlen). Coaches und Admins sehen den Link «Linien einteilen». `?saison=<id>` zeigt eine andere Saison (Archiv mit Hinweis). Ohne Zugehörigkeit «Keine Berechtigung» | F-01, F-02 |
 | `/teams/:id/linien` | Linien | Coach, Admin (andere Mitglieder lesend) | Linien hinzufügen, umbenennen, sortieren («<Linie> nach oben/unten»), löschen (Dialog), Spielerinnen per Drag & Drop oder Auswahlfeld «Linie von <Name>» zuweisen; speichert sofort. Ohne Zugehörigkeit «Keine Berechtigung». Aktuelle Saison | F-02 |
-| `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, als gelesen markieren | F-06 |
+| `/benachrichtigungen` | Benachrichtigungen | angemeldet | Eigene Benachrichtigungen, neueste zuerst (Liste «Benachrichtigungen»): Text, Zeitpunkt, ungelesene mit «Neu». Ein Klick markiert als gelesen und öffnet `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (nur mit Ungelesenen, Rückmeldung «Alle sind als gelesen markiert.»). Leer: «Keine Benachrichtigungen.» | F-06 |
 | `/profil` | Profil | angemeldet | Name, Hell/Dunkel/System, Abmelden | F-00 |
 | `/verwaltung` | Verwaltung | Admin | Einstieg: Links «Personen», «Teams verwalten», «Saisons». Andere sehen «Keine Berechtigung» | F-00, F-01 |
 | `/keine-saison` | Keine aktuelle Saison | angemeldet | Hinweis, wenn `GET /api/ich` mit 409 antwortet (keine Saison als aktuell festgelegt, SAI-03). Ohne Navigation, Buttons «Nochmals versuchen» (zurück zu `?ziel=`) und «Abmelden». Jede Route leitet in diesem Zustand mit `?ziel=` hierher. Direkt geöffnet: ohne Anmeldung zur Anmeldung, mit aktueller Saison direkt weiter zum Ziel | Nachbesserung #13 |
@@ -96,7 +99,8 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | `kachel-<id>` | Kachel auf dem Start-Screen (Link), z.B. `kachel-anwesenheit` |
 | `dev-login-person-<schluessel>` | Eintrag einer Testperson auf `/dev-login`, z.B. `dev-login-person-petra` |
 | `naechster-termin` | Karte «Nächster Termin» auf dem Start-Screen: nächster geplanter Termin der eigenen Teams (abgesagte übersprungen) mit Link zum Termin und `meine-antwort`. Ohne Termin: «Keine kommenden Termine» |
-| `benachrichtigungen-zaehler` | Anzahl ungelesener Benachrichtigungen |
+| `benachrichtigungen-zaehler` | Anzahl ungelesener Benachrichtigungen in der Navigation (fehlt, wenn alles gelesen ist) |
+| `benachrichtigung-<id>` | Eintrag in `/benachrichtigungen` (`li` mit `data-gelesen="true\|false"` und `data-art`, z.B. `ERINNERUNG`) |
 | `keine-saison-hinweis` | Hinweis auf `/keine-saison` |
 
 ### Teams und Verwaltung (F-01)

@@ -33,6 +33,7 @@ Alle IDs sind UUIDs. Die erste Ziffer zeigt den Typ, die letzten zwei die Nummer
 | Saison | `60000000-0000-4000-8000-0000000000NN` |
 | Serie | `70000000-0000-4000-8000-0000000000NN` |
 | Konto | `80000000-0000-4000-8000-0000000000NN` (gleiche Nummer wie die Person) |
+| Benachrichtigung | `90000000-0000-4000-8000-0000000000NN` |
 
 ## Stand des Seeds
 
@@ -48,7 +49,9 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | F-04 | Antworten zu den Terminen 01, 02, 04 und 05 gemäss den Tabellen unten (Termin 02: Anna «dabei»), alle eingetragen am 15.11.2026 20:00 von der Person selbst, keine kurzfristig. Übrige Termine ohne Antworten |
 | F-05 | Spiele 01–03 und die Aufgebote der Termine 04 (Entwurf) und 05 (veröffentlicht am 15.11.2026 21:00) gemäss den Tabellen unten. Spiele 01 und 02 stammen aus swiss unihockey (SU-Spiel-ID `5000001` bzw. `5000002`), Spiel 03 ist von Hand erfasst. Noch ohne Resultate |
 
-Benachrichtigungen folgen mit F-06, der Abgleich mit swiss unihockey mit F-07.
+| F-06 | Benachrichtigungen 01–18 gemäss Tabelle «Benachrichtigungen» unten. Noch keine Erinnerungen |
+
+Der Abgleich mit swiss unihockey folgt mit F-07.
 
 Serientermine ohne feste ID haben die ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, z.B. für Serie 02 am 26.11.2026 `termin-2-2026-11-26`. Sie heissen «Training», Ort wie die Serie.
 
@@ -222,6 +225,17 @@ Antworten: Petra dabei, Lea dabei, Eva dabei, Lara dabei, Zoe nicht dabei, Ella 
 
 Aufgebot veröffentlicht am Sa 15.11.2026 21:00: Petra, Eva, Lara, Ella. Lea ist «nicht aufgeboten».
 
+## Benachrichtigungen
+
+Texte wie im Betrieb. `GET /api/test/benachrichtigungen` liefert sie mit; neu entstandene haben IDs, die nicht mit `90000000` beginnen.
+
+| Nr. | Art | Termin | Empfänger | Erstellt | Gelesen |
+|---|---|---|---|---|---|
+| 01–12 | `TERMIN_ABGESAGT` «Training Di 24.11. ist abgesagt: Halle besetzt» | 03 | Marc, Anna, Lea, Mia, Sara, Nina, Jana, Kim, Eva, Lara, Zoe, Ella (in dieser Reihenfolge; alle Mitglieder von Team 1 und 2 ausser Petra, die abgesagt hat) | Sa 14.11.2026 10:00 | nur Mia (Nr. 04) |
+| 13–18 | `AUFGEBOT_VEROEFFENTLICHT` «Das Aufgebot für Spieltag Sa 28.11. ist da: Du bist (nicht) aufgeboten.» | 05 | Petra, Lea (nicht aufgeboten), Eva, Lara, Zoe (nicht aufgeboten), Ella | So 15.11.2026 21:00 | nur Petra (Nr. 13) |
+
+Ungelesen nach Reset: Lea, Eva, Lara, Zoe, Ella je 2; Marc, Anna, Sara, Nina, Jana, Kim je 1; Petra, Mia, Alex, Ruth, Tina 0.
+
 ## Simulierte swiss-unihockey-Daten
 
 Im Profil `dev`/`test` spricht die App nicht mit swiss unihockey, sondern mit einem Simulator. Er liefert nach Reset für Team-ID `900001` genau Spiel 01 und Spiel 02 von Termin 04. Mit `PUT /api/test/swiss-unihockey/spiele` lassen sich andere Daten vorgeben.
@@ -236,12 +250,13 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S2 | Antwort mit einem Tap | Als `nina` in der Terminliste bei Termin 01 «dabei» tippen | Antwort gespeichert, Team 1 zeigt 6 dabei, 0 offen | ANM-08 |
 | S3 | Vielleicht ohne Kommentar | Als `nina` bei Termin 01 «vielleicht» wählen, Kommentar leer lassen | Speichern nicht möglich, Fehlermeldung beim Feld | ANM-04 |
 | S4 | Kommentare nur für Coaches | Als `anna` Termin 01 öffnen | Kein Kommentar sichtbar. Als `petra`: «Krank» bei Mia sichtbar | ANM-07 |
-| S5 | Kurzfristige Absage | Uhr auf 16.11.2026 19:00. Als `anna` bei Termin 01 auf «nicht dabei» wechseln | Antwort mit `kurzfristig: true`, Petra sieht bei Anna «kurzfristig abgemeldet» (F-04). Petra (Coach Team 1) wird benachrichtigt, Marc nicht (Annahme O-17, ab F-06) | ANM-10, BEN-02 |
-| S6 | Erinnerung | Uhr auf 16.11.2026 06:31 | Nina und Ella erhalten eine Erinnerung zu Termin 01, sonst niemand | BEN-01, BEN-13 |
+| S5 | Kurzfristige Absage | Uhr auf 16.11.2026 19:00. Als `anna` bei Termin 01 auf «nicht dabei» wechseln | Antwort mit `kurzfristig: true`, Petra sieht bei Anna «kurzfristig abgemeldet» (F-04). Petra (Coach Team 1) erhält «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», Marc nicht (Annahme O-17) | ANM-10, BEN-02 |
+| S6 | Erinnerung | Uhr auf 16.11.2026 06:31 | Nina und Ella erhalten eine Erinnerung zu Termin 01, sonst niemand. Uhr nochmals setzen (z.B. 07:00): keine weitere | BEN-01, BEN-13 |
 | S7 | Stellvertretend antworten | Als `petra` für Nina bei Termin 01 «nicht dabei» eintragen | Gespeichert, bei Nina ist «eingetragen von Petra Keller» sichtbar | ANM-11, ANM-12 |
 | S8 | Kein Stellvertreten für fremde Teams | Als `marc` bei Termin 01 für Anna antworten wollen | Aktion nicht angeboten, API antwortet 403 | RR-06 |
-| S9 | Aufgebot veröffentlichen | Als `petra` Termin 04 → Aufgebot → veröffentlichen | Anna sieht «aufgeboten», Kim «nicht aufgeboten». Alle 7 Spielerinnen von Team 1 werden benachrichtigt (ab F-06) | AUF-23, AUF-24 |
-| S10 | Aufgebotene meldet sich ab | Als `eva` bei Termin 05 auf «nicht dabei» wechseln | Marc wird benachrichtigt | AUF-26, BEN-04 |
+| S9 | Aufgebot veröffentlichen | Als `petra` Termin 04 → Aufgebot → veröffentlichen | Anna sieht «aufgeboten», Kim «nicht aufgeboten». Alle 7 Spielerinnen von Team 1 werden benachrichtigt, Kim mit «nicht aufgeboten» | AUF-23, AUF-24 |
+| S10 | Aufgebotene meldet sich ab | Als `eva` bei Termin 05 auf «nicht dabei» wechseln | Marc erhält «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.» | AUF-26, BEN-04 |
+| S27 | Benachrichtigung öffnen | Als `anna` `/benachrichtigungen` öffnen, Eintrag zu Termin 03 antippen | Termin 03 öffnet sich, Zähler in der Navigation verschwindet, Eintrag ist gelesen | BEN-12 |
 | S11 | Aufgebot nur für Coaches | Als `anna` `/termine/40000000-0000-4000-8000-000000000004/aufgebot` öffnen | Hinweis «Keine Berechtigung», API 403 | RR-03 |
 | S12 | Verschiebung durch swiss unihockey | Simulator: Spiel 02 auf 12:15. Abgleich auslösen | Spiel 02 zeigt 12:15, Treffpunkt und Aufgebot unverändert, Team 1 wird benachrichtigt | SUH-05, SUH-06 |
 | S13 | Abgesagter Termin | Als `anna` Termin 03 öffnen | Als abgesagt erkennbar, mit Grund. Antworten nicht möglich | TER-06 |

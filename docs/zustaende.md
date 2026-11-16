@@ -34,7 +34,8 @@ stateDiagram-v2
 |---|---|
 | Jeder Wechsel ist erlaubt, auch nach der Antwortfrist. | ANM-09 |
 | Wechsel **weg von DABEI** nach der Antwortfrist setzt `kurzfristig` und benachrichtigt die Coaches. | ANM-10, BEN-02 |
-| Bei einer aufgebotenen Spielerin benachrichtigt jeder Wechsel weg von DABEI die Coaches, auch vor der Frist. | AUF-26, BEN-04 |
+| Bei einer aufgebotenen Spielerin (veröffentlichtes Aufgebot) benachrichtigt jede Abmeldung die Coaches, auch vor der Frist: von DABEI oder OFFEN auf NICHT_DABEI oder VIELLEICHT, oder von VIELLEICHT auf NICHT_DABEI (Annahme F-06, O-49). Trifft zugleich eine kurzfristige Absage zu, geht nur diese eine Benachrichtigung raus. | AUF-26, BEN-04 |
+| Die kurzfristige Absage benachrichtigt einmal, beim Wechsel weg von DABEI. Weitere Wechsel, die kurzfristig bleiben, benachrichtigen nicht nochmals. Empfänger sind die Coaches der Teams, in denen die Person beim Termin Spielerin ist (O-17). | ANM-10, BEN-02 |
 | Die Markierung `kurzfristig` bleibt bei weiteren Wechseln zwischen NICHT_DABEI und VIELLEICHT und fällt mit DABEI weg (Annahme O-43). | ANM-10 |
 | Für sich antworten darf jedes Mitglied eines beteiligten Teams (jede Funktion), sonst 403. | ANM-01, RR-02 |
 | Stellvertretend gesetzte Antworten folgen denselben Übergängen und speichern `eingetragenVon`. Erlaubt für Coaches eines Teams, in dem die Person Spielerin ist, und für Admins (jedes Mitglied). Sonst 403, Person in keinem beteiligten Team 404. Antwortet die Person danach selbst, fällt `eingetragenVon` weg. | ANM-11, ANM-12, RR-06 |
@@ -61,7 +62,8 @@ stateDiagram-v2
 ```
 
 - Gespeichert wird nur `GEPLANT` oder `ABGESAGT`. «Nach Frist», «läuft» und «vorbei» ergeben sich aus der Backend-Uhr.
-- Eine Erinnerung (BEN-01) geht 12 Stunden vor der Antwortfrist an alle mit Antwort OFFEN, höchstens einmal pro Person und Termin (BEN-13). Die 12 Stunden sind eine Annahme.
+- Eine Erinnerung (BEN-01) geht 12 Stunden vor der Antwortfrist an alle Mitglieder der beteiligten Teams (jede Funktion) mit Antwort OFFEN, höchstens einmal pro Person und Termin (BEN-13, Tabelle `erinnerung`). Nach der Frist wird nicht mehr erinnert. Die 12 Stunden sind eine Annahme (O-18). Geprüft wird jede Minute; im Test sofort beim Setzen der Uhr (`PUT /api/test/uhr`).
+- Absagen und Verschieben (einzeln oder durch eine Ausnahme bzw. Änderung der Serie, die einen Termin mit Antworten absagt) benachrichtigen alle Mitglieder der beteiligten Teams (BEN-07). Beim Verschieben auch die Mitglieder von Teams, die dabei entfernt wurden. Eine geänderte Seriezeit ist keine Verschiebung (O-41).
 - Verschieben behält alle Antworten. Ob «dabei» nach einer Verschiebung noch gilt, entscheidet die Person selbst.
 
 | Regel | Bezug |
@@ -137,7 +139,7 @@ stateDiagram-v2
 | Veröffentlicht wird nur ein Entwurf mit mindestens einer Spielerin, und nur einmal (sonst 409, Regel AUF-23). Danach bleibt es veröffentlicht, auch wenn die Coach die Auswahl ändert (Annahme O-46). | AUF-23 |
 | Vor der Veröffentlichung sehen Personen ohne Coach-Recht `aufgebotStatus: KEINES` und `meinAufgebot: NOCH_KEIN_AUFGEBOT` (Annahme O-45). `meinAufgebot` gibt es nur für Spielerinnen des Teams. | AUF-23, AUF-24 |
 | Abgesagter oder vergangener Spieltag: Auswahl und Veröffentlichen ergeben 409 (TER-06), Ansehen geht. Gleichzeitige Änderungen ergeben nie 500. | TER-06 |
-| Benachrichtigungen beim Veröffentlichen (BEN-03), bei Änderungen (BEN-05) und bei Abmeldung Aufgebotener (BEN-04) kommen mit F-06. | AUF-24, AUF-26, AUF-27 |
+| Veröffentlichen benachrichtigt alle Spielerinnen des Teams, je mit «aufgeboten» oder «nicht aufgeboten» (BEN-03). Eine Änderung danach benachrichtigt nur, wer neu dazukommt oder herausfällt (BEN-05). Änderungen im Entwurf benachrichtigen niemanden. | AUF-24, AUF-27 |
 
 ## Spiel eines Spieltags
 
@@ -177,6 +179,13 @@ stateDiagram-v2
     Ungelesen --> Gelesen: geöffnet oder als gelesen markiert
     Gelesen --> [*]
 ```
+
+| Regel | Bezug |
+|---|---|
+| Jede Person sieht nur ihre eigenen Benachrichtigungen, neueste zuerst. Fremde als gelesen markieren: 403. Mehrfach markieren ändert nichts. | RR-07 |
+| Ein Klick auf eine Benachrichtigung markiert sie als gelesen und öffnet den Termin. | BEN-12 |
+| Wer etwas auslöst, wird darüber nicht benachrichtigt (z.B. die Coach, die absagt; Annahme F-06, O-50). | BEN |
+| Die Liste in der App gibt es immer. Weitere Kanäle (E-Mail, Push) erhalten dieselben Nachrichten über die Schnittstelle `Kanal`. | BEN-10, BEN-11, E-56 |
 
 ## Saison
 
