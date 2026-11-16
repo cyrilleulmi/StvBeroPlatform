@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Startet eine lokale PostgreSQL-Instanz ohne Docker.
+# Starts a local PostgreSQL instance without Docker.
 #
-# Warum: In Claude-Cloud-Sitzungen läuft kein Docker-Daemon. Quarkus Dev Services
-# und Testcontainers funktionieren dort nicht. Dieses Skript nutzt die
-# PostgreSQL-Binaries, die im Image vorhanden sind, und ist idempotent.
+# Why: Claude cloud sessions have no Docker daemon. Quarkus Dev Services
+# and Testcontainers do not work there. This script uses the
+# PostgreSQL binaries that ship with the image, and it is idempotent.
 #
-# Ergebnis: Datenbank "stv", Benutzer "stv", Passwort "stv" auf localhost:${PGPORT:-5432}
+# Result: database "stv", user "stv", password "stv" on localhost:${PGPORT:-5432}
 #
-# Verwendung:
-#   scripts/db-start.sh          # starten (legt den Cluster beim ersten Mal an)
-#   scripts/db-start.sh stop     # stoppen
-#   scripts/db-start.sh reset    # Cluster löschen und neu anlegen
+# Usage:
+#   scripts/db-start.sh          # start (creates the cluster the first time)
+#   scripts/db-start.sh stop     # stop
+#   scripts/db-start.sh reset    # delete the cluster and create it again
 set -euo pipefail
 
 PGPORT="${PGPORT:-5432}"
@@ -18,18 +18,18 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="${PGDATA_DIR:-$ROOT/.local/pgdata}"
 LOG="$ROOT/.local/postgres.log"
 
-# PostgreSQL-Binaries finden (Ubuntu-Pfad zuerst, sonst PATH)
+# Find the PostgreSQL binaries (Ubuntu path first, then PATH)
 PGBIN=""
 for v in 18 17 16 15; do
   if [ -x "/usr/lib/postgresql/$v/bin/pg_ctl" ]; then PGBIN="/usr/lib/postgresql/$v/bin"; break; fi
 done
 if [ -z "$PGBIN" ] && command -v pg_ctl >/dev/null 2>&1; then PGBIN="$(dirname "$(command -v pg_ctl)")"; fi
 if [ -z "$PGBIN" ]; then
-  echo "PostgreSQL nicht gefunden. Lokal: 'docker compose up -d db' oder PostgreSQL installieren." >&2
+  echo "PostgreSQL not found. Locally: 'docker compose up -d db' or install PostgreSQL." >&2
   exit 1
 fi
 
-# Als root muss PostgreSQL unter einem anderen Benutzer laufen.
+# As root, PostgreSQL must run as a different user.
 run() {
   if [ "$(id -u)" = "0" ]; then
     su postgres -s /bin/bash -c "$*"
@@ -50,27 +50,27 @@ prepare_dirs() {
 start() {
   prepare_dirs
   if [ ! -f "$DATA/PG_VERSION" ]; then
-    echo "Lege PostgreSQL-Cluster an: $DATA"
+    echo "Creating PostgreSQL cluster: $DATA"
     run "'$PGBIN/initdb' -D '$DATA' -U postgres --auth=trust --encoding=UTF8 --locale=C.UTF-8 >/dev/null"
   fi
   if run "'$PGBIN/pg_ctl' -D '$DATA' status" >/dev/null 2>&1; then
-    echo "PostgreSQL läuft bereits."
+    echo "PostgreSQL is already running."
   else
     run "'$PGBIN/pg_ctl' -D '$DATA' -l '$LOG' -o '-p $PGPORT -k /tmp -c listen_addresses=localhost' -w start" >/dev/null
-    echo "PostgreSQL gestartet auf localhost:$PGPORT"
+    echo "PostgreSQL started on localhost:$PGPORT"
   fi
-  # Benutzer und Datenbank idempotent anlegen
+  # Create user and database idempotently
   run "'$PGBIN/psql' -h localhost -p $PGPORT -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='stv'\"" | grep -q 1 \
     || run "'$PGBIN/psql' -h localhost -p $PGPORT -U postgres -qc \"CREATE ROLE stv LOGIN PASSWORD 'stv' CREATEDB\""
   run "'$PGBIN/psql' -h localhost -p $PGPORT -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='stv'\"" | grep -q 1 \
     || run "'$PGBIN/psql' -h localhost -p $PGPORT -U postgres -qc \"CREATE DATABASE stv OWNER stv\""
-  echo "Bereit: jdbc:postgresql://localhost:$PGPORT/stv (Benutzer stv, Passwort stv)"
+  echo "Ready: jdbc:postgresql://localhost:$PGPORT/stv (user stv, password stv)"
 }
 
 stop() {
   if [ -f "$DATA/PG_VERSION" ]; then
     run "'$PGBIN/pg_ctl' -D '$DATA' -m fast stop" >/dev/null 2>&1 || true
-    echo "PostgreSQL gestoppt."
+    echo "PostgreSQL stopped."
   fi
 }
 
@@ -78,5 +78,5 @@ case "${1:-start}" in
   start) start ;;
   stop) stop ;;
   reset) stop; rm -rf "$DATA"; start ;;
-  *) echo "Unbekannt: $1 (start|stop|reset)" >&2; exit 2 ;;
+  *) echo "Unknown: $1 (start|stop|reset)" >&2; exit 2 ;;
 esac

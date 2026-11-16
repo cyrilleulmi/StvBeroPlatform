@@ -1,59 +1,59 @@
-# 06 · Anbindung swiss unihockey
+# 06 · swiss unihockey connection
 
-Spieltage sollen wenn möglich mit den Spieldaten von swiss unihockey gefüllt werden, statt sie von Hand zu erfassen.
+Where possible, match days should be filled with the match data from swiss unihockey instead of being entered by hand.
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Anforderungen
+## Requirements
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| SUH-01 | Wenn möglich werden die Spieldaten von swiss unihockey bezogen. | Entschieden |
-| SUH-02 | Ein Admin verknüpft jedes Team einmal mit dem entsprechenden Team bei swiss unihockey. | Angenommen |
-| SUH-03 | Die Spiele der Saison werden importiert und täglich abgeglichen. | Angenommen |
-| SUH-04 | Spiele desselben Teams am selben Tag in derselben Halle werden zu einem Spieltag zusammengefasst (Turnierform, siehe [05](05-match-days-call-up.md)). | Annahme |
-| SUH-05 | Ändert sich ein importiertes Spiel (Datum, Zeit, Ort), wird der Spieltag angepasst und die Betroffenen werden benachrichtigt. | Angenommen |
-| SUH-06 | Treffpunkt, Hinweise, Antworten und Aufgebot sind eigene Daten. Der Abgleich überschreibt sie nie. | Angenommen |
-| SUH-07 | Der Google-Maps-Link des Spielorts wird bei importierten Spieltagen automatisch gesetzt. | Angenommen |
-| SUH-08 | Resultate werden nach dem Spiel übernommen, sofern sie geliefert werden. | Annahme |
-| SUH-09 | Ist die Schnittstelle nicht erreichbar oder liefert sie unerwartete Daten, funktioniert die App normal weiter. Der Abgleich wird später wiederholt. | Annahme |
-| SUH-10 | Von Hand erfasste Spieltage bleiben vom Abgleich unberührt. | Angenommen |
+| SUH-01 | Where possible, the match data is taken from swiss unihockey. | Decided |
+| SUH-02 | An admin links each team once to the corresponding team at swiss unihockey. | Accepted |
+| SUH-03 | The matches of the season are imported and synced daily. | Accepted |
+| SUH-04 | Matches of the same team on the same day in the same hall are combined into one match day (tournament format, see [05](05-match-days-call-up.md)). | Assumption |
+| SUH-05 | If an imported match changes (date, time, location), the match day is updated and everyone affected is notified. | Accepted |
+| SUH-06 | Meeting point, notes, responses and call-up are our own data. The sync never overwrites them. | Accepted |
+| SUH-07 | The Google Maps link of the venue is set automatically for imported match days. | Accepted |
+| SUH-08 | Results are taken over after the match, if they are provided. | Assumption |
+| SUH-09 | If the interface cannot be reached or returns unexpected data, the app keeps working normally. The sync is retried later. | Assumption |
+| SUH-10 | Match days entered by hand are not touched by the sync. | Accepted |
 
-## Was über die Schnittstelle bekannt ist
+## What is known about the interface
 
-Stand 15.11.2026, aus der öffentlichen Dokumentation gelesen. Noch nichts davon ist gegen die echte Schnittstelle getestet.
+As of 15.11.2026, read from the public documentation. None of it has been tested against the real interface yet.
 
-- Basis-URL: `https://api-v2.swissunihockey.ch/api`
-- Laut Übersicht sind unter anderem diese Endpunkte öffentlich: `/api/games`, `/api/teams`, `/api/clubs`, `/api/calendars`, `/api/seasons`.
-- Teams eines Clubs: `GET /api/teams?mode=by_club&season=…&club_id=…`
-- Spiele eines Teams: `GET /api/games?mode=team&team_id=…&season=…`
-- Spiele eines Clubs: `GET /api/games?mode=club&club_id=…&season=…`
-- Die Spielliste enthält eine Spalte mit der Halle samt Google-Maps-Link.
-- Das Spieldetail liefert Heim- und Gastteam, Resultat, Datum, Anspielzeit und die Koordinaten des Spielorts.
-- Kalender eines Teams als iCalendar: `GET /api/calendars?team_id=…`
-- Die Antworten sind als generische Tabellen aufgebaut (Zeilen und Zellen), nicht als fachliche Objekte. Die Auswertung braucht deshalb eine eigene Übersetzungsschicht.
+- Base URL: `https://api-v2.swissunihockey.ch/api`
+- According to the overview, these endpoints, among others, are public: `/api/games`, `/api/teams`, `/api/clubs`, `/api/calendars`, `/api/seasons`.
+- Teams of a club: `GET /api/teams?mode=by_club&season=…&club_id=…`
+- Matches of a team: `GET /api/games?mode=team&team_id=…&season=…`
+- Matches of a club: `GET /api/games?mode=club&club_id=…&season=…`
+- The match list contains a column with the hall including a Google Maps link.
+- The match detail returns home and away team, result, date, start time and the coordinates of the venue.
+- Calendar of a team as iCalendar: `GET /api/calendars?team_id=…`
+- The responses are built as generic tables (rows and cells), not as domain objects. Evaluating them therefore needs its own translation layer.
 
-Dokumentation:
+Documentation:
 
-- Übersicht: https://api-v2.swissunihockey.ch/api/doc/table/overview
+- Overview: https://api-v2.swissunihockey.ch/api/doc/table/overview
 - Games: https://api-v2.swissunihockey.ch/api/games/doc
 - Teams: https://api-v2.swissunihockey.ch/api/teams/doc
 - Calendars: https://api-v2.swissunihockey.ch/api/calendars/doc
 
-## Stand nach F-07
+## State after F-07
 
-- Im Profil `dev`/`test` spricht die App mit einem Simulator ([test-data.md](../test-data.md#simulierte-swiss-unihockey-daten)), im Profil `prod` mit der Adresse aus `STV_SU_URL` (Standard `https://api-v2.swissunihockey.ch/api`).
-- Laut öffentlichen Clients der Schnittstelle (Stand Herbst 2026) verlangt `api-v2` inzwischen Zugangsdaten. Frei ist `https://wc.swissunihockey.ch` mit demselben Antwortformat, siehe [O-20 und O-24](../open-points.md#swiss-unihockey).
-- Spalten der Spielliste und die Gruppierung von Turnieren: [O-21](../open-points.md#swiss-unihockey).
-- Der Abgleich ist in [states.md](../states.md#spiel-aus-swiss-unihockey) beschrieben.
+- In the `dev`/`test` profile the app talks to a simulator ([test-data.md](../test-data.md#simulated-swiss-unihockey-data)), in the `prod` profile to the address from `STV_SU_URL` (default `https://api-v2.swissunihockey.ch/api`).
+- According to public clients of the interface (as of autumn 2026), `api-v2` now requires credentials. `https://wc.swissunihockey.ch` is free and has the same response format, see [O-20 and O-24](../open-points.md#swiss-unihockey).
+- Columns of the match list and the grouping of tournaments: [O-21](../open-points.md#swiss-unihockey).
+- The sync is described in [states.md](../states.md#match-from-swiss-unihockey).
 
-## Noch zu prüfen
+## Still to check
 
-| Punkt | Warum |
+| Point | Why |
 |---|---|
-| Braucht es einen Schlüssel oder eine Registrierung? | Die Dokumentation sagt dazu nichts. Einzelne Ressourcen sind laut Dokumentation nur für registrierte Partner. |
-| Welche Felder liefert eine Zeile der Spielliste genau? | Die Dokumentation listet sie für die Modi `team` und `club` nicht auf. |
-| Wie sind Spieltage in Turnierform abgebildet? | Entscheidet, wie zuverlässig SUH-04 gruppieren kann. |
-| Club-ID des STV Beromünster und Team-IDs | Nötig für die Verknüpfung (SUH-02). |
-| Nutzungsbedingungen | Klären, ob der regelmässige Abruf für eine Vereins-App erlaubt ist. |
-| Gibt es eine neuere Schnittstelle? | Ein unabhängiges WordPress-Plugin erwähnt die Hosts `wc.swissunihockey.ch` (frei) und `office.swissunihockey.ch` (Partner). Laut weiteren Clients nutzen die offiziellen Web-Komponenten `wc.swissunihockey.ch`. Nicht live geprüft (O-24). |
+| Is a key or a registration needed? | The documentation says nothing about it. According to the documentation, some resources are only for registered partners. |
+| Which fields exactly does a row of the match list return? | The documentation does not list them for the modes `team` and `club`. |
+| How are match days in tournament format represented? | Decides how reliably SUH-04 can group. |
+| Club ID of STV Beromünster and team IDs | Needed for the link (SUH-02). |
+| Terms of use | Clarify whether regular fetching is allowed for a club app. |
+| Is there a newer interface? | An independent WordPress plugin mentions the hosts `wc.swissunihockey.ch` (free) and `office.swissunihockey.ch` (partners). According to other clients, the official web components use `wc.swissunihockey.ch`. Not checked live (O-24). |

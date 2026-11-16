@@ -1,133 +1,133 @@
-# Testbarkeit des Frontends
+# Frontend testability
 
-Der Test-Agent der [Pipeline](pipeline/README.md) bedient die App wie ein Mensch, aber über den **Accessibility-Tree** des Browsers (Playwright MCP). Er sieht keine Pixel, sondern Rollen, Namen und Zustände. Was dort nicht auftaucht, kann er weder finden noch prüfen.
+The test agent of the [pipeline](pipeline/README.md) uses the app like a human, but through the browser's **accessibility tree** (Playwright MCP). It sees no pixels, only roles, names and states. Whatever does not show up there, it can neither find nor check.
 
-Diese Regeln sind für jedes Feature verbindlich. Der Review-Agent prüft sie, der Test-Agent ist auf sie angewiesen.
+These rules are binding for every feature. The review agent checks them, the test agent depends on them.
 
-## Warum so
+## Why
 
-- Playwright MCP übergibt dem Agenten einen Text-Schnappschuss des Accessibility-Trees. Klicks und Eingaben laufen über Referenzen aus diesem Schnappschuss, nicht über Koordinaten.
-- Playwright empfiehlt für Locators die Reihenfolge **Rolle → Label → Text → Test-ID → CSS** (letzter Ausweg).
-- Reine Layout-`div`s fallen im Accessibility-Tree weg oder erscheinen als namenlose `generic`-Knoten, auch wenn sie eine `data-testid` haben. Gruppen müssen deshalb semantisch ausgezeichnet sein.
-- Gute Barrierefreiheit und gute Testbarkeit sind dasselbe. Was ein Screenreader versteht, versteht auch der Agent.
+- Playwright MCP hands the agent a text snapshot of the accessibility tree. Clicks and inputs use references from this snapshot, not coordinates.
+- For locators, Playwright recommends the order **role → label → text → test ID → CSS** (last resort).
+- Pure layout `div`s drop out of the accessibility tree or appear as nameless `generic` nodes, even if they have a `data-testid`. Groups must therefore be marked up semantically.
+- Good accessibility and good testability are the same thing. What a screen reader understands, the agent understands too.
 
-## Regeln
+## Rules
 
-### 1. Semantik zuerst
+### 1. Semantics first
 
-| Regel | Beispiel |
+| Rule | Example |
 |---|---|
-| Landmarks verwenden: `header`, `nav`, `main`, `footer`. Pro Seite genau ein `main`. | `<nav aria-label="Hauptnavigation">` |
-| Jede Seite hat genau eine `h1`, die dem Seitentitel entspricht. | `<h1>Training Di 18:30</h1>` |
-| Gruppen sind `section` mit Überschrift oder `aria-labelledby`. | `<section aria-labelledby="team-1-titel">` |
-| Listen sind echte Listen (`ul`/`ol`/`li`) oder haben `role="list"` mit Namen. | `<ul aria-label="Linie 1">` |
-| Tabellen nur für tabellarische Daten, mit `th` und `scope`. | Saisonstatistik |
-| Klickbares ist ein `button` oder `a`, nie ein `div` mit Click-Handler. | – |
-| Links führen zu einer URL, Buttons lösen eine Aktion aus. | – |
+| Use landmarks: `header`, `nav`, `main`, `footer`. Exactly one `main` per page. | `<nav aria-label="Hauptnavigation">` |
+| Every page has exactly one `h1` that matches the page title. | `<h1>Training Di 18:30</h1>` |
+| Groups are a `section` with a heading or `aria-labelledby`. | `<section aria-labelledby="team-1-titel">` |
+| Lists are real lists (`ul`/`ol`/`li`) or have `role="list"` with a name. | `<ul aria-label="Linie 1">` |
+| Tables only for tabular data, with `th` and `scope`. | Season statistics |
+| Anything clickable is a `button` or `a`, never a `div` with a click handler. | – |
+| Links lead to a URL, buttons trigger an action. | – |
 
-### 2. Jedes Bedienelement hat einen Namen
+### 2. Every control has a name
 
-- Buttons haben sichtbaren Text. Icon-Buttons haben `aria-label` (z.B. «Menü öffnen»).
-- Eingabefelder haben ein `<label>`. Ein Platzhalter ist kein Label.
-- Gleiche Aktionen in Listen werden über ihren Container unterschieden, nicht über den Namen. Der Container hat einen Namen (z.B. `li` mit `aria-label="Anna Muster"`), oder der Button-Name enthält den Kontext («Anna aufbieten»).
-- Texte kommen aus einer zentralen Stelle (Konstanten oder i18n-Datei), damit Tests und Doku dieselben Wörter verwenden.
+- Buttons have visible text. Icon buttons have an `aria-label` (e.g. «Menü öffnen»).
+- Input fields have a `<label>`. A placeholder is not a label.
+- Identical actions in lists are told apart by their container, not by their name. The container has a name (e.g. `li` with `aria-label="Anna Muster"`), or the button name contains the context («Anna aufbieten»).
+- Texts come from one central place (constants or i18n file), so tests and docs use the same words.
 
-### 3. Zustände sind maschinenlesbar, nicht nur farbig
+### 3. States are machine-readable, not just colored
 
-Farbe allein trägt keine Information (siehe auch [design-principles.md](design-principles.md#noch-nicht-festgelegt)).
+Color alone carries no information (see also [design-principles.md](design-principles.md#not-yet-defined)).
 
-| Zustand | Auszeichnung |
+| State | Markup |
 |---|---|
-| Gewählte Antwort | Antwort-Buttons als Gruppe mit `role="radiogroup"` bzw. `aria-pressed="true"` |
-| Antwort einer Person in Listen | Sichtbarer Text oder `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **und** `data-antwort="DABEI"` |
-| Aktiver Navigationspunkt | `aria-current="page"` |
-| Aufgeboten | Checkbox mit `aria-checked` bzw. Text «aufgeboten» |
-| Laden | Container mit `aria-busy="true"`, danach entfernt |
-| Aktion läuft | Geklickte Schaltfläche `disabled` und `aria-busy="true"`, danach entfernt |
-| Deaktiviert | `disabled` bzw. `aria-disabled="true"` mit Erklärung in der Nähe |
-| Fehler im Formular | `aria-invalid="true"` und Fehlermeldung über `aria-describedby` |
+| Selected response | Response buttons as a group with `role="radiogroup"` or `aria-pressed="true"` |
+| A person's response in lists | Visible text or `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **and** `data-antwort="DABEI"` |
+| Active navigation item | `aria-current="page"` |
+| Called up | Checkbox with `aria-checked` or the text «aufgeboten» |
+| Loading | Container with `aria-busy="true"`, removed afterwards |
+| Action running | Clicked button `disabled` and `aria-busy="true"`, removed afterwards |
+| Disabled | `disabled` or `aria-disabled="true"` with an explanation nearby |
+| Form error | `aria-invalid="true"` and error message via `aria-describedby` |
 
-Zähler (dabei/nicht dabei/vielleicht/offen) haben zusätzlich `data-zaehler="dabei"` usw. und einen Text, der die Zahl und das Wort enthält («10 dabei»).
+Counters (dabei/nicht dabei/vielleicht/offen) also have `data-zaehler="dabei"` etc. and a text that contains the number and the word («10 dabei»).
 
-### 4. Test-IDs dort, wo Semantik nicht reicht
+### 4. Test IDs where semantics are not enough
 
-`data-testid` ist die Ergänzung, nicht der Ersatz. Gesetzt wird es auf:
+`data-testid` is the supplement, not the replacement. It is set on:
 
-- wiederholte Container, die eine Entität darstellen (Karten, Listeneinträge),
-- Gruppierungen der Übersicht (Team, Linie, Coach-Block),
-- Zähler und Status-Anzeigen,
-- alles, was in [ui/navigation.md](ui/navigation.md#test-ids) als feste Test-ID aufgeführt ist.
+- repeated containers that represent an entity (cards, list entries),
+- groupings in the overview (team, line, coach block),
+- counters and status displays,
+- everything listed as a fixed test ID in [ui/navigation.md](ui/navigation.md#test-ids).
 
-**Namensschema:** `kebab-case`, deutsch, `<bereich>-<element>[-<schlüssel>]`.
+**Naming scheme:** `kebab-case`, German, `<area>-<element>[-<key>]`.
 
-| Muster | Beispiel |
+| Pattern | Example |
 |---|---|
-| Entität mit ID | `termin-karte-40000000-0000-4000-8000-000000000001` |
-| Entität mit fachlichem Schlüssel | `uebersicht-team-team-1`, `uebersicht-gruppe-linie-1` |
-| Einmaliges Element | `meine-antwort`, `coach-block`, `aufgebot-veroeffentlichen` |
+| Entity with ID | `termin-karte-40000000-0000-4000-8000-000000000001` |
+| Entity with a domain key | `uebersicht-team-team-1`, `uebersicht-gruppe-linie-1` |
+| Single element | `meine-antwort`, `coach-block`, `aufgebot-veroeffentlichen` |
 
-Test-IDs sind Teil der Schnittstelle: Wer eine umbenennt, passt Tests und [navigation.md](ui/navigation.md) im selben PR an.
+Test IDs are part of the interface: whoever renames one updates the tests and [navigation.md](ui/navigation.md) in the same PR.
 
-### 5. Jeder Zustand hat eine URL
+### 5. Every state has a URL
 
-- Jeder Screen ist direkt per URL erreichbar (Deep Link), auch nach einem Neuladen.
-- Filter und Tabs stehen in der URL (`/termine?team=…&ansicht=vergangen`).
-- Dialoge, die zu einem Screen gehören, dürfen ohne URL sein. Eigenständige Formulare (Termin erfassen, Aufgebot) haben eine eigene Route.
+- Every screen can be reached directly by URL (deep link), also after a reload.
+- Filters and tabs are in the URL (`/termine?team=…&ansicht=vergangen`).
+- Dialogs that belong to a screen may have no URL. Standalone forms (create event, call-up) have their own route.
 
-Der Test-Agent springt so direkt an die richtige Stelle, statt sich durchzuklicken.
+This way the test agent jumps straight to the right place instead of clicking its way there.
 
-### 6. Rückmeldungen sind auffindbar
+### 6. Feedback can be found
 
-- Erfolgsmeldungen (Toasts) haben `role="status"`, Fehlermeldungen `role="alert"`. Sie bleiben mindestens 5 Sekunden sichtbar und schliessen sich nicht beim ersten Fokuswechsel.
-- Dialoge sind `role="dialog"` (bzw. `<dialog>`) mit `aria-modal="true"` und Namen über die Überschrift.
-- Leere Zustände haben einen Text («Keine kommenden Termine»), nie eine leere Fläche.
-- Fehler vom Backend werden sichtbar angezeigt und nicht nur in die Konsole geschrieben.
+- Success messages (toasts) have `role="status"`, error messages `role="alert"`. They stay visible for at least 5 seconds and do not close on the first focus change.
+- Dialogs are `role="dialog"` (or `<dialog>`) with `aria-modal="true"` and a name from their heading.
+- Empty states have a text («Keine kommenden Termine»), never an empty area.
+- Errors from the backend are shown visibly, not only written to the console.
 
-### 7. Bedienbar ohne Hover und ohne Drag & Drop
+### 7. Usable without hover and without drag and drop
 
-- Keine Aktion ist nur per Hover erreichbar.
-- Drag & Drop (Linien) hat immer eine gleichwertige Alternative mit Buttons oder Auswahlfeld («Linie wählen»).
-- Alles ist per Tastatur erreichbar, mit sichtbarem Fokus.
+- No action is reachable only by hover.
+- Drag and drop (lines) always has an equivalent alternative with buttons or a select field («Linie wählen»).
+- Everything is reachable by keyboard, with visible focus.
 
-### 8. Deterministisch
+### 8. Deterministic
 
-- Listen haben eine feste Sortierung (z.B. Personen nach Nachname, dann Vorname).
-- Animationen respektieren `prefers-reduced-motion` und sind dann aus. Der Test-Agent setzt reduzierte Bewegung.
-- Zeitabhängige Texte («in 2 Tagen») leiten sich von der Backend-Uhr ab, die im Testprofil festgesetzt werden kann (siehe unten).
-- Keine zufälligen IDs im DOM, die sich bei jedem Rendern ändern.
+- Lists have a fixed sort order (e.g. people by last name, then first name).
+- Animations respect `prefers-reduced-motion` and are then off. The test agent sets reduced motion.
+- Time-dependent texts («in 2 Tagen») are derived from the backend clock, which can be fixed in the test profile (see below).
+- No random IDs in the DOM that change on every render.
 
-## Test-Hilfen der App
+## Test helpers in the app
 
-Diese Hilfen gibt es nur in den Quarkus-Profilen `dev` und `test`. Im Profil `prod` existieren die Endpunkte nicht (nicht nur versteckt). Der Review-Agent prüft das.
+These helpers exist only in the Quarkus profiles `dev` and `test`. In the `prod` profile the endpoints do not exist (not just hidden). The review agent checks this.
 
-| Hilfe | Zweck | Schnittstelle |
+| Helper | Purpose | Interface |
 |---|---|---|
-| **Seed zurücksetzen** | Datenbank in den definierten Ausgangszustand bringen | `POST /api/test/reset` |
-| **Feste Uhr** | «Jetzt» festlegen, um Antwortfristen, kurzfristige Absagen und Erinnerungen zu prüfen | `PUT /api/test/uhr`, `DELETE /api/test/uhr` |
-| **Ohne aktuelle Saison** | Zustand «keine Saison als aktuell festgelegt» herstellen (Hinweis `/keine-saison`). Reset stellt den Seed wieder her | `DELETE /api/test/aktuelle-saison` |
-| **Anmelden als** | Ohne Passwort als beliebige Seed-Person anmelden | `POST /api/test/anmelden`, Seite `/dev-login` |
-| **Benachrichtigungen mitlesen** | Prüfen, wer wann worüber benachrichtigt wurde | `GET /api/test/benachrichtigungen` |
-| **swiss unihockey simulieren** | Spieldaten vorgeben, die der Abgleich «von swiss unihockey» erhält | `PUT /api/test/swiss-unihockey/spiele` |
+| **Reset seed** | Bring the database into the defined initial state | `POST /api/test/reset` |
+| **Fixed clock** | Set «now» to check response deadlines, late cancellations and reminders | `PUT /api/test/uhr`, `DELETE /api/test/uhr` |
+| **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/aktuelle-saison` |
+| **Log in as** | Log in as any seed person without a password | `POST /api/test/anmelden`, page `/dev-login` |
+| **Read notifications** | Check who was notified when and about what | `GET /api/test/benachrichtigungen` |
+| **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey» | `PUT /api/test/swiss-unihockey/spiele` |
 
-Details im API-Vertrag: [api/openapi.yaml](api/openapi.yaml) (Tag «Test»). Die Seed-Daten: [test-data.md](test-data.md).
+Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»). The seed data: [test-data.md](test-data.md).
 
-Die Seite `/dev-login` listet alle Seed-Personen mit Funktion und Team. Ein Klick meldet an. Sie zeigt oben deutlich «Testmodus».
+The page `/dev-login` lists all seed persons with team role and team. One click logs in. At the top it clearly shows «Testmodus».
 
-## Werkzeuge
+## Tools
 
-| Werkzeug | Wofür | Wo |
+| Tool | Used for | Where |
 |---|---|---|
-| Playwright Test | Automatische End-to-End-Tests, laufen in CI und bei jedem Agenten | `e2e/` |
-| Playwright MCP | Explorative Tests durch den Test-Agenten | Konfiguration in [.mcp.json](../.mcp.json) |
-| axe-core (`@axe-core/playwright`) | Automatischer Barrierefreiheits-Check pro Screen in den E2E-Tests | `e2e/` |
+| Playwright Test | Automated end-to-end tests, run in CI and by every agent | `e2e/` |
+| Playwright MCP | Exploratory tests by the test agent | Configuration in [.mcp.json](../.mcp.json) |
+| axe-core (`@axe-core/playwright`) | Automated accessibility check per screen in the E2E tests | `e2e/` |
 
-Konventionen für E2E-Tests:
+Conventions for E2E tests:
 
-- Locators in der Reihenfolge `getByRole` → `getByLabel` → `getByText` → `getByTestId`. Keine CSS- oder XPath-Selektoren.
-- **Einzige Ausnahme:** Dokument-Elemente ohne Rolle, die nicht im Accessibility-Tree erscheinen (`<html>`, z.B. für `data-theme`, und `<link>` im Kopf, z.B. das Manifest). Für sie gibt es in `e2e/tests/hilfen.ts` die Hilfen `dokumentWurzel(page)` und `kopfLink(page, rel)`; nur dort steht der CSS-Selektor. Tests verwenden diese Hilfen und schreiben selbst keinen. Braucht es ein weiteres solches Element, kommt dort eine Hilfe dazu.
-- `e2e/tests/nb17-keine-css-selektoren.spec.ts` prüft das statisch: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` sowie `css=`/`xpath=` ausserhalb von `hilfen.ts` lassen den Test fehlschlagen.
-- Kein `waitForTimeout`. Auf Zustände warten (`expect(...).toBeVisible()` usw.).
-- Jeder Test beginnt mit `POST /api/test/reset` und meldet sich über `POST /api/test/anmelden` an.
-- Jeder Test läuft in zwei Projekten: `mobil` (375×812, Touch) und `desktop` (1280×800).
-- Der Testname nennt die Anforderungs-ID: `test('ANM-04: vielleicht verlangt einen Kommentar', …)`.
-- `e2e/tests/seed.spec.ts` ist der Einstiegstest (Reset, Anmeldung, Dashboard sichtbar). Er dient auch als Vorlage, wenn Tests mit den Playwright-Test-Agenten (Planner/Generator/Healer) erzeugt werden.
+- Locators in the order `getByRole` → `getByLabel` → `getByText` → `getByTestId`. No CSS or XPath selectors.
+- **Only exception:** document elements without a role that do not appear in the accessibility tree (`<html>`, e.g. for `data-theme`, and `<link>` in the head, e.g. the manifest). For these, `e2e/tests/hilfen.ts` has the helpers `dokumentWurzel(page)` and `kopfLink(page, rel)`; only there is the CSS selector written. Tests use these helpers and write none themselves. If another such element is needed, a helper is added there.
+- `e2e/tests/nb17-keine-css-selektoren.spec.ts` checks this statically: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` as well as `css=`/`xpath=` outside `hilfen.ts` make the test fail.
+- No `waitForTimeout`. Wait for states (`expect(...).toBeVisible()` etc.).
+- Every test starts with `POST /api/test/reset` and logs in via `POST /api/test/anmelden`.
+- Every test runs in two projects: `mobil` (375×812, touch) and `desktop` (1280×800).
+- The test name states the requirement ID: `test('ANM-04: vielleicht verlangt einen Kommentar', …)`.
+- `e2e/tests/seed.spec.ts` is the entry test (reset, login, dashboard visible). It also serves as the template when tests are generated with the Playwright test agents (planner/generator/healer).

@@ -1,35 +1,35 @@
-# 03 · Termine
+# 03 · Events
 
-Dass ein Training zu mehreren Teams gleichzeitig gehören kann, ist einer der beiden Hauptgründe für die eigene App.
+That a practice can belong to several teams at once is one of the two main reasons for building our own app.
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Anforderungen
+## Requirements
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| TER-01 | Ein Training kann zu mehreren Teams gleichzeitig gehören. | Entschieden |
-| TER-02 | Es gibt von Anfang an die Termintypen Training, Spieltag und Anlass. Die An- und Abmeldung funktioniert bei allen gleich. | Angenommen |
-| TER-03 | Jeder Termin gehört zu mindestens einem Team. | Angenommen |
-| TER-04 | Ein Termin hat Datum, Beginn, Ende, Ort und ein freies Feld für Hinweise. | Annahme |
-| TER-05 | Serientermine: Ein wiederkehrender Termin wird einmal erfasst, z.B. «jeden Dienstag 18:30, Halle X, Team 1 + Team 2». | Angenommen |
-| TER-06 | Einzelne Daten einer Serie lassen sich absagen oder verschieben, ohne die Serie zu ändern. | Angenommen |
-| TER-07 | Ferien und andere Zeiträume lassen sich von einer Serie ausnehmen. | Angenommen |
-| TER-08 | Änderungen an einer Serie gelten für künftige Termine. Bereits gegebene Antworten bleiben erhalten. | Annahme |
-| TER-09 | Termine haben eine Antwortfrist: X Stunden vor Beginn. Sie steuert Erinnerungen und was als kurzfristig gilt (siehe [04](04-responses.md) und [08](08-notifications.md)). | Angenommen |
-| TER-10 | Die Antwortfrist ist pro Termin bzw. Serie einstellbar, mit einem sinnvollen Standardwert. | Annahme |
-| TER-11 | Die Coach eines beteiligten Teams kann Termine erfassen, bearbeiten und absagen. | Angenommen |
-| TER-12 | Wird ein Termin abgesagt oder verschoben, werden alle Betroffenen benachrichtigt. | Annahme |
-| TER-13 | Jede Person sieht die kommenden Termine aller ihrer Teams in einer Liste, mit ihrer eigenen Antwort. | Annahme |
+| TER-01 | A practice can belong to several teams at once. | Decided |
+| TER-02 | From the start there are the event types practice, match day and other event. Responding works the same for all of them. | Accepted |
+| TER-03 | Each event belongs to at least one team. | Accepted |
+| TER-04 | An event has a date, start, end, location and a free text field for notes. | Assumption |
+| TER-05 | Series: a recurring event is entered once, e.g. «jeden Dienstag 18:30, Halle X, Team 1 + Team 2» (every Tuesday 18:30, hall X, Team 1 + Team 2). | Accepted |
+| TER-06 | Single dates of a series can be cancelled or moved without changing the series. | Accepted |
+| TER-07 | Holidays and other periods can be excluded from a series. | Accepted |
+| TER-08 | Changes to a series apply to future events. Responses already given are kept. | Assumption |
+| TER-09 | Events have a response deadline: X hours before the start. It controls reminders and what counts as late (see [04](04-responses.md) and [08](08-notifications.md)). | Accepted |
+| TER-10 | The response deadline can be set per event or series, with a sensible default. | Assumption |
+| TER-11 | The coach of a participating team can create, edit and cancel events. | Accepted |
+| TER-12 | If an event is cancelled or moved, everyone affected is notified. | Assumption |
+| TER-13 | Each person sees the upcoming events of all their teams in one list, with their own response. | Assumption |
 
-## Termintypen
+## Event types
 
-| Typ | Teams | Besonderheiten |
+| Type | Teams | Specifics |
 |---|---|---|
-| Training | eines oder mehrere | Meist als Serie. |
-| Spieltag | eines (Annahme) | Umfasst mehrere Spiele (Turnierform), hat Treffpunkt, Spielort mit Google-Maps-Link und ein Aufgebot. Details: [05 · Spieltage und Aufgebot](05-match-days-call-up.md). |
-| Anlass | eines oder mehrere | Sonstiges, z.B. Teamanlass. Nur An- und Abmeldung. |
+| Practice | one or more | Usually a series. |
+| Match day | one (assumption) | Includes several matches (tournament format), has a meeting point, a venue with a Google Maps link and a call-up. Details: [05 · Match days and call-up](05-match-days-call-up.md). |
+| Other event | one or more | Anything else, e.g. a team event. Responses only. |
 
-## Nicht Teil des Kerns
+## Not part of the core
 
-- Kalender-Abo (iCal): siehe [Spätere Funktionen](../later-features.md).
+- Calendar subscription (iCal): see [Later features](../later-features.md).

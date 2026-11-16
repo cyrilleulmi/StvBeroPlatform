@@ -1,46 +1,46 @@
-# 04 · An- und Abmeldung
+# 04 · Responses
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Antworten
+## Responses
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| ANM-01 | Spielerinnen und Coaches melden sich für Termine an und ab. Coaches tun das gleich wie Spielerinnen. | Entschieden |
-| ANM-02 | Pro Person und Termin gibt es genau eine Antwort, nicht eine pro Team. | Angenommen |
-| ANM-03 | Mögliche Antworten: «dabei», «nicht dabei», «vielleicht». | Entschieden |
-| ANM-04 | Bei «vielleicht» ist ein Kommentar Pflicht. | Entschieden |
-| ANM-05 | Bei «nicht dabei» ist ein Grund freiwillig. | Angenommen |
-| ANM-06 | Solange jemand nicht geantwortet hat, ist der Status «offen». Niemand ist automatisch angemeldet. | Angenommen |
-| ANM-07 | Kommentare und Gründe sehen nur die Coaches der beteiligten Teams und die Person selbst. | Angenommen |
-| ANM-08 | Die häufigste Aktion («dabei» / «nicht dabei») ist mit einem Tap erledigt, direkt aus der Terminliste. | Entschieden |
-| ANM-09 | Eine Antwort kann jederzeit geändert werden, auch nach der Antwortfrist. | Annahme |
-| ANM-10 | Ändert jemand nach der Antwortfrist von «dabei» auf «nicht dabei» oder «vielleicht», gilt das als kurzfristige Absage. Die Coaches werden benachrichtigt. | Angenommen |
-| ANM-11 | Eine Coach kann stellvertretend für Spielerinnen ihres Teams antworten, z.B. wenn sich jemand mündlich abgemeldet hat. | Angenommen |
-| ANM-12 | Bei stellvertretenden Antworten ist ersichtlich, wer sie eingetragen hat. | Annahme |
+| ANM-01 | Players and coaches respond to events. Coaches do it the same way as players. | Decided |
+| ANM-02 | There is exactly one response per person and event, not one per team. | Accepted |
+| ANM-03 | Possible responses: «dabei» (attending), «nicht dabei» (declined), «vielleicht» (maybe). | Decided |
+| ANM-04 | With «vielleicht» a comment is required. | Decided |
+| ANM-05 | With «nicht dabei» a reason is optional. | Accepted |
+| ANM-06 | As long as someone has not responded, the status is «offen» (pending). Nobody is attending automatically. | Accepted |
+| ANM-07 | Comments and reasons are visible only to the coaches of the participating teams and to the person themselves. | Accepted |
+| ANM-08 | The most common action («dabei» / «nicht dabei») takes one tap, directly from the event list. | Decided |
+| ANM-09 | A response can be changed at any time, also after the response deadline. | Assumption |
+| ANM-10 | If someone changes from «dabei» to «nicht dabei» or «vielleicht» after the response deadline, it counts as a late cancellation. The coaches are notified. | Accepted |
+| ANM-11 | A coach can respond on behalf of players of her team, e.g. when someone cancelled in person. | Accepted |
+| ANM-12 | For responses on behalf, it is visible who entered them. | Assumption |
 
-## Ansicht eines Termins
+## Event view
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| ANM-20 | Die Ansicht zeigt die Mitglieder nach Team gruppiert. | Entschieden |
-| ANM-21 | Innerhalb eines Teams sind die Spielerinnen nach Linie gruppiert: Linien in ihrer Reihenfolge, dann Goalies, dann «Ohne Linie». | Entschieden (Gruppierung), Angenommen (Reihenfolge) |
-| ANM-22 | Coaches stehen in einem eigenen Block, mit Angabe ihres Teams. Sie erscheinen nicht unter den Spielerinnen. | Entschieden |
-| ANM-23 | Pro Team und für den ganzen Termin wird gezählt: dabei, nicht dabei, vielleicht, offen. Gezählt werden nur Spielerinnen. | Angenommen |
-| ANM-24 | Bei jeder Person ist ihr Status auf einen Blick erkennbar. | Angenommen |
-| ANM-25 | Alle Mitglieder der beteiligten Teams sehen den Status der anderen, aber nicht deren Kommentare (siehe ANM-07). | Annahme |
+| ANM-20 | The view shows the members grouped by team. | Decided |
+| ANM-21 | Within a team, players are grouped by line: lines in their order, then goalies, then «Ohne Linie» (no line). | Decided (grouping), Accepted (order) |
+| ANM-22 | Coaches are in a block of their own, with their team shown. They do not appear among the players. | Decided |
+| ANM-23 | Per team and for the whole event the counts are: attending, declined, maybe, pending. Only players are counted. | Accepted |
+| ANM-24 | Each person's status can be seen at a glance. | Accepted |
+| ANM-25 | All members of the participating teams see the status of the others, but not their comments (see ANM-07). | Assumption |
 
-## Doppelrollen im selben Termin
+## Dual roles in the same event
 
-Gehört ein Termin zu mehreren Teams, kann dieselbe Person in mehr als einem davon sein.
+If an event belongs to several teams, the same person can be in more than one of them.
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| ANM-30 | Die Person gibt eine einzige Antwort. Sie gilt für den ganzen Termin. | Angenommen |
-| ANM-31 | Die Person erscheint in jedem beteiligten Team in ihrer dortigen Funktion: als Spielerin in ihrer Linie, als Coach im Coach-Block. | Angenommen |
-| ANM-32 | Im Team-Total zählt sie in jedem Team, in dem sie Spielerin ist. Im Gesamttotal des Termins zählt sie nur einmal. | Angenommen |
+| ANM-30 | The person gives a single response. It applies to the whole event. | Accepted |
+| ANM-31 | The person appears in each participating team in their team role there: as a player in her line, as a coach in the coach block. | Accepted |
+| ANM-32 | In the team total she counts in every team where she is a player. In the overall total of the event she counts only once. | Accepted |
 
-## Beispiel: gemeinsames Training von zwei Teams
+## Example: joint practice of two teams
 
 ```
 Di 18:30 · Team 1 + Team 2          19 dabei · 4 ab · 5 offen
@@ -56,9 +56,9 @@ Team 2                              9 dabei · 2 ab · 2 offen
 Coaches       Petra ✓ (Team 1)  Marc ✗ (Team 2)
 ```
 
-Die Skizze zeigt den Aufbau, nicht das Design. Für das Aussehen gilt [design-principles.md](../design-principles.md). «Vielleicht» fehlt in der Skizze und kommt als eigener Zähler und eigenes Symbol dazu.
+The sketch shows the structure, not the design. For the look, [design-principles.md](../design-principles.md) applies. «Vielleicht» is missing from the sketch and is added as its own counter and its own symbol.
 
-## Nicht Teil des Kerns
+## Not part of the core
 
-- Präsenzkontrolle (wer war wirklich da): siehe [Spätere Funktionen](../later-features.md).
-- Warnungen wie «kein Goalie angemeldet»: siehe [Spätere Funktionen](../later-features.md).
+- Attendance check (who was really there): see [Later features](../later-features.md).
+- Warnings such as «kein Goalie angemeldet» (no goalie attending): see [Later features](../later-features.md).

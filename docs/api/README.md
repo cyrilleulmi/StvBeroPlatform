@@ -1,51 +1,51 @@
 # API
 
-Der Vertrag steht in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 53 Operationen). Er beschreibt das Zielbild für den Kern.
+The contract is in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 53 operations). It describes the target state for the core.
 
-## Arbeitsweise: Contract first
+## Way of working: contract first
 
-1. Ändert ein Feature die API, wird **zuerst** `openapi.yaml` angepasst, im selben PR wie der Code.
-2. Das Backend setzt den Vertrag um. Quarkus (`quarkus-smallrye-openapi`) erzeugt daraus zur Laufzeit `/q/openapi`.
-3. Ein Test im Backend vergleicht die erzeugte Spezifikation mit `openapi.yaml` (Pfade, Methoden, Statuscodes, Schemas). Abweichungen lassen den Build fehlschlagen. Der Test kommt mit F-00.
-4. Das Frontend erzeugt seine TypeScript-Typen aus `openapi.yaml` (z.B. mit `openapi-typescript`), statt sie von Hand zu schreiben.
+1. If a feature changes the API, `openapi.yaml` is updated **first**, in the same PR as the code.
+2. The backend implements the contract. Quarkus (`quarkus-smallrye-openapi`) generates `/q/openapi` from it at runtime.
+3. A backend test compares the generated specification with `openapi.yaml` (paths, methods, status codes, schemas). Differences make the build fail. The test comes with F-00.
+4. The frontend generates its TypeScript types from `openapi.yaml` (e.g. with `openapi-typescript`) instead of writing them by hand.
 
-Prüfen:
+Check:
 
 ```bash
-npx -y @redocly/cli lint docs/api/openapi.yaml        # 0 Fehler, 0 Warnungen
-npx -y @redocly/cli preview-docs docs/api/openapi.yaml # lesbare Doku im Browser
+npx -y @redocly/cli lint docs/api/openapi.yaml        # 0 errors, 0 warnings
+npx -y @redocly/cli preview-docs docs/api/openapi.yaml # readable docs in the browser
 ```
 
-Lokal laufend: Swagger UI unter `http://localhost:8080/q/swagger-ui`.
+Running locally: Swagger UI at `http://localhost:8080/q/swagger-ui`.
 
-## Konventionen
+## Conventions
 
-| Thema | Regel |
+| Topic | Rule |
 |---|---|
-| Sprache | Pfade, Felder und Enum-Werte auf Deutsch, aus dem [Fachmodell](../domain-model.md). Umlaute umschreiben (`zugehoerigkeiten`, `veroeffentlichen`). |
-| Pfade | Kleinbuchstaben, Mehrzahl für Sammlungen (`/api/termine`), Aktionen als Verb-Unterpfad (`/absagen`, `/veroeffentlichen`). |
-| Felder | `camelCase`. Enum-Werte `GROSS_MIT_UNTERSTRICH`. |
-| IDs | UUID. Seed-IDs sind fest, siehe [test-data.md](../test-data.md#id-schema). |
-| Zeit | ISO 8601 mit Offset (`2026-11-17T18:30:00+01:00`). Zeitzone der Fachlogik: Europe/Zurich. Daten ohne Zeit als `date`. |
-| «Jetzt» | Kommt immer von der Backend-Uhr (im Testprofil festsetzbar), nie vom Browser. |
-| Fehler | RFC 9457 Problem Details (`application/problem+json`). `detail` ist ein deutscher Satz zum direkten Anzeigen, `regel` nennt die Anforderungs-ID. |
-| Statuscodes | 400 formal ungültig · 401 nicht angemeldet · 403 keine Berechtigung · 404 nicht gefunden · 409 widerspricht dem Zustand · 422 fachliche Regel verletzt · 502 swiss unihockey gestört |
-| Rechte | Werden im Backend geprüft (RR-07). Die Oberfläche blendet nur aus, was die API ohnehin verweigert. Hilfsfeld: `darfBearbeiten`. |
-| Sichtbarkeit | Daten, die jemand nicht sehen darf (Kommentare, ANM-07), fehlen in der Antwort. Sie werden nicht nur im Frontend versteckt. |
-| Sortierung | Die API liefert in Anzeigereihenfolge. Das Frontend sortiert nicht um. |
-| Anmeldung | Sitzungs-Cookie `stv_sitzung`. Das produktive Verfahren ist offen (O-01). |
+| Language | Paths, fields and enum values in German, from the [domain model](../domain-model.md). Umlauts written out (`zugehoerigkeiten`, `veroeffentlichen`). |
+| Paths | Lowercase, plural for collections (`/api/termine`), actions as a verb sub-path (`/absagen`, `/veroeffentlichen`). |
+| Fields | `camelCase`. Enum values `UPPER_WITH_UNDERSCORE`. |
+| IDs | UUID. Seed IDs are fixed, see [test-data.md](../test-data.md#id-scheme). |
+| Time | ISO 8601 with offset (`2026-11-17T18:30:00+01:00`). Time zone of the domain logic: Europe/Zurich. Dates without time as `date`. |
+| «Now» | Always comes from the backend clock (can be fixed in the test profile), never from the browser. |
+| Errors | RFC 9457 Problem Details (`application/problem+json`). `detail` is a German sentence for direct display, `regel` names the requirement ID. |
+| Status codes | 400 formally invalid · 401 not logged in · 403 no permission · 404 not found · 409 conflicts with the state · 422 domain rule violated · 502 swiss unihockey unavailable |
+| Permissions | Checked in the backend (RR-07). The UI only hides what the API refuses anyway. Helper field: `darfBearbeiten`. |
+| Visibility | Data someone may not see (comments, ANM-07) is missing from the response. It is not just hidden in the frontend. |
+| Sorting | The API returns data in display order. The frontend does not re-sort. |
+| Login | Session cookie `stv_sitzung`. The production method is open (O-01). |
 
-## Test-Endpunkte
+## Test endpoints
 
-Alles unter `/api/test/` existiert nur in den Profilen `dev` und `test`. Im Profil `prod` liefern diese Pfade 404, weil die Ressourcen nicht registriert werden (z.B. per `@IfBuildProfile`). Zweck und Gebrauch: [testability.md](../testability.md#test-hilfen-der-app).
+Everything under `/api/test/` exists only in the `dev` and `test` profiles. In the `prod` profile these paths return 404 because the resources are not registered (e.g. via `@IfBuildProfile`). Purpose and use: [testability.md](../testability.md#test-helpers-in-the-app).
 
-## Annahmen im Vertrag
+## Assumptions in the contract
 
-Diese Punkte stehen nicht ausdrücklich in den Anforderungen und sind im Vertrag als Annahme umgesetzt:
+These points are not stated explicitly in the requirements and are implemented in the contract as an assumption:
 
-| Punkt | Annahme |
+| Point | Assumption |
 |---|---|
-| Benachrichtigungen | Es gibt immer eine Liste in der App (`/api/benachrichtigungen`). E-Mail oder Push kommen als zusätzlicher Kanal dazu (BEN-10, BEN-11). |
-| Spiel bei swiss unihockey verschwunden | Wird markiert (`beiSuNichtMehrVorhanden`), nicht gelöscht. Die Coach entscheidet. |
-| Funktion wechseln | Wird eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team. |
-| Kurzfristige Absage | Benachrichtigt werden die Coaches der Teams, in denen die Person beim Termin Spielerin ist (O-17). |
+| Notifications | There is always a list in the app (`/api/benachrichtigungen`). E-mail or push come as an additional channel (BEN-10, BEN-11). |
+| Match gone from swiss unihockey | Is marked (`beiSuNichtMehrVorhanden`), not deleted. The coach decides. |
+| Changing team role | If a player becomes a coach, she loses her line assignment in this team. |
+| Late cancellation | The coaches of the teams in which the person is a player for the event are notified (O-17). |

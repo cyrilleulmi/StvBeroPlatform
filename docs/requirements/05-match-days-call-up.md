@@ -1,52 +1,52 @@
-# 05 · Spieltage und Aufgebot
+# 05 · Match days and call-up
 
-Das Aufgebot für Spiele ist Teil des Kerns.
+The call-up for matches is part of the core.
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Turnierform
+## Tournament format
 
-Die Teams spielen in Turnierform: An einem Spieltag finden mehrere Spiele in derselben Halle statt. Deshalb ist die Einheit der App der **Spieltag**, nicht das einzelne Spiel.
+The teams play in tournament format: on a match day several matches take place in the same hall. That is why the unit of the app is the **match day**, not the single match.
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| AUF-01 | Ein Spieltag ist ein Termin, der mehrere Spiele in derselben Halle umfasst. | Entschieden |
-| AUF-02 | Pro Spieltag gibt es eine Anmeldung und ein Aufgebot, nicht pro Spiel. | Entschieden |
-| AUF-03 | Ein Spieltag gehört zu genau einem Team. | Annahme |
-| AUF-04 | Ein einzelnes Spiel ausserhalb der Turnierform (z.B. Testspiel, Cup) ist ein Spieltag mit einem Spiel. | Annahme |
+| AUF-01 | A match day is an event that includes several matches in the same hall. | Decided |
+| AUF-02 | There is one response and one call-up per match day, not per match. | Decided |
+| AUF-03 | A match day belongs to exactly one team. | Assumption |
+| AUF-04 | A single match outside the tournament format (e.g. friendly, cup) is a match day with one match. | Assumption |
 
-## Angaben zum Spieltag
+## Match day details
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| AUF-10 | Der Spielort kann mit einem Google-Maps-Link angegeben werden. | Entschieden |
-| AUF-11 | Der Google-Maps-Link lässt sich von Hand einfügen. Bei importierten Spieltagen wird er automatisch gesetzt (siehe [06](06-swiss-unihockey.md)). | Angenommen |
-| AUF-12 | Ein Spieltag hat einen Treffpunkt mit Zeit und Ort. | Angenommen |
-| AUF-13 | Ein Spieltag hat ein freies Feld für Hinweise, z.B. die Trikotfarbe. | Angenommen |
-| AUF-14 | Jedes Spiel des Spieltags hat Gegner, Anspielzeit und die Angabe Heim oder Auswärts. | Angenommen |
-| AUF-15 | Zu jedem Spiel kann ein Resultat festgehalten werden. | Annahme |
-| AUF-16 | Spieltage lassen sich von Hand erfassen, unabhängig von der Anbindung an swiss unihockey. | Angenommen |
+| AUF-10 | The venue can be given with a Google Maps link. | Decided |
+| AUF-11 | The Google Maps link can be pasted by hand. For imported match days it is set automatically (see [06](06-swiss-unihockey.md)). | Accepted |
+| AUF-12 | A match day has a meeting point with time and place. | Accepted |
+| AUF-13 | A match day has a free text field for notes, e.g. the jersey colour. | Accepted |
+| AUF-14 | Each match of the match day has an opponent, a start time and home or away. | Accepted |
+| AUF-15 | A result can be recorded for each match. | Assumption |
+| AUF-16 | Match days can be entered by hand, independently of the swiss unihockey connection. | Accepted |
 
-## Ablauf
+## Flow
 
-1. Die Spielerinnen melden sich für den Spieltag an oder ab, genau wie für ein Training ([04](04-responses.md)).
-2. Die Coach wählt das Aufgebot.
-3. Die Coach veröffentlicht das Aufgebot. Alle werden benachrichtigt.
+1. The players respond to the match day, exactly as for a practice ([04](04-responses.md)).
+2. The coach chooses the call-up.
+3. The coach publishes the call-up. Everyone is notified.
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| AUF-20 | Die An- und Abmeldung für einen Spieltag funktioniert gleich wie für ein Training. | Angenommen |
-| AUF-21 | Die Coach wählt die Spielerinnen für das Aufgebot aus. Die Auswahlliste ist nach den Standardlinien gruppiert (Linien, Goalies, Ohne Linie). Lücken durch Absagen sind sofort sichtbar. | Angenommen |
-| AUF-22 | Die Coach darf alle Spielerinnen des Teams aufbieten, unabhängig von deren Antwort. Der Antwortstatus steht daneben. So kann sie auch jemanden mit «vielleicht» oder ohne Antwort nominieren. | Entschieden |
-| AUF-23 | Das Aufgebot wird ausdrücklich veröffentlicht. Vorher sehen es nur die Coaches. | Annahme |
-| AUF-24 | Mit der Veröffentlichung werden alle Spielerinnen des Teams benachrichtigt. Jede sieht bei sich «aufgeboten» oder «nicht aufgeboten». | Angenommen |
-| AUF-25 | Aufgebotene müssen nicht bestätigen. Die Zusage liegt mit der Anmeldung schon vor. | Entschieden |
-| AUF-26 | Wer aufgeboten ist und doch nicht kann, meldet sich ab. Die Coach wird benachrichtigt. | Entschieden |
-| AUF-27 | Ändert die Coach ein veröffentlichtes Aufgebot, werden die betroffenen Spielerinnen benachrichtigt. | Annahme |
-| AUF-28 | Coaches melden sich für den Spieltag an und ab, stehen im Coach-Block und sind nicht Teil des Aufgebots. | Angenommen |
+| AUF-20 | Responding to a match day works the same as for a practice. | Accepted |
+| AUF-21 | The coach selects the players for the call-up. The selection list is grouped by the standard lines (lines, goalies, no line). Gaps caused by cancellations are visible immediately. | Accepted |
+| AUF-22 | The coach may call up any player of the team, regardless of their response. The response status is shown next to them. This way she can also select someone with «vielleicht» or without a response. | Decided |
+| AUF-23 | The call-up is published explicitly. Before that, only the coaches see it. | Assumption |
+| AUF-24 | On publishing, all players of the team are notified. Each sees «aufgeboten» (called up) or «nicht aufgeboten» (not called up) for herself. | Accepted |
+| AUF-25 | Called-up players do not have to confirm. Their response already confirms it. | Decided |
+| AUF-26 | Anyone who is called up but cannot come after all cancels their response. The coach is notified. | Decided |
+| AUF-27 | If the coach changes a published call-up, the affected players are notified. | Assumption |
+| AUF-28 | Coaches respond to the match day, are listed in the coach block and are not part of the call-up. | Accepted |
 
-## Nicht Teil des Kerns
+## Not part of the core
 
-- Abweichende Linien für einen einzelnen Spieltag: gestrichen (siehe [LIN-08](02-lines.md)).
-- Fahrerliste mit automatischer Fahrzeit: siehe [Spätere Funktionen](../later-features.md). Treffpunkt und Spielort sind bewusst schon im Modell, damit das später darauf aufsetzen kann.
-- Gastspielerinnen aus anderen Teams aufbieten: siehe [Spätere Funktionen](../later-features.md).
+- Different lines for a single match day: dropped (see [LIN-08](02-lines.md)).
+- Driver list with automatic travel time: see [Later features](../later-features.md). Meeting point and venue are already in the model on purpose, so that this can build on them later.
+- Calling up guest players from other teams: see [Later features](../later-features.md).

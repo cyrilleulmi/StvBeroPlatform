@@ -1,35 +1,35 @@
-# 07 · Rollen und Rechte
+# 07 · Roles and permissions
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Anforderungen
+## Requirements
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| RR-01 | Die Rechte einer Person ergeben sich aus ihrer Funktion im jeweiligen Team. Wer in Team 1 Coach und in Team 2 Spielerin ist, hat in Team 1 Coach-Rechte und in Team 2 die Rechte einer Spielerin. | Angenommen |
-| RR-02 | Eine Spielerin sieht ihre Teams und deren Termine und antwortet für sich selbst. | Angenommen |
-| RR-03 | Eine Coach bearbeitet Termine und Linien ihres Teams, antwortet stellvertretend, sieht Kommentare und erstellt das Aufgebot. | Angenommen |
-| RR-04 | Admins dürfen alles, über alle Teams hinweg. Admin ist keine Funktion in einem Team, sondern eine Eigenschaft der Person. | Angenommen |
-| RR-05 | Kacheln und Aktionen sind nur für die Rollen sichtbar, die sie nutzen dürfen. | Entschieden |
-| RR-06 | Bei einem Termin mit mehreren Teams darf die Coach eines beteiligten Teams den Termin bearbeiten. Stellvertretend antworten und Kommentare sehen darf sie nur für ihr eigenes Team. | Annahme |
-| RR-07 | Die Rechte werden im Backend durchgesetzt, nicht nur in der Oberfläche ausgeblendet. | Annahme |
+| RR-01 | A person's permissions follow from their team role in the respective team. Someone who is coach in Team 1 and player in Team 2 has coach permissions in Team 1 and player permissions in Team 2. | Accepted |
+| RR-02 | A player sees her teams and their events and responds for herself. | Accepted |
+| RR-03 | A coach edits events and lines of her team, responds on behalf, sees comments and creates the call-up. | Accepted |
+| RR-04 | Admins may do everything, across all teams. Admin is not a team role but a property of the person. | Accepted |
+| RR-05 | Tiles and actions are only visible to the roles allowed to use them. | Decided |
+| RR-06 | For an event with several teams, the coach of a participating team may edit the event. She may respond on behalf and see comments only for her own team. | Assumption |
+| RR-07 | Permissions are enforced in the backend, not just hidden in the user interface. | Assumption |
 
-## Übersicht
+## Overview
 
-| Aktion | Spielerin | Coach (eigenes Team) | Admin |
+| Action | Player | Coach (own team) | Admin |
 |---|---|---|---|
-| Eigene Termine sehen | ✓ | ✓ | ✓ |
-| Für sich antworten | ✓ | ✓ | ✓ |
-| Status der anderen im Termin sehen | ✓ | ✓ | ✓ |
-| Kommentare und Gründe anderer sehen | – | ✓ | ✓ |
-| Stellvertretend antworten | – | ✓ | ✓ |
-| Termine und Serien erfassen, bearbeiten, absagen | – | ✓ | ✓ |
-| Linien verwalten | – | ✓ | ✓ |
-| Aufgebot erstellen und veröffentlichen | – | ✓ | ✓ |
-| Personen, Teams, Teamzugehörigkeiten verwalten | – | – | ✓ |
-| Team mit swiss unihockey verknüpfen | – | – | ✓ |
-| Saisons verwalten | – | – | ✓ |
+| See own events | ✓ | ✓ | ✓ |
+| Respond for oneself | ✓ | ✓ | ✓ |
+| See the status of others in the event | ✓ | ✓ | ✓ |
+| See comments and reasons of others | – | ✓ | ✓ |
+| Respond on behalf | – | ✓ | ✓ |
+| Create, edit, cancel events and series | – | ✓ | ✓ |
+| Manage lines | – | ✓ | ✓ |
+| Create and publish the call-up | – | ✓ | ✓ |
+| Manage people, teams, team memberships | – | – | ✓ |
+| Link a team to swiss unihockey | – | – | ✓ |
+| Manage seasons | – | – | ✓ |
 
-## Hinweis zu den Rollen der Plattform
+## Note on the roles of the platform
 
-Für die ganze Plattform sind mindestens die Rollen Spielerin, Coach, Helfer/Eltern und Admin vorgesehen. Helfer und Eltern spielen im Kern keine Rolle. Sie werden mit der Helfereinsatzplanung bzw. den Elternfunktionen relevant.
+For the whole platform at least the roles player, coach, helper/parent and admin are planned. Helpers and parents play no part in the core. They become relevant with helper scheduling and the parent features.

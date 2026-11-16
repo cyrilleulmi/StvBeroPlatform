@@ -1,4 +1,4 @@
-# Testpläne
+# Test plans
 
-Hier liegen Testpläne in Markdown, z.B. erzeugt mit dem Playwright-Planner-Agenten. Ein Plan beschreibt
-Szenarien in Worten; die ausführbaren Tests liegen in `../tests/`. Vorlage für neue Tests: `../tests/seed.spec.ts`.
+This folder holds test plans in Markdown, e.g. generated with the Playwright planner agent. A plan describes
+scenarios in words; the executable tests live in `../tests/`. Template for new tests: `../tests/seed.spec.ts`.

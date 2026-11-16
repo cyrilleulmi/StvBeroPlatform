@@ -1,92 +1,92 @@
-# Testplan F-00 · Grundgerüst
+# Test plan F-00 · Foundation
 
-Issue #1, PR #11. Anforderungen: NF-01–NF-24, RR-05.
+Issue #1, PR #11. Requirements: NF-01–NF-24, RR-05.
 
-**Allgemeine Ausgangslage:** `POST /api/test/reset` (Seed F-00: Saisons, Personen 01–17 mit Konto), Uhr Standard (Mo 16.11.2026 06:00). App: Frontend `http://localhost:4200` (Development-Build), Backend `http://localhost:8080`.
-Viewports: mobil 375×812, Desktop 1280×800. Nach jedem Fall: Konsole ohne Fehler, keine unerwarteten 4xx/5xx.
+**General starting point:** `POST /api/test/reset` (seed F-00: seasons, people 01–17 with account), default clock (Mon 16.11.2026 06:00). App: frontend `http://localhost:4200` (development build), backend `http://localhost:8080`.
+Viewports: mobile 375×812, desktop 1280×800. After each case: console without errors, no unexpected 4xx/5xx.
 
 ## K1 · `scripts/start.sh`
 
-1. Aus dem Repo-Stand `scripts/start.sh` ausführen (DB, Backend Profil `dev`, Frontend).
-2. Erwartung: Meldung «Bereit.», `http://localhost:4200` antwortet 200, `GET http://localhost:4200/api/sitzung` (Proxy) antwortet 200 mit `angemeldet: false`.
+1. Run `scripts/start.sh` from the repo state (DB, backend profile `dev`, frontend).
+2. Expected: message «Bereit.», `http://localhost:4200` answers 200, `GET http://localhost:4200/api/sitzung` (proxy) answers 200 with `angemeldet: false`.
 
 ## K2 · `scripts/test.sh`
 
-1. `scripts/test.sh` ausführen.
-2. Erwartung: API-Lint ohne Befund, Backend-Tests grün, Frontend-Lint und -Build grün, E2E mobil + desktop (mit axe) grün, Exit-Code 0.
+1. Run `scripts/test.sh`.
+2. Expected: API lint without findings, backend tests green, frontend lint and build green, E2E mobile + desktop (with axe) green, exit code 0.
 
 ## K3 · `/dev-login`
 
-Ausgangslage: Reset, nicht angemeldet.
+Starting point: reset, not signed in.
 
-1. `/dev-login` öffnen.
-2. Erwartung: Alle 17 Seed-Personen sind sichtbar (Test-ID `dev-login-person-<schluessel>`, z.B. `dev-login-person-petra`), mit Name. Banner `testmodus-hinweis` sichtbar.
-3. Auf «Anna Muster» klicken.
-4. Erwartung: URL `/`, Begrüssung mit «Anna». Nach Neuladen weiterhin angemeldet.
-5. Grenzfall: `POST /api/test/anmelden {schluessel: "gibtsnicht"}` → 400 bzw. 404 (Problem Details), keine Sitzung. Leerer Body → 400.
+1. Open `/dev-login`.
+2. Expected: all 17 seed people are visible (test ID `dev-login-person-<schluessel>`, e.g. `dev-login-person-petra`), with name. Banner `testmodus-hinweis` visible.
+3. Click «Anna Muster».
+4. Expected: URL `/`, greeting with «Anna». Still signed in after reload.
+5. Edge case: `POST /api/test/anmelden {schluessel: "gibtsnicht"}` → 400 or 404 (Problem Details), no session. Empty body → 400.
 
-## K4 · Start und Kacheln
+## K4 · Start page and tiles
 
-Ausgangslage: Reset, als `anna` angemeldet.
+Starting point: reset, signed in as `anna`.
 
-1. `/` öffnen.
-2. Erwartung: Überschrift mit «Anna». Kacheln entsprechen `GET /api/kacheln`; Kachel `kachel-anwesenheit` sichtbar.
-3. Kachel «Anwesenheit» antippen.
-4. Erwartung: URL `/termine`, leerer Zustand mit Text (kein leerer Bildschirm).
-5. Rolle: als `alex` (Admin) `GET /api/kacheln` und Start vergleichen.
+1. Open `/`.
+2. Expected: heading with «Anna». Tiles match `GET /api/kacheln`; tile `kachel-anwesenheit` visible.
+3. Tap the tile «Anwesenheit».
+4. Expected: URL `/termine`, empty state with text (no blank screen).
+5. Role: as `alex` (admin), compare `GET /api/kacheln` and the start page.
 
 ## K5 · Navigation (RR-05)
 
-1. Mobil als `anna`: `nav` «Hauptnavigation» unten, Einträge Start, Termine, Teams, Profil (keine «Verwaltung»). Aktiver Eintrag `aria-current="page"`, wechselt beim Navigieren.
-2. Desktop als `anna`: Navigation links.
-3. Als `alex`: zusätzlich «Verwaltung», `/verwaltung` zeigt leeren Zustand.
-4. Als `anna`: `/verwaltung` per Deep Link → «Keine Berechtigung» (`role="alert"`).
-5. Grenzfall 1023px vs. 1024px: Navigation wechselt von unten nach links.
+1. Mobile as `anna`: `nav` «Hauptnavigation» at the bottom, entries «Start», «Termine», «Teams», «Profil» (no «Verwaltung»). Active entry `aria-current="page"`, changes when navigating.
+2. Desktop as `anna`: navigation on the left.
+3. As `alex`: additionally «Verwaltung», `/verwaltung` shows an empty state.
+4. As `anna`: `/verwaltung` via deep link → «Keine Berechtigung» (`role="alert"`).
+5. Edge case 1023px vs. 1024px: navigation switches from bottom to left.
 
-## K6 · Design-Tokens und Darstellung
+## K6 · Design tokens and theme
 
-1. Als `anna` `/profil` öffnen, Umschalter `theme-umschalter` mit Hell/Düne/GitHub Dark/System (seit E-67, vorher Hell/Dunkel/System).
-2. «GitHub Dark» wählen → `<html data-theme="github-dark">`, Bildschirm dunkel; neu laden → bleibt dunkel.
-3. «Hell» → hell, bleibt nach Neuladen. «System» mit `prefers-color-scheme: dark` → dunkel (GitHub Dark).
-4. Jeder Screen (`/dev-login`, `/`, `/termine`, `/teams`, `/profil`, `/verwaltung`, Nicht gefunden) im Darkmode: lesbar, nichts Weisses auf Weiss.
-5. CSS Custom Properties aus design-principles.md auf `:root` vorhanden (z.B. `--primary`).
+1. As `anna` open `/profil`, switcher `theme-umschalter` with «Hell»/«Düne»/«GitHub Dark»/«System» (since E-67, before «Hell»/«Dunkel»/«System»).
+2. Choose «GitHub Dark» → `<html data-theme="github-dark">`, screen dark; reload → stays dark.
+3. «Hell» → light, stays after reload. «System» with `prefers-color-scheme: dark` → dark (GitHub Dark).
+4. Every screen (`/dev-login`, `/`, `/termine`, `/teams`, `/profil`, `/verwaltung`, not found) in dark mode: readable, nothing white on white.
+5. CSS custom properties from design-principles.md present on `:root` (e.g. `--primary`).
 
 ## K7 · PWA
 
-1. `/manifest.webmanifest` liefert gültiges Manifest (name, icons 192/512, start_url, display standalone).
-2. Service Worker `sw.js` wird registriert (`navigator.serviceWorker.getRegistration()`).
+1. `/manifest.webmanifest` delivers a valid manifest (name, icons 192/512, start_url, display standalone).
+2. Service worker `sw.js` is registered (`navigator.serviceWorker.getRegistration()`).
 
-## K8 · Test-Endpunkte
+## K8 · Test endpoints
 
-1. Profil dev: `POST /api/test/reset` 204, `PUT /api/test/uhr` 204, `POST /api/test/anmelden` 204 mit Cookie.
-2. Profil prod: automatischer Test `ProdOhneTesthilfenTest` (404, nicht in OpenAPI).
+1. Profile dev: `POST /api/test/reset` 204, `PUT /api/test/uhr` 204, `POST /api/test/anmelden` 204 with cookie.
+2. Profile prod: automated test `ProdOhneTesthilfenTest` (404, not in OpenAPI).
 
-## K9 · OpenAPI-Vergleich
+## K9 · OpenAPI comparison
 
-`OpenApiVertragTest` läuft grün in den Backend-Tests.
+`OpenApiVertragTest` runs green in the backend tests.
 
-## K10 · Uhr
+## K10 · Clock
 
-1. `PUT /api/test/uhr` auf 2027-01-05T10:00 → `GET /api/ich` liefert weiterhin konsistente Daten; Backend-Test `uhrSetzenVeraendertJetztImGanzenBackend` grün.
-2. Ungültige Uhr (`{}` oder Text) → 400.
+1. `PUT /api/test/uhr` to 2027-01-05T10:00 → `GET /api/ich` still delivers consistent data; backend test `uhrSetzenVeraendertJetztImGanzenBackend` green.
+2. Invalid clock (`{}` or text) → 400.
 
 ## K11 · CI
 
-Checks auf dem PR: Workflow `ci.yml` grün.
+Checks on the PR: workflow `ci.yml` green.
 
-## K12 · Rückleitung
+## K12 · Redirect back
 
-Ausgangslage: Reset, nicht angemeldet.
+Starting point: reset, not signed in.
 
-1. `/profil` öffnen → Weiterleitung auf `/dev-login?ziel=%2Fprofil`.
-2. Als `petra` anmelden → URL `/profil`.
-3. Gleiches für `/termine`, `/teams`, `/verwaltung` (als `alex`), unbekannte Route.
-4. Grenzfall offener Redirect: `/dev-login?ziel=https://example.com` bzw. `?ziel=//example.com` → nach Anmeldung auf `/`.
-5. Abmelden im Profil → `/anmelden` bzw. `/dev-login`; Zurück-Taste zeigt keine geschützten Inhalte.
+1. Open `/profil` → redirect to `/dev-login?ziel=%2Fprofil`.
+2. Sign in as `petra` → URL `/profil`.
+3. Same for `/termine`, `/teams`, `/verwaltung` (as `alex`), unknown route.
+4. Edge case open redirect: `/dev-login?ziel=https://example.com` or `?ziel=//example.com` → `/` after sign-in.
+5. Sign out in the profile → `/anmelden` or `/dev-login`; the back button shows no protected content.
 
-## Robustheit
+## Robustness
 
-- Doppelklick auf eine Person in `/dev-login`: genau eine Anmeldung, keine Fehler.
-- Neuladen auf `/profil` nach Theme-Wechsel.
-- Zurück-Taste nach Anmeldung.
-- Unbekannte Route angemeldet: «Diese Seite gibt es nicht.» mit Link «Zur Startseite».
+- Double click on a person in `/dev-login`: exactly one sign-in, no errors.
+- Reload on `/profil` after a theme change.
+- Back button after sign-in.
+- Unknown route while signed in: «Diese Seite gibt es nicht.» with link «Zur Startseite».

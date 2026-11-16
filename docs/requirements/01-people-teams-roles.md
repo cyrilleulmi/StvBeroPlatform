@@ -1,35 +1,35 @@
-# 01 · Personen, Teams, Funktionen
+# 01 · People, teams, team roles
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Anforderungen
+## Requirements
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| PTF-01 | Jede Person gibt es genau einmal, unabhängig davon, in wie vielen Teams sie ist. | Angenommen |
-| PTF-02 | Es gibt mehrere Teams. | Entschieden |
-| PTF-03 | Eine Person kann mehreren Teams angehören. | Entschieden |
-| PTF-04 | Pro Team hat eine Person genau eine Funktion. Über Teams hinweg sind die Funktionen frei kombinierbar, z.B. Team 1 Coach und Team 2 Spielerin. | Entschieden |
-| PTF-05 | Es gibt mindestens die Funktionen «Spielerin» und «Coach». | Entschieden |
-| PTF-06 | Weitere Funktionen (z.B. Assistenzcoach, Betreuerin) sollen später ergänzt werden können, ohne das Modell umzubauen. Welche es braucht, ist nicht festgelegt. | Offen |
-| PTF-07 | Coaches werden nirgends als Spielerinnen angezeigt und zählen nie zum Spielerinnen-Total. | Entschieden |
-| PTF-08 | Die App ist momentan für Erwachsene gedacht. Jede Person antwortet für sich selbst. | Entschieden |
-| PTF-09 | Konto (Login) und Person sind getrennt modelliert, damit später ein Konto für mehrere Personen antworten kann (Eltern für Kinder). Heute gehört zu einem Konto genau eine Person. | Angenommen |
-| PTF-10 | Teamzugehörigkeiten gelten pro Saison (siehe [09 · Saisons](09-seasons.md)). | Angenommen |
-| PTF-11 | Admins verwalten Personen, Teams und Teamzugehörigkeiten. | Annahme |
-| PTF-12 | Eine Person sieht alle Teams, denen sie angehört, und ihre Funktion darin. | Annahme |
+| PTF-01 | Each person exists exactly once, no matter how many teams they are in. | Accepted |
+| PTF-02 | There are several teams. | Decided |
+| PTF-03 | A person can belong to several teams. | Decided |
+| PTF-04 | A person has exactly one team role per team. Across teams the team roles can be combined freely, e.g. coach in Team 1 and player in Team 2. | Decided |
+| PTF-05 | There are at least the team roles «Spielerin» (player) and «Coach». | Decided |
+| PTF-06 | Further team roles (e.g. assistant coach, team manager) should be addable later without rebuilding the model. Which ones are needed is not defined. | Open |
+| PTF-07 | Coaches are never shown as players and never count towards the player total. | Decided |
+| PTF-08 | For now the app is meant for adults. Each person responds for themselves. | Decided |
+| PTF-09 | Account (login) and person are modelled separately, so that later one account can respond for several people (parents for children). Today an account belongs to exactly one person. | Accepted |
+| PTF-10 | Team memberships apply per season (see [09 · Seasons](09-seasons.md)). | Accepted |
+| PTF-11 | Admins manage people, teams and team memberships. | Assumption |
+| PTF-12 | A person sees all teams they belong to and their team role in each. | Assumption |
 
-## Beispiel
+## Example
 
 | Person | Team 1 | Team 2 |
 |---|---|---|
-| Anna | Spielerin | – |
-| Petra | Coach | Spielerin |
-| Lea | Spielerin | Spielerin |
+| Anna | Player | – |
+| Petra | Coach | Player |
+| Lea | Player | Player |
 
-Petra erscheint in Team 1 im Coach-Block und in Team 2 unter den Spielerinnen. Lea erscheint in beiden Teams unter den Spielerinnen und kann in jedem Team eine andere Linie haben.
+In Team 1 Petra appears in the coach block, in Team 2 among the players. Lea appears among the players in both teams and can have a different line in each team.
 
-## Nicht Teil des Kerns
+## Not part of the core
 
-- Elternfunktionen: siehe [Spätere Funktionen](../later-features.md).
-- Gäste und Probetrainings: siehe [Spätere Funktionen](../later-features.md).
+- Parent roles: see [Later features](../later-features.md).
+- Guests and trial practices: see [Later features](../later-features.md).

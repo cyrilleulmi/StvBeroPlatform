@@ -1,14 +1,14 @@
-# 09 · Saisons
+# 09 · Seasons
 
-Status-Legende: siehe [README](../../README.md#status-der-anforderungen).
+Status legend: see [README](../../README.md#requirement-status).
 
-## Anforderungen
+## Requirements
 
-| ID | Anforderung | Status |
+| ID | Requirement | Status |
 |---|---|---|
-| SAI-01 | Teamzugehörigkeiten und Linien gelten pro Saison. | Angenommen |
-| SAI-02 | Alte Saisons bleiben als Archiv lesbar: Teams, Zugehörigkeiten, Linien, Termine und Antworten. | Angenommen |
-| SAI-03 | Es gibt immer genau eine aktuelle Saison. Die App zeigt standardmässig diese. | Annahme |
-| SAI-04 | Beim Anlegen einer neuen Saison können Teams, Zugehörigkeiten und Linien der Vorsaison als Ausgangslage übernommen und dann angepasst werden. | Annahme |
-| SAI-05 | Die Saison der App entspricht der Saison von swiss unihockey, damit der Import der Spiele ([06](06-swiss-unihockey.md)) eindeutig zugeordnet werden kann. | Annahme |
-| SAI-06 | Admins legen Saisons an und wechseln die aktuelle Saison. | Annahme |
+| SAI-01 | Team memberships and lines apply per season. | Accepted |
+| SAI-02 | Old seasons stay readable as an archive: teams, memberships, lines, events and responses. | Accepted |
+| SAI-03 | There is always exactly one current season. By default the app shows it. | Assumption |
+| SAI-04 | When a new season is created, the teams, memberships and lines of the previous season can be taken over as a starting point and then adjusted. | Assumption |
+| SAI-05 | The season of the app matches the season of swiss unihockey, so that the imported matches ([06](06-swiss-unihockey.md)) can be assigned unambiguously. | Assumption |
+| SAI-06 | Admins create seasons and switch the current season. | Assumption |

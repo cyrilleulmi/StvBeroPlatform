@@ -1,14 +1,14 @@
-# Testplan · Darstellungen (NF-08, E-67)
+# Test plan · Themes (NF-08, E-67)
 
-Profil, Umschalter «Darstellung» (`data-testid="theme-umschalter"`, `docs/design-principles.md#darstellungen`).
-Tests: `../tests/darstellungen.spec.ts`. Hell und System: `../tests/f00-grundgeruest.spec.ts` (K6).
+Profile, switcher «Darstellung» (`data-testid="theme-umschalter"`, `docs/design-principles.md#themes`).
+Tests: `../tests/darstellungen.spec.ts`. «Hell» and «System»: `../tests/f00-grundgeruest.spec.ts` (K6).
 
-Allgemein für jeden Fall: `POST /api/test/reset`, anmelden als `anna`. Mobil (375×812) und Desktop (1280×800).
+General for every case: `POST /api/test/reset`, sign in as `anna`. Mobile (375×812) and desktop (1280×800).
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| D1 Auswahl | `/profil` öffnen | Genau vier Einträge: «Hell», «Düne», «GitHub Dark», «System» |
-| D2 Düne, GitHub Dark | System auf das Gegenteil stellen (`prefers-color-scheme`), Darstellung wählen, `/`, Termin 01, zurück zu `/profil` | `data-theme` ist `duene` bzw. `github-dark`, Hintergrund `#F3ECE1` bzw. `#0D1117`, bleibt nach dem Seitenwechsel, Eintrag bleibt gewählt, axe ohne Befunde auf Profil, Start und Termin |
-| D3 Alter Wert | `localStorage` `stv-theme` = `dunkel` (gibt es nicht mehr), neu laden | «System» ist gewählt, kein `data-theme` |
+| D1 Choice | Open `/profil` | Exactly four entries: «Hell», «Düne», «GitHub Dark», «System» |
+| D2 Düne, GitHub Dark | Set the system to the opposite (`prefers-color-scheme`), choose the theme, `/`, event 01, back to `/profil` | `data-theme` is `duene` or `github-dark`, background `#F3ECE1` or `#0D1117`, stays after the page change, entry stays selected, axe without findings on profile, start page and event |
+| D3 Old value | `localStorage` `stv-theme` = `dunkel` (no longer exists), reload | «System» is selected, no `data-theme` |
 
-Von Hand zu prüfen (nicht automatisiert): Die Farbe der Browser- bzw. Statusleiste folgt bei Düne und GitHub Dark deren Hintergrund (`meta[name="theme-color"]`).
+Check by hand (not automated): with «Düne» and «GitHub Dark», the color of the browser or status bar follows their background (`meta[name="theme-color"]`).

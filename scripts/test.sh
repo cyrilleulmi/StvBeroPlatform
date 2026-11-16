@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Führt alle Tests aus und endet mit Exit-Code 0, wenn alles grün ist:
-#   1. API-Vertrag (redocly lint)
-#   2. Backend-Tests (inkl. Vergleich mit docs/api/openapi.yaml)
-#   3. Frontend-Lint und -Build
-#   4. E2E-Tests (Playwright, Projekte mobil und desktop, mit axe)
+# Runs all tests and exits with code 0 when everything is green:
+#   1. API contract (redocly lint)
+#   2. Backend tests (including the comparison with docs/api/openapi.yaml)
+#   3. Frontend lint and build
+#   4. E2E tests (Playwright, projects mobile and desktop, with axe)
 #
-# Backend und Frontend für die E2E-Tests startet Playwright selbst, falls sie nicht schon laufen.
+# Playwright starts the backend and frontend for the E2E tests itself, if they are not already running.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -14,7 +14,7 @@ if [ "${CI:-}" != "true" ]; then
   "$ROOT/scripts/db-start.sh"
 fi
 
-echo "== API-Vertrag =="
+echo "== API contract =="
 npx -y @redocly/cli@2.78.0 lint "$ROOT/docs/api/openapi.yaml"
 
 echo "== Backend =="
@@ -26,4 +26,4 @@ echo "== Frontend =="
 echo "== E2E =="
 (cd "$ROOT/e2e" && { [ -d node_modules ] || npm ci --no-audit --no-fund; } && npx playwright test --trace off)
 
-echo "Alle Tests grün."
+echo "All tests green."

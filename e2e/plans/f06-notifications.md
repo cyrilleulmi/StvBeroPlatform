@@ -1,47 +1,47 @@
-# Testplan F-06 · Benachrichtigungen
+# Test plan F-06 · Notifications
 
-Issue #7 · Anforderungen BEN-01, BEN-02, BEN-03, BEN-04, BEN-05, BEN-07, BEN-11, BEN-12, BEN-13, RR-07 ·
-Tests: `../tests/f06-benachrichtigungen.spec.ts`, Backend `backend/src/test/java/ch/stvbero/platform/kern/benachrichtigung/BenachrichtigungenTest.java`, `…/kern/termin/BenachrichtigungsRegelnTest.java`
+Issue #7 · Requirements BEN-01, BEN-02, BEN-03, BEN-04, BEN-05, BEN-07, BEN-11, BEN-12, BEN-13, RR-07 ·
+Tests: `../tests/f06-benachrichtigungen.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/kern/benachrichtigung/BenachrichtigungenTest.java`, `…/kern/termin/BenachrichtigungsRegelnTest.java`
 
-Allgemein für jeden Fall:
+General, for every case:
 
-- Vorbereitung: `POST /api/test/reset` (Jetzt = Mo 16.11.2026 06:00), dann `POST /api/test/anmelden` mit `{ "schluessel": "<person>" }` bzw. `/dev-login`.
-- Benachrichtigungen prüfen über `GET /api/test/benachrichtigungen`. Neu entstandene haben IDs, die nicht mit `90000000` beginnen (Seed 01–18).
-- Ansichten: mobil 375×812, zentrale Fälle zusätzlich Desktop 1280×800; `/benachrichtigungen` und die Glocke einmal dunkel.
-- Nach jedem Fall: keine Konsolenfehler, keine unerwarteten 4xx/5xx.
+- Setup: `POST /api/test/reset` (now = Mon 16.11.2026 06:00), then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }` or `/dev-login`.
+- Check notifications via `GET /api/test/benachrichtigungen`. Newly created ones have IDs that do not start with `90000000` (seed 01–18).
+- Views: mobile 375×812, key cases also desktop 1280×800; `/benachrichtigungen` and the bell once in dark mode.
+- After each case: no console errors, no unexpected 4xx/5xx.
 
-IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`. Termine T01 Training Di 17.11. 18:30 `40000000-0000-4000-8000-000000000001`,
-T02 Training Do 19.11. `…002`, T03 abgesagt `…003`, T04 Spieltag Team 1 `…004` (Aufgebot Entwurf), T05 Spieltag Team 2 `…005` (Aufgebot veröffentlicht).
-Personen `20000000-0000-4000-8000-0000000000NN` (Petra 02, Marc 03, Anna 05, Lea 06, Mia 07, Nina 09, Kim 11, Eva 12, Ella 15).
-Benachrichtigungen `90000000-0000-4000-8000-0000000000NN` (Anna Absage T03: 02, Lea Absage T03: 03, Petra Aufgebot T05: 13, Lea Aufgebot T05: 14).
+IDs: team 1 `10000000-0000-4000-8000-000000000001`, team 2 `…002`. Events T01 practice Tue 17.11. 18:30 `40000000-0000-4000-8000-000000000001`,
+T02 practice Thu 19.11. `…002`, T03 cancelled `…003`, T04 match day team 1 `…004` (call-up draft), T05 match day team 2 `…005` (call-up published).
+People `20000000-0000-4000-8000-0000000000NN` (Petra 02, Marc 03, Anna 05, Lea 06, Mia 07, Nina 09, Kim 11, Eva 12, Ella 15).
+Notifications `90000000-0000-4000-8000-0000000000NN` (Anna cancellation T03: 02, Lea cancellation T03: 03, Petra call-up T05: 13, Lea call-up T05: 14).
 
-## Akzeptanzkriterien
+## Acceptance criteria
 
-| Nr. | Fall | Ausgangslage | Schritte | Erwartung |
+| No. | Case | Starting point | Steps | Expected |
 |---|---|---|---|---|
-| K1 | Liste und Zähler | Reset, `lea` | `/` öffnen; Glocke antippen | Glocke «Benachrichtigungen 2 ungelesen», `benachrichtigungen-zaehler` = 2. `/benachrichtigungen`, Titel «Benachrichtigungen · STV Bero», Liste «Benachrichtigungen»: zuerst Aufgebot T05 (15.11. 21:00), dann Absage T03 (14.11. 10:00); beide «Neu», `data-gelesen="false"` |
-| K1b | Ohne Ungelesene | Reset, `petra`, `mia`; `alex` | `/` und `/benachrichtigungen` | Petra/Mia: kein Zähler, Einträge ohne «Neu», kein Button «Alle als gelesen markieren». Alex: «Keine Benachrichtigungen.» |
-| K1c | Alle als gelesen | Reset, `lea` | `/benachrichtigungen` → «Alle als gelesen markieren»; neu laden | «Alle sind als gelesen markiert.», Zähler weg, bleibt nach Neuladen |
-| K2 | S32 Klick öffnet Termin (BEN-12) | Reset, `anna` | `/benachrichtigungen` → Eintrag zu T03 antippen; Zurück | `/termine/<T03>` (abgesagt mit «Halle besetzt»), Zähler weg; zurück in der Liste ist der Eintrag gelesen, `data-gelesen="true"`, bleibt nach Neuladen |
-| K2b | Fremde (RR-07) | Reset, `anna` | API `POST /api/benachrichtigungen/<Lea 03>/gelesen`; eigene zweimal | 403 bzw. 204, 204. Ohne Anmeldung 401. `GET /api/benachrichtigungen` liefert nur eigene |
-| K3 | S5 kurzfristige Absage (BEN-02) | Reset, Uhr 16.11.2026 19:00, `anna` | `/termine/<T01>` → «nicht dabei»; dann «vielleicht» mit Kommentar | Genau eine neue `KURZFRISTIGE_ABSAGE` an Petra «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», keine an Marc oder Anna. Weiterer Wechsel: keine zweite. Petra sieht sie in `/benachrichtigungen`, Zähler 1 |
-| K4 | S6 Erinnerung (BEN-01, BEN-13) | Reset | Uhr 16.11.2026 06:31; dann 07:00 | Genau zwei `ERINNERUNG` zu T01 an Nina und Ella; nach 07:00 keine weitere. Nina sieht Zähler 1 und die Erinnerung. Vor 06:30 (Uhr 06:29) keine |
-| K5 | S9 Veröffentlichen (BEN-03) | Reset, `petra` | `/termine/<T04>/aufgebot` → «Veröffentlichen» → bestätigen | 7 neue `AUFGEBOT_VEROEFFENTLICHT` an alle Spielerinnen von Team 1 (Anna, Lea, Mia, Sara, Nina, Jana, Kim); Kim und Nina «nicht aufgeboten», andere «aufgeboten». Petra nicht |
-| K6 | S10 Abmeldung Aufgebotene (BEN-04) | Reset, `eva` | `/termine/<T05>` → «nicht dabei» | Marc erhält «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.», Eva nicht; Marc sieht sie mit Zähler |
-| K7 | Änderung Aufgebot (BEN-05) | Reset, `marc` | `/termine/<T05>/aufgebot`: Lea anhaken, Ella abhaken | Genau Lea («neu aufgeboten») und Ella («nicht mehr aufgeboten») erhalten eine Benachrichtigung, sonst niemand. Änderung im Entwurf T04 (Petra) benachrichtigt niemanden |
-| K8a | Absage (BEN-07) | Reset, `petra` | `/termine/<T01>` → absagen mit Grund | Alle 12 Mitglieder von Team 1 + 2 ausser Petra erhalten `TERMIN_ABGESAGT` mit Grund |
-| K8b | Verschiebung (BEN-07) | Reset, `petra` | `/termine/<T01>/bearbeiten` → Beginn 19:00 | Alle 12 ausser Petra erhalten `TERMIN_VERSCHOBEN`. Änderung nur des Orts: keine |
-| K9 | Schnittstelle (BEN-11) | Code | `Kanal`, `AppKanal`, `Benachrichtigungen.senden`, Test `ben11…` | Versand über Schnittstelle, Backend-Test mit `TestKanal` grün |
+| K1 | List and counter | Reset, `lea` | Open `/`; tap the bell | Bell «Benachrichtigungen 2 ungelesen», `benachrichtigungen-zaehler` = 2. `/benachrichtigungen`, title «Benachrichtigungen · STV Bero», list «Benachrichtigungen»: first call-up T05 (15.11. 21:00), then cancellation T03 (14.11. 10:00); both «Neu», `data-gelesen="false"` |
+| K1b | No unread | Reset, `petra`, `mia`; `alex` | `/` and `/benachrichtigungen` | Petra/Mia: no counter, entries without «Neu», no button «Alle als gelesen markieren». Alex: «Keine Benachrichtigungen.» |
+| K1c | Mark all as read | Reset, `lea` | `/benachrichtigungen` → «Alle als gelesen markieren»; reload | «Alle sind als gelesen markiert.», counter gone, stays after reload |
+| K2 | S32 click opens event (BEN-12) | Reset, `anna` | `/benachrichtigungen` → tap the entry for T03; back | `/termine/<T03>` (cancelled with «Halle besetzt»), counter gone; back in the list the entry is read, `data-gelesen="true"`, stays after reload |
+| K2b | Other people's (RR-07) | Reset, `anna` | API `POST /api/benachrichtigungen/<Lea 03>/gelesen`; own one twice | 403, and 204, 204. Without login 401. `GET /api/benachrichtigungen` returns only own ones |
+| K3 | S5 late cancellation (BEN-02) | Reset, clock 16.11.2026 19:00, `anna` | `/termine/<T01>` → «nicht dabei»; then «vielleicht» with comment | Exactly one new `KURZFRISTIGE_ABSAGE` to Petra «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», none to Marc or Anna. Further change: no second one. Petra sees it in `/benachrichtigungen`, counter 1 |
+| K4 | S6 reminder (BEN-01, BEN-13) | Reset | Clock 16.11.2026 06:31; then 07:00 | Exactly two `ERINNERUNG` for T01 to Nina and Ella; none more after 07:00. Nina sees counter 1 and the reminder. None before 06:30 (clock 06:29) |
+| K5 | S9 publish (BEN-03) | Reset, `petra` | `/termine/<T04>/aufgebot` → «Veröffentlichen» → confirm | 7 new `AUFGEBOT_VEROEFFENTLICHT` to all players of team 1 (Anna, Lea, Mia, Sara, Nina, Jana, Kim); Kim and Nina «nicht aufgeboten», others «aufgeboten». Not Petra |
+| K6 | S10 called-up player declines (BEN-04) | Reset, `eva` | `/termine/<T05>` → «nicht dabei» | Marc receives «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.», Eva does not; Marc sees it with counter |
+| K7 | Call-up change (BEN-05) | Reset, `marc` | `/termine/<T05>/aufgebot`: tick Lea, untick Ella | Exactly Lea («neu aufgeboten») and Ella («nicht mehr aufgeboten») receive a notification, nobody else. A change in draft T04 (Petra) notifies nobody |
+| K8a | Cancellation (BEN-07) | Reset, `petra` | `/termine/<T01>` → cancel with reason | All 12 members of team 1 + 2 except Petra receive `TERMIN_ABGESAGT` with reason |
+| K8b | Rescheduling (BEN-07) | Reset, `petra` | `/termine/<T01>/bearbeiten` → start 19:00 | All 12 except Petra receive `TERMIN_VERSCHOBEN`. Changing only the location: none |
+| K9 | Interface (BEN-11) | Code | `Kanal`, `AppKanal`, `Benachrichtigungen.senden`, test `ben11…` | Sending goes through the interface, backend test with `TestKanal` green |
 
-## Grenzfälle
+## Edge cases
 
-| Nr. | Fall | Schritte | Erwartung |
+| No. | Case | Steps | Expected |
 |---|---|---|---|
-| G1 | Rollen | `marc` sagt T01 ab (Coach nur Team 2) | Nicht angeboten bzw. 403, keine Benachrichtigung |
-| G2 | Auslöser | Petra antwortet stellvertretend für Anna kurzfristig | Petra erhält keine (O-50) |
-| G3 | Doppelklick | «Alle als gelesen markieren» doppelt, Eintrag doppelt antippen | keine Fehler, Zähler korrekt |
-| G4 | Neuladen | `/benachrichtigungen` neu laden, Deep Link ohne Anmeldung | Weiterleitung zu `/dev-login?ziel=%2Fbenachrichtigungen`, danach zurück |
-| G5 | Darstellung | Glocke mobil oben rechts und Desktop, hell und dunkel | lesbar, verdeckt nichts, Kontrast ausreichend |
-| G6 | Glocke verdeckt nichts | mobil `petra` → `/termine/<T01>`, so scrollen, dass «Antwort für Mia Frei eintragen» oben rechts steht | Die Glocke liegt nicht über Bedienelementen des Inhalts; ein Tipp auf den rechten Rand des Stift-Buttons trifft den Button |
-| G7 | Fokus unter Kopfzeile (O-51) | mobil `petra` → `/termine/<T01>`, ans Seitenende scrollen, mit Shift+Tab rückwärts durch alle Bedienelemente von `main` | Kein fokussiertes Element liegt unter der Kopfzeile (oben 68px) oder der Navigation unten (`scroll-padding`) |
-| G8 | Kopfzeile Darkmode | mobil dunkel, `lea`, `/termine/<T01>` und `/benachrichtigungen` | Kopfzeile mit dunklem Hintergrund und Trennlinie, Glocke mit Zähler lesbar; ab 1024px keine Kopfzeile |
+| G1 | Roles | `marc` cancels T01 (coach of team 2 only) | Not offered or 403, no notification |
+| G2 | Trigger | Petra responds on behalf of Anna at short notice | Petra receives none (O-50) |
+| G3 | Double click | «Alle als gelesen markieren» twice, tap an entry twice | No errors, counter correct |
+| G4 | Reload | Reload `/benachrichtigungen`, deep link without login | Redirect to `/dev-login?ziel=%2Fbenachrichtigungen`, then back |
+| G5 | Theme | Bell on mobile top right and on desktop, light and dark | Readable, covers nothing, sufficient contrast |
+| G6 | Bell covers nothing | Mobile `petra` → `/termine/<T01>`, scroll so that «Antwort für Mia Frei eintragen» is at the top right | The bell does not sit over controls of the content; a tap on the right edge of the pencil button hits the button |
+| G7 | Focus under header (O-51) | Mobile `petra` → `/termine/<T01>`, scroll to the bottom, Shift+Tab backwards through all controls of `main` | No focused element lies under the header (top 68px) or the bottom navigation (`scroll-padding`) |
+| G8 | Header dark mode | Mobile dark, `lea`, `/termine/<T01>` and `/benachrichtigungen` | Header with dark background and divider, bell with counter readable; no header from 1024px |
