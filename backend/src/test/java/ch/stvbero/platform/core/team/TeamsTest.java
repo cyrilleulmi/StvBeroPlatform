@@ -56,7 +56,7 @@ class TeamsTest {
         given().cookie("stv_session", alex).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Team 1", "Team 2", "Team 3"))
                 .body("[0].suTeamId", equalTo(900001))
-                .body("[0].meineFunktion", nullValue());
+                .body("[0].myTeamRole", nullValue());
         given().cookie("stv_session", alex).queryParam("season", SEASON_2025).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Team 1"));
     }
@@ -74,7 +74,7 @@ class TeamsTest {
                 .body("lineup.groups[1].players.lastName", contains("Brun", "Roth"))
                 .body("lineup.groups[2].players.lastName", contains("Wyss"))
                 .body("lineup.noLine.lastName", contains("Baumann"))
-                .body("einteilung.gruppen.spielerinnen.flatten().vorname", not(hasItem("Petra")));
+                .body("lineup.groups.players.flatten().firstName", not(hasItem("Petra")));
         given().cookie("stv_session", anna).get("/api/teams/" + TEAM_2).then().statusCode(403);
     }
 

@@ -32,8 +32,8 @@ class PersonsTest {
     void listByLastNameWithSearch() {
         given().cookie("stv_session", alex).get("/api/persons").then().statusCode(200)
                 .body("", hasSize(17))
-                .body("[0].nachname", equalTo("Admin"))
-                .body("[1].nachname", equalTo("Baumann"));
+                .body("[0].lastName", equalTo("Admin"))
+                .body("[1].lastName", equalTo("Baumann"));
         given().cookie("stv_session", alex).queryParam("search", "kel").get("/api/persons").then().statusCode(200)
                 .body("firstName", contains("Petra"));
         given().cookie("stv_session", alex).queryParam("search", "petra keller").get("/api/persons").then().statusCode(200)

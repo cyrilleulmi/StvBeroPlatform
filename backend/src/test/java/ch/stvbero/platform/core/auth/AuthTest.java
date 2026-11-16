@@ -97,10 +97,10 @@ public class AuthTest {
     void nf11TileAttendanceIsRegistered() {
         given().cookie("stv_session", login("anna")).get("/api/tiles").then().statusCode(200)
                 .body("id", contains("anwesenheit"))
-                .body("[0].titel", equalTo("Anwesenheit"))
+                .body("[0].title", equalTo("Anwesenheit"))
                 .body("[0].route", equalTo("/termine"))
                 .body("[0].icon", equalTo("calendar-check"))
-                .body("[0].farbe", equalTo("primary"));
+                .body("[0].color", equalTo("primary"));
     }
 
     @Test
@@ -108,7 +108,7 @@ public class AuthTest {
         String session = login("anna");
 
         given().cookie("stv_session", session).post("/api/logout").then().statusCode(204)
-                .header("Set-Cookie", containsString("stv_sitzung=;"));
+                .header("Set-Cookie", containsString("stv_session=;"));
 
         given().cookie("stv_session", session).get("/api/me").then().statusCode(401);
     }
@@ -129,7 +129,7 @@ public class AuthTest {
 
         for (int i = 0; i < 2; i++) {
             given().cookie("stv_session", session).post("/api/logout").then().statusCode(204)
-                    .header("Set-Cookie", containsString("stv_sitzung=;"));
+                    .header("Set-Cookie", containsString("stv_session=;"));
         }
         given().cookie("stv_session", session).get("/api/me").then().statusCode(401);
     }
@@ -154,7 +154,7 @@ public class AuthTest {
                 for (Future<Response> response : responses) {
                     Response r = response.get(30, TimeUnit.SECONDS);
                     assertEquals(204, r.statusCode(), "Status einer gleichzeitigen Abmeldung");
-                    assertTrue(r.header("Set-Cookie").contains("stv_sitzung=;"), "Cookie wird gelöscht");
+                    assertTrue(r.header("Set-Cookie").contains("stv_session=;"), "Cookie wird gelöscht");
                 }
             } finally {
                 pool.shutdownNow();

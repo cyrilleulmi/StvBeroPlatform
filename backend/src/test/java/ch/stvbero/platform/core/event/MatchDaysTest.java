@@ -157,8 +157,8 @@ class MatchDaysTest {
     @Test
     void auf28CoachesStandNotInTheSelection() {
         JsonPath json = callUp(login("petra"), T04).statusCode(200).extract().jsonPath();
-        assertThat(json.getList("gruppen.eintraege.person.id.flatten()"), not(hasItem(PETRA)));
-        assertThat(json.getList("gruppen.eintraege.person.id.flatten()").size(), equalTo(7));
+        assertThat(json.getList("groups.entries.person.id.flatten()"), not(hasItem(PETRA)));
+        assertThat(json.getList("groups.entries.person.id.flatten()").size(), equalTo(7));
     }
 
     @Test

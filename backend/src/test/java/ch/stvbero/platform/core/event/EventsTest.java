@@ -107,7 +107,7 @@ class EventsTest {
                 .body("notes", equalTo("Weisse Trikots mitnehmen"))
                 .body("location.mapsUrl", equalTo("https://www.google.com/maps/search/?api=1&query=Sporthalle+Seefeld+Musterdorf"))
                 // Spiele und Aufgebot im Entwurf ab F-05 (AUF-23: für Anna noch kein Aufgebot)
-                .body("spiele.size()", equalTo(2))
+                .body("matches.size()", equalTo(2))
                 .body("myCallUp", equalTo("NO_CALL_UP_YET"));
         given().cookie("stv_session", petra).get("/api/series/" + SERIES_1).then().statusCode(200)
                 .body("weekday", equalTo("TUESDAY"))
@@ -142,7 +142,7 @@ class EventsTest {
         List<String> tinas = ids(tina, "");
         assertThat(tinas, not(hasItem(T01)));
         assertThat(tinas, hasItem(T06));
-        list(tina, "").body("[0].beginn", equalTo("2026-11-18T18:00:00+01:00"))
+        list(tina, "").body("[0].start", equalTo("2026-11-18T18:00:00+01:00"))
                 .body("teams.id", everyItem(hasItem(TEAM_3)));
         // Alex ist in keinem Team: keine Termine
         list(login("alex"), "").body("$", empty());
@@ -266,7 +266,7 @@ class EventsTest {
                 .body("responseDeadlineHours", equalTo(24))
                 .extract().path("id");
         List<String> start = list(login("anna"), "?to=2027-01-31").extract().jsonPath()
-                .getList("findAll { it.seriesId == '" + id + "' }.beginn");
+                .getList("findAll { it.seriesId == '" + id + "' }.start");
         assertThat(start, contains("2026-11-16T19:30:00+01:00", "2026-11-23T19:30:00+01:00",
                 "2026-11-30T19:30:00+01:00", "2026-12-07T19:30:00+01:00", "2026-12-14T19:30:00+01:00",
                 "2026-12-21T19:30:00+01:00"));
@@ -277,7 +277,7 @@ class EventsTest {
         String id = given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(series("MONDAY", "05:00", "2026-11-02", "2026-11-30", TEAM_1).replace("21:00", "06:00"))
                 .post("/api/series").then().statusCode(201).extract().path("id");
-        List<String> start = list(petra, "").extract().jsonPath().getList("findAll { it.seriesId == '" + id + "' }.beginn");
+        List<String> start = list(petra, "").extract().jsonPath().getList("findAll { it.seriesId == '" + id + "' }.start");
         assertThat(start, contains("2026-11-23T05:00:00+01:00", "2026-11-30T05:00:00+01:00"));
     }
 
@@ -290,7 +290,7 @@ class EventsTest {
                 .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(201)
                 .body("exceptions.reason", contains("Hallenreinigung", "Weihnachtsferien"));
         List<String> start = list(petra, "?from=2026-11-28&to=2026-12-09&type=PRACTICE").extract().jsonPath()
-                .getList("findAll { it.seriesId == '" + SERIES_1 + "' }.beginn");
+                .getList("findAll { it.seriesId == '" + SERIES_1 + "' }.start");
         assertThat(start, contains("2026-12-08T18:30:00+01:00"));
     }
 
@@ -336,7 +336,7 @@ class EventsTest {
         given().cookie("stv_session", petra).get("/api/series/" + SERIES_2).then()
                 .body("weekday", equalTo("THURSDAY")).body("startTime", equalTo("19:00"));
         List<String> start = list(petra, "?from=2026-11-19&to=2026-11-27&team=" + TEAM_1 + "&type=PRACTICE")
-                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.beginn");
+                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
         assertThat(start, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:00:00+01:00"));
 
         // Spätere Änderung der Serie übernimmt der verschobene Termin nicht (TER-08)
@@ -346,11 +346,11 @@ class EventsTest {
         given().cookie("stv_session", petra).get("/api/events/" + T02).then()
                 .body("start", equalTo("2026-11-20T19:00:00+01:00"));
         start = list(petra, "?from=2026-11-19&to=2026-12-04&team=" + TEAM_1 + "&type=PRACTICE")
-                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.beginn");
+                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
         assertThat(start, contains("2026-11-20T19:00:00+01:00", "2026-11-26T19:30:00+01:00", "2026-12-03T19:30:00+01:00"));
         // Vergangene Termine bleiben unverändert
         given().cookie("stv_session", petra).get("/api/events?view=past&team=" + TEAM_1 + "&type=PRACTICE")
-                .then().body("findAll { it.seriesId == '" + SERIES_2 + "' }[0].beginn", equalTo("2026-11-12T19:00:00+01:00"));
+                .then().body("findAll { it.seriesId == '" + SERIES_2 + "' }[0].start", equalTo("2026-11-12T19:00:00+01:00"));
     }
 
     @Test
@@ -359,7 +359,7 @@ class EventsTest {
                 .body(series("FRIDAY", "19:00", "2026-08-20", "2026-12-31", TEAM_1))
                 .put("/api/series/" + SERIES_2).then().statusCode(200);
         List<String> start = list(petra, "?to=2026-12-31&team=" + TEAM_1 + "&type=PRACTICE")
-                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.beginn");
+                .extract().jsonPath().getList("findAll { it.seriesId == '" + SERIES_2 + "' }.start");
         // Termin 02 hat seit F-04 eine Antwort (Anna): er wird abgesagt statt entfernt (TER-07, zustaende.md)
         assertThat(start, contains("2026-11-19T19:00:00+01:00", "2026-11-20T19:00:00+01:00",
                 "2026-11-27T19:00:00+01:00", "2026-12-04T19:00:00+01:00", "2026-12-11T19:00:00+01:00",
@@ -405,17 +405,17 @@ class EventsTest {
     @Test
     void k8ResponseDeadlinePerEventAndSeries() {
         String body = event("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1)
-                .replace("\"hinweise\"", "\"responseDeadlineHours\":48,\"notes\"");
+                .replace("\"notes\"", "\"responseDeadlineHours\":48,\"notes\"");
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(201)
                 .body("responseDeadlineHours", equalTo(48))
                 .body("responseDeadline", equalTo("2026-11-18T18:00:00+01:00"));
         String series = given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(series("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
-                        .replace("\"ort\"", "\"responseDeadlineHours\":2,\"location\""))
+                        .replace("\"location\"", "\"responseDeadlineHours\":2,\"location\""))
                 .post("/api/series").then().statusCode(201).body("responseDeadlineHours", equalTo(2))
                 .extract().path("id");
-        list(petra, "?to=2026-11-16").body("find { it.seriesId == '" + series + "' }.antwortfrist",
+        list(petra, "?to=2026-11-16").body("find { it.seriesId == '" + series + "' }.responseDeadline",
                 equalTo("2026-11-16T17:30:00+01:00"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(body.replace("48", "-1")).post("/api/events").then().statusCode(400)
@@ -427,14 +427,14 @@ class EventsTest {
     @Test
     void ter10ResponseDeadlineAtMostTwoWeeksWithGermanMessage() {
         String body = event("2026-11-21T18:00:00+01:00", "2026-11-21T19:30:00+01:00", TEAM_1)
-                .replace("\"hinweise\"", "\"responseDeadlineHours\":337,\"notes\"");
+                .replace("\"notes\"", "\"responseDeadlineHours\":337,\"notes\"");
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(400)
                 .body("fields[0].field", equalTo("responseDeadlineHours"))
                 .body("fields[0].message", equalTo("Höchstens 336 Stunden (14 Tage)."));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(series("MONDAY", "19:30", "2026-11-16", "2026-11-30", TEAM_1)
-                        .replace("\"ort\"", "\"responseDeadlineHours\":337,\"location\""))
+                        .replace("\"location\"", "\"responseDeadlineHours\":337,\"location\""))
                 .put("/api/series/" + SERIES_1).then().statusCode(400)
                 .body("fields[0].message", equalTo("Höchstens 336 Stunden (14 Tage)."));
         // Andere Felder: deutsche Standardtexte statt «must not be null»
@@ -458,9 +458,9 @@ class EventsTest {
         assertThat(past, not(hasItem(T08)));
         assertThat(ids(login("vera"), "?view=past"), containsInAnyOrder(T08));
         // Vergangene absteigend: Do 12.11. (Serie 02), Di 10.11. (Termin 07), Do 05.11.
-        list(login("anna"), "?view=past").body("[0].beginn", equalTo("2026-11-12T19:00:00+01:00"))
-                .body("[1].beginn", equalTo("2026-11-10T18:30:00+01:00"))
-                .body("[2].beginn", equalTo("2026-11-05T19:00:00+01:00"));
+        list(login("anna"), "?view=past").body("[0].start", equalTo("2026-11-12T19:00:00+01:00"))
+                .body("[1].start", equalTo("2026-11-10T18:30:00+01:00"))
+                .body("[2].start", equalTo("2026-11-05T19:00:00+01:00"));
         given().cookie("stv_session", petra).get("/api/events?view=morgen").then().statusCode(400);
     }
 }

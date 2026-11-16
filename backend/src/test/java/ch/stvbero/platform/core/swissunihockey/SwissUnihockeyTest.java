@@ -320,7 +320,7 @@ class SwissUnihockeyTest {
 
     @Test
     void suh08ResultIsAppliedWithoutNotification() {
-        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU.replace("\"halle\"", "\"result\":\"5:3\",\"hall\"")
+        simulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU.replace("\"hall\"", "\"result\":\"5:3\",\"hall\"")
                 + "," + match02("11:45") + "]}");
         sync(login("alex"), TEAM_1).statusCode(200).body("changed", equalTo(1));
         assertThat(event(T04).getList("matches.result"), contains("5:3", null));

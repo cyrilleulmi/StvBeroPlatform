@@ -66,7 +66,7 @@ class TestEndpointsTest {
     void loginSetsSessionCookie() {
         String cookie = given().contentType(ContentType.JSON).body("{\"loginKey\":\"petra\"}")
                 .post("/api/test/login").then().statusCode(204)
-                .header("Set-Cookie", containsString("stv_sitzung="))
+                .header("Set-Cookie", containsString("stv_session="))
                 .header("Set-Cookie", containsString("HttpOnly"))
                 .extract().cookie("stv_session");
 
@@ -104,8 +104,8 @@ class TestEndpointsTest {
     void personsListsAllSeedPersonsSorted() {
         given().get("/api/test/persons").then().statusCode(200)
                 .body("$", hasSize(17))
-                .body("[0].nachname", equalTo("Admin"))
-                .body("[0].schluessel", equalTo("alex"))
+                .body("[0].lastName", equalTo("Admin"))
+                .body("[0].loginKey", equalTo("alex"))
                 .body("[0].admin", equalTo(true))
                 .body("find { it.loginKey == 'petra' }.id", equalTo("20000000-0000-4000-8000-000000000002"));
     }

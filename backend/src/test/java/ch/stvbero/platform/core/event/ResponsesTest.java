@@ -60,7 +60,7 @@ class ResponsesTest {
     }
 
     private static List<String> names(JsonPath json, String path) {
-        return json.getList(path + ".person.vorname");
+        return json.getList(path + ".person.firstName");
     }
 
     // ------------------------------------------------------------------ Übersicht (S1)
@@ -120,7 +120,7 @@ class ResponsesTest {
     @Test
     void s4CommentsNotForPlayers() {
         JsonPath json = overview(login("anna"), T01).statusCode(200).extract().jsonPath();
-        List<Map<String, Object>> all = json.getList("teams.gruppen.flatten().eintraege.flatten().antwort");
+        List<Map<String, Object>> all = json.getList("teams.groups.flatten().entries.flatten().response");
         assertThat(all, everyItem(not(hasKey("comment"))));
         assertThat(json.getList("coaches.response"), everyItem(not(hasKey("comment"))));
     }
@@ -332,7 +332,7 @@ class ResponsesTest {
     void seedResponsesByTestData() {
         String anna = login("anna");
         List<Map<String, Object>> list = given().cookie("stv_session", anna).get("/api/events").then().statusCode(200)
-                .extract().jsonPath().getList("findAll { it.id in ['" + T01 + "','" + T02 + "'] }.meineAntwort");
+                .extract().jsonPath().getList("findAll { it.id in ['" + T01 + "','" + T02 + "'] }.myResponse");
         assertThat(list.stream().map(m -> m.get("status")).toList(), contains("ATTENDING", "ATTENDING"));
         // Termin 02: nur Anna hat geantwortet
         given().cookie("stv_session", anna).get("/api/events/" + T02).then()
