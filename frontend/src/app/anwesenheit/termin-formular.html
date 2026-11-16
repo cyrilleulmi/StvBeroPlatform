@@ -261,7 +261,19 @@
                 {{ z.zeit }} · {{ z.gegner }} ·
                 {{ z.heim ? texte.terminFormular.heim : texte.terminFormular.auswaerts }}
               </p>
-              <p class="nebentext">{{ texte.terminFormular.importiert }}</p>
+              @if (z.nichtMehrBeiSu) {
+                <p class="nebentext">{{ texte.spieltag.nichtMehrBeiSu }}</p>
+                <button
+                  type="button"
+                  class="button button-sekundaer button-klein entfernen"
+                  [disabled]="speichert()"
+                  (click)="spielEntfernen(z.schluessel)"
+                >
+                  {{ texte.terminFormular.spielEntfernen(i + 1) }}
+                </button>
+              } @else {
+                <p class="nebentext">{{ texte.terminFormular.importiert }}</p>
+              }
             } @else {
               <div class="feld">
                 <label [for]="'spiel-' + z.schluessel + '-gegner'">{{ texte.terminFormular.gegner }}</label>
