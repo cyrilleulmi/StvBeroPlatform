@@ -50,3 +50,17 @@ Spiel 02 gleich mit `5000002`, `11:45`, Heim «Unihockey Beispielstadt», Gast �
 | G2 | Keine aktuelle Saison | `DELETE /api/test/aktuelle-saison`, Abgleich | 409 Regel SAI-03 |
 | G3 | Doppelklick «Jetzt abgleichen» | zweimal schnell tippen | Ein Abgleich, Knopf während des Laufs gesperrt |
 | G4 | Archiv | `/verwaltung/teams/<Team>?saison=<2025/26>` | Abschnitt «swiss unihockey» fehlt (nur lesend) |
+| G5 | Ganzer Spieltag verschoben (SUH-04, SUH-06, Nacharbeit Runde 1) | Simulator: Spiel 01 am 29.11. 09:30 und Spiel 02 am 29.11. 11:45, beide «Sporthalle Seefeld»; einmal in dieser, einmal in umgekehrter Reihenfolge geliefert. Abgleich; `petra` öffnet Termin 04 | «0 neu, 2 geändert», betroffen nur Termin 04. Termin 04: So 29.11. 09:30–13:00, «Dieser Termin wurde verschoben.», beide Spiele, Treffpunkt «08:00 · Parkplatz Sporthalle Nord», Hinweis, Antworten (4 dabei · 1 nicht dabei · 1 vielleicht · 1 offen) und Aufgebot-Entwurf bleiben. Kein zusätzlicher Spieltag. Eine Benachrichtigung pro Mitglied «Spieltag So 22.11. wurde geändert: Spiel gegen … neu am So 29.11. …». Zweiter Abgleich: «2 unverändert» |
+| G6 | Spiel wieder geliefert | Simulator nur Spiel 01, Abgleich; dann Spiel 01 und 02, Abgleich | Zweiter Abgleich «1 geändert», `beiSuNichtMehrVorhanden` bei beiden Spielen `false` |
+| G7 | Rollen API | `petra` (Coach Team 1), `anna` (Spielerin), `marc` (Coach Team 2): `PUT …/swiss-unihockey`, `POST …/abgleich`; ohne Anmeldung `POST …/abgleich` | 403 für alle drei, 401 ohne Anmeldung |
+| G8 | Ungültige Team-ID API | `PUT …/swiss-unihockey` mit `0`, `-5`, `99999999999999` | 400 mit Feld `suTeamId` |
+| G9 | Neu laden | Team 1 «Verknüpfung lösen», Seite neu laden | «Nicht verknüpft.» bleibt |
+| G10 | Antworten auf importiertem Spieltag | K3, als `anna` Spieltag So 06.12. → «Dabei» | Knopf gedrückt, «1 dabei» |
+
+## Testlauf Runde 1 (Test-Agent, Stand 8046fa4)
+
+Automatisch: Backend 265 ✅, E2E 264 ✅ (mobil und desktop, inkl. axe), 6 projektbedingt übersprungen.
+
+Explorativ mit Playwright MCP: K1–K6 und G1–G10 bestanden. Mobil 375×812: K1, K1b, K1c, K1d, K3, K5, K6, G3, G4, G9, G10. Desktop 1280×800: K4, G5. Dunkelmodus: `/verwaltung/teams/:id` mit Abschnitt «swiss unihockey» gut lesbar. K2, K3b, K4b–K4d, G2, G7, G8 über die API. K7 und K8: Backend-Test `suh03TaeglicherJob…` bzw. Doku O-20 bis O-24.
+
+Nachbesserung: Ein Spiel, das swiss unihockey nicht mehr liefert, lässt sich in `/termine/:id/bearbeiten` nicht löschen (nur über `DELETE /api/termine/{id}/spiele/{spielId}`). Das Formular stammt aus F-05, siehe Nachbesserungs-Issue.
