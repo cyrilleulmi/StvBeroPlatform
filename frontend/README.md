@@ -1,18 +1,18 @@
 # Frontend
 
-Angular (Standalone Components, Signals). Jede Kachel ist ein lazy geladenes Feature (`src/app/<kachel>/`).
+Angular (standalone components, signals). Every tile is a lazy-loaded feature (`src/app/<tile>/`).
 
 ```bash
 npm ci
-npm start          # http://localhost:4200, /api wird an das Backend auf :8080 weitergeleitet
+npm start          # http://localhost:4200, /api is proxied to the backend on :8080
 npm run lint
 npm run build
-npm run api-typen  # TypeScript-Typen aus docs/api/openapi.yaml erzeugen (läuft vor start/build)
+npm run api-typen  # generate TypeScript types from docs/api/openapi.yaml (runs before start/build)
 ```
 
-- Design-Tokens und Darstellungen (Hell, Düne, GitHub Dark): `src/styles.css` (docs/design-grundlagen.md). Auswahl im Profil: `src/app/kern/theme.service.ts`
-- Texte der Oberfläche: `src/app/kern/texte.ts`
-- Icons (Lucide-Stil): `src/app/kern/icon.ts`
-- Testmodus (`/dev-login`): nur im Development-Build (`src/umgebung/umgebung.ts`)
+- Design tokens and themes (Hell, Düne, GitHub Dark): `src/styles.css` (docs/design-principles.md). Selection in the profile: `src/app/kern/theme.service.ts`
+- UI texts: `src/app/kern/texte.ts`
+- Icons (Lucide style): `src/app/kern/icon.ts`
+- Test mode (`/dev-login`): only in the development build (`src/umgebung/umgebung.ts`)
 
-Ganze App starten: `scripts/start.sh` im Repo-Wurzelverzeichnis.
+Start the whole app: `scripts/start.sh` in the repository root.

@@ -1,0 +1,56 @@
+# Domain model
+
+The terms of the app and how they relate. This is a domain model, not a database schema. Code, API and documents use the English terms from [glossary.md](glossary.md); the user interface uses the German terms.
+
+## Terms
+
+| Term | Meaning |
+|---|---|
+| **Account** | A login. Today each account belongs to exactly one person. Later an account can respond for several people (parents for children). |
+| **Person** | A human being in the club. Each person exists exactly once, no matter how many teams they are in. |
+| **Team** | A team of the club. Exists across seasons; the name applies per season, so that the archive keeps the name of the time (SAI-02). |
+| **Season** | Period for which team memberships and lines apply. |
+| **Team role** | What a person is in a team: at least «Spielerin» (player) or «Coach». |
+| **Team membership** | Link between person, team and team role in a season. There is exactly one team role per person and team. |
+| **Line** | Group of players within a team (Linie 1, Linie 2, …). |
+| **Goalies** | A group of its own per team, next to the lines. |
+| **No line** | Display group for players who are assigned neither to a line nor to the goalies («Ohne Linie»). |
+| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. |
+| **Series** | Rule that creates recurring events («jeden Dienstag 18:30», every Tuesday 18:30). |
+| **Match day** | Event of type match day. Because of the tournament format it includes several matches in the same hall. |
+| **Match** | A single game within a match day, with opponent and start time. |
+| **Response** | A person's answer for an event: attending, declined or maybe. Without a response the status is pending («offen»). |
+| **Call-up** | Selection of the players who play on a match day. Created and published by the coach. |
+| **Meeting point** | Time and place where the team meets before a match day. |
+| **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
+
+## Relationships
+
+```mermaid
+erDiagram
+    ACCOUNT ||--|{ PERSON : "responds for"
+    PERSON ||--o{ TEAM_MEMBERSHIP : has
+    TEAM ||--o{ TEAM_MEMBERSHIP : has
+    SEASON ||--o{ TEAM_MEMBERSHIP : "applies in"
+    TEAM ||--o{ GROUP : "has lines and goalies"
+    GROUP |o--o{ TEAM_MEMBERSHIP : "contains players"
+    SERIES ||--o{ EVENT : creates
+    EVENT }o--|{ TEAM : "belongs to"
+    EVENT ||--o{ RESPONSE : receives
+    PERSON ||--o{ RESPONSE : gives
+    EVENT ||--o{ MATCH : "includes (match day only)"
+    EVENT ||--o| CALL_UP : "has (match day only)"
+    CALL_UP ||--o{ CALL_UP_ENTRY : includes
+    PERSON ||--o{ CALL_UP_ENTRY : "is called up"
+```
+
+`GROUP` stands for a line or the goalie group of a team.
+
+## The most important rules
+
+1. **One team role per team.** A person can be coach in Team 1 and player in Team 2, but not both in the same team.
+2. **At most one line per team.** Per team a player is in at most one group (line or goalies). In two teams she can have two different lines. The limit of one line is a rule, not a fixed structure: it should be possible to lift it later without rebuilding the model.
+3. **One response per person and event.** Even if the event belongs to several teams and the person is in several of them.
+4. **Coaches are not players.** They respond the same way, but are listed in a block of their own and do not count towards the player total.
+5. **Lines are standard lines.** There are no different lines for single events.
+6. **One match day, one call-up.** All matches of a match day share one response and one call-up.

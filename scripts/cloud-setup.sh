@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# Setup-Skript für die Claude-Cloud-Umgebung der Pipeline.
+# Setup script for the pipeline's Claude cloud environment.
 #
-# Den INHALT dieser Datei in claude.ai/code → Umgebung bearbeiten → Setup-Skript einfügen.
-# Das Skript läuft, bevor das Repo geklont ist, und wird gecacht. Es darf daher
-# nichts aus dem Repo voraussetzen.
+# Paste the CONTENT of this file into claude.ai/code → edit environment → setup script.
+# The script runs before the repo is cloned and is cached. It must therefore
+# not depend on anything from the repo.
 #
-# Das Standard-Image bringt bereits mit: Java 21, Maven, Gradle, Node 22, Google Chrome,
-# PostgreSQL-16-Binaries. Hier wird nur vorgewärmt und geprüft.
+# The default image already includes: Java 21, Maven, Gradle, Node 22, Google Chrome,
+# PostgreSQL 16 binaries. This script only warms caches and checks.
 set -euo pipefail
 
-echo "== Werkzeuge =="
+echo "== Tools =="
 java -version 2>&1 | grep -v Picked | head -1
 node -v
-command -v google-chrome >/dev/null && google-chrome --version || echo "WARNUNG: Google Chrome fehlt"
-ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1 && ls -d /usr/lib/postgresql/*/bin || echo "WARNUNG: PostgreSQL-Binaries fehlen"
+command -v google-chrome >/dev/null && google-chrome --version || echo "WARNING: Google Chrome is missing"
+ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1 && ls -d /usr/lib/postgresql/*/bin || echo "WARNING: PostgreSQL binaries are missing"
 
-echo "== npm-Cache vorwärmen =="
+echo "== Warm npm cache =="
 npm cache add @playwright/mcp@0.0.85 >/dev/null 2>&1 || true
 npm cache add @redocly/cli@2.78.0 >/dev/null 2>&1 || true
 npm cache add @playwright/test@1.65.1 >/dev/null 2>&1 || true
 
 echo "== GitHub CLI =="
-command -v gh >/dev/null && gh --version | head -1 || echo "WARNUNG: gh fehlt"
+command -v gh >/dev/null && gh --version | head -1 || echo "WARNING: gh is missing"
 
-echo "Setup fertig."
+echo "Setup done."

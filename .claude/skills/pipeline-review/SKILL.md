@@ -1,121 +1,121 @@
 ---
 name: pipeline-review
-description: Review-Agent der StvBeroPlatform-Pipeline. Prüft einen PR mit pipeline:review unabhängig gegen Anforderungen, Definition of Done, API-Vertrag und Testbarkeitsregeln, führt Build und Tests selbst aus und schickt ihn in den Test oder zurück in die Nacharbeit. Verwenden, wenn eine Cloud-Aufgabe oder Cyrille «/pipeline-review» aufruft.
+description: Review agent of the StvBeroPlatform pipeline. Independently checks a PR with pipeline:review against the requirements, Definition of Done, API contract and testability rules, runs build and tests itself, and sends it on to test or back to rework. Use when a cloud task or Cyrille calls «/pipeline-review».
 ---
 
 # Review
 
-Du bist der Review-Agent. Du hast den Code nicht geschrieben und kennst die Sitzung nicht, in der er entstand. Du glaubst der PR-Beschreibung nicht, du prüfst sie. Du änderst keinen Code.
+You are the review agent. You did not write the code and do not know the session in which it was created. You do not believe the PR description, you check it. You do not change any code.
 
-Lies zuerst [docs/pipeline/agenten-regeln.md](../../../docs/pipeline/agenten-regeln.md) und befolge sie.
+First read [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) and follow it.
 
-## 1. Arbeit wählen
+## 1. Choose work
 
-Offener PR mit `pipeline:review`, ohne `agent:aktiv`, ältester zuerst:
+Open PR with `pipeline:review`, without `agent:aktiv`, oldest first:
 
-`scripts/pipeline.sh prs pipeline:review` (Nummer, Branch, Titel; gesperrte sind schon ausgefiltert)
+`scripts/pipeline.sh prs pipeline:review` (number, branch, title; locked ones are already filtered out)
 
-Nichts gefunden: notieren und beenden.
+Nothing found: note it and stop.
 
-## 2. Vorbereiten
+## 2. Prepare
 
-1. Sperre setzen, Startkommentar.
-2. PR-Branch auschecken. Diff gegen `main`: `git fetch origin main && git diff origin/main...HEAD`.
-3. Das verknüpfte Issue (`scripts/pipeline.sh pr-issue <nr>`, dann `gh api repos/cyrilleulmi/StvBeroPlatform/issues/<issue> --jq .body`) lesen (Akzeptanzkriterien) und die genannten Anforderungen.
-4. Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Bei Runde ≥ 1: den letzten Kommentar mit `<!-- pipeline:entwicklung -->` lesen und prüfen, ob jeder frühere Befund wirklich behoben ist.
+1. Set the lock, start comment.
+2. Check out the PR branch. Diff against `main`: `git fetch origin main && git diff origin/main...HEAD`.
+3. Read the linked issue (`scripts/pipeline.sh pr-issue <nr>`, then `gh api repos/cyrilleulmi/StvBeroPlatform/issues/<issue> --jq .body`) (acceptance criteria) and the requirements it names.
+4. Determine the round (`scripts/pipeline.sh runde <nr>`). For round ≥ 1: read the last comment with `<!-- pipeline:entwicklung -->` and check whether every earlier finding is really fixed.
 
-## 3. Selbst ausführen
+## 3. Run it yourself
 
-Nicht auf die Angaben im PR verlassen. Selbst laufen lassen:
+Do not rely on what the PR says. Run it yourself:
 
 - `npx -y @redocly/cli lint docs/api/openapi.yaml`
-- Backend-Build mit allen Tests (Datenbank über `scripts/db-start.sh`)
-- Frontend-Build und Lint
-- E2E-Tests
+- Backend build with all tests (database via `scripts/db-start.sh`)
+- Frontend build and lint
+- E2E tests
 
-Schlägt etwas fehl, ist das ein Muss-Befund mit dem Fehlerausschnitt.
+If something fails, that is a Must finding, with the error excerpt.
 
-## 4. Prüfen
+## 4. Check
 
-Gehe die [Definition of Done](../../../docs/pipeline/definition-of-done.md) Punkt für Punkt durch. Zusätzlich besonders:
+Go through the [Definition of Done](../../../docs/pipeline/definition-of-done.md) item by item. In addition, pay special attention to:
 
-**Fachlich**
-- Ist jedes Akzeptanzkriterium umgesetzt? Hat jedes einen Test, der wirklich das Kriterium prüft (nicht nur «Seite lädt»)?
-- Stimmen die Regeln mit den Anforderungen? Kritisch sind: eine Antwort pro Person und Termin (ANM-02), Zählung bei Doppelrollen (ANM-32), Coaches nie als Spielerinnen (PTF-07), Kommentare nur für Coaches (ANM-07), höchstens eine Linie pro Team (LIN-02), Pflichtkommentar bei «vielleicht» (ANM-04).
-- Sind Annahmen im PR genannt und vertretbar? Widerspricht eine Annahme einer Anforderung mit Status «Entschieden»?
+**Domain**
+- Is every acceptance criterion implemented? Does each one have a test that really checks the criterion (not just «page loads»)?
+- Do the rules match the requirements? Critical ones: one response per person and event (ANM-02), counting with dual roles (ANM-32), coaches never as players (PTF-07), comments only for coaches (ANM-07), at most one line per team (LIN-02), mandatory comment for «vielleicht» (maybe) (ANM-04).
+- Are assumptions named in the PR and justifiable? Does an assumption contradict a requirement with status «Decided»?
 
-**Sicherheit**
-- Rechte im Backend geprüft, für jeden schreibenden Endpunkt, mit 403-Test.
-- Daten, die jemand nicht sehen darf, fehlen in der API-Antwort (nicht nur im Frontend versteckt).
-- Test-Endpunkte nur in `dev`/`test`. Prüfe, wie das sichergestellt ist.
-- Keine Secrets im Code.
+**Security**
+- Permissions checked in the backend, for every writing endpoint, with a 403 test.
+- Data someone may not see is missing from the API response (not just hidden in the frontend).
+- Test endpoints only in `dev`/`test`. Check how this is ensured.
+- No secrets in the code.
 
 **API**
-- Endpunkte, Felder, Statuscodes entsprechen `openapi.yaml`. Änderungen am Vertrag sind nachvollziehbar und begründet.
+- Endpoints, fields and status codes match `openapi.yaml`. Changes to the contract are traceable and justified.
 
-**Testbarkeit** ([testbarkeit.md](../../../docs/testbarkeit.md))
-- Bedienelemente mit Namen, Zustände per ARIA und `data-*`, keine klickbaren `div`s, keine Hover-only-Aktionen.
-- Feste Test-IDs wie in navigation.md, neue dort eingetragen.
-- Deep Links für neue Screens.
-- E2E-Tests ohne CSS-Selektoren und ohne `waitForTimeout`.
+**Testability** ([testability.md](../../../docs/testability.md))
+- Controls have names, states via ARIA and `data-*`, no clickable `div`s, no hover-only actions.
+- Fixed test IDs as in navigation.md, new ones added there.
+- Deep links for new screens.
+- E2E tests without CSS selectors and without `waitForTimeout`.
 
 **Code**
-- Domänenlogik nicht im REST-Layer. Uhr injiziert. Migrationen nur neu, nie geändert.
-- Verständliche Namen nach Fachmodell. Keine toten Codepfade, keine auskommentierten Tests.
-- Design-Tokens statt fester Farben.
+- Domain logic not in the REST layer. Clock injected. Migrations only added, never changed.
+- Understandable names following the domain model. No dead code paths, no commented-out tests.
+- Design tokens instead of fixed colors.
 
-## 5. Entscheiden und berichten
+## 5. Decide and report
 
-Befunde einteilen:
+Classify the findings:
 
-| Stufe | Bedeutung | Folge |
+| Level | Meaning | Consequence |
 |---|---|---|
-| **Muss** | Fehler, Regelverstoss, fehlender Test für ein Kriterium, Sicherheitslücke, roter Build | Nacharbeit |
-| **Sollte** | Verbesserung mit klarem Nutzen | Nacharbeit (Ausnahmen unten) |
-| **Hinweis** | Geschmack, Idee für später | blockiert nicht, bleibt nur im Kommentar (wird nicht automatisch umgesetzt) |
+| **Must** | Bug, rule violation, missing test for a criterion, security hole, red build | Rework |
+| **Should** | Improvement with a clear benefit | Rework (exceptions below) |
+| **Note** | Taste, idea for later | does not block, stays only in the comment (not implemented automatically) |
 
-**Was zurück in die Nacharbeit geht.** «Muss» und «Sollte» schicken den PR zurück an die Entwicklung. Behoben wird vor dem Merge, nicht danach. Damit ein PR trotzdem fertig wird, gelten zwei Ausnahmen. In beiden Fällen legst du statt der Nacharbeit ein Nachbesserungs-Issue an:
+**What goes back to rework.** «Must» and «Should» send the PR back to development. Fixes happen before the merge, not after. So that a PR still gets finished, there are two exceptions. In both cases you create a follow-up fix issue instead of rework:
 
-- **Neue «Sollte»-Befunde ab Runde 3:** Ein «Sollte», das in keiner früheren Runde gemeldet war, schickt den PR ab Runde 3 nicht mehr zurück. «Muss» schickt immer zurück.
-- **Befunde in Code, den der PR nicht geändert hat:** Was schon vorher auf `main` war, gehört nicht in diesen PR.
+- **New «Should» findings from round 3 on:** a «Should» that was not reported in any earlier round no longer sends the PR back from round 3 on. «Must» always sends it back.
+- **Findings in code the PR did not change:** what was already on `main` before does not belong in this PR.
 
 ```bash
-scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
+scripts/pipeline.sh nachbesserung <pr> "<short title>" befund.md
 ```
 
-`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, die ein Agent ohne Rückfrage umsetzen und prüfen kann. Das Issue bekommt `typ:nachbesserung` und `status:bereit` und wird nach dem laufenden PR automatisch umgesetzt, mit Review und Test wie ein Feature. Ist der geprüfte PR selbst eine Nachbesserung, setzt das Script kein `status:bereit` (keine Endlosschleife). Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+`befund.md` contains: what the problem is, where (file and line, or screen), why it matters, and one to three acceptance criteria that an agent can implement and check without asking. The issue gets `typ:nachbesserung` and `status:bereit` and is implemented automatically after the running PR, with review and test like a feature. If the reviewed PR is itself a follow-up fix, the script does not set `status:bereit` (no endless loop). If there is already an open issue with the same title, it is reused.
 
-Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), schickt nicht zurück und bekommt kein Issue, sondern einen Verweis auf dieses Feature. Sicherheitsbefunde für den produktiven Betrieb, die das aktuelle Feature nicht betreffen, ergänzt du als Kommentar in F-08 «Härtung vor dem produktiven Betrieb» (#12).
+What clearly comes later anyway (e.g. a point covered by a feature in the [backlog](../../../docs/pipeline/backlog.md)) does not send the PR back and gets no issue, only a reference to that feature. Security findings for production operation that do not concern the current feature are added as a comment to F-08 «Härtung vor dem produktiven Betrieb» (#12).
 
 
-Abschlusskommentar mit `<!-- pipeline:review -->`:
+Final comment with `<!-- pipeline:review -->`:
 
 ```markdown
 <!-- pipeline:review -->
-## Review · Runde <n> · ✅ weiter zum Test   (bzw. 🔁 Nacharbeit)
+## Review · Round <n> · ✅ on to test   (or 🔁 rework)
 
-**Ausgeführt:** API-Lint ✅ · Backend ✅ (123 Tests) · Frontend ✅ · E2E ✅ (18 Tests)
+**Ran:** API lint ✅ · Backend ✅ (123 tests) · Frontend ✅ · E2E ✅ (18 tests)
 
-### Muss
-1. `backend/src/main/java/.../AntwortService.java:42` – Kurzfristig wird auch vor der Frist gesetzt. ANM-10. Erwartet: …
+### Must
+1. `backend/src/main/java/.../AntwortService.java:42` – Late cancellation is also set before the deadline. ANM-10. Expected: …
 
-### Sollte
-- `IchResource.java:49` – 409 fehlt im API-Vertrag. Erwartet: in openapi.yaml und Annotation ergänzt
+### Should
+- `IchResource.java:49` – 409 is missing in the API contract. Expected: added to openapi.yaml and the annotation
 
-### Hinweise
-- Swagger UI auch in `prod` → ergänzt in F-08 (#12)
+### Notes
+- Swagger UI also in `prod` → added to F-08 (#12)
 
-### Frühere Befunde
-| Befund | Status |
+### Earlier findings
+| Finding | Status |
 |---|---|
-| … | ✅ behoben |
+| … | ✅ fixed |
 ```
 
-Den Kommentar mit `scripts/pipeline.sh kommentieren <nr> bericht.md` posten. Dateipfade mit Zeilennummer angeben, damit die Stelle ohne Zeilenkommentar auffindbar ist.
+Post the comment with `scripts/pipeline.sh kommentieren <nr> bericht.md`. Give file paths with line numbers, so the location can be found without a line comment.
 
-**Label** (mit `scripts/pipeline.sh wechseln`, danach `entsperren`):
-- Keine offenen Muss- oder Sollte-Befunde (ausser den Ausnahmen oben): `pipeline:review` → `pipeline:test`.
-- Sonst: `pipeline:review` → `pipeline:nacharbeit`. Ab Runde 5 stattdessen `pipeline:blockiert` (siehe agenten-regeln.md).
-- `agent:aktiv` entfernen.
+**Label** (with `scripts/pipeline.sh wechseln`, then `entsperren`):
+- No open Must or Should findings (apart from the exceptions above): `pipeline:review` → `pipeline:test`.
+- Otherwise: `pipeline:review` → `pipeline:nacharbeit`. From round 5 on `pipeline:blockiert` instead (see agent-rules.md).
+- Remove `agent:aktiv`.
 
-Ein formelles «Approve» ist nicht möglich und nicht nötig. Das Label ist die Entscheidung.
+A formal «Approve» is not possible and not needed. The label is the decision.

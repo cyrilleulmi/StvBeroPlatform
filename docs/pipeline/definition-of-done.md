@@ -1,40 +1,40 @@
 # Definition of Done
 
-Ein PR ist fertig, wenn alle Punkte erfüllt sind. Der Entwicklungs-Agent hakt sie in der PR-Beschreibung ab, der Review-Agent prüft sie, der Test-Agent prüft das Verhalten.
+A PR is done when all items are met. The development agent ticks them in the PR description, the review agent checks them, the test agent checks the behavior.
 
-## Fachlich
+## Domain
 
-- [ ] Jedes Akzeptanzkriterium des Issues ist umgesetzt und hat mindestens einen automatischen Test.
-- [ ] Die betroffenen Anforderungs-IDs sind im PR genannt.
-- [ ] Getroffene Annahmen sind im PR unter «Annahmen» aufgelistet. Neue offene Fragen stehen in [offene-punkte.md](../offene-punkte.md).
-- [ ] Keine Anforderung mit Status «Entschieden» wurde geändert oder umgangen.
-- [ ] Begriffe aus dem [Fachmodell](../fachmodell.md) in Code, API und Oberfläche.
+- [ ] Every acceptance criterion of the issue is implemented and has at least one automated test.
+- [ ] The affected requirement IDs are named in the PR.
+- [ ] Assumptions made are listed in the PR under «Assumptions». New open questions are in [open-points.md](../open-points.md).
+- [ ] No requirement with status «Decided» was changed or bypassed.
+- [ ] Terms from the [domain model](../domain-model.md) in code, API and UI.
 
 ## Backend
 
-- [ ] API entspricht [openapi.yaml](../api/openapi.yaml). Änderungen am Vertrag sind im selben PR, `redocly lint` ist ohne Fehler und Warnungen.
-- [ ] Rechte werden im Backend geprüft (RR-07), mit Test für den verbotenen Fall (403).
-- [ ] Fachregeln liegen in der Domänenlogik, nicht im REST-Layer, und haben Unit-Tests.
-- [ ] Schema-Änderungen als neue Flyway-Migration. Bestehende Migrationen sind unverändert.
-- [ ] Test-Endpunkte nur in den Profilen `dev`/`test`.
-- [ ] «Jetzt» kommt aus der injizierten Uhr, nie aus `LocalDateTime.now()` direkt.
+- [ ] The API matches [openapi.yaml](../api/openapi.yaml). Changes to the contract are in the same PR, `redocly lint` runs without errors and warnings.
+- [ ] Permissions are checked in the backend (RR-07), with a test for the forbidden case (403).
+- [ ] Domain rules live in the domain logic, not in the REST layer, and have unit tests.
+- [ ] Schema changes as a new Flyway migration. Existing migrations are unchanged.
+- [ ] Test endpoints only in the profiles `dev`/`test`.
+- [ ] «Now» comes from the injected clock, never from `LocalDateTime.now()` directly.
 
 ## Frontend
 
-- [ ] Regeln aus [testbarkeit.md](../testbarkeit.md) eingehalten: Semantik, Namen, Zustände, Test-IDs, URLs.
-- [ ] Neue Routen und feste Test-IDs in [navigation.md](../oberflaeche/navigation.md) eingetragen.
-- [ ] Design nach [design-grundlagen.md](../design-grundlagen.md): nur Tokens, keine fest codierten Farben. Light- und Darkmode geprüft.
-- [ ] Mobil (375px) und Desktop (1280px) geprüft, Touch-Ziele mindestens 44px.
-- [ ] Keine Fehler in der Browser-Konsole.
+- [ ] Rules from [testability.md](../testability.md) followed: semantics, names, states, test IDs, URLs.
+- [ ] New routes and fixed test IDs added to [navigation.md](../ui/navigation.md).
+- [ ] Design according to [design-principles.md](../design-principles.md): only tokens, no hard-coded colors. Light and dark mode checked.
+- [ ] Mobile (375px) and desktop (1280px) checked, touch targets at least 44px.
+- [ ] No errors in the browser console.
 
-## Tests und Daten
+## Tests and data
 
-- [ ] Backend-Tests grün.
-- [ ] E2E-Tests (`e2e/`) grün in den Projekten `mobil` und `desktop`, inklusive axe-Check ohne kritische Befunde.
-- [ ] Seed-Daten decken das Feature ab. Änderungen am Seed sind in [testdaten.md](../testdaten.md) nachgeführt, neue Szenarien dort ergänzt.
-- [ ] Geändertes Verhalten ist in [zustaende.md](../zustaende.md) nachgeführt.
+- [ ] Backend tests green.
+- [ ] E2E tests (`e2e/`) green in the projects `mobil` and `desktop`, including an axe check without critical findings.
+- [ ] Seed data covers the feature. Changes to the seed are updated in [test-data.md](../test-data.md), new scenarios added there.
+- [ ] Changed behavior is updated in [states.md](../states.md).
 
-## Lauffähigkeit
+## Runnability
 
-- [ ] Die App startet mit dem dokumentierten Startbefehl aus einem frischen Klon.
-- [ ] Die PR-Beschreibung nennt, wie man das Feature ausprobiert (Startbefehl, URL, Testperson).
+- [ ] The app starts with the documented start command from a fresh clone.
+- [ ] The PR description says how to try out the feature (start command, URL, test person).

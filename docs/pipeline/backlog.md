@@ -1,221 +1,221 @@
 # Backlog
 
-Die Features des Kerns in Umsetzungsreihenfolge. Jedes Feature ist ein Issue auf GitHub mit demselben Titel (`F-xx · …`). Der Entwicklungs-Agent nimmt nur Features, deren Voraussetzungen auf `main` sind.
+The features of the core in implementation order. Each feature is an issue on GitHub with the same title (`F-xx · …`). The development agent only takes features whose prerequisites are on `main`.
 
-Die Akzeptanzkriterien sind das, was der Test-Agent prüft. Szenarien `S…` stehen in [testdaten.md](../testdaten.md#szenarien-für-tests).
+The acceptance criteria are what the test agent checks. Scenarios `S…` are in [test-data.md](../test-data.md#scenarios-for-tests).
 
-| Nr. | Feature | Voraussetzung | Anforderungen |
+| No. | Feature | Prerequisite | Requirements |
 |---|---|---|---|
-| F-00 | Grundgerüst | – | NF-01–NF-24, RR-05 |
-| F-01 | Personen, Teams, Saisons | F-00 | PTF, SAI, RR-04 |
-| F-02 | Linien | F-01 | LIN |
-| F-03 | Termine und Serien | F-01 | TER |
-| F-04 | An- und Abmeldung mit Übersicht | F-02, F-03 | ANM, RR-02, RR-03, RR-06 |
-| F-05 | Spieltage und Aufgebot | F-04 | AUF |
-| F-06 | Benachrichtigungen | F-04, F-05 | BEN |
-| F-07 | Anbindung swiss unihockey | F-05, F-06 | SUH |
-| F-08 | Härtung vor dem produktiven Betrieb | F-07, F-11 | RR-07, NF-30 |
-| F-09 bis F-20 | Batch 2, siehe [unten](#batch-2-f-09-to-f-20) | | |
+| F-00 | Foundation | – | NF-01–NF-24, RR-05 |
+| F-01 | People, teams, seasons | F-00 | PTF, SAI, RR-04 |
+| F-02 | Lines | F-01 | LIN |
+| F-03 | Events and series | F-01 | TER |
+| F-04 | Responses with overview | F-02, F-03 | ANM, RR-02, RR-03, RR-06 |
+| F-05 | Match days and call-up | F-04 | AUF |
+| F-06 | Notifications | F-04, F-05 | BEN |
+| F-07 | swiss unihockey connection | F-05, F-06 | SUH |
+| F-08 | Hardening before production use | F-07, F-11 | RR-07, NF-30 |
+| F-09 to F-20 | Batch 2, see [below](#batch-2-f-09-to-f-20) | | |
 
 ```mermaid
 flowchart LR
-    F00[F-00 Grundgerüst] --> F01[F-01 Personen, Teams, Saisons]
-    F01 --> F02[F-02 Linien]
-    F01 --> F03[F-03 Termine, Serien]
-    F02 --> F04[F-04 An-/Abmeldung]
+    F00[F-00 Foundation] --> F01[F-01 People, teams, seasons]
+    F01 --> F02[F-02 Lines]
+    F01 --> F03[F-03 Events, series]
+    F02 --> F04[F-04 Responses]
     F03 --> F04
-    F04 --> F05[F-05 Spieltage, Aufgebot]
-    F04 --> F06[F-06 Benachrichtigungen]
+    F04 --> F05[F-05 Match days, call-up]
+    F04 --> F06[F-06 Notifications]
     F05 --> F06
     F05 --> F07[F-07 swiss unihockey]
     F06 --> F07
-    F07 --> F08[F-08 Härtung]
+    F07 --> F08[F-08 Hardening]
 ```
 
 ---
 
-## F-00 · Grundgerüst
+## F-00 · Foundation
 
-**Ziel:** Ein lauffähiges, leeres Gerüst, auf dem alle weiteren Features aufbauen. Es legt die Konventionen fest, an die sich spätere Läufe halten.
+**Goal:** A runnable, empty foundation that all further features build on. It sets the conventions that later runs follow.
 
-**Vorgaben für das Gerüst**, damit nicht jeder Lauf neu entscheidet:
+**Rules for the foundation**, so that not every run decides anew:
 
-| Punkt | Vorgabe |
+| Item | Rule |
 |---|---|
-| Backend-Sprache | Java 21 LTS (entschieden, E-57). In der Cloud vorinstalliert. |
-| Migrationen | Flyway (entschieden, E-57) |
-| Build | Maven im Backend, npm im Frontend und in `e2e/` |
-| Anmeldung (O-01) | Sitzungs-Cookie. Im Profil `dev`/`test` Anmeldung über `/dev-login`. Produktives Verfahren folgt, sobald entschieden. |
+| Backend language | Java 21 LTS (decided, E-57). Preinstalled in the cloud. |
+| Migrations | Flyway (decided, E-57) |
+| Build | Maven in the backend, npm in the frontend and in `e2e/` |
+| Login (O-01) | Session cookie. In profile `dev`/`test`, login via `/dev-login`. The production method follows once decided. |
 
-**Struktur:**
+**Structure:**
 
 ```
-backend/     Quarkus, Package pro Kachel unter ch.stvbero.platform.<kachel>, gemeinsamer Kern unter …kern
-frontend/    Angular (Standalone, Signals), Feature pro Kachel, lazy geladen
-e2e/         Playwright Test: tests/, plaene/, playwright.config.ts (Projekte mobil + desktop, channel chrome)
-scripts/     db-start.sh (besteht), start.sh (alles starten), test.sh (alles testen)
-.github/workflows/ci.yml   Build + Tests bei jedem PR
+backend/     Quarkus, one package per tile under ch.stvbero.platform.<kachel>, shared core under …kern
+frontend/    Angular (standalone, signals), one feature per tile, lazy loaded
+e2e/         Playwright Test: tests/, plans/, playwright.config.ts (projects mobil + desktop, channel chrome)
+scripts/     db-start.sh (exists), start.sh (start everything), test.sh (test everything)
+.github/workflows/ci.yml   Build + tests on every PR
 ```
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. `scripts/start.sh` startet aus einem frischen Klon Datenbank, Backend (Profil `dev`) und Frontend. Die App ist unter `http://localhost:4200` erreichbar.
-2. `scripts/test.sh` führt Backend-Tests und E2E-Tests aus und endet mit Exit-Code 0.
-3. `/dev-login` zeigt alle Seed-Personen aus testdaten.md (zunächst nur Personen, ohne Teams). Ein Klick meldet an und führt auf `/`.
-4. `/` zeigt die Begrüssung mit Vornamen und die Kacheln aus `GET /api/kacheln`. Die Kachel «Anwesenheit» ist registriert und führt auf `/termine` (dort vorerst leerer Zustand).
-5. Navigation mobil unten, ab 1024px links, nach navigation.md. Aktiver Eintrag mit `aria-current="page"`.
-6. Design-Tokens aus design-grundlagen.md als CSS Custom Properties. Unter `/profil` lässt sich die Darstellung umschalten (ursprünglich Hell/Dunkel/System, seit E-67 Hell/Düne/GitHub Dark/System), die Wahl bleibt nach Neuladen erhalten.
-7. PWA: Manifest und Service Worker, installierbar.
-8. Test-Endpunkte `reset`, `uhr`, `anmelden` funktionieren im Profil `dev`/`test` und fehlen im Profil `prod` (Test, der das prüft).
-9. Ein Backend-Test vergleicht die von Quarkus erzeugte OpenAPI mit `docs/api/openapi.yaml` für alle bereits umgesetzten Pfade.
-10. Die Uhr ist injiziert (`java.time.Clock`), `PUT /api/test/uhr` verändert «jetzt» für das ganze Backend.
-11. CI-Workflow führt bei jedem PR Build und alle Tests aus.
-12. Ohne Anmeldung leitet jede Route auf die Anmeldung und danach zurück.
-
----
-
-## F-01 · Personen, Teams, Saisons
-
-**Ziel:** Admins verwalten Personen, Teams, Teamzugehörigkeiten und Saisons. Alle sehen ihre Teams.
-
-**Akzeptanzkriterien:**
-
-1. Seed nach testdaten.md: Saisons, Teams, Personen, Teamzugehörigkeiten (noch ohne Linien).
-2. Als `alex` unter `/verwaltung/personen` eine Person anlegen und bearbeiten.
-3. Als `alex` unter `/verwaltung/teams` eine Person mit Funktion ins Team aufnehmen. Zweite Aufnahme derselben Person ins selbe Team wird abgelehnt (PTF-04).
-4. Petra kann gleichzeitig Coach in Team 1 und Spielerin in Team 2 sein. `/teams` zeigt bei ihr beide Teams mit der jeweiligen Funktion (PTF-12).
-5. `/teams/:id` zeigt Coaches und Spielerinnen getrennt. Coaches erscheinen nie in der Liste der Spielerinnen (PTF-07).
-6. Als `alex` unter `/verwaltung/saisons` eine neue Saison mit Übernahme der Vorsaison anlegen und zur aktuellen machen (SAI-04, SAI-06).
-7. Szenario S16: Archiv lesend sichtbar.
-8. Verwaltungs-Screens und -Endpunkte sind für Nicht-Admins gesperrt (403, «Keine Berechtigung»).
+1. `scripts/start.sh` starts the database, the backend (profile `dev`) and the frontend from a fresh clone. The app is reachable at `http://localhost:4200`.
+2. `scripts/test.sh` runs the backend tests and the E2E tests and ends with exit code 0.
+3. `/dev-login` shows all seed people from test-data.md (at first only people, without teams). A click logs in and leads to `/`.
+4. `/` shows the greeting with the first name and the tiles from `GET /api/kacheln`. The tile «Anwesenheit» is registered and leads to `/termine` (empty state there for now).
+5. Navigation at the bottom on mobile, on the left from 1024px, as in navigation.md. Active entry with `aria-current="page"`.
+6. Design tokens from design-principles.md as CSS custom properties. The theme can be switched under `/profil` (originally Hell/Dunkel/System, since E-67 Hell/Düne/GitHub Dark/System), and the choice is kept after reloading.
+7. PWA: manifest and service worker, installable.
+8. Test endpoints `reset`, `uhr`, `anmelden` work in profile `dev`/`test` and are absent in profile `prod` (test that checks this).
+9. A backend test compares the OpenAPI generated by Quarkus with `docs/api/openapi.yaml` for all paths implemented so far.
+10. The clock is injected (`java.time.Clock`); `PUT /api/test/uhr` changes «now» for the whole backend.
+11. The CI workflow runs the build and all tests on every PR.
+12. Without login, every route redirects to the login and back afterwards.
 
 ---
 
-## F-02 · Linien
+## F-01 · People, teams, seasons
 
-**Ziel:** Coaches teilen ihre Spielerinnen in Linien und Goalies ein.
+**Goal:** Admins manage people, teams, team memberships and seasons. Everyone sees their teams.
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. Seed: Gruppen und Zuweisungen nach testdaten.md.
-2. Als `petra` unter `/teams/<Team 1>/linien`: Linie hinzufügen, umbenennen, Reihenfolge ändern, löschen. Spielerinnen einer gelöschten Linie sind danach «ohne Linie».
-3. Zuweisung per Drag & Drop **und** per Auswahlfeld (`zuweisung-<personId>`). Beides speichert sofort.
-4. Szenario S15: höchstens eine Gruppe pro Spielerin und Team (LIN-02).
-5. Lea hat in Team 1 und Team 2 verschiedene Linien (LIN-03).
-6. Goalies existieren pro Team genau einmal und lassen sich nicht löschen.
-7. Nur Coaches des Teams (und Admins) können Linien ändern. `anna` sieht die Einteilung lesend, `marc` kann Team 1 nicht ändern (403).
-
----
-
-## F-03 · Termine und Serien
-
-**Ziel:** Coaches erfassen Trainings, Anlässe und Serien, auch für mehrere Teams.
-
-**Akzeptanzkriterien:**
-
-1. Seed: Serien und Termine nach testdaten.md (Antworten folgen mit F-04).
-2. `/termine` zeigt alle kommenden Termine der eigenen Teams chronologisch. `anna` sieht Termin 01 (Team 1 + 2), `tina` nicht.
-3. Als `petra` einen Termin für Team 1 + Team 2 erfassen. Er erscheint bei Mitgliedern beider Teams (TER-01). Als `marc` kann Petra nicht für Team 1 erfassen (403).
-4. Als `petra` eine Serie anlegen (wöchentlich, Zeitraum). Termine erscheinen für jede Woche im Zeitraum (TER-05).
-5. Ausnahme für einen Zeitraum hinzufügen. Termine darin verschwinden bzw. werden abgesagt, wie in zustaende.md beschrieben (TER-07).
-6. Einzelnen Termin einer Serie verschieben, ohne die Serie zu ändern (TER-06).
-7. Szenario S13: abgesagter Termin ist erkennbar, mit Grund.
-8. Antwortfrist pro Termin und Serie einstellbar, Standard 24 Stunden (TER-09, TER-10).
-9. Filter `?team=` und Ansicht `?ansicht=vergangen` funktionieren und stehen in der URL.
+1. Seed per test-data.md: seasons, teams, people, team memberships (still without lines).
+2. As `alex`, create and edit a person under `/verwaltung/personen`.
+3. As `alex`, add a person with a team role to a team under `/verwaltung/teams`. Adding the same person to the same team a second time is rejected (PTF-04).
+4. Petra can be coach in Team 1 and player in Team 2 at the same time. `/teams` shows both teams for her with the respective team role (PTF-12).
+5. `/teams/:id` shows coaches and players separately. Coaches never appear in the list of players (PTF-07).
+6. As `alex`, create a new season under `/verwaltung/saisons`, taking over the previous season, and make it the current one (SAI-04, SAI-06).
+7. Scenario S16: archive visible read-only.
+8. Administration screens and endpoints are locked for non-admins (403, «Keine Berechtigung»).
 
 ---
 
-## F-04 · An- und Abmeldung mit Übersicht
+## F-02 · Lines
 
-**Ziel:** Der Hauptgrund für die App. Alle melden sich mit einem Tap an oder ab, Coaches sehen die Übersicht nach Team und Linie.
+**Goal:** Coaches assign their players to lines and goalies.
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. Seed: Antworten nach testdaten.md.
-2. Szenario S1: Übersicht von Termin 01 genau wie in testdaten.md (Zähler, Gruppen, Reihenfolge, Coach-Block, Doppelrollen).
-3. Szenario S2: Antwort mit einem Tap aus der Terminliste und aus dem Detail. Zähler aktualisieren sich ohne Neuladen.
-4. Szenario S3: «vielleicht» ohne Kommentar nicht möglich, Fehlermeldung beim Feld.
-5. «nicht dabei» bietet einen freiwilligen Grund an, der sich überspringen lässt.
-6. Szenario S4: Kommentare nur für Coaches des Teams und die Person selbst, auch in der API-Antwort.
-7. Szenario S5: kurzfristige Absage wird als solche markiert. (Die Benachrichtigung selbst kommt mit F-06. Hier: Feld `kurzfristig` korrekt.)
-8. Szenarien S7 und S8: stellvertretend antworten, mit «eingetragen von», nur für eigene Teams.
-9. Start-Screen zeigt den nächsten eigenen Termin mit Antwort-Buttons.
-10. Antwort ist nach Neuladen unverändert. Abgesagte Termine nehmen keine Antworten an (409, Buttons deaktiviert mit Erklärung).
+1. Seed: groups and assignments per test-data.md.
+2. As `petra` under `/teams/<Team 1>/linien`: add, rename, reorder and delete a line. Players of a deleted line are «ohne Linie» afterwards.
+3. Assignment by drag and drop **and** by select field (`zuweisung-<personId>`). Both save immediately.
+4. Scenario S15: at most one group per player and team (LIN-02).
+5. Lea has different lines in Team 1 and Team 2 (LIN-03).
+6. Goalies exist exactly once per team and cannot be deleted.
+7. Only coaches of the team (and admins) can change lines. `anna` sees the assignment read-only, `marc` cannot change Team 1 (403).
 
 ---
 
-## F-05 · Spieltage und Aufgebot
+## F-03 · Events and series
 
-**Ziel:** Spieltage in Turnierform mit Spielen, Treffpunkt, Spielort und Aufgebot.
+**Goal:** Coaches enter practices, other events and series, also for several teams.
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. Seed: Termine 04 und 05 mit Spielen und Aufgebot nach testdaten.md.
-2. Als `petra` einen Spieltag für Team 1 mit zwei Spielen, Treffpunkt, Hinweisen und Google-Maps-Link erfassen (AUF-10 bis AUF-16).
-3. Termin-Detail zeigt Spiele nach Anspielzeit, Treffpunkt und den Link «In Google Maps öffnen» (öffnet in neuem Tab).
-4. `/termine/<04>/aufgebot`: alle Spielerinnen von Team 1 nach Linien gruppiert, Antwortstatus daneben, auch «offen» und «vielleicht» auswählbar (AUF-21, AUF-22).
-5. Szenario S9: Veröffentlichen mit Bestätigungsdialog. Danach sehen Spielerinnen «aufgeboten» bzw. «nicht aufgeboten». Vorher sehen sie «noch kein Aufgebot».
-6. Szenario S11: Aufgebot-Screen nur für Coaches.
-7. Coaches erscheinen nicht in der Auswahl des Aufgebots (AUF-28).
-8. Resultat pro Spiel erfassbar (AUF-15).
-
----
-
-## F-06 · Benachrichtigungen
-
-**Ziel:** Die richtigen Leute erfahren rechtzeitig, was sich geändert hat. Zuerst in der App, weitere Kanäle später (BEN-10 offen).
-
-**Akzeptanzkriterien:**
-
-1. `/benachrichtigungen` zeigt eigene Benachrichtigungen, neueste zuerst. Ungelesene sind gekennzeichnet, die Anzahl steht in der Navigation (`benachrichtigungen-zaehler`).
-2. Ein Klick führt zum Termin und markiert als gelesen (BEN-12).
-3. Szenario S5: kurzfristige Absage benachrichtigt Petra, nicht Marc.
-4. Szenario S6: Erinnerung an Personen ohne Antwort, genau einmal (BEN-01, BEN-13).
-5. Szenario S9: Veröffentlichen benachrichtigt alle Spielerinnen des Teams (BEN-03).
-6. Szenario S10: Abmeldung einer Aufgebotenen benachrichtigt die Coaches (BEN-04).
-7. Änderung eines veröffentlichten Aufgebots benachrichtigt nur Betroffene (BEN-05).
-8. Absage oder Verschiebung eines Termins benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
-9. Versand ist hinter einer Schnittstelle, damit E-Mail oder Push später dazukommen (BEN-11).
+1. Seed: series and events per test-data.md (responses follow with F-04).
+2. `/termine` shows all upcoming events of the person's own teams in chronological order. `anna` sees event 01 (Team 1 + 2), `tina` does not.
+3. As `petra`, enter an event for Team 1 + Team 2. It appears for members of both teams (TER-01). As `marc`, Petra cannot enter one for Team 1 (403).
+4. As `petra`, create a series (weekly, period). Events appear for every week in the period (TER-05).
+5. Add an exception for a period. Events in it disappear or are cancelled, as described in states.md (TER-07).
+6. Move a single event of a series without changing the series (TER-06).
+7. Scenario S13: a cancelled event is recognizable, with reason.
+8. Response deadline adjustable per event and series, default 24 hours (TER-09, TER-10).
+9. Filter `?team=` and view `?ansicht=vergangen` work and are in the URL.
 
 ---
 
-## F-07 · Anbindung swiss unihockey
+## F-04 · Responses with overview
 
-**Ziel:** Spieltage kommen automatisch von swiss unihockey.
+**Goal:** The main reason for the app. Everyone responds yes or no with one tap, coaches see the overview by team and line.
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. Als `alex` Team 1 mit der swiss-unihockey-Team-ID verknüpfen und den Abgleich auslösen (SUH-02).
-2. Im Profil `dev`/`test` spricht die App mit dem Simulator, im Profil `prod` mit `https://api-v2.swissunihockey.ch/api`. Der echte Client ist mit aufgezeichneten Antworten getestet (Fixture-Dateien), nicht live.
-3. Spiele am selben Tag in derselben Halle werden ein Spieltag mit mehreren Spielen (SUH-04).
-4. Szenario S12: Verschiebung wird übernommen, eigene Daten bleiben, Team wird benachrichtigt.
-5. Spiel fehlt bei swiss unihockey: wird markiert, nicht gelöscht.
-6. Simulator «nicht erreichbar»: Abgleich meldet den Fehler, nichts wird verändert, die App funktioniert normal (SUH-09).
-7. Täglicher Abgleich als geplanter Job.
-8. Die offenen Fragen O-20 bis O-24 sind, soweit ohne Zugangsdaten möglich, geklärt und in offene-punkte.md bzw. 06-swiss-unihockey.md nachgeführt.
+1. Seed: responses per test-data.md.
+2. Scenario S1: overview of event 01 exactly as in test-data.md (counters, groups, order, coach block, dual roles).
+3. Scenario S2: response with one tap from the event list and from the detail. Counters update without reloading.
+4. Scenario S3: «vielleicht» not possible without a comment, error message at the field.
+5. «nicht dabei» offers an optional reason that can be skipped.
+6. Scenario S4: comments only for coaches of the team and the person herself, also in the API response.
+7. Scenario S5: a late cancellation is marked as such. (The notification itself comes with F-06. Here: field `kurzfristig` correct.)
+8. Scenarios S7 and S8: respond on behalf, with «eingetragen von», only for the person's own teams.
+9. The start screen shows the next own event with response buttons.
+10. The response is unchanged after reloading. Cancelled events accept no responses (409, buttons disabled with explanation).
 
 ---
 
-## F-08 · Härtung vor dem produktiven Betrieb
+## F-05 · Match days and call-up
 
-**Ziel:** Sicherheitslücken schliessen, die in der Entwicklung bewusst offen blieben. Sammelt Sicherheitsbefunde aus Review und Test (E-62). Muss vor dem ersten produktiven Betrieb erledigt sein.
+**Goal:** Match days in tournament form with matches, meeting point, venue and call-up.
 
-**Akzeptanzkriterien:**
+**Acceptance criteria:**
 
-1. Schutz gegen Anfragen von fremden Seiten (CSRF) für alle schreibenden Endpunkte, z.B. Sitzungs-Cookie mit `SameSite` plus Prüfung von `Origin`. Eine schreibende Anfrage mit fremdem `Origin` wird mit 403 abgelehnt (Test).
-2. Sitzungen laufen ab: nach Inaktivität und nach einer Höchstdauer (Werte als Annahme festlegen und in offene-punkte.md nennen). Abmelden macht die Sitzung sofort ungültig (Test).
-3. Sitzungs-Token werden nur gehasht gespeichert. Ein Token aus der Datenbank allein erlaubt keine Anmeldung (Test).
-4. Swagger UI ist im Profil `prod` nicht erreichbar (Test).
-5. Sicherheits-Header im Profil `prod`: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` (Test).
-6. Weitere Sicherheitsbefunde, die bis dahin als Kommentar in diesem Issue gesammelt wurden, sind behoben oder begründet zurückgestellt.
+1. Seed: events 04 and 05 with matches and call-up per test-data.md.
+2. As `petra`, enter a match day for Team 1 with two matches, meeting point, notes and Google Maps link (AUF-10 to AUF-16).
+3. The event detail shows matches by start time, the meeting point and the link «In Google Maps öffnen» (opens in a new tab).
+4. `/termine/<04>/aufgebot`: all players of Team 1 grouped by line, response status next to them, «offen» and «vielleicht» selectable too (AUF-21, AUF-22).
+5. Scenario S9: publishing with a confirmation dialog. Afterwards players see «aufgeboten» or «nicht aufgeboten». Before that they see «noch kein Aufgebot».
+6. Scenario S11: call-up screen only for coaches.
+7. Coaches do not appear in the selection of the call-up (AUF-28).
+8. Result can be entered per match (AUF-15).
+
+---
+
+## F-06 · Notifications
+
+**Goal:** The right people learn in time what has changed. First in the app, further channels later (BEN-10 open).
+
+**Acceptance criteria:**
+
+1. `/benachrichtigungen` shows the person's own notifications, newest first. Unread ones are marked, and the count is in the navigation (`benachrichtigungen-zaehler`).
+2. A click leads to the event and marks it as read (BEN-12).
+3. Scenario S5: a late cancellation notifies Petra, not Marc.
+4. Scenario S6: reminder to people without a response, exactly once (BEN-01, BEN-13).
+5. Scenario S9: publishing notifies all players of the team (BEN-03).
+6. Scenario S10: a called-up player declining notifies the coaches (BEN-04).
+7. A change to a published call-up notifies only those affected (BEN-05).
+8. Cancelling or moving an event notifies all members of the involved teams (BEN-07).
+9. Sending sits behind an interface, so that e-mail or push can be added later (BEN-11).
+
+---
+
+## F-07 · swiss unihockey connection
+
+**Goal:** Match days come automatically from swiss unihockey.
+
+**Acceptance criteria:**
+
+1. As `alex`, link Team 1 with the swiss unihockey team ID and trigger the sync (SUH-02).
+2. In profile `dev`/`test` the app talks to the simulator, in profile `prod` to `https://api-v2.swissunihockey.ch/api`. The real client is tested with recorded responses (fixture files), not live.
+3. Matches on the same day in the same hall become one match day with several matches (SUH-04).
+4. Scenario S12: a move is taken over, the app's own data stays, the team is notified.
+5. Match missing at swiss unihockey: it is marked, not deleted.
+6. Simulator «nicht erreichbar» (unreachable): the sync reports the error, nothing is changed, the app works normally (SUH-09).
+7. Daily sync as a scheduled job.
+8. The open questions O-20 to O-24 are clarified as far as possible without credentials and updated in open-points.md or 06-swiss-unihockey.md.
+
+---
+
+## F-08 · Hardening before production use
+
+**Goal:** Close security gaps that were deliberately left open during development. Collects security findings from review and test (E-62). Must be done before the first production use.
+
+**Acceptance criteria:**
+
+1. Protection against requests from foreign sites (CSRF) for all writing endpoints, e.g. session cookie with `SameSite` plus a check of `Origin`. A writing request with a foreign `Origin` is rejected with 403 (test).
+2. Sessions expire: after inactivity and after a maximum duration (set the values as an assumption and name them in open-points.md). Logging out invalidates the session immediately (test).
+3. Session tokens are stored hashed only. A token from the database alone does not allow a login (test).
+4. Swagger UI is not reachable in profile `prod` (test).
+5. Security headers in profile `prod`: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` (test).
+6. Further security findings collected as comments on this issue until then are fixed or deferred with a reason.
 
 ---
 
 # Batch 2 (F-09 to F-20)
 
-Decided on 16.11.2026 (E-68 to E-71). Written in English, because the repository switches to English with F-09 to F-11. F-09 translates the rest of this file.
+Decided on 16.11.2026 (E-68 to E-71). Written in English, because the repository switches to English with F-09 to F-11. F-09 translated the rest of this file.
 
-| No. | Feature | Voraussetzung | Requirements |
+| No. | Feature | Prerequisite | Requirements |
 |---|---|---|---|
 | F-09 | English: glossary, documentation and pipeline | – | NF-02 (changed), NF-40 (new) |
 | F-10 | English: backend, database and API | F-09 | NF-40 |
@@ -230,7 +230,7 @@ Decided on 16.11.2026 (E-68 to E-71). Written in English, because the repository
 | F-19 | Notifications by e-mail and push | F-11 | BEN-10, BEN-11 (decided: both) |
 | F-20 | Driver list for match days | F-12 | DRV (new) |
 
-F-08 (Härtung) follows after F-11.
+F-08 (hardening) follows after F-11.
 
 ---
 
@@ -299,7 +299,7 @@ F-08 (Härtung) follows after F-11.
 
 **Scope of this step:**
 
-- All Markdown in the repo: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**`, `backend/README.md`, `frontend/README.md`, `e2e/plaene/**`, `.github/**` templates.
+- All Markdown in the repo: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**`, `backend/README.md`, `frontend/README.md`, `e2e/plans/**`, `.github/**` templates.
 - File and folder names of documents become English (for example `docs/fachmodell.md` → `docs/domain-model.md`, `docs/anforderungen/` → `docs/requirements/`, `docs/entscheide.md` → `docs/decisions.md`, `e2e/plaene/` → `e2e/plans/`). All links are updated.
 - The content of the four skills under `.claude/skills/` and of `docs/pipeline/**`. Names stay, see above.
 - Comments, help text and output of the scripts in `scripts/` and of `.github/workflows/`.
@@ -421,7 +421,7 @@ F-08 (Härtung) follows after F-11.
 6. As `anna` (player only): nothing changed. Administration and other teams' data answer 403.
 7. A person who is coach in Team 1 and player in Team 2 (`petra`) has coach rights everywhere.
 8. Notifications that go to «the coaches of the team» (late cancellation, withdrawal of a called-up player) still go only to the coaches of that team, not to all coaches.
-9. Requirements RR-03, RR-04 and RR-06 are rewritten and RR-08 («deleting is for admins») is added. The matrix of who may do what is in `docs/requirements/07-roles-rights.md`.
+9. Requirements RR-03, RR-04 and RR-06 are rewritten and RR-08 («deleting is for admins») is added. The matrix of who may do what is in `docs/requirements/07-roles-permissions.md`.
 
 **Assumptions to confirm (record as open points):** coaches see comments of all teams; removing a person from a team counts as deleting; cancelling an event does not.
 

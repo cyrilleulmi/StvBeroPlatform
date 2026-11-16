@@ -1,6 +1,6 @@
-# Veröffentlicht die Statusseite der Pipeline (status/) auf GitHub Pages.
-# Die Seite liest den Stand live aus der GitHub-API, sie muss nur bei Änderungen an status/ neu veröffentlicht werden.
-name: Statusseite
+# Publishes the pipeline status page (status/) on GitHub Pages.
+# The page reads the state live from the GitHub API; it only needs to be republished when status/ changes.
+name: Status page
 
 on:
   push:
