@@ -44,6 +44,9 @@ public class AntwortService {
     @Inject
     Uhr uhr;
 
+    @Inject
+    TerminBenachrichtigungen benachrichtigungen;
+
     /** Gespeicherte Antwort, wie sie in der Tabelle steht. */
     record Gespeichert(AntwortStatus status, String kommentar, Instant geaendertAm, UUID eingetragenVon,
                        boolean kurzfristig) {
@@ -99,7 +102,8 @@ public class AntwortService {
                 .setParameter(1, t.id).setParameter(2, fuer).setParameter(3, neu.name()).setParameter(4, kommentar)
                 .setParameter(5, jetzt).setParameter(6, eingetragenVon).setParameter(7, kurzfristig)
                 .executeUpdate();
-        // Benachrichtigung der Coaches bei kurzfristiger Absage kommt mit F-06 (BEN-02).
+        benachrichtigungen.antwortGeaendert(wer, t, mitglieder, fuer,
+                bisher == null ? AntwortStatus.OFFEN : bisher.status(), neu, kurzfristig);
         return new AntwortDto(neu, kommentar, TerminLeser.zeit(jetzt),
                 eingetragenVon == null ? null : PersonKurz.von(Person.findById(eingetragenVon)), kurzfristig);
     }

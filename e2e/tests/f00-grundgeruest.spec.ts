@@ -109,7 +109,7 @@ test.describe('Navigation', () => {
 
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
     await expect(nav).toHaveAttribute('data-testid', 'hauptnavigation');
-    await expect(nav.getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil']);
+    await expect(nav.getByRole('list').getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil']);
     await expect(nav.getByRole('link', { name: 'Start' })).toHaveAttribute('aria-current', 'page');
 
     const box = (await nav.boundingBox())!;
@@ -140,7 +140,7 @@ test.describe('Navigation', () => {
     await anmelden(page, 'alex');
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
-    await expect(nav.getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil', 'Verwaltung']);
+    await expect(nav.getByRole('list').getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil', 'Verwaltung']);
 
     await nav.getByRole('link', { name: 'Verwaltung' }).click();
 

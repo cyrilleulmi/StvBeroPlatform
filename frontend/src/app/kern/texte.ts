@@ -11,6 +11,17 @@ export const TEXTE = {
     teams: 'Teams',
     profil: 'Profil',
     verwaltung: 'Verwaltung',
+    benachrichtigungen: 'Benachrichtigungen',
+    ungelesen: 'ungelesen',
+  },
+  benachrichtigungen: {
+    titel: 'Benachrichtigungen',
+    leer: 'Keine Benachrichtigungen.',
+    neu: 'Neu',
+    alleGelesen: 'Alle als gelesen markieren',
+    alleGelesenErledigt: 'Alle sind als gelesen markiert.',
+    alsGelesen: 'Als gelesen markieren',
+    gelesenErledigt: 'Als gelesen markiert.',
   },
   start: {
     begruessung: (vorname: string) => `Hallo ${vorname}`,

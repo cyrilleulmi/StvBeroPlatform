@@ -40,6 +40,9 @@ public class AufgebotService {
     @Inject
     AntwortService antworten;
 
+    @Inject
+    TerminBenachrichtigungen benachrichtigungen;
+
     public AufgebotDto lesen(Angemeldet wer, UUID terminId) {
         Termin t = TerminService.finden(terminId);
         pruefeDarf(wer, t);
@@ -49,8 +52,8 @@ public class AufgebotService {
 
     /**
      * Auswahl speichern (AUF-21, AUF-22). Jede Spielerin des Teams lässt sich aufbieten, unabhängig von
-     * ihrer Antwort; Coaches nicht (AUF-28). Ist das Aufgebot veröffentlicht, bleibt es das; die
-     * Benachrichtigung der Betroffenen (AUF-27, BEN-05) kommt mit F-06.
+     * ihrer Antwort; Coaches nicht (AUF-28). Ist das Aufgebot veröffentlicht, bleibt es das, und wer neu
+     * dazukommt oder herausfällt, wird benachrichtigt (AUF-27, BEN-05).
      */
     @Transactional
     public AufgebotDto setzen(Angemeldet wer, UUID terminId, AufgebotSetzen eingabe) {
@@ -62,14 +65,18 @@ public class AufgebotService {
         Set<UUID> auswahl = new LinkedHashSet<>(eingabe.personIds());
         AufgebotRegeln.pruefeAufbietbar(auswahl, spielerinnen(t));
         Aufgebot a = gesperrt(t.id);
+        Set<UUID> bisher = new LinkedHashSet<>(a.personIds);
         a.personIds.clear();
         a.personIds.addAll(auswahl);
+        if (a.veroeffentlichtAm != null) {
+            benachrichtigungen.aufgebotGeaendert(wer, t, bisher, auswahl);
+        }
         return dto(t, a);
     }
 
     /**
      * Aufgebot veröffentlichen (AUF-23, AUF-24). Danach sehen alle Spielerinnen des Teams, ob sie aufgeboten
-     * sind. Die Benachrichtigung (BEN-03) kommt mit F-06.
+     * sind und werden benachrichtigt (BEN-03).
      */
     @Transactional
     public AufgebotDto veroeffentlichen(Angemeldet wer, UUID terminId) {
@@ -82,6 +89,7 @@ public class AufgebotService {
         a.personIds.retainAll(spielerinnen(t));
         AufgebotRegeln.pruefeVeroeffentlichbar(a.status());
         a.veroeffentlichtAm = uhr.jetzt();
+        benachrichtigungen.veroeffentlicht(wer, t, spielerinnen(t), a.personIds);
         return dto(t, a);
     }
 

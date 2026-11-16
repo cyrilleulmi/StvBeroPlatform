@@ -20,7 +20,7 @@ for (const [schluessel, eintraege] of [
     await anmelden(page, schluessel);
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
-    const links = nav.getByRole('link');
+    const links = nav.getByRole('list').getByRole('link');
     await expect(links).toHaveText([...eintraege]);
 
     for (const text of eintraege) {

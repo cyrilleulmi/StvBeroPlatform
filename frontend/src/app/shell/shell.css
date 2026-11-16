@@ -2,8 +2,22 @@
   min-height: 100dvh;
 }
 
+/* Mobil: feste Kopfzeile mit Hintergrund hinter der Glocke. Der Inhalt scrollt darunter durch,
+   damit die Glocke auch beim Scrollen nie über Bedienelementen liegt (O-51). Höhe: 10px + 48px + 10px. */
+.kopfzeile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  height: calc(68px + env(safe-area-inset-top));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
 .inhalt {
-  padding: 24px var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
+  /* Oben Platz für die Kopfzeile mit der Glocke (Benachrichtigungen), damit sie keinen Inhalt verdeckt. */
+  padding: calc(84px + env(safe-area-inset-top)) var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
   max-width: 880px;
 }
 
@@ -82,6 +96,49 @@ a span {
   }
 }
 
+/* Mobil: Glocke als runder Knopf oben rechts, Beschriftung nur für Screenreader (F-06). */
+a.glocke {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: 12px;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  color: var(--text);
+}
+
+.glocke-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+a.glocke .zaehler {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--coral);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 22px;
+  text-align: center;
+  letter-spacing: normal;
+}
+
 a.aktiv {
   background: var(--primary-soft);
   color: var(--primary);
@@ -106,6 +163,10 @@ a.aktiv span {
     border-top: 0;
     border-right: 1px solid var(--border);
     padding: 24px 16px;
+  }
+
+  .kopfzeile {
+    display: none;
   }
 
   .marke {
@@ -141,5 +202,40 @@ a.aktiv span {
 
   .inhalt {
     padding: 40px 48px;
+  }
+
+  a.glocke {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: auto;
+    height: auto;
+    min-height: 48px;
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: var(--radius-nav);
+    box-shadow: none;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  a.glocke.aktiv {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+
+  .glocke-text {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+  }
+
+  a.glocke .zaehler {
+    position: static;
+    margin-left: auto;
   }
 }

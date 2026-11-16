@@ -64,6 +64,12 @@ export const routes: Routes = [
         loadComponent: () => import('./seiten/teams/linien').then((m) => m.Linien),
       },
       {
+        path: 'benachrichtigungen',
+        title: titel('Benachrichtigungen'),
+        loadComponent: () =>
+          import('./seiten/benachrichtigungen/benachrichtigungen').then((m) => m.Benachrichtigungen),
+      },
+      {
         path: 'profil',
         title: titel('Profil'),
         loadComponent: () => import('./seiten/profil/profil').then((m) => m.Profil),
