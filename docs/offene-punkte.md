@@ -10,7 +10,7 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-02 | **Hosting:** Wo läuft die Plattform produktiv, wo die Vorschau zum Verifizieren? | |
 | O-03 | **Datenschutz:** Welche Daten werden gespeichert, wer sieht was (nDSG)? | Die App ist momentan für Erwachsene gedacht. Kommen Minderjährige dazu, neu beurteilen. |
 | O-04 | **Mandantenfähigkeit:** Braucht es mehrere Vereine in einer Installation? | Mehrere Teams innerhalb des Vereins sind Teil des Kerns. |
-| O-05 | **Benachrichtigungen:** E-Mail, Push über die PWA oder beides? | Siehe [BEN-10](anforderungen/08-benachrichtigungen.md). |
+| O-05 | ~~**Benachrichtigungen:** E-Mail, Push über die PWA oder beides?~~ | Entschieden: beides (E-71, F-19). |
 | O-06 | **Grösse:** Wie viele Teams und Mitglieder ungefähr? | |
 | O-07 | ~~**Backend-Sprache:** Java oder Kotlin?~~ | Entschieden: Java 21 (E-57). |
 | O-08 | ~~**Migrationen:** Flyway oder Liquibase?~~ | Entschieden: Flyway (E-57). |
