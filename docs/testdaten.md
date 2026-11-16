@@ -44,9 +44,10 @@ Der Seed wächst mit den Features. Was heute im Seed ist:
 | F-01 | Teams 01–03 (Saison 2026/27), Team 01 zusätzlich in Saison 2025/26, Teamzugehörigkeiten mit Funktion gemäss Tabelle «Personen», noch **ohne Linien** (alle Spielerinnen «ohne Linie»). Vera: Spielerin in Team 1, nur Saison 2025/26. Alex ist in keinem Team. Der Teamname gilt pro Saison: Wird Team 1 umbenannt, zeigt 2025/26 weiterhin «Team 1» (SAI-02, Nachbesserung #21) |
 | F-02 | Gruppen 01–08 und Linienzuweisungen gemäss Tabellen «Gruppen» und «Personen». Kim ist ohne Linie. Zusätzlich Gruppe 09: Goalies von Team 1 in Saison 2025/26 (leer, Vera ist dort ohne Linie) |
 
-| F-03 | Serien 01–03 mit allen ihren Terminen im Gültigkeitszeitraum (auch vergangenen), Ausnahme «Weihnachtsferien» bei Serie 01, Termine 01–08 gemäss Tabelle «Termine mit festen IDs». Termin 03 abgesagt («Halle besetzt»). Spieltage 04 und 05 mit Spielort, Google-Maps-Link und Treffpunkt, noch ohne Spiele und Aufgebot. Antwortfrist überall 24 Stunden. Noch **keine Antworten** (alle «offen») |
+| F-03 | Serien 01–03 mit allen ihren Terminen im Gültigkeitszeitraum (auch vergangenen), Ausnahme «Weihnachtsferien» bei Serie 01, Termine 01–08 gemäss Tabelle «Termine mit festen IDs». Termin 03 abgesagt («Halle besetzt»). Spieltage 04 und 05 mit Spielort, Google-Maps-Link und Treffpunkt, noch ohne Spiele und Aufgebot. Antwortfrist überall 24 Stunden |
+| F-04 | Antworten zu den Terminen 01, 02, 04 und 05 gemäss den Tabellen unten (Termin 02: Anna «dabei»), alle eingetragen am 15.11.2026 20:00 von der Person selbst, keine kurzfristig. Übrige Termine ohne Antworten |
 
-Antworten folgen mit F-04, Spiele und Aufgebote mit F-05. Die Tabellen unten sind das Zielbild.
+Spiele und Aufgebote folgen mit F-05. Die Tabellen unten sind das Zielbild.
 
 Serientermine ohne feste ID haben die ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, z.B. für Serie 02 am 26.11.2026 `termin-2-2026-11-26`. Sie heissen «Training», Ort wie die Serie.
 
@@ -222,7 +223,7 @@ Jedes Szenario beginnt mit `POST /api/test/reset`.
 | S2 | Antwort mit einem Tap | Als `nina` in der Terminliste bei Termin 01 «dabei» tippen | Antwort gespeichert, Team 1 zeigt 6 dabei, 0 offen | ANM-08 |
 | S3 | Vielleicht ohne Kommentar | Als `nina` bei Termin 01 «vielleicht» wählen, Kommentar leer lassen | Speichern nicht möglich, Fehlermeldung beim Feld | ANM-04 |
 | S4 | Kommentare nur für Coaches | Als `anna` Termin 01 öffnen | Kein Kommentar sichtbar. Als `petra`: «Krank» bei Mia sichtbar | ANM-07 |
-| S5 | Kurzfristige Absage | Uhr auf 16.11.2026 19:00. Als `anna` bei Termin 01 auf «nicht dabei» wechseln | Petra (Coach Team 1) wird benachrichtigt, Marc nicht (Annahme O-17) | ANM-10, BEN-02 |
+| S5 | Kurzfristige Absage | Uhr auf 16.11.2026 19:00. Als `anna` bei Termin 01 auf «nicht dabei» wechseln | Antwort mit `kurzfristig: true`, Petra sieht bei Anna «kurzfristig abgemeldet» (F-04). Petra (Coach Team 1) wird benachrichtigt, Marc nicht (Annahme O-17, ab F-06) | ANM-10, BEN-02 |
 | S6 | Erinnerung | Uhr auf 16.11.2026 06:31 | Nina und Ella erhalten eine Erinnerung zu Termin 01, sonst niemand | BEN-01, BEN-13 |
 | S7 | Stellvertretend antworten | Als `petra` für Nina bei Termin 01 «nicht dabei» eintragen | Gespeichert, bei Nina ist «eingetragen von Petra Keller» sichtbar | ANM-11, ANM-12 |
 | S8 | Kein Stellvertreten für fremde Teams | Als `marc` bei Termin 01 für Anna antworten wollen | Aktion nicht angeboten, API antwortet 403 | RR-06 |

@@ -151,7 +151,7 @@ test('F-04 K3 K5 ANM-08 ANM-05: «nicht dabei» aus dem Detail, Grund übersprin
   let navigationen = 0;
   page.on('framenavigated', () => navigationen++);
 
-  await knopf(page.locator('main'), 'nicht-dabei').click();
+  await knopf(page.getByRole('main'), 'nicht-dabei').click();
   // Die Antwort ist schon gespeichert, der Grund ist freiwillig (ANM-05)
   const dialog = page.getByRole('dialog', { name: 'Nicht dabei' });
   await expect(dialog).toBeVisible();
@@ -159,20 +159,20 @@ test('F-04 K3 K5 ANM-08 ANM-05: «nicht dabei» aus dem Detail, Grund übersprin
   await expect(team1Zaehler).toContainText(z(5, 2, 0, 0));
   await dialog.getByRole('button', { name: 'Überspringen' }).click();
   await expect(dialog).toBeHidden();
-  await expect(knopf(page.locator('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
+  await expect(knopf(page.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'NICHT_DABEI');
   expect(navigationen).toBe(0);
 
   // K10: nach Neuladen unverändert
   await page.reload();
-  await expect(knopf(page.locator('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
+  await expect(knopf(page.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'NICHT_DABEI');
 });
 
 test('F-04 K5 ANM-05: «nicht dabei» mit Grund', async ({ page }) => {
   await anmelden(page, 'nina');
   await page.goto(`/termine/${T01}`);
-  await knopf(page.locator('main'), 'nicht-dabei').click();
+  await knopf(page.getByRole('main'), 'nicht-dabei').click();
   const dialog = page.getByRole('dialog', { name: 'Nicht dabei' });
   await dialog.getByLabel('Grund (freiwillig)').fill('Prüfung');
   await barrierefrei(page);
@@ -181,7 +181,7 @@ test('F-04 K5 ANM-05: «nicht dabei» mit Grund', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('Grund gespeichert.');
   await expect(page.getByTestId('meine-antwort')).toContainText('Dein Kommentar: Prüfung');
   // Erneut «nicht dabei»: Grund ändern, ohne die Antwort neu zu setzen
-  await knopf(page.locator('main'), 'nicht-dabei').click();
+  await knopf(page.getByRole('main'), 'nicht-dabei').click();
   await expect(dialog.getByLabel('Grund (freiwillig)')).toHaveValue('Prüfung');
   await dialog.getByRole('button', { name: 'Überspringen' }).click();
   await page.reload();
@@ -193,7 +193,7 @@ test('F-04 K4 S3 ANM-04: «vielleicht» ohne Kommentar nicht möglich, Fehlermel
 }) => {
   await anmelden(page, 'nina');
   await page.goto(`/termine/${T01}`);
-  await knopf(page.locator('main'), 'vielleicht').click();
+  await knopf(page.getByRole('main'), 'vielleicht').click();
   const dialog = page.getByRole('dialog', { name: 'Vielleicht – bitte kurz begründen' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Speichern' }).click();
@@ -204,17 +204,17 @@ test('F-04 K4 S3 ANM-04: «vielleicht» ohne Kommentar nicht möglich, Fehlermel
   await barrierefrei(page);
   // Nichts gespeichert
   await dialog.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(knopf(page.locator('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'false');
+  await expect(knopf(page.getByRole('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'false');
   const api = await page.request.get(`/api/termine/${T01}`);
   expect((await api.json()).meineAntwort.status).toBe('OFFEN');
 
   // Mit Kommentar geht es
-  await knopf(page.locator('main'), 'vielleicht').click();
+  await knopf(page.getByRole('main'), 'vielleicht').click();
   await feld.fill('Knie');
   await expect(feld).not.toHaveAttribute('aria-invalid', 'true');
   await dialog.getByRole('button', { name: 'Speichern' }).click();
   await expect(dialog).toBeHidden();
-  await expect(knopf(page.locator('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'true');
+  await expect(knopf(page.getByRole('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('meine-antwort')).toContainText('Dein Kommentar: Knie');
 });
 
@@ -267,7 +267,7 @@ test('F-04 K7 S5 ANM-10: Kurzfristige Absage nach der Antwortfrist', async ({ pa
   expect(uhr.status()).toBe(204);
   await anmelden(page, 'anna');
   await page.goto(`/termine/${T01}`);
-  await knopf(page.locator('main'), 'nicht-dabei').click();
+  await knopf(page.getByRole('main'), 'nicht-dabei').click();
   await page.getByRole('dialog', { name: 'Nicht dabei' }).getByRole('button', { name: 'Überspringen' }).click();
   await expect(page.getByTestId('meine-antwort')).toContainText('kurzfristig abgemeldet');
   const api = await page.request.get(`/api/termine/${T01}`);
@@ -315,7 +315,7 @@ test('F-04 K8 S7 ANM-11 ANM-12: Petra trägt für Nina «nicht dabei» ein', asy
   await anmelden(ninaSeite, 'nina');
   await ninaSeite.goto(`/termine/${T01}`);
   await expect(ninaSeite.getByTestId('meine-antwort')).toContainText('eingetragen von Petra Keller');
-  await expect(knopf(ninaSeite.locator('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
+  await expect(knopf(ninaSeite.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
   await ninaKontext.close();
 });
 
@@ -402,7 +402,7 @@ test('F-04 K10 TER-06: Abgesagte Termine nehmen keine Antworten an', async ({ pa
     );
   }
   await page.goto(`/termine/${T03}`);
-  await expect(knopf(page.locator('main'), 'dabei')).toBeDisabled();
+  await expect(knopf(page.getByRole('main'), 'dabei')).toBeDisabled();
   await expect(page.getByTestId('meine-antwort')).toContainText(
     'Der Termin ist abgesagt. Antworten sind nicht mehr möglich.',
   );

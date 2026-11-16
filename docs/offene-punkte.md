@@ -25,7 +25,7 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-13 | Sehen Spielerinnen den Status der anderen? | Annahme: ja, aber keine Kommentare ([ANM-25](anforderungen/04-an-und-abmeldung.md)). |
 | O-14 | Gehört ein Spieltag immer zu genau einem Team? | Annahme: ja ([AUF-03](anforderungen/05-spieltage-aufgebot.md)). |
 | O-15 | Heisst es in der Oberfläche «Spielerin» oder «Spieler/in»? | In der Erarbeitung wurde «Spielerinnen» verwendet, in älteren Unterlagen «Spieler/innen». |
-| O-16 | Farben und Symbole für die vier Antwortstatus | Vorschlag in [design-grundlagen.md](design-grundlagen.md#noch-nicht-festgelegt). |
+| O-16 | Farben und Symbole für die vier Antwortstatus | Vorschlag in [design-grundlagen.md](design-grundlagen.md#noch-nicht-festgelegt). Umgesetzt mit F-04 als Annahme: dabei `primary` mit Häkchen, nicht dabei `coral` mit Kreuz, vielleicht `mustard` mit Fragezeichen, offen `muted` mit gestricheltem Kreis, immer zusätzlich als Text. |
 | O-17 | Wer wird bei einer kurzfristigen Absage benachrichtigt, wenn ein Termin mehrere Teams hat? | Annahme: nur die Coaches der Teams, in denen die Person Spielerin ist ([BEN-02](anforderungen/08-benachrichtigungen.md)). |
 | O-18 | Wann geht die Erinnerung raus? | Annahme: 12 Stunden vor der Antwortfrist ([zustaende.md](zustaende.md#termin)). |
 | O-19 | Was passiert mit Serienterminen in einer neuen Ausnahme? | Annahme: ohne Antworten entfernt, mit Antworten abgesagt ([zustaende.md](zustaende.md#serie)). |
@@ -36,6 +36,9 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-38 | Lassen sich die Goalies umbenennen? | Annahme F-02: nein, «Goalies» ist fest (409, LIN-05). |
 | O-39 | Wer darf einen Termin für mehrere Teams erfassen? | Annahme F-03: Coach in mindestens einem der Teams (oder Admin). So kann Petra (Coach Team 1) das gemeinsame Training mit Team 2 erfassen, wie im Akzeptanzkriterium verlangt. Der Vertrag sagte vorher «Coach in jedem Team». Das Formular bietet die eigenen Teams an. |
 | O-40 | Werden beim Anlegen einer Serie auch vergangene Daten erzeugt? | Annahme F-03: nein, nur Termine, die noch nicht begonnen haben. Der Seed enthält dagegen alle Termine seit Serienbeginn. |
+| O-42 | Dürfen Admins ohne Team für sich antworten? | Annahme F-04: nein, für sich antwortet nur, wer in einem beteiligten Team ist (403). Stellvertretend dürfen Admins für jedes Mitglied der beteiligten Teams antworten, auch für Coaches (RR-04). |
+| O-43 | Wie lange gilt eine Antwort als «kurzfristig»? | Annahme F-04: Die Markierung entsteht beim Wechsel weg von «dabei» nach der Frist, bleibt bei Wechseln zwischen «nicht dabei» und «vielleicht» und fällt mit «dabei» weg. Ein erstes «nicht dabei» nach der Frist (vorher «offen») ist nicht kurzfristig. |
+| O-44 | Wer sieht, wer eine Antwort stellvertretend eingetragen hat? | Annahme F-04: alle, die den Termin sehen. Es ist kein Kommentar (ANM-07 gilt nicht), sondern macht die Antwort nachvollziehbar (ANM-12). |
 | O-41 | Gilt eine Änderung der Seriezeit als Verschiebung (Hinweis, Benachrichtigung)? | Annahme F-03: nein, nur das Verschieben eines einzelnen Termins setzt «verschoben». Benachrichtigungen kommen mit F-06 (TER-12). |
 
 ## Pipeline

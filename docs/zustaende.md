@@ -35,7 +35,10 @@ stateDiagram-v2
 | Jeder Wechsel ist erlaubt, auch nach der Antwortfrist. | ANM-09 |
 | Wechsel **weg von DABEI** nach der Antwortfrist setzt `kurzfristig` und benachrichtigt die Coaches. | ANM-10, BEN-02 |
 | Bei einer aufgebotenen Spielerin benachrichtigt jeder Wechsel weg von DABEI die Coaches, auch vor der Frist. | AUF-26, BEN-04 |
-| Stellvertretend gesetzte Antworten folgen denselben Übergängen und speichern `eingetragenVon`. | ANM-11, ANM-12 |
+| Die Markierung `kurzfristig` bleibt bei weiteren Wechseln zwischen NICHT_DABEI und VIELLEICHT und fällt mit DABEI weg (Annahme O-43). | ANM-10 |
+| Für sich antworten darf jedes Mitglied eines beteiligten Teams (jede Funktion), sonst 403. | ANM-01, RR-02 |
+| Stellvertretend gesetzte Antworten folgen denselben Übergängen und speichern `eingetragenVon`. Erlaubt für Coaches eines Teams, in dem die Person Spielerin ist, und für Admins (jedes Mitglied). Sonst 403, Person in keinem beteiligten Team 404. Antwortet die Person danach selbst, fällt `eingetragenVon` weg. | ANM-11, ANM-12, RR-06 |
+| Jede Antwort ersetzt die vorherige ganz, auch den Kommentar. In der Oberfläche speichert «nicht dabei» sofort und bietet danach den Grund an. | ANM-05, ANM-08 |
 | Nach Absage oder Ende des Termins sind keine Änderungen mehr möglich (409). | TER-06 |
 
 ## Termin
