@@ -47,6 +47,7 @@ Bis zur Klärung gelten sinnvolle Annahmen, die beim Ergebnis genannt werden.
 | O-49 | Was gilt als «Abmeldung» einer Aufgebotenen (BEN-04)? | Annahme F-06: nach der Veröffentlichung der Wechsel von «dabei» oder «offen» auf «nicht dabei» oder «vielleicht» und von «vielleicht» auf «nicht dabei». Ist es zugleich eine kurzfristige Absage, erhalten die Coaches nur eine Benachrichtigung. |
 | O-50 | Wird die Person benachrichtigt, die etwas selbst ausgelöst hat? | Annahme F-06: nein. Wer absagt, verschiebt, veröffentlicht oder stellvertretend antwortet, erhält dazu keine Benachrichtigung. Alle anderen Empfänger bleiben. |
 | O-51 | Wo steht die Anzahl ungelesener Benachrichtigungen? | Annahme F-06: In der Hauptnavigation als eigener Eintrag «Benachrichtigungen» ausserhalb der Liste der Haupteinträge. Mobil als runde Glocke oben rechts (die Bottom-Navigation bleibt bei fünf Einträgen lesbar, Nachbesserung #15/#23), ab 1024px als Eintrag über «Start». Ohne Ungelesene kein Zähler. |
+| O-52 | Wird jemand benachrichtigt, wenn eine Ausnahme oder Änderung der Serie einen Termin **ohne** Antworten entfernt? | Annahme F-06: nein. Ein solcher Termin wird gemäss TER-07 entfernt statt abgesagt, es gibt also keine Absage im Sinn von BEN-07. Nur Termine mit Antworten werden abgesagt und benachrichtigen alle Mitglieder der beteiligten Teams. |
 
 ## Pipeline
 

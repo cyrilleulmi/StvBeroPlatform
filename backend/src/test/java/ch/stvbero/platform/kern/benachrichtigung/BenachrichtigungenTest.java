@@ -8,8 +8,10 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static ch.stvbero.platform.kern.anmeldung.AnmeldungTest.anmelden;
 import static io.restassured.RestAssured.given;
@@ -44,9 +46,14 @@ class BenachrichtigungenTest {
     static final String ZOE = "20000000-0000-4000-8000-000000000014";
     static final String ELLA = "20000000-0000-4000-8000-000000000015";
     static final String T01 = "40000000-0000-4000-8000-000000000001";
+    static final String T02 = "40000000-0000-4000-8000-000000000002";
     static final String T03 = "40000000-0000-4000-8000-000000000003";
     static final String T04 = "40000000-0000-4000-8000-000000000004";
     static final String T05 = "40000000-0000-4000-8000-000000000005";
+    static final String SERIE_1 = "70000000-0000-4000-8000-000000000001";
+    static final String SERIE_2 = "70000000-0000-4000-8000-000000000002";
+    /** Serie 01 am Di 01.12.2026, ohne Antworten (docs/testdaten.md). */
+    static final String SERIE_1_01_12 = UUID.nameUUIDFromBytes("termin-1-2026-12-01".getBytes(StandardCharsets.UTF_8)).toString();
     static final String ANNA_ABSAGE_T03 = "90000000-0000-4000-8000-000000000002";
     static final String LEA_ABSAGE_T03 = "90000000-0000-4000-8000-000000000003";
 
@@ -250,6 +257,45 @@ class BenachrichtigungenTest {
         List<Map<String, Object>> neu = neue("TERMIN_VERSCHOBEN", T01);
         assertThat(empfaenger(neu), containsInAnyOrder(TEAM_1_UND_2_OHNE_PETRA));
         assertThat(texte(neu), everyItem(equalTo("Training Di 17.11. ist verschoben auf Mi 18.11. 19:00.")));
+    }
+
+    @Test
+    void ben07AbsageDurchAusnahmeDerSerieBenachrichtigtAlleMitglieder() {
+        String petra = anmelden("petra");
+        given().cookie("stv_sitzung", petra).get("/api/termine/" + SERIE_1_01_12).then().statusCode(200);
+        // 17.11. hat Antworten (wird abgesagt), 24.11. ist schon abgesagt, 01.12. hat keine Antworten (wird entfernt)
+        given().cookie("stv_sitzung", petra).contentType(ContentType.JSON)
+                .body("{\"von\":\"2026-11-17\",\"bis\":\"2026-12-01\",\"grund\":\"Hallensperre\"}")
+                .post("/api/serien/" + SERIE_1 + "/ausnahmen").then().statusCode(201);
+
+        List<Map<String, Object>> neu = neue("TERMIN_ABGESAGT", T01);
+        assertThat(empfaenger(neu), containsInAnyOrder(TEAM_1_UND_2_OHNE_PETRA));
+        assertThat(texte(neu), everyItem(equalTo("Training Di 17.11. ist abgesagt: Hallensperre")));
+        // Der entfernte Termin ohne Antworten und der schon abgesagte Termin 03 lösen nichts aus
+        given().cookie("stv_sitzung", petra).get("/api/termine/" + SERIE_1_01_12).then().statusCode(404);
+        assertThat(neue("TERMIN_ABGESAGT", SERIE_1_01_12), empty());
+        assertThat(neue("TERMIN_ABGESAGT", T03), empty());
+        JsonPath alle = given().get("/api/test/benachrichtigungen").then().extract().jsonPath();
+        assertThat(alle.getList("findAll { it.art == 'TERMIN_ABGESAGT' && !it.id.startsWith('90000000') }"),
+                hasSize(TEAM_1_UND_2_OHNE_PETRA.length));
+    }
+
+    @Test
+    void ben07AbsageDurchAenderungDerSerieBenachrichtigtAlleMitglieder() {
+        // Serie 02 auf Freitag: Termin 02 (Do 19.11.) hat Annas Antwort und wird abgesagt, die übrigen Donnerstage
+        // ohne Antworten werden entfernt
+        given().cookie("stv_sitzung", anmelden("petra")).contentType(ContentType.JSON).body("""
+                        {"typ":"TRAINING","titel":"Training","teamIds":["%s"],"wochentag":"FREITAG","beginnZeit":"19:00",
+                         "endeZeit":"20:30","gueltigVon":"2026-08-20","gueltigBis":"2027-04-29",
+                         "ort":{"name":"Sporthalle Nord"}}""".formatted(TEAM_1))
+                .put("/api/serien/" + SERIE_2).then().statusCode(200);
+
+        List<Map<String, Object>> neu = neue("TERMIN_ABGESAGT", T02);
+        assertThat(empfaenger(neu), containsInAnyOrder(ANNA, LEA, MIA, SARA, NINA, JANA, KIM));
+        assertThat(texte(neu), everyItem(equalTo("Training Do 19.11. ist abgesagt: Serie geändert")));
+        JsonPath alle = given().get("/api/test/benachrichtigungen").then().extract().jsonPath();
+        assertThat(alle.getList("findAll { it.art == 'TERMIN_ABGESAGT' && !it.id.startsWith('90000000') }"),
+                hasSize(7));
     }
 
     @Test

@@ -63,7 +63,7 @@ stateDiagram-v2
 
 - Gespeichert wird nur `GEPLANT` oder `ABGESAGT`. «Nach Frist», «läuft» und «vorbei» ergeben sich aus der Backend-Uhr.
 - Eine Erinnerung (BEN-01) geht 12 Stunden vor der Antwortfrist an alle Mitglieder der beteiligten Teams (jede Funktion) mit Antwort OFFEN, höchstens einmal pro Person und Termin (BEN-13, Tabelle `erinnerung`). Nach der Frist wird nicht mehr erinnert. Die 12 Stunden sind eine Annahme (O-18). Geprüft wird jede Minute; im Test sofort beim Setzen der Uhr (`PUT /api/test/uhr`).
-- Absagen und Verschieben (einzeln oder durch eine Ausnahme bzw. Änderung der Serie, die einen Termin mit Antworten absagt) benachrichtigen alle Mitglieder der beteiligten Teams (BEN-07). Beim Verschieben auch die Mitglieder von Teams, die dabei entfernt wurden. Eine geänderte Seriezeit ist keine Verschiebung (O-41).
+- Absagen und Verschieben (einzeln oder durch eine Ausnahme bzw. Änderung der Serie, die einen Termin mit Antworten absagt) benachrichtigen alle Mitglieder der beteiligten Teams (BEN-07). Beim Verschieben auch die Mitglieder von Teams, die dabei entfernt wurden. Eine geänderte Seriezeit ist keine Verschiebung (O-41). Ein Serientermin ohne Antworten, der durch eine Ausnahme oder Änderung der Serie entfernt wird, benachrichtigt niemanden (Annahme F-06, O-52).
 - Verschieben behält alle Antworten. Ob «dabei» nach einer Verschiebung noch gilt, entscheidet die Person selbst.
 
 | Regel | Bezug |
