@@ -300,7 +300,7 @@ F-08 (hardening) follows after F-11.
 **Scope of this step:**
 
 - All Markdown in the repo: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**`, `backend/README.md`, `frontend/README.md`, `e2e/plans/**`, `.github/**` templates.
-- File and folder names of documents become English (for example `docs/domain-model.md` → `docs/domain-model.md`, `docs/requirements/` → `docs/requirements/`, `docs/decisions.md` → `docs/decisions.md`, `e2e/plans/` → `e2e/plans/`). All links are updated.
+- File and folder names of documents become English (for example `docs/fachmodell.md` → `docs/domain-model.md`, `docs/anforderungen/` → `docs/requirements/`, `docs/entscheide.md` → `docs/decisions.md`, `e2e/plaene/` → `e2e/plans/`). All links are updated.
 - The content of the four skills under `.claude/skills/` and of `docs/pipeline/**`. Names stay, see above.
 - Comments, help text and output of the scripts in `scripts/` and of `.github/workflows/`.
 - The rules for agents: commit messages, PR descriptions and agent comments are English from now on. Issue and PR titles keep the pattern `F-xx · <title>`.

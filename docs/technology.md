@@ -1,61 +1,61 @@
-# Technik
+# Technology
 
-Technologie-Entscheide und Leitplanken für die Architektur. Umgesetzt ist das Grundgerüst (F-00).
+Technology decisions and guardrails for the architecture. The foundation (F-00) is implemented.
 
-## Konventionen aus dem Grundgerüst (F-00)
+## Conventions from the foundation (F-00)
 
-| Thema | Konvention |
+| Topic | Convention |
 |---|---|
-| Versionen | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
-| Backend-Packages | `ch.stvbero.platform.kern.*` (Uhr, Person, Saison, Team, Anmeldung, Kachel, Fehler, Test-Hilfen), `ch.stvbero.platform.<kachel>` pro Kachel (z.B. `anwesenheit`) |
-| Kachel registrieren | Backend: CDI-Bean, die `KachelDefinition` umsetzt (Metadaten, `sichtbarFuer`). Frontend: Route `loadChildren` in `app.routes.ts`, Icon in `kern/icon.ts` |
-| «Jetzt» | `java.time.Clock` injizieren. Im Profil dev/test über `PUT /api/test/uhr` steuerbar |
-| Test-Hilfen | Build-Eigenschaft `stv.testhilfen` (`true` nur in `%dev`/`%test`). Ressourcen mit `@IfBuildProperty`, im Profil prod nicht vorhanden |
-| Anmeldung | Cookie `stv_sitzung` (HttpOnly, SameSite=Lax), Sitzungen in der Datenbank. Ressourcen ohne `@Oeffentlich` verlangen eine Sitzung (401) |
-| Fehler | `FachFehler` → Problem Details (`application/problem+json`), Validierung → 400 mit `felder` |
-| Fachregeln | Pro Bereich eine Klasse `…Regeln` ohne Datenbank (z.B. `TeamRegeln`, `SaisonRegeln`), mit Unit-Tests. Services laden, Regeln entscheiden, Ressourcen bleiben dünn (F-01) |
-| Saison-Parameter | Endpunkte mit Saisonbezug nehmen `?saison=<id>`, ohne Angabe gilt die aktuelle Saison. Saisons vor der aktuellen sind nur lesbar (409, SAI-02) |
-| Vertrag | `OpenApiVertragTest` vergleicht `/q/openapi` mit `docs/api/openapi.yaml` (Pfade, Methoden, operationId, Statuscodes, Schemas) |
-| Frontend-Typen | `npm run api-typen` erzeugt `src/app/api/schema.d.ts` aus dem Vertrag (läuft vor `start` und `build`) |
-| Texte | `frontend/src/app/kern/texte.ts` |
-| Schrift | Plus Jakarta Sans lokal über `@fontsource` (keine Anfragen an Google Fonts) |
-| PWA | `public/manifest.webmanifest`, eigener schlanker Service Worker `public/sw.js` (Offline-Seite, keine Datencaches) |
+| Versions | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
+| Backend packages | `ch.stvbero.platform.kern.*` (clock, person, season, team, login, tile, errors, test helpers), `ch.stvbero.platform.<tile>` per tile (e.g. `anwesenheit`) |
+| Registering a tile | Backend: CDI bean that implements `KachelDefinition` (metadata, `sichtbarFuer`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `kern/icon.ts` |
+| «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/uhr` |
+| Test helpers | Build property `stv.testhilfen` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
+| Login | Cookie `stv_sitzung` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Oeffentlich` require a session (401) |
+| Errors | `FachFehler` → Problem Details (`application/problem+json`), validation → 400 with `felder` |
+| Domain rules | One class `…Regeln` per area without database access (e.g. `TeamRegeln`, `SaisonRegeln`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
+| Season parameter | Endpoints related to a season take `?saison=<id>`; without it the current season applies. Seasons before the current one are read-only (409, SAI-02) |
+| Contract | `OpenApiVertragTest` compares `/q/openapi` with `docs/api/openapi.yaml` (paths, methods, operationId, status codes, schemas) |
+| Frontend types | `npm run api-typen` generates `src/app/api/schema.d.ts` from the contract (runs before `start` and `build`) |
+| Texts | `frontend/src/app/kern/texte.ts` |
+| Font | Plus Jakarta Sans served locally via `@fontsource` (no requests to Google Fonts) |
+| PWA | `public/manifest.webmanifest`, own lean service worker `public/sw.js` (offline page, no data caches) |
 
-## Entschieden
+## Decided
 
-| Bereich | Entscheid |
+| Area | Decision |
 |---|---|
-| Frontend | Angular in der aktuellen Version, Standalone Components, Signals. |
-| Aufbau Frontend | Jede Kachel ist ein lazy geladenes Feature mit eigener Route. Das Dashboard zeigt die Kacheln je nach Rolle. |
-| Backend | Quarkus mit REST-API, Java 21 (LTS). |
-| Aufbau Backend | Eine Package-Struktur pro Kachel mit klaren Grenzen. |
-| Datenbank | PostgreSQL. Schema-Migrationen versioniert mit Flyway. |
-| Rollen | Mindestens Spielerin, Coach, Helfer/Eltern, Admin. Kacheln und Aktionen sind rollenbasiert sichtbar. |
-| Kachel-Konzept | Eine Kachel liefert Metadaten (Titel, Icon, Route, benötigte Rolle) und registriert sich zentral. Das Dashboard rendert daraus die Übersicht. |
-| Auslieferung | Responsive Web-App, als PWA installierbar. |
-| Design | Tokens als CSS Custom Properties, siehe [design-principles.md](design-principles.md). |
+| Frontend | Angular in the current version, standalone components, signals. |
+| Frontend structure | Each tile is a lazy-loaded feature with its own route. The dashboard shows the tiles depending on the role. |
+| Backend | Quarkus with REST API, Java 21 (LTS). |
+| Backend structure | One package structure per tile with clear boundaries. |
+| Database | PostgreSQL. Schema migrations versioned with Flyway. |
+| Roles | At least player, coach, helper/parent, admin. Tiles and actions are visible based on role. |
+| Tile concept | A tile provides metadata (title, icon, route, required role) and registers itself centrally. The dashboard renders the overview from it. |
+| Delivery | Responsive web app, installable as a PWA. |
+| Design | Tokens as CSS custom properties, see [design-principles.md](design-principles.md). |
 
-## Noch offen
+## Still open
 
-| Bereich | Frage |
+| Area | Question |
 |---|---|
-| Login | E-Mail und Passwort, Magic Link oder Keycloak/OIDC. |
-| Hosting | Wo läuft die Plattform produktiv, wo die Vorschau zum Verifizieren. |
-| Benachrichtigungen | E-Mail, Push über die PWA oder beides. |
-| Mandantenfähigkeit | Braucht es mehrere Vereine in einer Installation. |
+| Login | E-mail and password, magic link or Keycloak/OIDC. |
+| Hosting | Where the platform runs in production, and where the preview for verification runs. |
+| Notifications | E-mail, push via the PWA, or both. |
+| Multi-tenancy | Are several clubs needed in one installation? |
 
-Alle offenen Punkte gesammelt: [open-points.md](open-points.md).
+All open points collected: [open-points.md](open-points.md).
 
-## Leitplanken aus den Anforderungen
+## Guardrails from the requirements
 
-Diese Punkte ergeben sich aus den fachlichen Anforderungen und sollten die Architektur von Anfang an prägen.
+These points follow from the domain requirements and should shape the architecture from the start.
 
-1. **Kern als gemeinsame Grundlage.** Personen, Teams, Funktionen, Saisons und Rollen werden von allen Kacheln gebraucht. Sie gehören in ein gemeinsames Kernmodul, nicht in die Anwesenheits-Kachel.
-2. **Konto und Person trennen.** Das Login-Konto ist nicht die Person ([PTF-09](requirements/01-people-teams-roles.md)).
-3. **Rechte pro Team.** Die Berechtigung hängt von der Funktion im jeweiligen Team ab, nicht von einer globalen Rolle. Sie wird im Backend geprüft ([07](requirements/07-roles-permissions.md)).
-4. **Regeln statt Struktur.** «Höchstens eine Linie pro Team» ist eine prüfbare Regel, die später gelockert werden kann ([LIN-04](requirements/02-lines.md)).
-5. **Termin zu Team ist n:m.** Ein Termin kann zu mehreren Teams gehören. Die Antwort hängt an Person und Termin, nicht am Team ([ANM-02](requirements/04-responses.md)).
-6. **Anzeige wird abgeleitet.** Die Gruppierung nach Team und Linie entsteht aus Termin, Teamzugehörigkeiten und Linien. Sie wird nicht pro Termin gespeichert.
-7. **swiss unihockey hinter einer eigenen Schicht.** Die Schnittstelle liefert generische Tabellen. Eine Übersetzungsschicht macht daraus Spieltage und Spiele. Fällt die Schnittstelle aus, läuft die App weiter ([06](requirements/06-swiss-unihockey.md)).
-8. **Eigene Daten bleiben eigene Daten.** Importierte Felder und selbst gepflegte Felder (Treffpunkt, Hinweise, Aufgebot) sind getrennt, damit der Abgleich nichts überschreibt.
-9. **Benachrichtigungen mit austauschbarem Kanal.** Auslöser und Versandkanal sind getrennt ([08](requirements/08-notifications.md)).
+1. **Core as a shared foundation.** People, teams, team roles, seasons and roles are needed by all tiles. They belong in a shared core module, not in the attendance tile.
+2. **Separate account and person.** The login account is not the person ([PTF-09](requirements/01-people-teams-roles.md)).
+3. **Permissions per team.** Permission depends on the team role in the respective team, not on a global role. It is checked in the backend ([07](requirements/07-roles-permissions.md)).
+4. **Rules instead of structure.** «At most one line per team» is a checkable rule that can be relaxed later ([LIN-04](requirements/02-lines.md)).
+5. **Event to team is n:m.** An event can belong to several teams. The response belongs to the person and the event, not to the team ([ANM-02](requirements/04-responses.md)).
+6. **Display is derived.** The grouping by team and line is derived from the event, team memberships and lines. It is not stored per event.
+7. **swiss unihockey behind its own layer.** The interface delivers generic tables. A translation layer turns them into match days and matches. If the interface fails, the app keeps running ([06](requirements/06-swiss-unihockey.md)).
+8. **Own data stays own data.** Imported fields and self-maintained fields (meeting point, notes, call-up) are kept separate, so the sync overwrites nothing.
+9. **Notifications with an exchangeable channel.** Trigger and delivery channel are separate ([08](requirements/08-notifications.md)).

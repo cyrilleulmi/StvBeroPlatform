@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# GitHub-Hilfsbefehle für die Pipeline-Agenten.
+# GitHub helper commands for the pipeline agents.
 #
-# Warum ein Skript: In Claude-Code-Cloud-Sitzungen ist die GitHub-GraphQL-API gesperrt.
-# Viele gh-Befehle (gh pr list, gh pr edit, gh issue list, gh pr create) nutzen GraphQL
-# und schlagen dort fehl. Dieses Skript verwendet nur die REST-API über «gh api».
+# Why a script: in Claude Code cloud sessions the GitHub GraphQL API is blocked.
+# Many gh commands (gh pr list, gh pr edit, gh issue list, gh pr create) use GraphQL
+# and fail there. This script uses only the REST API via "gh api".
 #
-# Verwendung: scripts/pipeline.sh <befehl> [argumente]   (ohne Argumente: Hilfe)
+# Usage: scripts/pipeline.sh <command> [arguments]   (no arguments: help)
 set -euo pipefail
 
 REPO="${PIPELINE_REPO:-cyrilleulmi/StvBeroPlatform}"
@@ -17,42 +17,42 @@ enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]
 
 hilfe() {
   cat <<'EOF'
-Befehle:
-  prs <label>                    Offene PRs mit Label, älteste zuerst, ohne aktive Sperre: nr<TAB>branch<TAB>titel
-  issues <label>                 Offene Issues (keine PRs) mit Label, ohne aktive Sperre: nr<TAB>titel
-  hat-label <nr> <label>         Exit 0, wenn Issue/PR das Label hat
-  label-von <nr> <label>         GitHub-Login, das das Label zuletzt gesetzt hat
+Commands:
+  prs <label>                    Open PRs with the label, oldest first, without an active lock: nr<TAB>branch<TAB>title
+  issues <label>                 Open issues (no PRs) with the label, without an active lock: nr<TAB>title
+  hat-label <nr> <label>         Exit 0 if the issue/PR has the label
+  label-von <nr> <label>         GitHub login that last set the label
   label-setzen <nr> <label>
-  label-entfernen <nr> <label>   (kein Fehler, wenn es fehlt)
-  wechseln <nr> <alt> <neu>      Erst alt entfernen, dann neu setzen
-  sperren <nr>                   Setzt agent:aktiv
-  entsperren <nr>                Entfernt agent:aktiv
-  gesperrt <nr>                  Exit 0, wenn agent:aktiv gesetzt und jünger als 3 Stunden
-  kommentieren <nr> <datei>      Kommentar aus Markdown-Datei
-  pr-erstellen <titel> <branch> <datei>   PR gegen main eröffnen, gibt die Nummer aus
-  pr-branch <nr>                 Head-Branch eines PRs
-  pr-issue <nr>                  Issue-Nummer aus «Closes #n» im PR
-  runde <nr>                     Anzahl Nacharbeitsrunden (Entwicklungs-Kommentare minus 1, min. 0)
-  letzter-befund <nr>            Text des neuesten Review- oder Test-Kommentars
-  laufend                        Was gerade in der Pipeline ist: offene PRs mit pipeline:-Label (ausser gemergt)
-                                 und Issues mit status:in-arbeit, pipeline:blockiert oder agent:aktiv. Leer = Pipeline frei
-  voraussetzungen <issue>        Exit 0, wenn alle «Voraussetzung: F-xx»-Issues geschlossen sind; sonst offene auf stderr
-  naechstes-feature              Nächstes Issue mit status:bereit: zuerst Nachbesserungen (älteste), dann F-Issues
-                                 (kleinste Nummer); ohne Sperre/Blockade, Voraussetzungen erfüllt
-  nachbesserung <pr> <titel> <datei>  Issue typ:nachbesserung + status:bereit anlegen (Text aus Datei), Duplikate per Titel vermeiden;
-                                 stammt der PR selbst von einer Nachbesserung, ohne status:bereit (keine Endlosschleife)
-  beanspruchen <issue>           Setzt Sperre und Anspruchs-Kommentar, wartet 20 s. Exit 0 nur, wenn dieser Lauf
-                                 den ältesten Anspruch hat (verhindert, dass zwei Läufe dasselbe Feature bauen)
-  anstossen <issue>              status:bereit entfernen und neu setzen: startet die Entwicklungs-Aufgabe
-  label-alter <nr> <label>       Minuten, seit das Label zuletzt gesetzt wurde (leer, wenn nie)
-  waechter [--trocken]           Erkennt hängende Schritte (abgebrochene Läufe, verlorene Ereignisse) und stösst
-                                 sie neu an. --trocken: nur melden, nichts ändern
-  mergebar <nr>                  Exit 0, wenn der PR offen, konfliktfrei und alle Checks grün sind; sonst Grund auf stderr
-  mergen <nr> <erwarteter-sha>   Squash-Merge nach main, nur wenn mergebar und Head = erwarteter SHA. Gibt Merge-SHA aus
+  label-entfernen <nr> <label>   (no error if it is missing)
+  wechseln <nr> <old> <new>      Remove old first, then set new
+  sperren <nr>                   Sets agent:aktiv
+  entsperren <nr>                Removes agent:aktiv
+  gesperrt <nr>                  Exit 0 if agent:aktiv is set and younger than 3 hours
+  kommentieren <nr> <file>       Comment from a Markdown file
+  pr-erstellen <title> <branch> <file>   Open a PR against main, prints the number
+  pr-branch <nr>                 Head branch of a PR
+  pr-issue <nr>                  Issue number from "Closes #n" in the PR
+  runde <nr>                     Number of rework rounds (development comments minus 1, min. 0)
+  letzter-befund <nr>            Text of the newest review or test comment
+  laufend                        What is currently in the pipeline: open PRs with a pipeline: label (except gemergt)
+                                 and issues with status:in-arbeit, pipeline:blockiert or agent:aktiv. Empty = pipeline free
+  voraussetzungen <issue>        Exit 0 if all "Voraussetzung: F-xx" issues are closed; otherwise the open ones on stderr
+  naechstes-feature              Next issue with status:bereit: follow-up fixes first (oldest), then F issues
+                                 (lowest number); without lock/block, prerequisites met
+  nachbesserung <pr> <title> <file>  Create an issue typ:nachbesserung + status:bereit (text from file), avoid duplicates by title;
+                                 if the PR itself comes from a follow-up fix, without status:bereit (no endless loop)
+  beanspruchen <issue>           Sets the lock and a claim comment, waits 20 s. Exit 0 only if this run
+                                 holds the oldest claim (prevents two runs from building the same feature)
+  anstossen <issue>              Remove status:bereit and set it again: starts the development task
+  label-alter <nr> <label>       Minutes since the label was last set (empty if never)
+  waechter [--trocken]           Detects stuck steps (aborted runs, lost events) and triggers
+                                 them again. --trocken: dry run, only report, change nothing
+  mergebar <nr>                  Exit 0 if the PR is open, free of conflicts and all checks are green; otherwise the reason on stderr
+  mergen <nr> <expected-sha>     Squash merge into main, only if mergeable and head = expected SHA. Prints the merge SHA
 EOF
 }
 
-# Minuten seit dem letzten «labeled»-Ereignis für ein Label (leer, wenn nie gesetzt)
+# Minutes since the last "labeled" event for a label (empty if never set)
 label_alter() {
   local seit
   seit=$(gh api "$API/issues/$1/events?per_page=100" --paginate \
@@ -61,8 +61,8 @@ label_alter() {
   python3 -c 'import sys,datetime as d;t=d.datetime.fromisoformat(sys.argv[1].replace("Z","+00:00"));print(int((d.datetime.now(d.timezone.utc)-t).total_seconds()//60))' "$seit"
 }
 
-# Exit 0, wenn es in den letzten AKTIV_MIN Minuten Aktivität gab: Push auf einen claude/-Branch
-# oder Änderung am Issue/PR. Lange Läufe pushen regelmässig Zwischenstände und gelten so als lebendig.
+# Exit 0 if there was activity in the last AKTIV_MIN minutes: a push to a claude/ branch
+# or a change to the issue/PR. Long runs push intermediate states regularly and so count as alive.
 kuerzlich_aktiv() {
   local nr="$1" grenze
   grenze=$(python3 -c 'import sys,datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(minutes=int(sys.argv[1]))).strftime("%Y-%m-%dT%H:%M:%SZ"))' "${AKTIV_MIN:-60}")
@@ -76,7 +76,7 @@ kuerzlich_aktiv() {
   return 1
 }
 
-# Anzahl Wächter-Anstösse auf einem Eintrag in den letzten 24 Stunden
+# Number of watchdog triggers on an item in the last 24 hours
 waechter_anstoesse_24h() {
   local seit
   seit=$(python3 -c 'import datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ"))')
@@ -84,36 +84,36 @@ waechter_anstoesse_24h() {
     --jq '[.[] | select(.body | startswith("<!-- pipeline:waechter -->"))] | length'
 }
 
-# Wächter: findet hängende Schritte und stösst sie neu an.
-#  - Sperre agent:aktiv älter als SPERRE_MAX_STUNDEN und seit AKTIV_MIN keine Aktivität (Push auf claude/-Branch,
-#    Änderung am Eintrag): Lauf gilt als abgebrochen, Sperre weg, Schritt neu anstossen
-#  - PR mit pipeline:review/test/nacharbeit ohne Sperre, Label älter als WARTE_MIN: Ereignis verloren, neu anstossen
-#  - Warteschlange: nichts läuft, aber ein Feature ist bereit und seit WARTE_MIN nicht beansprucht: anstossen
-#  - Mehr als MAX_ANSTOESSE pro Eintrag in 24 h: pipeline:blockiert statt endlos neu anstossen
+# Watchdog: finds stuck steps and triggers them again.
+#  - Lock agent:aktiv older than SPERRE_MAX_STUNDEN and no activity for AKTIV_MIN (push to a claude/ branch,
+#    change to the item): the run counts as aborted, remove the lock, trigger the step again
+#  - PR with pipeline:review/test/nacharbeit without a lock, label older than WARTE_MIN: event lost, trigger again
+#  - Queue: nothing is running, but a feature is ready and not claimed for WARTE_MIN: trigger it
+#  - More than MAX_ANSTOESSE per item in 24 h: pipeline:blockiert instead of triggering endlessly
 waechter() {
   local trocken="$1" WARTE_MIN="${WAECHTER_WARTE_MIN:-45}" MAX_ANSTOESSE=3 aktionen=0
-  tun() { if [ "$trocken" = "--trocken" ]; then echo "  (trocken) $*"; else "$@"; fi; }
+  tun() { if [ "$trocken" = "--trocken" ]; then echo "  (dry run) $*"; else "$@"; fi; }
   notiz() { # nr text
     local tmp; tmp=$(mktemp)
-    printf '<!-- pipeline:waechter -->\n🛟 **Wächter:** %s\n' "$2" > "$tmp"
+    printf '<!-- pipeline:waechter -->\n🛟 **Watchdog:** %s\n' "$2" > "$tmp"
     tun gh api -X POST "$API/issues/$1/comments" -F "body=@$tmp" --silent; rm -f "$tmp"
   }
   anstoss() { # nr label grund
     local n; n=$(waechter_anstoesse_24h "$1")
     if [ "$n" -ge "$MAX_ANSTOESSE" ]; then
-      echo "#$1: schon $n Mal in 24 h angestossen → pipeline:blockiert"
-      notiz "$1" "Schritt \`$2\` hängt weiterhin ($3). Nach $n Anstössen in 24 Stunden gebe ich auf. Bitte prüfen, dann \`pipeline:blockiert\` entfernen und \`$2\` neu setzen."
+      echo "#$1: already triggered $n times in 24 h → pipeline:blockiert"
+      notiz "$1" "Step \`$2\` is still stuck ($3). After $n triggers in 24 hours I give up. Please check, then remove \`pipeline:blockiert\` and set \`$2\` again."
       tun "$0" label-setzen "$1" "pipeline:blockiert"
     else
-      echo "#$1: $3 → $2 neu angestossen"
-      notiz "$1" "$3. Ich stosse \`$2\` neu an."
+      echo "#$1: $3 → $2 triggered again"
+      notiz "$1" "$3. I am triggering \`$2\` again."
       tun "$0" label-entfernen "$1" "$2"; [ "$trocken" = "--trocken" ] || sleep 2
       tun "$0" label-setzen "$1" "$2"
     fi
     aktionen=$((aktionen+1))
   }
 
-  # 1. PRs in der Pipeline
+  # 1. PRs in the pipeline
   local nr l alter sperre
   for l in pipeline:review pipeline:test pipeline:nacharbeit; do
     gh api "$API/issues?state=open&labels=$(enc "$l")&per_page=100" --jq '.[] | select(.pull_request) | .number' |
@@ -123,71 +123,71 @@ waechter() {
         sperre=$(label_alter "$nr" "$SPERRE")
         if [ -n "$sperre" ] && [ "$sperre" -ge $((SPERRE_MAX_STUNDEN*60)) ] && ! kuerzlich_aktiv "$nr"; then
           tun "$0" entsperren "$nr"
-          anstoss "$nr" "$l" "Lauf seit ${sperre} Minuten gesperrt, gilt als abgebrochen"
+          anstoss "$nr" "$l" "Run locked for ${sperre} minutes, counts as aborted"
         else
-          echo "#$nr: $l, Agent arbeitet (Sperre seit ${sperre:-?} min)"
+          echo "#$nr: $l, agent is working (locked for ${sperre:-?} min)"
         fi
       else
         alter=$(label_alter "$nr" "$l")
         if [ -n "$alter" ] && [ "$alter" -ge "$WARTE_MIN" ]; then
-          anstoss "$nr" "$l" "Label \`$l\` seit ${alter} Minuten ohne Agent"
+          anstoss "$nr" "$l" "Label \`$l\` set for ${alter} minutes without an agent"
         else
-          echo "#$nr: $l seit ${alter:-?} min, noch im Zeitfenster"
+          echo "#$nr: $l for ${alter:-?} min, still within the time window"
         fi
       fi
     done
   done
 
-  # 2. Issues mit abgelaufener Sperre (Entwicklung vor dem PR abgebrochen)
+  # 2. Issues with an expired lock (development aborted before the PR)
   gh api "$API/issues?state=open&labels=$(enc "$SPERRE")&per_page=100" --jq '.[] | select(.pull_request == null) | .number' |
   while read -r nr; do
     sperre=$(label_alter "$nr" "$SPERRE")
     if [ -n "$sperre" ] && [ "$sperre" -ge $((SPERRE_MAX_STUNDEN*60)) ] && ! kuerzlich_aktiv "$nr"; then
-      echo "#$nr: Sperre seit ${sperre} min und seit ${AKTIV_MIN:-60} min keine Aktivität, Entwicklung gilt als abgebrochen → Sperre entfernt"
-      notiz "$nr" "Die Entwicklung war seit ${sperre} Minuten gesperrt und gilt als abgebrochen. Sperre entfernt."
+      echo "#$nr: locked for ${sperre} min and no activity for ${AKTIV_MIN:-60} min, development counts as aborted → lock removed"
+      notiz "$nr" "Development was locked for ${sperre} minutes and counts as aborted. Lock removed."
       tun "$0" entsperren "$nr"
     else
-      echo "#$nr: Entwicklung läuft (Sperre seit ${sperre:-?} min)"
+      echo "#$nr: development is running (locked for ${sperre:-?} min)"
     fi
   done
 
-  # 3. Warteschlange
+  # 3. Queue
   if [ -z "$("$0" laufend)" ]; then
     local naechst; naechst=$("$0" naechstes-feature | cut -f1)
     if [ -n "$naechst" ]; then
       alter=$(label_alter "$naechst" "status:bereit")
       if [ -n "$alter" ] && [ "$alter" -ge "$WARTE_MIN" ]; then
-        anstoss "$naechst" "status:bereit" "Feature wartet seit ${alter} Minuten, aber keine Entwicklung läuft"
+        anstoss "$naechst" "status:bereit" "Feature has been waiting for ${alter} minutes, but no development is running"
       else
-        echo "#$naechst: als nächstes dran, seit ${alter:-?} min bereit"
+        echo "#$naechst: next in line, ready for ${alter:-?} min"
       fi
     else
-      echo "Warteschlange leer oder Voraussetzungen offen."
+      echo "Queue empty or prerequisites open."
     fi
   else
-    echo "Pipeline belegt:"; "$0" laufend | sed 's/^/  /'
+    echo "Pipeline busy:"; "$0" laufend | sed 's/^/  /'
   fi
 }
 
-# Prüft, ob ein PR gemergt werden darf. Gründe gehen auf stderr.
+# Checks whether a PR may be merged. Reasons go to stderr.
 mergebar() {
   local nr="$1" info state mergeable mstate sha draft i
-  for i in 1 2 3 4 5 6; do   # GitHub berechnet «mergeable» asynchron
+  for i in 1 2 3 4 5 6; do   # GitHub computes "mergeable" asynchronously
     info=$(gh api "$API/pulls/$nr" --jq '[.state, (.mergeable|tostring), .mergeable_state, .head.sha, (.draft|tostring), .base.ref] | @tsv')
     IFS=$'\t' read -r state mergeable mstate sha draft base <<<"$info"
     [ "$mergeable" != "null" ] && break
     sleep 5
   done
-  [ "$state" = "open" ]      || { echo "PR ist nicht offen ($state)" >&2; return 1; }
-  [ "$base" = "main" ]       || { echo "PR zielt nicht auf main ($base)" >&2; return 1; }
-  [ "$draft" = "false" ]     || { echo "PR ist ein Entwurf" >&2; return 1; }
-  [ "$mergeable" = "true" ]  || { echo "PR hat Konflikte mit main (mergeable=$mergeable, state=$mstate)" >&2; return 1; }
-  # Checks (CI): alle abgeschlossen und erfolgreich oder übersprungen
+  [ "$state" = "open" ]      || { echo "PR is not open ($state)" >&2; return 1; }
+  [ "$base" = "main" ]       || { echo "PR does not target main ($base)" >&2; return 1; }
+  [ "$draft" = "false" ]     || { echo "PR is a draft" >&2; return 1; }
+  [ "$mergeable" = "true" ]  || { echo "PR has conflicts with main (mergeable=$mergeable, state=$mstate)" >&2; return 1; }
+  # Checks (CI): all completed and successful or skipped
   local offen fehl
   offen=$(gh api "$API/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.status != "completed")] | length')
   fehl=$(gh api "$API/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.status == "completed" and (.conclusion | IN("success","skipped","neutral") | not))] | map(.name) | join(", ")')
-  [ "$offen" = "0" ] || { echo "Checks laufen noch ($offen offen)" >&2; return 1; }
-  [ -z "$fehl" ]     || { echo "Checks fehlgeschlagen: $fehl" >&2; return 1; }
+  [ "$offen" = "0" ] || { echo "Checks still running ($offen open)" >&2; return 1; }
+  [ -z "$fehl" ]     || { echo "Checks failed: $fehl" >&2; return 1; }
   echo "$sha"
 }
 
@@ -267,12 +267,12 @@ case "$cmd" in
     offen=""
     for f in $vor; do
       st=$(gh api "$API/issues?state=all&per_page=100" --jq ".[] | select(.pull_request == null and (.title | startswith(\"$f \"))) | .state" | head -1)
-      [ "$st" = "closed" ] || offen="$offen $f(${st:-fehlt})"
+      [ "$st" = "closed" ] || offen="$offen $f(${st:-missing})"
     done
-    [ -z "$offen" ] || { echo "Offene Voraussetzungen:$offen" >&2; exit 1; } ;;
+    [ -z "$offen" ] || { echo "Open prerequisites:$offen" >&2; exit 1; } ;;
   naechstes-feature)
-    # Reihenfolge: freigegebene Nachbesserungen (älteste zuerst), dann Features nach F-Nummer.
-    # Jeweils ohne Sperre, ohne Blockade und mit erfüllten Voraussetzungen.
+    # Order: released follow-up fixes (oldest first), then features by F number.
+    # Each without a lock, without a block and with prerequisites met.
     {
       gh api "$API/issues?state=open&labels=status%3Abereit&sort=created&direction=asc&per_page=100" \
         --jq '.[] | select(.pull_request == null) | select([.labels[].name] | (index("pipeline:blockiert") | not) and (index("typ:nachbesserung") != null)) | [.number, .title] | @tsv'
@@ -285,19 +285,19 @@ case "$cmd" in
           printf '%s\t%s\n' "$nr" "$titel"; break
         done ;;
   nachbesserung)
-    # nachbesserung <pr> <titel> <datei>: legt ein Issue typ:nachbesserung an, ausser es gibt schon ein offenes
-    # mit gleichem Titel. Gibt die Issue-Nummer aus. Normalfall: mit status:bereit, die Entwicklung nimmt es
-    # nach dem laufenden PR automatisch auf (E-63). Stammt der PR selbst von einer Nachbesserung, wird nicht
-    # automatisch freigegeben, damit keine Endlosschleife aus Befund und Nachbesserung entsteht.
-    pr="$1"; titel="Nachbesserung · $2"; datei="$3"
+    # nachbesserung <pr> <title> <file>: creates an issue typ:nachbesserung, unless an open one with the
+    # same title already exists. Prints the issue number. Normal case: with status:bereit, development picks it up
+    # automatically after the running PR (E-63). If the PR itself comes from a follow-up fix, it is not
+    # released automatically, so that no endless loop of finding and follow-up fix arises.
+    pr="$1"; titel="Follow-up fix · $2"; datei="$3"
     vorhanden=$(gh api "$API/issues?state=open&labels=typ%3Anachbesserung&per_page=100" --jq ".[] | select(.title == \"$titel\") | .number" | head -1)
     if [ -n "$vorhanden" ]; then echo "$vorhanden"; exit 0; fi
     quelle=$("$0" pr-issue "$pr" 2>/dev/null || true)
     freigeben=1
     if [ -n "$quelle" ] && gh api "$API/issues/$quelle" --jq '[.labels[].name] | index("typ:nachbesserung") != null' | grep -q true; then freigeben=0; fi
-    if [ "$freigeben" = 1 ]; then hinweis='Wird nach dem laufenden PR automatisch von der Entwicklung umgesetzt.'
-    else hinweis='Stammt aus einer Nachbesserung und wird deshalb nicht automatisch freigegeben. Mit `status:bereit` geht es in die Warteschlange.'; fi
-    tmp=$(mktemp); { cat "$datei"; printf '\n\n---\nGefunden in #%s. %s\n' "$pr" "$hinweis"; } > "$tmp"
+    if [ "$freigeben" = 1 ]; then hinweis='Development implements this automatically after the running PR.'
+    else hinweis='Comes from a follow-up fix and is therefore not released automatically. Setting `status:bereit` puts it in the queue.'; fi
+    tmp=$(mktemp); { cat "$datei"; printf '\n\n---\nFound in #%s. %s\n' "$pr" "$hinweis"; } > "$tmp"
     python3 - "$titel" "$tmp" "$freigeben" > "$tmp.json" <<'PY'
 import json,sys
 labels=["typ:nachbesserung"]+(["status:bereit"] if sys.argv[3]=="1" else [])
@@ -307,14 +307,14 @@ PY
   beanspruchen)
     nr="$1"; token="$(date +%s)-$RANDOM$RANDOM"
     "$0" label-setzen "$nr" "$SPERRE"
-    tmp=$(mktemp); printf '<!-- pipeline:anspruch %s -->\n🤖 Entwicklung beansprucht dieses Feature.\n' "$token" > "$tmp"
+    tmp=$(mktemp); printf '<!-- pipeline:anspruch %s -->\n🤖 Development claimed this feature.\n' "$token" > "$tmp"
     gh api -X POST "$API/issues/$nr/comments" -F "body=@$tmp" --silent; rm -f "$tmp"
     sleep 20
     seit=$(python3 -c 'import datetime as d;print((d.datetime.now(d.timezone.utc)-d.timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ"))')
     erster=$(gh api "$API/issues/$nr/comments?since=$seit&per_page=100" \
       --jq '[.[] | select(.body | startswith("<!-- pipeline:anspruch "))] | sort_by(.created_at, .id) | first | .body' \
       | grep -oE 'anspruch [^ ]+' | cut -d' ' -f2)
-    if [ "$erster" = "$token" ]; then echo "beansprucht"; else echo "Anderer Lauf war schneller ($erster)" >&2; exit 1; fi ;;
+    if [ "$erster" = "$token" ]; then echo "claimed"; else echo "Another run was faster ($erster)" >&2; exit 1; fi ;;
   anstossen)
     "$0" label-entfernen "$1" "status:bereit"; sleep 2; "$0" label-setzen "$1" "status:bereit" ;;
   label-alter) label_alter "$1" "$2" ;;
@@ -322,12 +322,12 @@ PY
   mergebar) mergebar "$1" >/dev/null ;;
   mergen)
     nr="$1"; erwartet="${2:-}"
-    [ -n "$erwartet" ] || { echo "mergen braucht den geprüften Head-SHA als zweites Argument" >&2; exit 2; }
+    [ -n "$erwartet" ] || { echo "mergen needs the tested head SHA as its second argument" >&2; exit 2; }
     sha=$(mergebar "$nr") || exit 1
-    [ "$sha" = "$erwartet" ] || { echo "Head hat sich seit dem Test geändert ($sha statt $erwartet). Nicht gemergt." >&2; exit 1; }
+    [ "$sha" = "$erwartet" ] || { echo "Head has changed since the test ($sha instead of $erwartet). Not merged." >&2; exit 1; }
     titel=$(gh api "$API/pulls/$nr" --jq .title)
     gh api -X PUT "$API/pulls/$nr/merge" -f merge_method=squash -f "sha=$sha" \
       -f "commit_title=$titel (#$nr)" --jq .sha ;;
   ""|-h|--help|hilfe) hilfe ;;
-  *) echo "Unbekannter Befehl: $cmd" >&2; hilfe >&2; exit 2 ;;
+  *) echo "Unknown command: $cmd" >&2; hilfe >&2; exit 2 ;;
 esac

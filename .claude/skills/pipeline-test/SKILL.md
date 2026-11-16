@@ -1,122 +1,122 @@
 ---
 name: pipeline-test
-description: Test-Agent der StvBeroPlatform-Pipeline. Startet die App eines PRs mit pipeline:test, führt alle automatischen Tests aus und testet jedes Akzeptanzkriterium explorativ im Browser (Playwright MCP, mobil und Desktop, hell und dunkel, verschiedene Rollen). Merged den PR nach main, wenn alles bestanden ist, sonst zurück in die Nacharbeit. Verwenden, wenn eine Cloud-Aufgabe oder Cyrille «/pipeline-test» aufruft.
+description: Test agent of the StvBeroPlatform pipeline. Starts the app of a PR with pipeline:test, runs all automated tests and tests every acceptance criterion exploratively in the browser (Playwright MCP, mobile and desktop, light and dark, different roles). Merges the PR into main if everything passed, otherwise sends it back to rework. Use when a cloud task or Cyrille calls «/pipeline-test».
 ---
 
 # Test
 
-Du bist der Test-Agent. Du benutzt die App so, wie Spielerinnen, Coaches und Admins sie benutzen werden, und prüfst, ob sie tut, was das Issue verspricht. Du änderst keinen Produktivcode. Du darfst nur Testpläne unter `e2e/plans/` committen. Ist alles bestanden, mergst du den PR selbst nach `main`: Du bist die letzte Prüfung vor `main`, Cyrille schaut nicht mehr dazwischen.
+You are the test agent. You use the app the way players, coaches and admins will use it, and check whether it does what the issue promises. You do not change any production code. You may only commit test plans under `e2e/plans/`. If everything passed, you merge the PR into `main` yourself: you are the last check before `main`, Cyrille no longer looks in between.
 
-Lies zuerst [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) und befolge sie.
+First read [docs/pipeline/agent-rules.md](../../../docs/pipeline/agent-rules.md) and follow it.
 
-## 1. Arbeit wählen
+## 1. Choose work
 
-Offener PR mit `pipeline:test`, ohne `agent:aktiv`, ältester zuerst:
+Open PR with `pipeline:test`, without `agent:aktiv`, oldest first:
 
-`scripts/pipeline.sh prs pipeline:test` (Nummer, Branch, Titel; gesperrte sind schon ausgefiltert)
+`scripts/pipeline.sh prs pipeline:test` (number, branch, title; locked ones are already filtered out)
 
-Nichts gefunden: notieren und beenden.
+Nothing found: note it and stop.
 
-## 2. Vorbereiten
+## 2. Prepare
 
-1. Sperre setzen, Startkommentar.
-2. PR-Branch auschecken (`scripts/pipeline.sh pr-branch <nr>`) und den Head-SHA notieren (`git rev-parse HEAD`). Genau dieser Stand wird getestet und später gemergt. Issue mit Akzeptanzkriterien lesen (`scripts/pipeline.sh pr-issue <nr>`), dazu [test-data.md](../../../docs/test-data.md) (Seed, Szenarien), [navigation.md](../../../docs/ui/navigation.md) (Routen, Test-IDs), [states.md](../../../docs/states.md) (erlaubte und verbotene Übergänge).
-3. **App starten** wie im PR beschrieben: Datenbank (`scripts/db-start.sh`), Backend im Profil `test`, Frontend. Prozesse im Hintergrund, Logs in Dateien. Warten, bis beide antworten.
-   Startet die App nicht: Das ist ein Befund (Muss), weiter mit Schritt 5.
+1. Set the lock, start comment.
+2. Check out the PR branch (`scripts/pipeline.sh pr-branch <nr>`) and note the head SHA (`git rev-parse HEAD`). Exactly this state is tested and merged later. Read the issue with the acceptance criteria (`scripts/pipeline.sh pr-issue <nr>`), plus [test-data.md](../../../docs/test-data.md) (seed, scenarios), [navigation.md](../../../docs/ui/navigation.md) (routes, test IDs), [states.md](../../../docs/states.md) (allowed and forbidden transitions).
+3. **Start the app** as described in the PR: database (`scripts/db-start.sh`), backend in profile `test`, frontend. Processes in the background, logs in files. Wait until both respond.
+   If the app does not start: that is a finding (Must), continue with step 5.
 
-## 3. Automatische Tests
+## 3. Automated tests
 
-Alle ausführen und Ergebnis festhalten: Backend-Tests, E2E-Tests (beide Projekte, inklusive axe). Ein roter Test ist ein Befund.
+Run all of them and record the result: backend tests, E2E tests (both projects, including axe). A red test is a finding.
 
-## 4. Testplan und explorativer Test
+## 4. Test plan and exploratory test
 
-1. **Testplan schreiben** unter `e2e/plans/f<nr>-<kurzname>.md` (bei einer Nachbesserung `e2e/plans/nb<issue>-<kurzname>.md`). Pro Akzeptanzkriterium: Ausgangslage (Seed, Uhr, Person), Schritte, Erwartung. Ergänze Grenzfälle aus states.md (jeder verbotene Übergang) und die passenden Szenarien aus test-data.md. Der Plan ist so geschrieben, dass der Playwright-Generator daraus später automatische Tests erzeugen kann.
-2. **Ausführen mit Playwright MCP.** Für jeden Fall:
-   - `POST /api/test/reset`, bei Bedarf Uhr setzen (`PUT /api/test/uhr`), anmelden über `/dev-login` oder `POST /api/test/anmelden`.
-   - Per Deep Link zum Screen springen. Mit Schnappschüssen des Accessibility-Trees arbeiten, nicht mit Koordinaten.
-   - Erwartung prüfen: angezeigte Texte und Zähler, `data-antwort`/`data-zaehler`, Zustand nach Neuladen, Benachrichtigungen über `GET /api/test/benachrichtigungen`.
-   - Nach jedem Fall: Konsolenfehler und fehlgeschlagene Netzwerkanfragen (4xx/5xx, die nicht erwartet sind) prüfen.
-3. **Abdeckung:**
-   - Jedes Kriterium **mobil** (375×812). Die zentralen Kriterien zusätzlich **Desktop** (1280×800).
-   - Jeder neue Screen einmal im **Darkmode** (Bildschirmfoto ansehen: Lesbarkeit, Kontrast, nichts Weisses auf Weiss).
-   - **Rollen:** jede Aktion mit einer berechtigten und einer nicht berechtigten Person (z.B. `petra` und `anna`, `marc` für fremde Teams).
-   - **Robustheit:** Doppelklick auf Speichern, Neuladen mitten im Ablauf, Zurück-Taste, leere und sehr lange Eingaben.
-4. Findet ein Fall ein Problem, prüfe es ein zweites Mal von Reset an, bevor du es meldest. Halte die genauen Schritte fest.
+1. **Write a test plan** under `e2e/plans/f<nr>-<shortname>.md` (for a follow-up fix `e2e/plans/nb<issue>-<shortname>.md`), with an English file name, e.g. `e2e/plans/f12-coaches-all-teams.md`. Per acceptance criterion: starting point (seed, clock, person), steps, expectation. Add edge cases from states.md (every forbidden transition) and the matching scenarios from test-data.md. The plan is written so that the Playwright generator can later create automated tests from it.
+2. **Run it with Playwright MCP.** For every case:
+   - `POST /api/test/reset`, set the clock if needed (`PUT /api/test/uhr`), log in via `/dev-login` or `POST /api/test/anmelden`.
+   - Jump to the screen via deep link. Work with accessibility tree snapshots, not with coordinates.
+   - Check the expectation: displayed texts and counters, `data-antwort`/`data-zaehler`, state after reload, notifications via `GET /api/test/benachrichtigungen`.
+   - After every case: check console errors and failed network requests (4xx/5xx that are not expected).
+3. **Coverage:**
+   - Every criterion on **mobile** (375×812). The central criteria also on **desktop** (1280×800).
+   - Every new screen once in **dark mode** (look at the screenshot: readability, contrast, nothing white on white).
+   - **Roles:** every action with one authorized and one unauthorized person (e.g. `petra` and `anna`, `marc` for other teams).
+   - **Robustness:** double click on save, reload in the middle of a flow, back button, empty and very long inputs.
+4. If a case finds a problem, check it a second time from reset before you report it. Record the exact steps.
 
-## 5. Entscheiden und berichten
+## 5. Decide and report
 
-Testplan committen und pushen (nur `e2e/plans/`), Commit `F-<nr>: Testplan` bzw. `Nachbesserung #<issue>: Testplan`.
+Commit and push the test plan (only `e2e/plans/`), commit `F-<nr>: Test plan` or `Follow-up fix #<issue>: Test plan`.
 
-Runde bestimmen (`scripts/pipeline.sh runde <nr>`). Abschlusskommentar mit `<!-- pipeline:test -->`:
+Determine the round (`scripts/pipeline.sh runde <nr>`). Final comment with `<!-- pipeline:test -->`:
 
 ```markdown
 <!-- pipeline:test -->
-## Test · Runde <n> · ✅ gemergt   (bzw. 🔁 Nacharbeit)
+## Test · Round <n> · ✅ merged   (or 🔁 rework)
 
-**Automatisch:** Backend ✅ 123 · E2E mobil ✅ 18 · E2E desktop ✅ 18 · axe ✅
+**Automated:** Backend ✅ 123 · E2E mobil ✅ 18 · E2E desktop ✅ 18 · axe ✅
 
-| Kriterium | Mobil | Desktop | Dark | Rollen |
+| Criterion | Mobile | Desktop | Dark | Roles |
 |---|---|---|---|---|
-| ANM-08 Antwort mit einem Tap | ✅ | ✅ | ✅ | ✅ |
+| ANM-08 Respond with one tap | ✅ | ✅ | ✅ | ✅ |
 | … | | | | |
 
-### Fehler
-1. **Zähler aktualisiert sich nicht nach Antwort** (ANM-08)
-   Schritte: Reset → als `nina` → `/termine` → bei «Training Di 17.11.» «dabei» tippen
-   Erwartet: Team 1 «6 dabei · 0 offen» · Tatsächlich: bleibt «5 dabei · 1 offen» bis Neuladen
+### Errors
+1. **Counter does not update after responding** (ANM-08)
+   Steps: Reset → as `nina` → `/termine` → tap «dabei» on «Training Di 17.11.»
+   Expected: Team 1 «6 dabei · 0 offen» · Actual: stays «5 dabei · 1 offen» until reload
 
-### Beobachtungen
-- Mobil 375px: «Verwaltu…» in der Navigation abgeschnitten. Erwartet: «Verwaltung» vollständig lesbar
+### Observations
+- Mobile 375px: «Verwaltu…» cut off in the navigation. Expected: «Verwaltung» fully readable
 
-### Selbst ausprobieren
-`scripts/db-start.sh && …` → http://localhost:4200/dev-login → als `petra`
+### Try it yourself
+`scripts/db-start.sh && …` → http://localhost:4200/dev-login → as `petra`
 ```
 
-**Bei Fehlern oder Beobachtungen** (ausser den Ausnahmen unter «Beobachtungen»):
+**If there are errors or observations** (apart from the exceptions under «Observations»):
 
-1. Kommentar posten: `scripts/pipeline.sh kommentieren <nr> bericht.md`
-2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (ab Runde 5 stattdessen `pipeline:blockiert`)
+1. Post the comment: `scripts/pipeline.sh kommentieren <nr> bericht.md`
+2. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:nacharbeit` (from round 5 on `pipeline:blockiert` instead)
 3. `scripts/pipeline.sh entsperren <nr>`
 
-**Wenn alles bestanden ist und keine Beobachtung zurückschickt: mergen.**
+**If everything passed and no observation sends it back: merge.**
 
-1. Testplan committen und pushen (siehe oben). Das ergibt einen neuen Head-SHA. Notiere ihn: `git rev-parse HEAD`.
-2. Prüfen: `scripts/pipeline.sh mergebar <nr>`. Das verlangt: PR offen, Ziel `main`, kein Entwurf, keine Konflikte, alle CI-Checks abgeschlossen und grün. Laufen Checks noch, bis zu 15 Minuten warten und erneut prüfen.
-3. Mergen: `scripts/pipeline.sh mergen <nr> <sha-aus-schritt-1>`. Das macht einen Squash-Merge, aber nur, wenn der Head noch genau dem getesteten Stand entspricht.
-4. Der Kommentar endet mit dem Merge-SHA und zwei, drei Sätzen für Cyrille: was jetzt auf `main` neu ist und was er sich anschauen könnte. Kommentar posten.
-5. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:gemergt`, dann `scripts/pipeline.sh entsperren <nr>`.
-6. Das verknüpfte Issue schliesst GitHub über «Closes #…» selbst. Dort `status:in-arbeit` entfernen: `scripts/pipeline.sh label-entfernen <issue> status:in-arbeit`.
-7. **Nächstes Feature anstossen:** `scripts/pipeline.sh naechstes-feature`. Liefert das ein Issue, `scripts/pipeline.sh anstossen <issue>`. Das startet die Entwicklung des nächsten Features aus der Warteschlange. Im Abschlusskommentar erwähnen, welches Feature als nächstes kommt.
+1. Commit and push the test plan (see above). This produces a new head SHA. Note it: `git rev-parse HEAD`.
+2. Check: `scripts/pipeline.sh mergebar <nr>`. This requires: PR open, target `main`, not a draft, no conflicts, all CI checks finished and green. If checks are still running, wait up to 15 minutes and check again.
+3. Merge: `scripts/pipeline.sh mergen <nr> <sha-from-step-1>`. This does a squash merge, but only if the head still matches exactly the tested state.
+4. The comment ends with the merge SHA and two or three sentences for Cyrille: what is new on `main` now and what he could take a look at. Post the comment.
+5. `scripts/pipeline.sh wechseln <nr> pipeline:test pipeline:gemergt`, then `scripts/pipeline.sh entsperren <nr>`.
+6. GitHub closes the linked issue itself via «Closes #…». Remove `status:in-arbeit` there: `scripts/pipeline.sh label-entfernen <issue> status:in-arbeit`.
+7. **Trigger the next feature:** `scripts/pipeline.sh naechstes-feature`. If this returns an issue, `scripts/pipeline.sh anstossen <issue>`. This starts development of the next feature from the queue. Mention in the final comment which feature comes next.
 
-**Wenn der Merge nicht geht** (Konflikte mit `main`, roter Check, Head verändert): nicht erzwingen. Grund in den Kommentar, `pipeline:test` → `pipeline:nacharbeit`. Der Entwicklungs-Agent bringt den Branch auf den Stand von `main`, danach läuft die Pipeline erneut durch Review und Test.
+**If the merge does not work** (conflicts with `main`, red check, head changed): do not force it. Put the reason in the comment, `pipeline:test` → `pipeline:nacharbeit`. The development agent brings the branch up to date with `main`, after which the pipeline runs through review and test again.
 
-Nie mergen, wenn auch nur ein Akzeptanzkriterium nicht geprüft werden konnte. «Nicht prüfbar» ist ein Befund, kein Bestehen.
+Never merge if even a single acceptance criterion could not be checked. «Not checkable» is a finding, not a pass.
 
-Am Ende alle gestarteten Prozesse beenden.
+At the end, stop all processes you started.
 
-## Was ein Fehler ist
+## What an error is
 
-- Ein Akzeptanzkriterium ist nicht erfüllt, in irgendeiner Ansicht oder Rolle.
-- Ein verbotener Übergang ist möglich (z.B. «vielleicht» ohne Kommentar gespeichert).
-- Jemand sieht oder darf etwas, das er nicht sehen oder dürfen sollte.
-- Konsolenfehler, unbehandelte 5xx, Absturz, Datenverlust.
-- Ein Element ist für den Accessibility-Tree unsichtbar oder namenlos, sodass du es nicht bedienen kannst. Das ist ein Fehler, kein Hindernis: Melde es mit der Stelle.
+- An acceptance criterion is not met, in any view or role.
+- A forbidden transition is possible (e.g. «vielleicht» (maybe) saved without a comment).
+- Someone sees or may do something they should not see or do.
+- Console errors, unhandled 5xx, crash, data loss.
+- An element is invisible or nameless for the accessibility tree, so you cannot operate it. That is an error, not an obstacle: report it with its location.
 
-Darstellungsfragen ohne Funktionsverlust sind Beobachtungen, keine Fehler. Auch sie gehen in die Nacharbeit, siehe unten.
+Display issues without loss of function are observations, not errors. They also go to rework, see below.
 
-## Beobachtungen
+## Observations
 
-Beobachtungen mit einer konkreten Massnahme (z.B. abgeschnittene Beschriftung, fehlende Fehlermeldung) schicken den PR ebenfalls zurück in die Nacharbeit. Behoben wird vor dem Merge, nicht danach. Schreib sie wie Fehler: Stelle, Schritte, Erwartung.
+Observations with a concrete action (e.g. a cut-off label, a missing error message) also send the PR back to rework. Fixes happen before the merge, not after. Write them like errors: location, steps, expectation.
 
-Zwei Ausnahmen, damit ein PR fertig wird. Statt der Nacharbeit legst du ein Nachbesserungs-Issue an:
+Two exceptions, so that a PR gets finished. Instead of rework you create a follow-up fix issue:
 
-- **Neue Beobachtungen ab Runde 3:** Eine Beobachtung, die in keiner früheren Runde gemeldet war, schickt den PR ab Runde 3 nicht mehr zurück. Fehler schicken immer zurück.
-- **Beobachtungen in Teilen, die der PR nicht geändert hat:** Was schon vorher auf `main` war, gehört nicht in diesen PR.
+- **New observations from round 3 on:** an observation that was not reported in any earlier round no longer sends the PR back from round 3 on. Errors always send it back.
+- **Observations in parts the PR did not change:** what was already on `main` before does not belong in this PR.
 
 ```bash
-scripts/pipeline.sh nachbesserung <pr> "<kurzer Titel>" befund.md
+scripts/pipeline.sh nachbesserung <pr> "<short title>" befund.md
 ```
 
-`befund.md` enthält: was das Problem ist, wo (Datei und Zeile oder Screen), warum es zählt, und ein bis drei Akzeptanzkriterien, die ein Agent ohne Rückfrage umsetzen und prüfen kann. Das Issue bekommt `typ:nachbesserung` und `status:bereit` und wird nach dem laufenden PR automatisch umgesetzt. Ist der geprüfte PR selbst eine Nachbesserung, setzt das Script kein `status:bereit` (keine Endlosschleife). Gibt es schon ein offenes Issue mit gleichem Titel, wird es wiederverwendet.
+`befund.md` contains: what the problem is, where (file and line, or screen), why it matters, and one to three acceptance criteria that an agent can implement and check without asking. The issue gets `typ:nachbesserung` and `status:bereit` and is implemented automatically after the running PR. If the tested PR is itself a follow-up fix, the script does not set `status:bereit` (no endless loop). If there is already an open issue with the same title, it is reused.
 
-Was eindeutig später ohnehin kommt (z.B. ein Punkt, den ein Feature im [Backlog](../../../docs/pipeline/backlog.md) abdeckt), schickt nicht zurück und bekommt kein Issue, sondern einen Verweis auf dieses Feature. Sicherheitsbefunde für den produktiven Betrieb, die das aktuelle Feature nicht betreffen, ergänzt du als Kommentar in F-08 «Härtung vor dem produktiven Betrieb» (#12).
+What clearly comes later anyway (e.g. a point covered by a feature in the [backlog](../../../docs/pipeline/backlog.md)) does not send the PR back and gets no issue, only a reference to that feature. Security findings for production operation that do not concern the current feature are added as a comment to F-08 «Härtung vor dem produktiven Betrieb» (#12).

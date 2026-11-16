@@ -1,39 +1,39 @@
-# Testplan Nachbesserung #17 · CSS-Selektoren in E2E-Tests
+# Test plan follow-up fix #17 · CSS selectors in E2E tests
 
-Issue #17 · PR #32 · Konventionen für E2E-Tests in `docs/testability.md`
+Issue #17 · PR #32 · Conventions for E2E tests in `docs/testability.md`
 
-Allgemein:
+General:
 
-- Die Kriterien betreffen die Testdateien selbst, keine Oberfläche und keine API.
-  Die statischen Fälle brauchen weder Datenbank noch Anmeldung.
-- Die Browser-Fälle (K3) prüfen, dass die über die Hilfen getesteten Stellen weiter stimmen:
-  Vorbereitung `POST /api/test/reset`, Anmeldung als `anna` über `/dev-login`, mobil 375×812.
+- The criteria concern the test files themselves, no UI and no API.
+  The static cases need neither a database nor a login.
+- The browser cases (K3) check that the places tested via the helpers are still correct:
+  setup `POST /api/test/reset`, login as `anna` via `/dev-login`, mobile 375×812.
 
-## K1 · Ausnahme dokumentiert und gekapselt (Kriterium 1)
+## K1 · Exception documented and encapsulated (criterion 1)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Doku | `docs/testability.md`, Abschnitt «Konventionen für E2E-Tests» lesen | Nennt als einzige Ausnahme Dokument-Elemente ohne Rolle (`<html>`, `<link>` im Kopf) und verweist auf `dokumentWurzel(page)` und `kopfLink(page, rel)` in `e2e/tests/hilfen.ts` |
-| K1.2 Hilfen vorhanden | `e2e/tests/hilfen.ts` | Exportiert `dokumentWurzel(page)` und `kopfLink(page, rel)`; nur dort stehen die CSS-Selektoren |
-| K1.3 Automatisch | `npx playwright test nb17` | «AK1» grün in `mobil` und `desktop` |
+| K1.1 Docs | Read `docs/testability.md`, section "Conventions for E2E tests" | Names as the only exception document elements without a role (`<html>`, `<link>` in the head) and refers to `dokumentWurzel(page)` and `kopfLink(page, rel)` in `e2e/tests/hilfen.ts` |
+| K1.2 Helpers exist | `e2e/tests/hilfen.ts` | Exports `dokumentWurzel(page)` and `kopfLink(page, rel)`; the CSS selectors are only there |
+| K1.3 Automated | `npx playwright test nb17` | «AK1» green in `mobil` and `desktop` |
 
-## K2 · Keine CSS-Selektoren ausserhalb der Ausnahme (Kriterium 2)
+## K2 · No CSS selectors outside the exception (criterion 2)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Ist-Zustand | `npx playwright test nb17` | «AK2» grün; ausserhalb von `hilfen.ts` kein Treffer für `locator(`, `$(`, `$$(`, `$eval(`, `waitForSelector(`, `css=`, `xpath=` |
-| K2.2 Gegenprobe `locator` | In `seed.spec.ts` die Zeile `page.locator("html")` anhängen, AK2 ausführen | AK2 rot, Meldung nennt `seed.spec.ts:<zeile>: locator() mit CSS-Selektor` |
-| K2.3 Gegenprobe verkettet | Wie K2.2 mit `getByRole('x').locator('y')` | AK2 rot, `locator()` |
-| K2.4 Gegenprobe `$eval`, `$$` | Wie K2.2 mit `page.$eval('div', e => e)` und `page.$$('a')` | AK2 rot, je ein Fund `$()/$$()/$eval()` |
-| K2.5 Gegenprobe `waitForSelector` | Wie K2.2 mit `page.waitForSelector('x')` | AK2 rot, `waitForSelector()` |
-| K2.6 Gegenprobe `xpath=` | Wie K2.2 mit `page.getByText('xpath=//div')` | AK2 rot, «CSS- oder XPath-Selektor» |
-| K2.7 Aufräumen | Gegenproben-Zeilen entfernen | `git status` sauber, AK2 wieder grün |
+| K2.1 Current state | `npx playwright test nb17` | «AK2» green; outside `hilfen.ts` no match for `locator(`, `$(`, `$$(`, `$eval(`, `waitForSelector(`, `css=`, `xpath=` |
+| K2.2 Counter-check `locator` | Append the line `page.locator("html")` in `seed.spec.ts`, run AK2 | AK2 red, message names `seed.spec.ts:<zeile>: locator() mit CSS-Selektor` |
+| K2.3 Counter-check chained | As K2.2 with `getByRole('x').locator('y')` | AK2 red, `locator()` |
+| K2.4 Counter-check `$eval`, `$$` | As K2.2 with `page.$eval('div', e => e)` and `page.$$('a')` | AK2 red, one match `$()/$$()/$eval()` each |
+| K2.5 Counter-check `waitForSelector` | As K2.2 with `page.waitForSelector('x')` | AK2 red, `waitForSelector()` |
+| K2.6 Counter-check `xpath=` | As K2.2 with `page.getByText('xpath=//div')` | AK2 red, «CSS- oder XPath-Selektor» |
+| K2.7 Clean up | Remove the counter-check lines | `git status` clean, AK2 green again |
 
-## K3 · Umgestellte Tests prüfen weiterhin dasselbe (Regression F-00)
+## K3 · Converted tests still check the same (regression F-00)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K3.1 Darkmode | Reset → als `anna` → `/profil` → Radio «Dunkel» | `<html data-theme="dark">`, Hintergrund dunkel; F-00-Test «Design» grün |
-| K3.2 Manifest | Als `anna` auf `/` | `<link rel="manifest">` im Kopf mit `href="manifest.webmanifest"`; F-00-Test «PWA» grün |
-| K3.3 Konsole | Nach K3.1/K3.2 | Keine Fehler oder Warnungen |
-| K3.4 Gesamtlauf | `npx playwright test` (beide Projekte, inkl. axe) | Alle grün |
+| K3.1 Dark mode | Reset → as `anna` → `/profil` → radio «Dunkel» | `<html data-theme="dark">`, dark background; F-00 test «Design» green |
+| K3.2 Manifest | As `anna` on `/` | `<link rel="manifest">` in the head with `href="manifest.webmanifest"`; F-00 test «PWA» green |
+| K3.3 Console | After K3.1/K3.2 | No errors or warnings |
+| K3.4 Full run | `npx playwright test` (both projects, incl. axe) | All green |

@@ -1,56 +1,56 @@
-# Fachmodell
+# Domain model
 
-Die Begriffe der App und wie sie zusammenhängen. Das ist ein fachliches Modell, kein Datenbankschema. Code, API und Oberfläche verwenden dieselben Begriffe.
+The terms of the app and how they relate. This is a domain model, not a database schema. Code, API and documents use the English terms from [glossary.md](glossary.md); the user interface uses the German terms.
 
-## Begriffe
+## Terms
 
-| Begriff | Bedeutung |
+| Term | Meaning |
 |---|---|
-| **Konto** | Ein Login. Heute gehört zu jedem Konto genau eine Person. Später kann ein Konto für mehrere Personen antworten (Eltern für Kinder). |
-| **Person** | Ein Mensch im Verein. Es gibt jede Person genau einmal, egal in wie vielen Teams sie ist. |
-| **Team** | Eine Mannschaft des Vereins. Besteht über Saisons hinweg; der Name gilt pro Saison, damit das Archiv den damaligen Namen behält (SAI-02). |
-| **Saison** | Zeitraum, für den Teamzugehörigkeiten und Linien gelten. |
-| **Funktion** | Was eine Person in einem Team ist: mindestens «Spielerin» oder «Coach». |
-| **Teamzugehörigkeit** | Verbindung von Person, Team und Funktion in einer Saison. Pro Person und Team gibt es genau eine Funktion. |
-| **Linie** | Gruppe von Spielerinnen innerhalb eines Teams (Linie 1, Linie 2, …). |
-| **Goalies** | Eigene Gruppe pro Team, neben den Linien. |
-| **Ohne Linie** | Sammelgruppe in der Anzeige für Spielerinnen, die weder einer Linie noch den Goalies zugewiesen sind. |
-| **Termin** | Etwas, wofür man sich an- oder abmeldet. Hat einen Typ: Training, Spieltag oder Anlass. Gehört zu einem oder mehreren Teams. |
-| **Serie** | Regel, die wiederkehrende Termine erzeugt («jeden Dienstag 18:30»). |
-| **Spieltag** | Termin vom Typ Spieltag. Wegen der Turnierform umfasst er mehrere Spiele in derselben Halle. |
-| **Spiel** | Einzelne Partie innerhalb eines Spieltags, mit Gegner und Anspielzeit. |
-| **Antwort** | An- oder Abmeldung einer Person für einen Termin: dabei, nicht dabei oder vielleicht. Ohne Antwort ist der Status «offen». |
-| **Aufgebot** | Auswahl der Spielerinnen, die an einem Spieltag spielen. Wird von der Coach erstellt und veröffentlicht. |
-| **Treffpunkt** | Zeit und Ort, an dem sich das Team vor einem Spieltag trifft. |
-| **Kachel** | Eigenständiges Funktionsmodul der Plattform, erscheint auf dem Dashboard. |
+| **Account** | A login. Today each account belongs to exactly one person. Later an account can respond for several people (parents for children). |
+| **Person** | A human being in the club. Each person exists exactly once, no matter how many teams they are in. |
+| **Team** | A team of the club. Exists across seasons; the name applies per season, so that the archive keeps the name of the time (SAI-02). |
+| **Season** | Period for which team memberships and lines apply. |
+| **Team role** | What a person is in a team: at least «Spielerin» (player) or «Coach». |
+| **Team membership** | Link between person, team and team role in a season. There is exactly one team role per person and team. |
+| **Line** | Group of players within a team (Linie 1, Linie 2, …). |
+| **Goalies** | A group of its own per team, next to the lines. |
+| **No line** | Display group for players who are assigned neither to a line nor to the goalies («Ohne Linie»). |
+| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. |
+| **Series** | Rule that creates recurring events («jeden Dienstag 18:30», every Tuesday 18:30). |
+| **Match day** | Event of type match day. Because of the tournament format it includes several matches in the same hall. |
+| **Match** | A single game within a match day, with opponent and start time. |
+| **Response** | A person's answer for an event: attending, declined or maybe. Without a response the status is pending («offen»). |
+| **Call-up** | Selection of the players who play on a match day. Created and published by the coach. |
+| **Meeting point** | Time and place where the team meets before a match day. |
+| **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
 
-## Zusammenhänge
+## Relationships
 
 ```mermaid
 erDiagram
-    KONTO ||--|{ PERSON : "antwortet fuer"
-    PERSON ||--o{ TEAMZUGEHOERIGKEIT : hat
-    TEAM ||--o{ TEAMZUGEHOERIGKEIT : hat
-    SAISON ||--o{ TEAMZUGEHOERIGKEIT : "gilt in"
-    TEAM ||--o{ GRUPPE : "hat Linien und Goalies"
-    GRUPPE |o--o{ TEAMZUGEHOERIGKEIT : "enthaelt Spielerinnen"
-    SERIE ||--o{ TERMIN : erzeugt
-    TERMIN }o--|{ TEAM : "gehoert zu"
-    TERMIN ||--o{ ANTWORT : erhaelt
-    PERSON ||--o{ ANTWORT : gibt
-    TERMIN ||--o{ SPIEL : "umfasst (nur Spieltag)"
-    TERMIN ||--o| AUFGEBOT : "hat (nur Spieltag)"
-    AUFGEBOT ||--o{ AUFGEBOTSEINTRAG : umfasst
-    PERSON ||--o{ AUFGEBOTSEINTRAG : "ist aufgeboten"
+    ACCOUNT ||--|{ PERSON : "responds for"
+    PERSON ||--o{ TEAM_MEMBERSHIP : has
+    TEAM ||--o{ TEAM_MEMBERSHIP : has
+    SEASON ||--o{ TEAM_MEMBERSHIP : "applies in"
+    TEAM ||--o{ GROUP : "has lines and goalies"
+    GROUP |o--o{ TEAM_MEMBERSHIP : "contains players"
+    SERIES ||--o{ EVENT : creates
+    EVENT }o--|{ TEAM : "belongs to"
+    EVENT ||--o{ RESPONSE : receives
+    PERSON ||--o{ RESPONSE : gives
+    EVENT ||--o{ MATCH : "includes (match day only)"
+    EVENT ||--o| CALL_UP : "has (match day only)"
+    CALL_UP ||--o{ CALL_UP_ENTRY : includes
+    PERSON ||--o{ CALL_UP_ENTRY : "is called up"
 ```
 
-`GRUPPE` steht für eine Linie oder die Goalie-Gruppe eines Teams.
+`GROUP` stands for a line or the goalie group of a team.
 
-## Die wichtigsten Regeln
+## The most important rules
 
-1. **Eine Funktion pro Team.** Eine Person kann in Team 1 Coach und in Team 2 Spielerin sein, aber nicht beides im selben Team.
-2. **Höchstens eine Linie pro Team.** Eine Spielerin ist pro Team in höchstens einer Gruppe (Linie oder Goalies). In zwei Teams kann sie zwei verschiedene Linien haben. Die Begrenzung auf eine Linie ist eine Regel, keine feste Struktur: Sie soll später aufgehoben werden können, ohne das Modell umzubauen.
-3. **Eine Antwort pro Person und Termin.** Auch wenn der Termin zu mehreren Teams gehört und die Person in mehreren davon ist.
-4. **Coaches sind keine Spielerinnen.** Sie melden sich gleich an und ab, stehen aber in einem eigenen Block und zählen nicht zum Spielerinnen-Total.
-5. **Linien sind Standardlinien.** Es gibt keine abweichenden Linien für einzelne Termine.
-6. **Ein Spieltag, ein Aufgebot.** Für alle Spiele eines Spieltags gibt es eine Anmeldung und ein Aufgebot.
+1. **One team role per team.** A person can be coach in Team 1 and player in Team 2, but not both in the same team.
+2. **At most one line per team.** Per team a player is in at most one group (line or goalies). In two teams she can have two different lines. The limit of one line is a rule, not a fixed structure: it should be possible to lift it later without rebuilding the model.
+3. **One response per person and event.** Even if the event belongs to several teams and the person is in several of them.
+4. **Coaches are not players.** They respond the same way, but are listed in a block of their own and do not count towards the player total.
+5. **Lines are standard lines.** There are no different lines for single events.
+6. **One match day, one call-up.** All matches of a match day share one response and one call-up.

@@ -1,104 +1,104 @@
-# Testplan F-01 · Personen, Teams, Saisons
+# Test plan F-01 · People, teams, seasons
 
-Issue #2 · PR #20 · Anforderungen PTF, SAI, RR-04, RR-07
+Issue #2 · PR #20 · Requirements PTF, SAI, RR-04, RR-07
 
-Allgemein für jeden Fall:
+General for every case:
 
-- Vorbereitung: `POST /api/test/reset`, dann `POST /api/test/anmelden` mit `{ "schluessel": "<person>" }`.
-- Uhr: Standard («Jetzt» = Mo 16.11.2026 06:00), ausser anders angegeben.
-- Ansichten: mobil 375×812 (alle Fälle), Desktop 1280×800 (zentrale Fälle K2–K6).
-- Nach jedem Fall: keine Konsolenfehler, keine unerwarteten 4xx/5xx.
+- Preparation: `POST /api/test/reset`, then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }`.
+- Clock: default ("now" = Mon 16.11.2026 06:00), unless stated otherwise.
+- Views: mobile 375×812 (all cases), desktop 1280×800 (core cases K2–K6).
+- After each case: no console errors, no unexpected 4xx/5xx.
 
 IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`, Team 3 `…003`.
-Saison 2025/26 `60000000-0000-4000-8000-000000000001` (Archiv), 2026/27 `…002` (aktuell).
-Personen `20000000-0000-4000-8000-0000000000NN` nach test-data.md.
+Season 2025/26 `60000000-0000-4000-8000-000000000001` (archive), 2026/27 `…002` (current).
+People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 
 ## K1 · Seed
 
-| Schritt | Erwartung |
+| Step | Expected |
 |---|---|
-| Als `alex` `/verwaltung/personen` öffnen | 17 Personen, nach Nachname sortiert, Alex mit Kennzeichen «Admin» |
-| `/verwaltung/teams` | Saison «2026/27 (aktuell)» gewählt, Team 1, Team 2, Team 3 |
-| `/verwaltung/teams/<Team 1>` | Coaches: Petra Keller. Spielerinnen (7): Kim Baumann, Sara Brun, Mia Frei, Lea Graf, Anna Muster, Nina Roth, Jana Wyss |
-| `/verwaltung/teams?saison=<2025/26>` | Hinweis `archiv-hinweis`, nur Team 1 |
+| As `alex` open `/verwaltung/personen` | 17 people, sorted by last name, Alex with the marker «Admin» |
+| `/verwaltung/teams` | Season «2026/27 (aktuell)» selected, Team 1, Team 2, Team 3 |
+| `/verwaltung/teams/<Team 1>` | Coaches: Petra Keller. Players (7): Kim Baumann, Sara Brun, Mia Frei, Lea Graf, Anna Muster, Nina Roth, Jana Wyss |
+| `/verwaltung/teams?saison=<2025/26>` | Notice `archiv-hinweis`, only Team 1 |
 
-## K2 · Person anlegen und bearbeiten (PTF-11)
+## K2 · Create and edit a person (PTF-11)
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| K2.1 Anlegen | `alex` → `/verwaltung/personen` → «Person erfassen» → Vorname «Flurina», Nachname «Testerin», E-Mail «flurina@example.ch» → «Speichern» | Weiter auf `/verwaltung/personen/:id`, Status «Flurina Testerin ist erfasst.», in der Liste genau einmal |
-| K2.2 Pflichtfelder | Formular leer speichern | «Bitte einen Vornamen eingeben.», «Bitte einen Nachnamen eingeben.» beim Feld, Felder `invalid`, kein POST |
-| K2.3 E-Mail ungültig | Bei Kim E-Mail «kein-mail» speichern | «Bitte eine gültige E-Mail-Adresse eingeben.», nichts gespeichert |
-| K2.4 Bearbeiten | Kim Nachname «Baumann-Huber» → Speichern → Neuladen | «Änderungen gespeichert.», nach Neuladen «Baumann-Huber» |
-| K2.5 Lange Eingabe | Vorname mit 500 Zeichen eingeben | Feld nimmt höchstens 60 Zeichen. API mit 61 Zeichen: 400 «Höchstens 60 Zeichen.». Liste `/verwaltung/personen` ohne horizontales Scrollen bei 375px |
-| K2.6 Doppelklick | K2.1 mit Doppelklick auf «Speichern» | Person nur **einmal** angelegt (genau ein `POST /api/personen`) |
-| K2.7 Letzter Admin | Bei Alex «Admin» abwählen → Speichern | Meldung «Es braucht mindestens eine Person mit Admin-Rechten.» (409, RR-04), Häkchen bleibt nach Neuladen |
+| K2.1 Create | `alex` → `/verwaltung/personen` → «Person erfassen» → first name «Flurina», last name «Testerin», e-mail «flurina@example.ch» → «Speichern» | On to `/verwaltung/personen/:id`, status «Flurina Testerin ist erfasst.», exactly once in the list |
+| K2.2 Required fields | Save the empty form | «Bitte einen Vornamen eingeben.», «Bitte einen Nachnamen eingeben.» at the field, fields `invalid`, no POST |
+| K2.3 Invalid e-mail | Save e-mail «kein-mail» for Kim | «Bitte eine gültige E-Mail-Adresse eingeben.», nothing saved |
+| K2.4 Edit | Kim last name «Baumann-Huber» → save → reload | «Änderungen gespeichert.», «Baumann-Huber» after reload |
+| K2.5 Long input | Enter a first name with 500 characters | Field takes at most 60 characters. API with 61 characters: 400 «Höchstens 60 Zeichen.». List `/verwaltung/personen` without horizontal scrolling at 375px |
+| K2.6 Double click | K2.1 with a double click on «Speichern» | Person created only **once** (exactly one `POST /api/personen`) |
+| K2.7 Last admin | Untick «Admin» for Alex → save | Message «Es braucht mindestens eine Person mit Admin-Rechten.» (409, RR-04), checkbox stays ticked after reload |
 
-## K3 · Person mit Funktion ins Team aufnehmen (PTF-04)
+## K3 · Add a person with a team role to the team (PTF-04)
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| K3.1 Aufnehmen | `alex` → `/verwaltung/teams/<Team 1>` → «Person» = Ruth Meier, «Funktion» = Coach → «Aufnehmen» | Status «Ruth Meier ist jetzt Coach in Team 1.», Ruth unter Coaches, nach Neuladen weiterhin |
-| K3.2 Schon im Team (UI) | Auswahl «Person» öffnen | Mitglieder mit «(schon im Team)» und nicht wählbar |
-| K3.3 Schon im Team (API) | `POST /api/teams/<Team 1>/mitglieder` mit Petra, `SPIELERIN` | 409, `regel: PTF-04` |
-| K3.4 Doppelklick | K3.1 mit Doppelklick auf «Aufnehmen» | Genau eine Aufnahme, keine Fehlermeldung, kein 500 |
-| K3.5 Funktion ändern | «Funktion von Anna Muster» = Coach | Anna wechselt zu den Coaches, Zähler Coaches 2 / Spielerinnen 6 |
-| K3.6 Entfernen | «Mia Frei entfernen» → Neuladen | Mia nicht mehr im Team, Person besteht weiter unter `/verwaltung/personen` |
+| K3.1 Add | `alex` → `/verwaltung/teams/<Team 1>` → «Person» = Ruth Meier, «Funktion» = Coach → «Aufnehmen» | Status «Ruth Meier ist jetzt Coach in Team 1.», Ruth under coaches, still there after reload |
+| K3.2 Already in the team (UI) | Open the «Person» select | Members with «(schon im Team)» and not selectable |
+| K3.3 Already in the team (API) | `POST /api/teams/<Team 1>/mitglieder` with Petra, `SPIELERIN` | 409, `regel: PTF-04` |
+| K3.4 Double click | K3.1 with a double click on «Aufnehmen» | Exactly one addition, no error message, no 500 |
+| K3.5 Change team role | «Funktion von Anna Muster» = Coach | Anna moves to the coaches, counters coaches 2 / players 6 |
+| K3.6 Remove | «Mia Frei entfernen» → reload | Mia no longer in the team, person still exists under `/verwaltung/personen` |
 
-## K4 · Doppelrolle (PTF-12, S20)
+## K4 · Dual role (PTF-12, S20)
 
-| Schritte | Erwartung |
+| Steps | Expected |
 |---|---|
 | `petra` → `/teams` | «Team 1 Coach», «Team 2 Spielerin» (`team-karte-<id>`) |
-| `petra` → `/teams/<Team 2>` | Petra unter `team-spielerinnen` |
+| `petra` → `/teams/<Team 2>` | Petra under `team-spielerinnen` |
 | `petra` → `/teams/<Team 3>` | «Keine Berechtigung», API 403 |
 
-## K5 · Coaches und Spielerinnen getrennt (PTF-07)
+## K5 · Coaches and players separate (PTF-07)
 
-| Schritte | Erwartung |
+| Steps | Expected |
 |---|---|
-| `petra` → `/teams/<Team 1>` | Coaches 1: Petra Keller. Spielerinnen 7 ohne Petra |
-| `petra` → `/teams/<Team 2>` | Coaches 1: Marc Huber. Spielerinnen 6 inkl. Petra, ohne Marc |
+| `petra` → `/teams/<Team 1>` | Coaches 1: Petra Keller. Players 7 without Petra |
+| `petra` → `/teams/<Team 2>` | Coaches 1: Marc Huber. Players 6 including Petra, without Marc |
 | `marc` → `/teams/<Team 1>` | «Keine Berechtigung», API 403 |
 
-## K6 · Neue Saison mit Übernahme (SAI-04, SAI-06, S21)
+## K6 · New season with carry-over (SAI-04, SAI-06, S21)
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| K6.1 Anlegen | `alex` → `/verwaltung/saisons` → Vorschlag «2027/28», 01.07.2027–30.06.2028, Übernahme aus 2026/27 → «Saison anlegen» | Status «Saison 2027/28 ist angelegt …», Eintrag «geplant» |
-| K6.2 Aktivieren | Bei 2027/28 «Zur aktuellen Saison machen» → Neuladen | 2027/28 «aktuell», 2026/27 und 2025/26 «Archiv» |
-| K6.3 Übernahme | `/verwaltung/teams` → Team 1 | Saison 2027/28, gleiche Coaches und Spielerinnen wie 2026/27 |
-| K6.4 Doppelklick | K6.1 mit Doppelklick auf «Saison anlegen» | Saison einmal angelegt, kein 500, keine Fehlermeldung |
-| K6.5 Doppelter Name (API) | `POST /api/saisons` mit Name «2026/27» | 409 |
+| K6.1 Create | `alex` → `/verwaltung/saisons` → suggestion «2027/28», 01.07.2027–30.06.2028, carry-over from 2026/27 → «Saison anlegen» | Status «Saison 2027/28 ist angelegt …», entry «geplant» |
+| K6.2 Activate | For 2027/28 «Zur aktuellen Saison machen» → reload | 2027/28 «aktuell», 2026/27 and 2025/26 «Archiv» |
+| K6.3 Carry-over | `/verwaltung/teams` → Team 1 | Season 2027/28, same coaches and players as 2026/27 |
+| K6.4 Double click | K6.1 with a double click on «Saison anlegen» | Season created once, no 500, no error message |
+| K6.5 Duplicate name (API) | `POST /api/saisons` with name «2026/27» | 409 |
 
-## K7 · Archiv lesend (S16, SAI-02)
+## K7 · Archive read-only (S16, SAI-02)
 
-| Schritte | Erwartung |
+| Steps | Expected |
 |---|---|
-| `alex` → `/verwaltung/saisons` → bei 2025/26 «Teams ansehen» → Team 1 | «Saison 2025/26 im Archiv: nur lesend.», Vera Studer als Spielerin, keine Bedienelemente zum Ändern |
-| API: Mitglied aufnehmen, entfernen, Team anlegen mit `?saison=<2025/26>` | jeweils 409, `regel: SAI-02` |
-| `alex` → `/teams/<Team 1>?saison=<2025/26>` | Archiv-Hinweis, Vera sichtbar |
+| `alex` → `/verwaltung/saisons` → for 2025/26 «Teams ansehen» → Team 1 | «Saison 2025/26 im Archiv: nur lesend.», Vera Studer as player, no controls for changes |
+| API: add member, remove member, create team with `?saison=<2025/26>` | 409 each, `regel: SAI-02` |
+| `alex` → `/teams/<Team 1>?saison=<2025/26>` | Archive notice, Vera visible |
 
-## K8 · Verwaltung für Nicht-Admins gesperrt (RR-04, RR-07)
+## K8 · Administration locked for non-admins (RR-04, RR-07)
 
-| Schritte | Erwartung |
+| Steps | Expected |
 |---|---|
-| Als `anna` und `petra` jede Route: `/verwaltung`, `/verwaltung/personen`, `/verwaltung/personen/neu`, `/verwaltung/personen/<id>`, `/verwaltung/teams`, `/verwaltung/teams/<id>`, `/verwaltung/saisons` | `role="alert"` «Keine Berechtigung», keine Formulare |
-| Als `anna` und `petra`: `GET/POST /api/personen`, `PUT /api/personen/<id>`, `POST /api/teams`, `PUT /api/teams/<id>`, `POST/PUT/DELETE …/mitglieder`, `POST /api/saisons` (gültiger Inhalt), `POST /api/saisons/<id>/aktivieren` | 403 |
-| Als `marc` Navigation | kein Eintrag «Verwaltung» |
+| As `anna` and `petra` every route: `/verwaltung`, `/verwaltung/personen`, `/verwaltung/personen/neu`, `/verwaltung/personen/<id>`, `/verwaltung/teams`, `/verwaltung/teams/<id>`, `/verwaltung/saisons` | `role="alert"` «Keine Berechtigung», no forms |
+| As `anna` and `petra`: `GET/POST /api/personen`, `PUT /api/personen/<id>`, `POST /api/teams`, `PUT /api/teams/<id>`, `POST/PUT/DELETE …/mitglieder`, `POST /api/saisons` (valid content), `POST /api/saisons/<id>/aktivieren` | 403 |
+| As `marc` navigation | no entry «Verwaltung» |
 
-## Darstellung
+## Theme
 
-- Jeder neue Screen (`/teams`, `/teams/:id`, `/verwaltung`, Personen, Person, Teams verwalten, Team verwalten, Saisons) einmal im Darkmode 375px: lesbar, kein Weiss auf Weiss, kein horizontales Scrollen.
-- Desktop 1280px: dieselben Screens ohne Überlauf.
+- Every new screen (`/teams`, `/teams/:id`, `/verwaltung`, people, person, manage teams, manage team, seasons) once in dark mode at 375px: readable, no white on white, no horizontal scrolling.
+- Desktop 1280px: the same screens without overflow.
 
-## Runde 1 · Nacharbeit (Doppelklick, gleichzeitige Anfragen, Beobachtungen)
+## Round 1 · Rework (double click, concurrent requests, observations)
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| R1.1 Doppelklick Aktivieren | `alex` → `/verwaltung/saisons` (2027/28 angelegt) → Doppelklick «Zur aktuellen Saison machen» | Genau ein `POST …/aktivieren` 204, Status «2027/28 ist jetzt die aktuelle Saison.», kein Alarm |
-| R1.2 Doppelklick Entfernen | `alex` → `/verwaltung/teams/<Team 1>` → Doppelklick «Mia Frei entfernen» | Mia entfernt, kein Alarm, keine Konsolenfehler |
-| R1.3 Gleichzeitige Aufnahme (API) | 3 × gleichzeitig `POST /api/teams/<Team 1>/mitglieder` mit Ruth, `COACH` | Genau eine 201, sonst 409 `regel: PTF-04`, nie 500 |
-| R1.4 Gleichzeitige Saison (API) | 3 × gleichzeitig `POST /api/saisons` mit Name «2028/29», `von` 2028-07-01, `bis` 2029-06-30 | Genau eine 201, sonst 409 `regel: SAI-01`, Saison existiert einmal |
-| R1.5 «noch keinen Coach» | `alex` → `/teams/<Team 1>?saison=<2025/26>` und `/verwaltung/teams/<Team 1>?saison=<2025/26>` | «Dieses Team hat noch keinen Coach.» |
-| R1.6 Langer Name | Bei Kim Vorname mit 80 × «X» eingeben → Speichern → `/verwaltung/personen` bei 375px | Feld nimmt 60 Zeichen, `scrollWidth` = 375 |
+| R1.1 Double click activate | `alex` → `/verwaltung/saisons` (2027/28 created) → double click «Zur aktuellen Saison machen» | Exactly one `POST …/aktivieren` 204, status «2027/28 ist jetzt die aktuelle Saison.», no alert |
+| R1.2 Double click remove | `alex` → `/verwaltung/teams/<Team 1>` → double click «Mia Frei entfernen» | Mia removed, no alert, no console errors |
+| R1.3 Concurrent addition (API) | 3 × concurrently `POST /api/teams/<Team 1>/mitglieder` with Ruth, `COACH` | Exactly one 201, otherwise 409 `regel: PTF-04`, never 500 |
+| R1.4 Concurrent season (API) | 3 × concurrently `POST /api/saisons` with name «2028/29», `von` 2028-07-01, `bis` 2029-06-30 | Exactly one 201, otherwise 409 `regel: SAI-01`, season exists once |
+| R1.5 «noch keinen Coach» | `alex` → `/teams/<Team 1>?saison=<2025/26>` and `/verwaltung/teams/<Team 1>?saison=<2025/26>` | «Dieses Team hat noch keinen Coach.» |
+| R1.6 Long name | Enter a first name of 80 × «X» for Kim → save → `/verwaltung/personen` at 375px | Field takes 60 characters, `scrollWidth` = 375 |

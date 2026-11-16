@@ -1,59 +1,59 @@
-# Testplan Nachbesserung #21 · Teamname pro Saison, Archiv behält den Namen
+# Test plan follow-up fix #21 · Team name per season, archive keeps the name
 
-Issue #21 · PR #33 · Anforderungen SAI-02, SAI-04, RR-07
+Issue #21 · PR #33 · Requirements SAI-02, SAI-04, RR-07
 
-Allgemein für jeden Fall:
+General, for every case:
 
-- Vorbereitung: `POST /api/test/reset`, anmelden mit `POST /api/test/anmelden` und
-  `{ "schluessel": "<person>" }`. Uhr: Standard (16.11.2026), spielt keine Rolle.
-- IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…0002`,
-  Saison 2025/26 (Archiv) `60000000-0000-4000-8000-000000000001`, 2026/27 (aktuell) `…0002`,
+- Setup: `POST /api/test/reset`, log in with `POST /api/test/anmelden` and
+  `{ "schluessel": "<person>" }`. Clock: default (16.11.2026), does not matter.
+- IDs: team 1 `10000000-0000-4000-8000-000000000001`, team 2 `…0002`,
+  season 2025/26 (archive) `60000000-0000-4000-8000-000000000001`, 2026/27 (current) `…0002`,
   Vera `20000000-0000-4000-8000-000000000017`, Petra `…0002`.
-- Nach jedem Browser-Fall: keine Konsolenfehler, keine unerwarteten 4xx/5xx.
+- After each browser case: no console errors, no unexpected 4xx/5xx.
 
-## K1 · Umbenennen in der aktuellen Saison lässt das Archiv unverändert
+## K1 · Renaming in the current season leaves the archive unchanged
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 API umbenennen | `alex`: `PUT /api/teams/<T1>` mit `{"name":"  Damen 1  "}` | 200, `name` «Damen 1» (getrimmt) |
-| K1.2 Archiv Detail | danach `GET /api/teams/<T1>?saison=<2025/26>` | `name` «Team 1», Vera als Spielerin |
-| K1.3 Aktuell Detail | `GET /api/teams/<T1>` | `name` «Damen 1» |
-| K1.4 Listen | `GET /api/teams?saison=<2025/26>` bzw. ohne Saison | Archiv: «Team 1»; aktuell: «Damen 1», «Team 2», «Team 3» (nach Name sortiert) |
-| K1.5 Eigene Teams | `petra`: `GET /api/ich` | Zugehörigkeit Team 1 heisst «Damen 1» |
-| K1.6 Personendetail | `alex`: `GET /api/personen/<Vera>` | Zugehörigkeit 2025/26 heisst «Team 1» |
-| K1.7 Browser mobil | 375×812, `alex`, `/verwaltung/teams/<T1>`, Teamname «Damen 1», «Umbenennen» doppelt klicken | Status «Name gespeichert.», Überschrift «Damen 1», genau ein `PUT …?saison=<2026/27>` |
-| K1.8 Archiv im Browser | `/teams/<T1>?saison=<2025/26>` und `/verwaltung/teams/<T1>?saison=<2025/26>` | Überschrift «Team 1», Hinweis «Saison 2025/26 im Archiv: nur lesend.», kein Umbenennen-Formular |
-| K1.9 Archivliste | «‹ Alle Teams» → `/verwaltung/teams?saison=<2025/26>` | nur «Team 1» |
-| K1.10 Personendetail Browser | `/verwaltung/personen/<Vera>` | Link «Team 1» mit Saison 2025/26 |
-| K1.11 Rolle Coach | `petra`, `/teams` | «Damen 1 · Coach», «Team 2 · Spielerin» |
-| K1.12 Desktop | 1280×800, `alex`, `/verwaltung/teams/<T1>`, Name «Herren Plausch» + Enter, dann Saisonwahl Archiv ↔ aktuell | Archiv «Team 1», aktuell «Herren Plausch», «Team 2», «Team 3» |
-| K1.13 Darkmode | mobil, dunkel, `/verwaltung/teams/<T1>` | alles lesbar |
+| K1.1 API rename | `alex`: `PUT /api/teams/<T1>` with `{"name":"  Damen 1  "}` | 200, `name` «Damen 1» (trimmed) |
+| K1.2 Archive detail | then `GET /api/teams/<T1>?saison=<2025/26>` | `name` «Team 1», Vera as player |
+| K1.3 Current detail | `GET /api/teams/<T1>` | `name` «Damen 1» |
+| K1.4 Lists | `GET /api/teams?saison=<2025/26>` or without season | Archive: «Team 1»; current: «Damen 1», «Team 2», «Team 3» (sorted by name) |
+| K1.5 Own teams | `petra`: `GET /api/ich` | Membership team 1 is called «Damen 1» |
+| K1.6 Person detail | `alex`: `GET /api/personen/<Vera>` | Membership 2025/26 is called «Team 1» |
+| K1.7 Browser mobile | 375×812, `alex`, `/verwaltung/teams/<T1>`, team name «Damen 1», double click «Umbenennen» | Status «Name gespeichert.», heading «Damen 1», exactly one `PUT …?saison=<2026/27>` |
+| K1.8 Archive in the browser | `/teams/<T1>?saison=<2025/26>` and `/verwaltung/teams/<T1>?saison=<2025/26>` | Heading «Team 1», notice «Saison 2025/26 im Archiv: nur lesend.», no rename form |
+| K1.9 Archive list | «‹ Alle Teams» → `/verwaltung/teams?saison=<2025/26>` | only «Team 1» |
+| K1.10 Person detail browser | `/verwaltung/personen/<Vera>` | Link «Team 1» with season 2025/26 |
+| K1.11 Team role coach | `petra`, `/teams` | «Damen 1 · Coach», «Team 2 · Spielerin» |
+| K1.12 Desktop | 1280×800, `alex`, `/verwaltung/teams/<T1>`, name «Herren Plausch» + Enter, then season selection archive ↔ current | Archive «Team 1», current «Herren Plausch», «Team 2», «Team 3» |
+| K1.13 Dark mode | mobile, dark, `/verwaltung/teams/<T1>` | everything readable |
 
-## K2 · Backend-Test vorhanden
+## K2 · Backend test exists
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| K2.1 | `cd backend && mvn test` | `TeamsTest.sai02UmbenennenVeraendertDasArchivNicht`, `sai02ArchivLaesstSichNichtUmbenennen`, `SaisonsTest.sai02TeamnameGiltProSaison` grün |
+| K2.1 | `cd backend && mvn test` | `TeamsTest.sai02UmbenennenVeraendertDasArchivNicht`, `sai02ArchivLaesstSichNichtUmbenennen`, `SaisonsTest.sai02TeamnameGiltProSaison` green |
 
-## Grenzfälle
+## Edge cases
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| G1 Archiv umbenennen | `alex`: `PUT /api/teams/<T1>?saison=<2025/26>` | 409 «Saison im Archiv», `regel` SAI-02, Name bleibt «Team 1» |
-| G2 Team nicht in Saison | `PUT /api/teams/<T2>?saison=<2025/26>` | 404 «Dieses Team gibt es in der Saison 2025/26 nicht.» |
-| G3 Unbekannte Saison | `?saison=60000000-0000-4000-8000-000000000099` | 404 «Diese Saison gibt es nicht.» |
-| G4 Leerer Name | `{"name":"   "}` (API und Formular) | 400 «Bitte einen Namen eingeben.»; im Formular Fehlermeldung am Feld |
-| G5 Länge | 61 Zeichen / 60 Zeichen | 400 «Höchstens 60 Zeichen.» / 200 |
-| G6 Doppelt gleichzeitig | zwei `PUT` parallel | beide 200, kein 5xx im Backend-Log |
-| G7 Übernahme | Team 1 → «Damen 1», dann `POST /api/saisons` 2027/28 mit `uebernehmenAus` 2026/27 | 2027/28 hat «Damen 1», «Team 2», «Team 3» |
-| G8 Umbenennen nur in Folgesaison | danach `PUT /api/teams/<T1>?saison=<2027/28>` «Damen Elite» | 2025/26 «Team 1», 2026/27 «Damen 1», 2027/28 «Damen Elite» |
-| G9 Aufnahme in neue Saison | Team «Alt» in 2026/27 anlegen, umbenennen zu «Alt umbenannt», Person in 2027/28 aufnehmen | Team in 2027/28 heisst «Alt umbenannt» |
-| G10 Migration | V1+V2 von `main` mit Daten (Team in zwei Saisons), dann V3 | `team_saison.name` aus `team.name` übernommen, `team.name` entfernt |
+| G1 Rename archive | `alex`: `PUT /api/teams/<T1>?saison=<2025/26>` | 409 «Saison im Archiv», `regel` SAI-02, name stays «Team 1» |
+| G2 Team not in season | `PUT /api/teams/<T2>?saison=<2025/26>` | 404 «Dieses Team gibt es in der Saison 2025/26 nicht.» |
+| G3 Unknown season | `?saison=60000000-0000-4000-8000-000000000099` | 404 «Diese Saison gibt es nicht.» |
+| G4 Empty name | `{"name":"   "}` (API and form) | 400 «Bitte einen Namen eingeben.»; in the form an error message at the field |
+| G5 Length | 61 characters / 60 characters | 400 «Höchstens 60 Zeichen.» / 200 |
+| G6 Twice at the same time | two `PUT` in parallel | both 200, no 5xx in the backend log |
+| G7 Carry-over | Team 1 → «Damen 1», then `POST /api/saisons` 2027/28 with `uebernehmenAus` 2026/27 | 2027/28 has «Damen 1», «Team 2», «Team 3» |
+| G8 Rename only in the following season | then `PUT /api/teams/<T1>?saison=<2027/28>` «Damen Elite» | 2025/26 «Team 1», 2026/27 «Damen 1», 2027/28 «Damen Elite» |
+| G9 Adding to a new season | Create team «Alt» in 2026/27, rename it to «Alt umbenannt», add a person in 2027/28 | The team in 2027/28 is called «Alt umbenannt» |
+| G10 Migration | V1+V2 from `main` with data (team in two seasons), then V3 | `team_saison.name` taken from `team.name`, `team.name` removed |
 
-## Rollen
+## Roles
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| R1 Spielerin | `anna`: `PUT /api/teams/<T1>` | 403 RR-07 |
+| R1 Player | `anna`: `PUT /api/teams/<T1>` | 403 RR-07 |
 | R2 Coach | `petra`: `PUT /api/teams/<T1>` | 403 RR-07 |
-| R3 Ohne Sitzung | `PUT /api/teams/<T1>` | 401 |
+| R3 Without session | `PUT /api/teams/<T1>` | 401 |

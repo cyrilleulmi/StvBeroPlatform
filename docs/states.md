@@ -1,345 +1,347 @@
-# Zustände und Abläufe
+# States and flows
 
-Zustandsdiagramme der fachlichen Objekte und Sequenzdiagramme der wichtigsten Abläufe. Der Test-Agent leitet daraus Testfälle ab: Jeder Übergang ist ein Testfall, jeder nicht erlaubte Übergang auch.
+State diagrams of the domain objects and sequence diagrams of the most important flows. The test agent derives test cases from them: every transition is a test case, and so is every transition that is not allowed.
 
-Wer das Verhalten ändert, passt das Diagramm im selben PR an. Diagramme sind [Mermaid](https://mermaid.js.org) und werden von GitHub direkt dargestellt.
+Whoever changes the behavior updates the diagram in the same PR. Diagrams are [Mermaid](https://mermaid.js.org) and are rendered directly by GitHub.
 
-## Antwort einer Person auf einen Termin
+State names in capitals (`OFFEN`, `DABEI`, `GEPLANT`, `ENTWURF`, …) are the current API values and stay as they are until the code is renamed.
+
+## Response of a person to an event
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> OFFEN: Termin entsteht / Person kommt ins Team
+    [*] --> OFFEN: event is created / person joins the team
     OFFEN --> DABEI: «dabei»
-    OFFEN --> NICHT_DABEI: «nicht dabei» (Grund freiwillig)
-    OFFEN --> VIELLEICHT: «vielleicht» + Kommentar
+    OFFEN --> NICHT_DABEI: «nicht dabei» (reason optional)
+    OFFEN --> VIELLEICHT: «vielleicht» + comment
     DABEI --> NICHT_DABEI
-    DABEI --> VIELLEICHT: + Kommentar
+    DABEI --> VIELLEICHT: + comment
     NICHT_DABEI --> DABEI
-    NICHT_DABEI --> VIELLEICHT: + Kommentar
+    NICHT_DABEI --> VIELLEICHT: + comment
     VIELLEICHT --> DABEI
     VIELLEICHT --> NICHT_DABEI
-    DABEI --> [*]: Termin vorbei oder abgesagt
-    NICHT_DABEI --> [*]: Termin vorbei oder abgesagt
-    VIELLEICHT --> [*]: Termin vorbei oder abgesagt
-    OFFEN --> [*]: Termin vorbei oder abgesagt
+    DABEI --> [*]: event over or cancelled
+    NICHT_DABEI --> [*]: event over or cancelled
+    VIELLEICHT --> [*]: event over or cancelled
+    OFFEN --> [*]: event over or cancelled
 
     note right of VIELLEICHT
-        Ohne Kommentar: 422, Regel ANM-04.
-        Zurück nach OFFEN gibt es nicht.
+        Without comment: 422, rule ANM-04.
+        There is no way back to OFFEN.
     end note
 ```
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Jeder Wechsel ist erlaubt, auch nach der Antwortfrist. | ANM-09 |
-| Wechsel **weg von DABEI** nach der Antwortfrist setzt `kurzfristig` und benachrichtigt die Coaches. | ANM-10, BEN-02 |
-| Bei einer aufgebotenen Spielerin (veröffentlichtes Aufgebot) benachrichtigt jede Abmeldung die Coaches, auch vor der Frist: von DABEI oder OFFEN auf NICHT_DABEI oder VIELLEICHT, oder von VIELLEICHT auf NICHT_DABEI (Annahme F-06, O-49). Trifft zugleich eine kurzfristige Absage zu, geht nur diese eine Benachrichtigung raus. | AUF-26, BEN-04 |
-| Die kurzfristige Absage benachrichtigt einmal, beim Wechsel weg von DABEI. Weitere Wechsel, die kurzfristig bleiben, benachrichtigen nicht nochmals. Empfänger sind die Coaches der Teams, in denen die Person beim Termin Spielerin ist (O-17). | ANM-10, BEN-02 |
-| Die Markierung `kurzfristig` bleibt bei weiteren Wechseln zwischen NICHT_DABEI und VIELLEICHT und fällt mit DABEI weg (Annahme O-43). | ANM-10 |
-| Für sich antworten darf jedes Mitglied eines beteiligten Teams (jede Funktion), sonst 403. | ANM-01, RR-02 |
-| Stellvertretend gesetzte Antworten folgen denselben Übergängen und speichern `eingetragenVon`. Erlaubt für Coaches eines Teams, in dem die Person Spielerin ist, und für Admins (jedes Mitglied). Sonst 403, Person in keinem beteiligten Team 404. Antwortet die Person danach selbst, fällt `eingetragenVon` weg. | ANM-11, ANM-12, RR-06 |
-| Jede Antwort ersetzt die vorherige ganz, auch den Kommentar. In der Oberfläche speichert «nicht dabei» sofort und bietet danach den Grund an. | ANM-05, ANM-08 |
-| Nach Absage oder Ende des Termins sind keine Änderungen mehr möglich (409). | TER-06 |
+| Every change is allowed, also after the response deadline. | ANM-09 |
+| A change **away from DABEI** after the response deadline sets `kurzfristig` and notifies the coaches. | ANM-10, BEN-02 |
+| For a called-up player (published call-up), every withdrawal notifies the coaches, also before the deadline: from DABEI or OFFEN to NICHT_DABEI or VIELLEICHT, or from VIELLEICHT to NICHT_DABEI (assumption F-06, O-49). If a late cancellation applies at the same time, only that one notification goes out. | AUF-26, BEN-04 |
+| A late cancellation notifies once, on the change away from DABEI. Further changes that stay late do not notify again. Recipients are the coaches of the teams in which the person is a player for the event (O-17). | ANM-10, BEN-02 |
+| The `kurzfristig` mark stays on further changes between NICHT_DABEI and VIELLEICHT and is dropped with DABEI (assumption O-43). | ANM-10 |
+| Every member of a participating team (any team role) may respond for themselves, otherwise 403. | ANM-01, RR-02 |
+| Responses set on behalf of someone follow the same transitions and store `eingetragenVon`. Allowed for coaches of a team in which the person is a player, and for admins (any member). Otherwise 403; person in no participating team: 404. If the person then responds themselves, `eingetragenVon` is dropped. | ANM-11, ANM-12, RR-06 |
+| Every response replaces the previous one completely, including the comment. In the UI, «nicht dabei» saves immediately and then offers the reason. | ANM-05, ANM-08 |
+| After the event is cancelled or over, no more changes are possible (409). | TER-06 |
 
-## Termin
+## Event
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Geplant: erfasst oder von Serie erzeugt
-    state Geplant {
+    [*] --> Planned: created or generated by a series
+    state Planned {
         direction LR
-        [*] --> AntwortenOffen
-        AntwortenOffen --> NachFrist: Antwortfrist erreicht
-        NachFrist --> Laeuft: Beginn
+        [*] --> ResponsesOpen
+        ResponsesOpen --> PastDeadline: response deadline reached
+        PastDeadline --> Running: start
     }
-    Geplant --> Geplant: verschoben (Beginn geändert)<br/>Benachrichtigung BEN-07
-    Geplant --> Abgesagt: absagen + Grund<br/>Benachrichtigung BEN-07
-    Geplant --> Vorbei: Ende erreicht
-    Abgesagt --> [*]
-    Vorbei --> [*]
+    Planned --> Planned: rescheduled (start changed)<br/>notification BEN-07
+    Planned --> Cancelled: cancel + reason<br/>notification BEN-07
+    Planned --> Over: end reached
+    Cancelled --> [*]
+    Over --> [*]
 ```
 
-- Gespeichert wird nur `GEPLANT` oder `ABGESAGT`. «Nach Frist», «läuft» und «vorbei» ergeben sich aus der Backend-Uhr.
-- Eine Erinnerung (BEN-01) geht 12 Stunden vor der Antwortfrist an alle Mitglieder der beteiligten Teams (jede Funktion) mit Antwort OFFEN, höchstens einmal pro Person und Termin (BEN-13, Tabelle `erinnerung`). Nach der Frist wird nicht mehr erinnert. Die 12 Stunden sind eine Annahme (O-18). Geprüft wird jede Minute; im Test sofort beim Setzen der Uhr (`PUT /api/test/uhr`).
-- Absagen und Verschieben (einzeln oder durch eine Ausnahme bzw. Änderung der Serie, die einen Termin mit Antworten absagt) benachrichtigen alle Mitglieder der beteiligten Teams (BEN-07). Beim Verschieben auch die Mitglieder von Teams, die dabei entfernt wurden. Eine geänderte Seriezeit ist keine Verschiebung (O-41). Ein Serientermin ohne Antworten, der durch eine Ausnahme oder Änderung der Serie entfernt wird, benachrichtigt niemanden (Annahme F-06, O-52).
-- Verschieben behält alle Antworten. Ob «dabei» nach einer Verschiebung noch gilt, entscheidet die Person selbst.
+- Only `GEPLANT` or `ABGESAGT` is stored. "Past deadline", "running" and "over" follow from the backend clock.
+- A reminder (BEN-01) goes out 12 hours before the response deadline to all members of the participating teams (any team role) with response OFFEN, at most once per person and event (BEN-13, table `erinnerung`). After the deadline there are no more reminders. The 12 hours are an assumption (O-18). The check runs every minute; in tests immediately when the clock is set (`PUT /api/test/uhr`).
+- Cancelling and rescheduling (individually, or through an exception or change of the series that cancels an event with responses) notify all members of the participating teams (BEN-07). When rescheduling, also the members of teams that were removed in the process. A changed series time is not a rescheduling (O-41). A series event without responses that is removed by an exception or change of the series notifies nobody (assumption F-06, O-52).
+- Rescheduling keeps all responses. Whether «dabei» still applies after a rescheduling is up to the person.
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Ein Termin gehört zur Saison, in die sein Datum fällt. Sichtbar ist er für Mitglieder (jede Funktion) eines beteiligten Teams in dieser Saison und für Admins, sonst 403. | TER-13, RR-02 |
-| Erfassen: Admins oder Coach in **mindestens einem** der Teams (so erfasst Petra das gemeinsame Training von Team 1 + Team 2). Nur Teams, in denen die Person nichts ist: 403. Bearbeiten und absagen: Coach eines beteiligten Teams oder Admin; nach der Änderung muss weiterhin ein Team dabei sein, in dem die Person Coach ist (Annahme O-39). | TER-01, TER-11, RR-06 |
-| Ende vor Beginn, kein Team, Spieltag mit mehr als einem Team, unbekanntes Team oder ein Termin in der Vergangenheit: 400 mit Feld. Termin in einer Saison im Archiv: 409 (SAI-02). | TER-04, AUF-03 |
-| Abgesagte oder vergangene Termine lassen sich weder ändern noch nochmals absagen: 409, Regel TER-06. | TER-06 |
-| Eine andere Beginnzeit setzt `verschoben` (bleibt danach gesetzt). Ein so geänderter Serientermin übernimmt spätere Änderungen der Serie nicht mehr. | TER-06 |
-| Antwortfrist = Beginn minus `antwortfristStunden` (0 bis 336, Standard 24). Ausserhalb: «Mindestens 0 Stunden.» bzw. «Höchstens 336 Stunden (14 Tage).», im Formular und in der API. | TER-09, TER-10 |
-| Liste: kommende = Ende nach «jetzt», aufsteigend; vergangene = Ende erreicht, absteigend. `?team=` zeigt die eigenen Termine, an denen dieses Team beteiligt ist. Ist es kein eigenes Team (z.B. geteilter Link), erscheint es zusätzlich in der Auswahl «Team», damit Auswahl und Liste übereinstimmen. | TER-13 |
+| An event belongs to the season its date falls into. It is visible to members (any team role) of a participating team in that season and to admins, otherwise 403. | TER-13, RR-02 |
+| Create: admins or coach in **at least one** of the teams (this is how Petra creates the shared practice of Team 1 + Team 2). Only teams in which the person has no role: 403. Edit and cancel: coach of a participating team or admin; after the change, a team in which the person is coach must still take part (assumption O-39). | TER-01, TER-11, RR-06 |
+| End before start, no team, match day with more than one team, unknown team or an event in the past: 400 with field. Event in an archived season: 409 (SAI-02). | TER-04, AUF-03 |
+| Cancelled or past events can neither be changed nor cancelled again: 409, rule TER-06. | TER-06 |
+| A different start time sets `verschoben` (stays set afterwards). A series event changed this way no longer takes over later changes of the series. | TER-06 |
+| Response deadline = start minus `antwortfristStunden` (0 to 336, default 24). Outside this range: «Mindestens 0 Stunden.» or «Höchstens 336 Stunden (14 Tage).», in the form and in the API. | TER-09, TER-10 |
+| List: upcoming = end after "now", ascending; past = end reached, descending. `?team=` shows the user's own events in which this team takes part. If it is not one of the user's teams (e.g. a shared link), it is also added to the «Team» selection so that selection and list match. | TER-13 |
 
-## Serie
+## Series
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Aktiv: angelegt, erzeugt Termine im Gültigkeitszeitraum
-    Aktiv --> Aktiv: geändert, betrifft künftige Termine (TER-08)
-    Aktiv --> Aktiv: Ausnahme hinzugefügt (TER-07)
-    Aktiv --> Beendet: Gültigkeit abgelaufen
-    Beendet --> [*]
+    [*] --> Active: created, generates events within the validity period
+    Active --> Active: changed, affects future events (TER-08)
+    Active --> Active: exception added (TER-07)
+    Active --> Ended: validity expired
+    Ended --> [*]
 ```
 
-Beim Hinzufügen einer Ausnahme (z.B. Ferien) gilt für die betroffenen künftigen Termine:
+When an exception is added (e.g. holidays), the following applies to the affected future events:
 
-- Termin ohne Antworten: wird entfernt.
-- Termin mit Antworten: wird abgesagt, Grund = Grund der Ausnahme. So geht keine Antwort verloren und alle werden benachrichtigt.
+- Event without responses: is removed.
+- Event with responses: is cancelled, reason = reason of the exception. This way no response is lost and everyone is notified.
 
-Das ist eine Annahme.
+This is an assumption.
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Anlegen erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Der Zeitraum dauert höchstens ein Jahr (400). | TER-05 |
-| Eine Ausnahme betrifft künftige **geplante** Termine der Serie, deren Datum im Zeitraum liegt (auch einzeln verschobene). Abgesagte bleiben. | TER-07 |
-| Ändern betrifft nur künftige Termine: geplante, nicht einzeln geänderte übernehmen die neuen Angaben (Antworten bleiben, `verschoben` wird nicht gesetzt). Daten, die neu dazukommen, erhalten einen Termin. Termine, deren Datum nicht mehr zur Serie passt, werden wie bei einer Ausnahme entfernt bzw. abgesagt (Grund «Serie geändert»). Vergangene, abgesagte und einzeln geänderte Termine bleiben. | TER-08 |
-| Rechte wie bei Terminen. Ansehen: Mitglieder der Teams der Serie und Admins (403). | TER-11, RR-06 |
+| Creating generates an event for every weekday in the validity period that has not started yet. The period is at most one year (400). | TER-05 |
+| An exception affects future **planned** events of the series whose date lies within the period (including individually rescheduled ones). Cancelled ones stay. | TER-07 |
+| Changing affects only future events: planned events that were not changed individually take over the new details (responses stay, `verschoben` is not set). New dates get an event. Events whose date no longer fits the series are removed or cancelled as with an exception (reason «Serie geändert»). Past, cancelled and individually changed events stay. | TER-08 |
+| Permissions as for events. Viewing: members of the series' teams and admins (403). | TER-11, RR-06 |
 
-## Aufgebot eines Spieltags
+## Call-up of a match day
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> KEINES
-    KEINES --> ENTWURF: Coach wählt erste Spielerin
-    ENTWURF --> ENTWURF: Auswahl ändern
-    ENTWURF --> KEINES: Auswahl geleert
-    ENTWURF --> VEROEFFENTLICHT: veröffentlichen<br/>alle Spielerinnen benachrichtigt (BEN-03)
-    VEROEFFENTLICHT --> VEROEFFENTLICHT: Auswahl ändern<br/>nur Betroffene benachrichtigt (BEN-05)
-    VEROEFFENTLICHT --> [*]: Spieltag vorbei
+    KEINES --> ENTWURF: coach selects first player
+    ENTWURF --> ENTWURF: change selection
+    ENTWURF --> KEINES: selection cleared
+    ENTWURF --> VEROEFFENTLICHT: publish<br/>all players notified (BEN-03)
+    VEROEFFENTLICHT --> VEROEFFENTLICHT: change selection<br/>only those affected notified (BEN-05)
+    VEROEFFENTLICHT --> [*]: match day over
 ```
 
-Sicht einer Spielerin (`meinAufgebot`):
+A player's view (`meinAufgebot`):
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> NOCH_KEIN_AUFGEBOT
-    NOCH_KEIN_AUFGEBOT --> AUFGEBOTEN: veröffentlicht, ausgewählt
-    NOCH_KEIN_AUFGEBOT --> NICHT_AUFGEBOTEN: veröffentlicht, nicht ausgewählt
-    AUFGEBOTEN --> NICHT_AUFGEBOTEN: Coach ändert
-    NICHT_AUFGEBOTEN --> AUFGEBOTEN: Coach ändert
+    NOCH_KEIN_AUFGEBOT --> AUFGEBOTEN: published, selected
+    NOCH_KEIN_AUFGEBOT --> NICHT_AUFGEBOTEN: published, not selected
+    AUFGEBOTEN --> NICHT_AUFGEBOTEN: coach changes
+    NICHT_AUFGEBOTEN --> AUFGEBOTEN: coach changes
 ```
 
-- Solange das Aufgebot ein Entwurf ist, sehen es nur Coaches (AUF-23).
-- Aufgeboten werden kann jede Spielerin des Teams, unabhängig von ihrer Antwort (AUF-22).
-- Aufgebotene bestätigen nicht (AUF-25).
+- As long as the call-up is a draft, only coaches see it (AUF-23).
+- Any player of the team can be called up, regardless of her response (AUF-22).
+- Called-up players do not confirm (AUF-25).
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Ansehen, auswählen und veröffentlichen dürfen Coaches des Teams und Admins, sonst 403. Ein Termin, der kein Spieltag ist, hat kein Aufgebot (409, Regel AUF-02). | RR-03, AUF-02 |
-| Speichern ersetzt die ganze Auswahl. Nur Spielerinnen des Teams, keine Coaches und niemand ausserhalb: 422 mit Regel AUF-28. Leere Auswahl im Entwurf: zurück zu KEINES. | AUF-22, AUF-28 |
-| Veröffentlicht wird nur ein Entwurf mit mindestens einer Spielerin, und nur einmal (sonst 409, Regel AUF-23). Danach bleibt es veröffentlicht, auch wenn die Coach die Auswahl ändert (Annahme O-46). | AUF-23 |
-| Vor der Veröffentlichung sehen Personen ohne Coach-Recht `aufgebotStatus: KEINES` und `meinAufgebot: NOCH_KEIN_AUFGEBOT` (Annahme O-45). `meinAufgebot` gibt es nur für Spielerinnen des Teams. | AUF-23, AUF-24 |
-| Abgesagter oder vergangener Spieltag: Auswahl und Veröffentlichen ergeben 409 (TER-06), Ansehen geht. Gleichzeitige Änderungen ergeben nie 500. | TER-06 |
-| Veröffentlichen benachrichtigt alle Spielerinnen des Teams, je mit «aufgeboten» oder «nicht aufgeboten» (BEN-03). Eine Änderung danach benachrichtigt nur, wer neu dazukommt oder herausfällt (BEN-05). Änderungen im Entwurf benachrichtigen niemanden. | AUF-24, AUF-27 |
+| Coaches of the team and admins may view, select and publish, otherwise 403. An event that is not a match day has no call-up (409, rule AUF-02). | RR-03, AUF-02 |
+| Saving replaces the whole selection. Only players of the team, no coaches and nobody from outside: 422 with rule AUF-28. Empty selection in a draft: back to KEINES. | AUF-22, AUF-28 |
+| Only a draft with at least one player can be published, and only once (otherwise 409, rule AUF-23). After that it stays published, even if the coach changes the selection (assumption O-46). | AUF-23 |
+| Before publication, people without coach permission see `aufgebotStatus: KEINES` and `meinAufgebot: NOCH_KEIN_AUFGEBOT` (assumption O-45). `meinAufgebot` exists only for players of the team. | AUF-23, AUF-24 |
+| Cancelled or past match day: selecting and publishing give 409 (TER-06), viewing works. Concurrent changes never give 500. | TER-06 |
+| Publishing notifies all players of the team, each with «aufgeboten» or «nicht aufgeboten» (BEN-03). A later change notifies only those who are added or removed (BEN-05). Changes in a draft notify nobody. | AUF-24, AUF-27 |
 
-## Spiel eines Spieltags
+## Match of a match day
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Spiele haben Gegner, Anspielzeit, Heim/Auswärts und optional ein Resultat Heim:Gast (z.B. 5:3). Die API liefert sie nach Anspielzeit. | AUF-14, AUF-15 |
-| Erfassen, ändern und löschen dürfen Coaches des Teams und Admins (403). Nur bei Spieltagen (409, Regel AUF-01). | TER-11, RR-06 |
-| Die Anspielzeit liegt am Tag des Spieltags (400 beim Feld `anspielzeit`). Beim Ändern eines Spiels gilt das nur für eine neue Anspielzeit, das Resultat lässt sich also immer erfassen. Wird der Spieltag auf einen anderen Tag verschoben, ziehen von Hand erfasste Spiele mit. Hat er Spiele aus swiss unihockey, lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05); deren Datum kommt von swiss unihockey (Annahme O-48). | AUF-01, SUH-05 |
-| Hinzufügen und löschen nur, solange der Spieltag geplant und nicht vorbei ist (409, TER-06). Ändern, z.B. das Resultat, auch danach; nur ein abgesagter Spieltag ergibt 409 (Annahme O-47). | AUF-15, TER-06 |
-| Spiele aus swiss unihockey: Gegner, Anspielzeit und Heim/Auswärts sind schreibgeschützt, Löschen nur, wenn swiss unihockey sie nicht mehr liefert (409, Regel SUH-06). Das Resultat lässt sich erfassen. | SUH-06 |
-| Ein Spieltag mit Spielen oder Aufgebot lässt sich nicht in einen anderen Typ ändern (409, Regel AUF-01). | AUF-01 |
+| Matches have an opponent, start time, home/away and optionally a result home:away (e.g. 5:3). The API returns them ordered by start time. | AUF-14, AUF-15 |
+| Coaches of the team and admins may create, change and delete them (403). Only for match days (409, rule AUF-01). | TER-11, RR-06 |
+| The start time lies on the day of the match day (400 on the field `anspielzeit`). When changing a match, this only applies to a new start time, so the result can always be entered. If the match day is moved to another day, manually entered matches move with it. If it has matches from swiss unihockey, it can only be moved within the same day (422 on the field `beginn`, rule SUH-05); their date comes from swiss unihockey (assumption O-48). | AUF-01, SUH-05 |
+| Adding and deleting only while the match day is planned and not over (409, TER-06). Changing, e.g. the result, also afterwards; only a cancelled match day gives 409 (assumption O-47). | AUF-15, TER-06 |
+| Matches from swiss unihockey: opponent, start time and home/away are read-only; deleting only when swiss unihockey no longer delivers them (409, rule SUH-06). The result can be entered. | SUH-06 |
+| A match day with matches or a call-up cannot be changed to another type (409, rule AUF-01). | AUF-01 |
 
-## Spiel aus swiss unihockey
+## Match from swiss unihockey
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Aktuell: Abgleich findet neues Spiel<br/>Spieltag wird angelegt oder ergänzt
-    Aktuell --> Aktuell: Abgleich ohne Änderung
-    Aktuell --> Geaendert: Zeit, Ort oder Gegner bei SU geändert
-    Geaendert --> Aktuell: übernommen, Team benachrichtigt (BEN-06)
-    Aktuell --> NichtMehrVorhanden: SU liefert Spiel nicht mehr
-    NichtMehrVorhanden --> Aktuell: SU liefert es wieder
-    NichtMehrVorhanden --> [*]: Coach löscht es
+    [*] --> Current: sync finds new match<br/>match day is created or extended
+    Current --> Current: sync without change
+    Current --> Changed: time, venue or opponent changed at SU
+    Changed --> Current: taken over, team notified (BEN-06)
+    Current --> NoLongerAvailable: SU no longer delivers match
+    NoLongerAvailable --> Current: SU delivers it again
+    NoLongerAvailable --> [*]: coach deletes it
 ```
 
-- Der Abgleich überschreibt nur importierte Felder: Gegner, Anspielzeit, Heim/Auswärts, Spielort, Resultat. Treffpunkt, Hinweise, Antworten und Aufgebot bleiben unberührt (SUH-06).
-- Spiele desselben Teams am selben Tag in derselben Halle bilden einen Spieltag (SUH-04). Ein neues Spiel kommt zu einem bestehenden importierten Spieltag mit gleichem Tag und gleicher Halle, sonst entsteht ein neuer Spieltag «Spieltag». Von Hand erfasste Spieltage bekommen nie Spiele aus dem Abgleich (SUH-10).
-- Beginn und Ende eines betroffenen Spieltags folgen seinen Spielen: Beginn ist die erste Anspielzeit, Ende die letzte plus 75 Minuten (Annahme F-07). Ändert sich dadurch der Beginn, gilt der Spieltag als verschoben.
-- Wechseln Spiele auf einen anderen Tag oder in eine andere Halle, betrachtet der Abgleich alle Spiele eines Spieltags gemeinsam: Bleibt keines am bisherigen Tag in der bisherigen Halle (z.B. ganzes Turnier eine Woche später), zieht der Spieltag mit allen seinen Spielen mit (Spielort und Zeit neu, Treffpunkt, Hinweise, Antworten und Aufgebot bleiben, Annahme F-07). Gehen die Spiele an verschiedene Ziele, zieht er dorthin, wo die meisten hingehen, bei Gleichstand zum frühesten Spiel. Die übrigen Spiele wechseln in den passenden oder einen neuen Spieltag. Bleibt mindestens ein Spiel, bleibt auch der Spieltag. Ein Tag und eine Halle gehören immer zu höchstens einem importierten Spieltag (SUH-04).
-- Benachrichtigt werden alle Mitglieder des Teams (BEN-06), einmal pro Spieltag und Abgleich, wenn sich Zeit, Halle, Gegner oder Heim/Auswärts eines Spiels geändert haben und der Spieltag geplant und nicht vorbei ist. Ein neues Resultat (SUH-08) oder eine Markierung «nicht mehr vorhanden» benachrichtigt nicht.
-- Ein Spiel «nicht mehr vorhanden» bleibt, bis die Coach es entfernt: in `/termine/:id/bearbeiten` mit «Spiel <n> entfernen» und «Änderungen speichern» (`DELETE /termine/{id}/spiele/{spielId}`). Importierte Spiele, die swiss unihockey noch liefert, lassen sich nicht entfernen (SUH-06, #44).
-- Das Resultat überschreibt der Abgleich nur, wenn swiss unihockey eines liefert; ein von Hand erfasstes bleibt sonst (O-47).
-- Ist swiss unihockey nicht erreichbar oder liefert es Unerwartetes, ändert sich nichts. Der Abgleich von Hand meldet es (502, Regel SUH-09), der tägliche Lauf (04:30) versucht es am nächsten Tag wieder; ein gestörtes Team hält die anderen nicht auf (SUH-09).
-- Abgeglichen wird die aktuelle Saison. Ein Team ohne Verknüpfung oder ausserhalb der aktuellen Saison: 409.
+- The sync only overwrites imported fields: opponent, start time, home/away, venue, result. Meeting point, notes, responses and call-up stay untouched (SUH-06).
+- Matches of the same team on the same day in the same hall form one match day (SUH-04). A new match joins an existing imported match day with the same day and the same hall, otherwise a new match day «Spieltag» is created. Manually created match days never get matches from the sync (SUH-10).
+- Start and end of an affected match day follow its matches: start is the first start time, end is the last plus 75 minutes (assumption F-07). If this changes the start, the match day counts as rescheduled.
+- If matches move to another day or another hall, the sync looks at all matches of a match day together: if none stays on the previous day in the previous hall (e.g. a whole tournament one week later), the match day moves with all its matches (new venue and time; meeting point, notes, responses and call-up stay, assumption F-07). If the matches go to different targets, it moves to where most of them go, on a tie to the earliest match. The remaining matches move to the matching or a new match day. If at least one match stays, the match day stays too. A day and a hall always belong to at most one imported match day (SUH-04).
+- All members of the team are notified (BEN-06), once per match day and sync, if time, hall, opponent or home/away of a match changed and the match day is planned and not over. A new result (SUH-08) or a «nicht mehr vorhanden» mark does not notify.
+- A match «nicht mehr vorhanden» (no longer available) stays until the coach removes it: in `/termine/:id/bearbeiten` with «Spiel <n> entfernen» and «Änderungen speichern» (`DELETE /termine/{id}/spiele/{spielId}`). Imported matches that swiss unihockey still delivers cannot be removed (SUH-06, #44).
+- The sync only overwrites the result if swiss unihockey delivers one; a manually entered result stays otherwise (O-47).
+- If swiss unihockey cannot be reached or delivers something unexpected, nothing changes. The manual sync reports it (502, rule SUH-09), the daily run (04:30) tries again the next day; a failing team does not hold up the others (SUH-09).
+- The current season is synced. A team without a link or outside the current season: 409.
 
-## Benachrichtigung
+## Notification
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Ungelesen: Auslöser BEN-01 bis BEN-07
-    Ungelesen --> Gelesen: geöffnet oder als gelesen markiert
-    Gelesen --> [*]
+    [*] --> Unread: trigger BEN-01 to BEN-07
+    Unread --> Read: opened or marked as read
+    Read --> [*]
 ```
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Jede Person sieht nur ihre eigenen Benachrichtigungen, neueste zuerst. Fremde als gelesen markieren: 403. Mehrfach markieren ändert nichts. | RR-07 |
-| Ein Klick auf eine Benachrichtigung markiert sie als gelesen und öffnet den Termin. | BEN-12 |
-| Wer etwas auslöst, wird darüber nicht benachrichtigt (z.B. die Coach, die absagt; Annahme F-06, O-50). | BEN |
-| Die Liste in der App gibt es immer. Weitere Kanäle (E-Mail, Push) erhalten dieselben Nachrichten über die Schnittstelle `Kanal`. | BEN-10, BEN-11, E-56 |
+| Every person sees only their own notifications, newest first. Marking someone else's as read: 403. Marking several times changes nothing. | RR-07 |
+| A click on a notification marks it as read and opens the event. | BEN-12 |
+| Whoever triggers something is not notified about it (e.g. the coach who cancels; assumption F-06, O-50). | BEN |
+| The list in the app always exists. Further channels (e-mail, push) receive the same messages through the `Kanal` interface. | BEN-10, BEN-11, E-56 |
 
-## Saison
+## Season
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Geplant: angelegt (optional mit Übernahme, SAI-04)
-    Geplant --> Aktuell: zur aktuellen machen (SAI-06)
-    Aktuell --> Archiv: andere, spätere Saison wird aktuell
-    Archiv --> Aktuell: wieder zur aktuellen machen
-    Aktuell --> Geplant: frühere Saison wird aktuell
+    [*] --> Planned: created (optionally with takeover, SAI-04)
+    Planned --> Current: make current (SAI-06)
+    Current --> Archive: another, later season becomes current
+    Archive --> Current: make current again
+    Current --> Planned: earlier season becomes current
 ```
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Es gibt immer genau eine aktuelle Saison. Ohne Angabe von `saison` gilt sie. | SAI-03 |
-| Ist (noch) keine Saison aktuell, z.B. in einer frischen Installation ohne Seed, antwortet `GET /api/ich` und jede Anfrage ohne `saison` mit 409 «Keine aktuelle Saison» (Regel SAI-03). Die Oberfläche leitet dann jede Route auf den Hinweis `/keine-saison` um. Den Hinweis zeigt sie nur in diesem Zustand: direkt geöffnet ohne Anmeldung geht es zur Anmeldung, mit aktueller Saison weiter zum Ziel. | SAI-03 |
-| «Archiv» ist jede Saison, die vor der aktuellen beginnt. Teams und Zugehörigkeiten darin sind nur lesbar: Ändern ergibt 409 mit Regel SAI-02. | SAI-02 |
-| Eine neue Saison ist zuerst «geplant» und kann angepasst werden, bevor sie aktuell wird. | SAI-04 |
-| Übernahme kopiert Teams, Teamzugehörigkeiten und Linien mit Namen, Reihenfolge und Zuweisungen. Die Quelle bleibt unverändert. | SAI-04, LIN-11 |
-| Name schon vergeben oder Zeitraum überschneidet sich mit einer anderen Saison: 409. Auch zwei gleichzeitige Anfragen (Doppelklick) ergeben 201 und 409, nie 500. Ende vor Beginn: 400. | SAI-01 |
+| There is always exactly one current season. If `saison` is not given, it applies. | SAI-03 |
+| If no season is current (yet), e.g. in a fresh installation without seed, `GET /api/ich` and every request without `saison` answer 409 «Keine aktuelle Saison» (rule SAI-03). The UI then redirects every route to the notice `/keine-saison`. It shows the notice only in this state: opened directly without login, it goes to the login; with a current season, on to the target. | SAI-03 |
+| "Archive" is every season that starts before the current one. Teams and memberships in it are read-only: changing gives 409 with rule SAI-02. | SAI-02 |
+| A new season is "planned" first and can be adjusted before it becomes current. | SAI-04 |
+| Takeover copies teams, team memberships and lines with names, order and assignments. The source stays unchanged. | SAI-04, LIN-11 |
+| Name already taken or period overlaps with another season: 409. Two concurrent requests (double click) also give 201 and 409, never 500. End before start: 400. | SAI-01 |
 
-## Teamzugehörigkeit
+## Team membership
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Pro Person, Team und Saison genau eine Funktion. Eine zweite Aufnahme ergibt 409 mit Regel PTF-04, auch wenn beide Anfragen gleichzeitig ankommen. Funktion wechseln geht über «Funktion ändern». | PTF-04 |
-| Coaches stehen nie bei den Spielerinnen. | PTF-07 |
-| Entfernen löscht nur die Zugehörigkeit; die Person bleibt bestehen. | PTF-01 |
-| Personen, Teams, Zugehörigkeiten und Saisons verwalten nur Admins (403). Ein Team sehen nur seine Mitglieder und Admins (403). | RR-04, RR-07 |
-| Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, Regel RR-04). | RR-04 |
+| Exactly one team role per person, team and season. A second admission gives 409 with rule PTF-04, even if both requests arrive at the same time. Changing the team role goes through «Funktion ändern». | PTF-04 |
+| Coaches are never listed among the players. | PTF-07 |
+| Removing deletes only the membership; the person stays. | PTF-01 |
+| Only admins manage people, teams, memberships and seasons (403). Only its members and admins see a team (403). | RR-04, RR-07 |
+| The admin permission cannot be taken away from the last person who has it (409, rule RR-04). | RR-04 |
 
-## Linien
+## Lines
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Linien und Goalies gehören zu einem Team in einer Saison. Die API arbeitet immer mit der aktuellen Saison; das Archiv zeigt seine Einteilung unverändert. | LIN-03, LIN-11, SAI-02 |
-| Jedes Team hat pro Saison genau eine Gruppe «Goalies». Sie entsteht mit dem Team (bzw. wenn es in eine Saison kommt) und lässt sich weder löschen noch umbenennen noch verschieben (409, Regel LIN-05). | LIN-05 |
-| Eine Spielerin ist pro Team in höchstens einer Gruppe. Eine neue Zuweisung ersetzt die bisherige; `gruppeId: null` heisst «ohne Linie». Zwei gleichzeitige Zuweisungen ergeben nie 500. | LIN-02, LIN-06 |
-| Nur Personen mit Funktion «Spielerin» im Team sind zuweisbar (sonst 409, Regel LIN-10). Wechselt eine Spielerin zur Coach, verliert sie ihre Zuweisung. | LIN-10 |
-| Neue Linie ohne Angabe kommt ans Ende. Verschieben und Löschen nummerieren die Linien neu (1, 2, …, ohne Lücke). Die Oberfläche schlägt «Linie n» mit dem nächsten freien n vor. | LIN-09 |
-| Namen sind pro Team eindeutig, ohne Gross-/Kleinschreibung, auch gegenüber «Goalies» (409, Regel LIN-09). Beim Umbenennen erscheint die Meldung beim Namensfeld, der Fokus bleibt im Feld. | LIN-09 |
-| Wird eine Linie mit «nach oben»/«nach unten» an den Rand verschoben, geht der Fokus auf den Gegenknopf derselben Linie (der gedrückte ist danach gesperrt). | LIN-09 |
-| Gelöschte Linie: ihre Spielerinnen sind danach «Ohne Linie». | LIN-06 |
-| Ändern dürfen Coaches des Teams und Admins (sonst 403), ansehen alle Mitglieder des Teams und Admins. | LIN-07, RR-03, RR-07 |
+| Lines and goalies belong to a team in a season. The API always works with the current season; the archive shows its assignment unchanged. | LIN-03, LIN-11, SAI-02 |
+| Every team has exactly one group «Goalies» per season. It is created with the team (or when the team enters a season) and can be neither deleted nor renamed nor moved (409, rule LIN-05). | LIN-05 |
+| A player is in at most one group per team. A new assignment replaces the previous one; `gruppeId: null` means "no line". Two concurrent assignments never give 500. | LIN-02, LIN-06 |
+| Only people with team role "player" in the team can be assigned (otherwise 409, rule LIN-10). If a player becomes coach, she loses her assignment. | LIN-10 |
+| A new line without position goes to the end. Moving and deleting renumber the lines (1, 2, …, without gap). The UI suggests «Linie n» with the next free n. | LIN-09 |
+| Names are unique per team, case-insensitive, also against «Goalies» (409, rule LIN-09). When renaming, the message appears at the name field and the focus stays in the field. | LIN-09 |
+| If a line is moved to the edge with "up"/"down", the focus goes to the opposite button of the same line (the pressed one is disabled afterwards). | LIN-09 |
+| Deleted line: its players are «Ohne Linie» afterwards. | LIN-06 |
+| Coaches of the team and admins may change (otherwise 403); all members of the team and admins may view. | LIN-07, RR-03, RR-07 |
 
-## Formulare
+## Forms
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Solange eine Anfrage läuft, ist der Absende-Button gesperrt und weitere Klicks (auch ein Doppelklick) lösen keine zweite Anfrage aus. | – |
-| Gilt für jede schreibende Aktion, nicht nur für Formulare: Anmelden unter `/dev-login`, Abmelden, Umbenennen, Aufnehmen, Entfernen, Saison anlegen und zur aktuellen machen, Person speichern, Linien hinzufügen, umbenennen, verschieben, löschen und zuweisen, Termin und Serie speichern, Termin absagen, Ausnahme hinzufügen, Aufgebot auswählen (alle Checkboxen gesperrt) und veröffentlichen, Resultat speichern. Die geklickte Schaltfläche hat während der Anfrage `aria-busy="true"`, gleichartige Schaltflächen daneben sind `disabled`. Schlägt die Anfrage fehl, sind sie wieder bedienbar. | Nachbesserung #14 |
+| While a request is running, the submit button is disabled and further clicks (also a double click) do not trigger a second request. | – |
+| Applies to every writing action, not only to forms: login at `/dev-login`, logout, rename, add, remove, create a season and make it current, save a person, add, rename, move, delete and assign lines, save event and series, cancel an event, add an exception, select the call-up (all checkboxes disabled) and publish it, save a result. The clicked button has `aria-busy="true"` during the request, similar buttons next to it are `disabled`. If the request fails, they can be used again. | Follow-up fix #14 |
 
-## Sitzung
+## Session
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> ABGEMELDET
-    ABGEMELDET --> ANGEMELDET: POST /api/test/anmelden (dev/test) · produktives Verfahren offen (O-01)
-    ANGEMELDET --> ABGEMELDET: POST /api/abmelden
-    ANGEMELDET --> ANGEMELDET: weitere Anmeldung (neue Sitzung, alte bleibt gültig)
+    [*] --> LOGGED_OUT
+    LOGGED_OUT --> LOGGED_IN: POST /api/test/anmelden (dev/test) · production method open (O-01)
+    LOGGED_IN --> LOGGED_OUT: POST /api/abmelden
+    LOGGED_IN --> LOGGED_IN: another login (new session, old one stays valid)
 ```
 
-| Regel | Bezug |
+| Rule | Reference |
 |---|---|
-| Ohne gültige Sitzung antworten alle fachlichen Endpunkte mit 401 (Problem Details). Öffentlich sind nur `GET /api/sitzung`, `POST /api/abmelden` und die Test-Endpunkte. | RR-07 |
-| `GET /api/sitzung` antwortet immer 200 mit `angemeldet: true/false`. | F-00 |
-| Abmelden löscht die Sitzung und das Cookie, auch ohne gültige Sitzung 204. Idempotent: mehrere (auch gleichzeitige) Abmeldungen mit demselben Cookie antworten alle mit 204, nie mit 500. | F-00, Nachbesserung #26 |
-| Eine Sitzung läuft nicht ab (Annahme, O-33). | O-01 |
+| Without a valid session, all domain endpoints answer 401 (Problem Details). Only `GET /api/sitzung`, `POST /api/abmelden` and the test endpoints are public. | RR-07 |
+| `GET /api/sitzung` always answers 200 with `angemeldet: true/false`. | F-00 |
+| Logout deletes the session and the cookie, 204 also without a valid session. Idempotent: several (also concurrent) logouts with the same cookie all answer 204, never 500. | F-00, follow-up fix #26 |
+| A session does not expire (assumption, O-33). | O-01 |
 
-## Abläufe
+## Flows
 
-### Anmeldung und Rückleitung
+### Login and redirect back
 
 ```mermaid
 sequenceDiagram
     actor P as Person
     participant F as Frontend
     participant B as Backend
-    P->>F: öffnet /profil
+    P->>F: opens /profil
     F->>B: GET /api/sitzung
     B-->>F: {angemeldet: false}
     F-->>P: /dev-login?ziel=/profil (prod: /anmelden?ziel=/profil)
-    P->>F: wählt «Petra Keller»
+    P->>F: selects «Petra Keller»
     F->>B: POST /api/test/anmelden {schluessel: petra}
     B-->>F: 204, Set-Cookie stv_sitzung
     F->>B: GET /api/ich
-    B-->>F: Person, aktuelle Saison
+    B-->>F: person, current season
     F-->>P: /profil
 ```
 
-### Antworten mit einem Tap
+### Responding with one tap
 
 ```mermaid
 sequenceDiagram
-    actor S as Spielerin
+    actor S as Player
     participant F as Frontend
     participant B as Backend
-    participant N as Benachrichtigungen
-    S->>F: tippt «nicht dabei» in der Terminliste
+    participant N as Notifications
+    S->>F: taps «nicht dabei» in the event list
     F->>B: PUT /api/termine/{id}/antworten/ich {NICHT_DABEI}
-    B->>B: Termin geplant? Person Mitglied eines beteiligten Teams?
-    B->>B: Wechsel weg von DABEI nach Frist? → kurzfristig
-    alt kurzfristig oder aufgeboten
-        B->>N: Coaches der Teams der Person benachrichtigen
+    B->>B: event planned? person member of a participating team?
+    B->>B: change away from DABEI after deadline? → kurzfristig
+    alt late or called up
+        B->>N: notify coaches of the person's teams
     end
-    B-->>F: 200 Antwort
-    F-->>S: Button aktiv, Zähler aktualisiert, Hinweis «Gespeichert» (role=status)
+    B-->>F: 200 response
+    F-->>S: button active, counter updated, notice «Gespeichert» (role=status)
 ```
 
-### Aufgebot veröffentlichen
+### Publishing the call-up
 
 ```mermaid
 sequenceDiagram
     actor C as Coach
     participant F as Frontend
     participant B as Backend
-    participant N as Benachrichtigungen
-    C->>F: öffnet /termine/{id}/aufgebot
+    participant N as Notifications
+    C->>F: opens /termine/{id}/aufgebot
     F->>B: GET /api/termine/{id}/aufgebot
-    B-->>F: alle Spielerinnen nach Linie, mit Antwort
-    C->>F: wählt aus
+    B-->>F: all players by line, with response
+    C->>F: selects
     F->>B: PUT /api/termine/{id}/aufgebot {personIds}
-    B-->>F: Status ENTWURF
-    C->>F: «Veröffentlichen» und bestätigen
+    B-->>F: status ENTWURF
+    C->>F: «Veröffentlichen» and confirm
     F->>B: POST /api/termine/{id}/aufgebot/veroeffentlichen
-    B->>N: alle Spielerinnen des Teams benachrichtigen
-    B-->>F: Status VEROEFFENTLICHT
+    B->>N: notify all players of the team
+    B-->>F: status VEROEFFENTLICHT
 ```
 
-### Abgleich mit swiss unihockey
+### Sync with swiss unihockey
 
 ```mermaid
 sequenceDiagram
-    participant J as Täglicher Job
+    participant J as Daily job
     participant B as Backend
-    participant SU as swiss unihockey (Simulator im Test)
-    participant N as Benachrichtigungen
-    J->>B: Abgleich für alle verknüpften Teams
-    B->>SU: Spiele des Teams in der Saison
-    alt nicht erreichbar
-        SU--xB: Fehler
-        B->>B: nichts ändern, protokollieren
-    else Antwort
-        SU-->>B: Spiele
-        B->>B: nach Tag + Halle zu Spieltagen gruppieren
-        B->>B: neue anlegen, geänderte übernehmen, fehlende markieren
-        B->>N: Team über geänderte Spiele benachrichtigen
+    participant SU as swiss unihockey (simulator in tests)
+    participant N as Notifications
+    J->>B: sync for all linked teams
+    B->>SU: matches of the team in the season
+    alt not reachable
+        SU--xB: error
+        B->>B: change nothing, log it
+    else response
+        SU-->>B: matches
+        B->>B: group by day + hall into match days
+        B->>B: create new, take over changed, mark missing
+        B->>N: notify team about changed matches
     end
 ```

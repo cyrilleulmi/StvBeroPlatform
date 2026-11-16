@@ -1,46 +1,46 @@
-# Testplan Nachbesserung #16 · Ungültiges JSON ergibt Problem Details
+# Test plan follow-up fix #16 · Invalid JSON returns problem details
 
-Issue #16 · PR #30 · Fehler-Konvention in `docs/api/README.md` (RFC 9457)
+Issue #16 · PR #30 · Error convention in `docs/api/README.md` (RFC 9457)
 
-Allgemein für jeden Fall:
+General, for every case:
 
-- Vorbereitung: `POST /api/test/reset`. Wo nötig anmelden mit `POST /api/test/anmelden`
-  und `{ "schluessel": "<person>" }`. Uhr: Standard, spielt keine Rolle.
-- Anfragen mit `Content-Type: application/json` und dem angegebenen Body (roh, nicht escaped).
-- «Problem Details» heisst: Status 400, `Content-Type: application/problem+json`,
-  Body mit `title` «Ungültige Anfrage», `status` 400 und
+- Setup: `POST /api/test/reset`. Where needed, log in with `POST /api/test/anmelden`
+  and `{ "schluessel": "<person>" }`. Clock: default, does not matter.
+- Requests with `Content-Type: application/json` and the given body (raw, not escaped).
+- "Problem details" means: status 400, `Content-Type: application/problem+json`,
+  body with `title` «Ungültige Anfrage», `status` 400 and
   `detail` «Die Anfrage konnte nicht gelesen werden. Bitte die Eingaben prüfen.»
-- Keine Oberfläche betroffen. Ein Fall läuft zusätzlich im Browser (mobil 375×812) über `fetch`
-  aus einer angemeldeten Seite; danach Konsole prüfen (nur der erwartete 400).
+- No UI affected. One case also runs in the browser (mobile 375×812) via `fetch`
+  from a logged-in page; then check the console (only the expected 400).
 
-## K1 · Ungültiges JSON an beliebigem Endpunkt (Kriterium 1)
+## K1 · Invalid JSON at any endpoint (criterion 1)
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Test-Endpunkt, abgebrochen | Ohne Sitzung `POST /api/test/anmelden` mit `{"schluessel": ` | Problem Details, ohne `felder` |
-| K1.2 Kein JSON | Wie K1.1 mit `nicht json` | Problem Details |
-| K1.3 Falscher Typ | Wie K1.1 mit `[1,2]` | Problem Details |
-| K1.4 Falsches Datum, Test-Endpunkt | `PUT /api/test/uhr` mit `{"jetzt":"gestern"}` | Problem Details mit `felder[0]` = `{feld: "jetzt", meldung: "Ungültiger Wert."}` |
-| K1.5 Fachlicher Endpunkt | Als `alex`: `POST /api/saisons` mit `{"name":"2027/28","von":"2027-08-01","bis":` | Problem Details |
-| K1.6 Falsches Datumsformat | Als `alex`: `POST /api/saisons` mit `{"name":"2027/28","von":"irgendwann","bis":"2028-07-31"}` | Problem Details, `felder[0].feld` = `von` |
-| K1.7 Falscher Feldtyp | Als `alex`: `POST /api/saisons` mit `{"name":["x"],"von":"2027-08-01","bis":"2028-07-31"}` | Problem Details, `felder[0].feld` = `name` |
-| K1.8 PUT | Als `alex`: `PUT /api/teams/10000000-0000-4000-8000-000000000001` mit `{"name":` | Problem Details |
-| K1.9 Gültige Anfrage | Als `alex`: `POST /api/saisons` mit `{"name":"2027/28","von":"2027-08-01","bis":"2028-07-31"}` | 201, unverändert |
-| K1.10 Browser | Mobil, `/dev-login?ziel=%2Fverwaltung%2Fsaisons`, «Alex Admin», dann `fetch('/api/saisons', POST, '{"name":"2027/28","von":"x"')` | Problem Details; Seite bleibt auf `/verwaltung/saisons`, keine weiteren Konsolenfehler |
+| K1.1 Test endpoint, truncated | Without session `POST /api/test/anmelden` with `{"schluessel": ` | Problem details, without `felder` |
+| K1.2 Not JSON | As K1.1 with `nicht json` | Problem details |
+| K1.3 Wrong type | As K1.1 with `[1,2]` | Problem details |
+| K1.4 Wrong date, test endpoint | `PUT /api/test/uhr` with `{"jetzt":"gestern"}` | Problem details with `felder[0]` = `{feld: "jetzt", meldung: "Ungültiger Wert."}` |
+| K1.5 Domain endpoint | As `alex`: `POST /api/saisons` with `{"name":"2027/28","von":"2027-08-01","bis":` | Problem details |
+| K1.6 Wrong date format | As `alex`: `POST /api/saisons` with `{"name":"2027/28","von":"irgendwann","bis":"2028-07-31"}` | Problem details, `felder[0].feld` = `von` |
+| K1.7 Wrong field type | As `alex`: `POST /api/saisons` with `{"name":["x"],"von":"2027-08-01","bis":"2028-07-31"}` | Problem details, `felder[0].feld` = `name` |
+| K1.8 PUT | As `alex`: `PUT /api/teams/10000000-0000-4000-8000-000000000001` with `{"name":` | Problem details |
+| K1.9 Valid request | As `alex`: `POST /api/saisons` with `{"name":"2027/28","von":"2027-08-01","bis":"2028-07-31"}` | 201, unchanged |
+| K1.10 Browser | Mobile, `/dev-login?ziel=%2Fverwaltung%2Fsaisons`, «Alex Admin», then `fetch('/api/saisons', POST, '{"name":"2027/28","von":"x"')` | Problem details; the page stays on `/verwaltung/saisons`, no further console errors |
 
-## Rollen
+## Roles
 
-| Fall | Ausgangslage · Schritte | Erwartung |
+| Case | Starting point · steps | Expected |
 |---|---|---|
-| R1 Ohne Sitzung | `POST /api/saisons` mit `{"name":` | 401 (Anmeldung wird vor dem Lesen geprüft) |
-| R2 Nicht berechtigt | Als `anna`: `POST /api/saisons` mit `{"name":` | 400 Problem Details (Body wird vor der Rollenprüfung gelesen, verrät nichts) |
+| R1 Without session | `POST /api/saisons` with `{"name":` | 401 (login is checked before reading) |
+| R2 Not permitted | As `anna`: `POST /api/saisons` with `{"name":` | 400 problem details (body is read before the role check, reveals nothing) |
 
-## Grenzfälle: Framework-Antworten bleiben unverändert
+## Edge cases: framework responses stay unchanged
 
-| Fall | Schritte | Erwartung |
+| Case | Steps | Expected |
 |---|---|---|
-| G1 415 | Als `alex`: `POST /api/saisons` mit `Content-Type: text/plain` | 415 wie bisher |
-| G2 404 | `GET /api/gibtsnicht` | 404 wie bisher |
-| G3 405 | `DELETE /api/saisons` | 405 wie bisher |
-| G4 Leerer Body | Als `alex`: `POST /api/saisons` ohne Body | 400 `application/problem+json`, `detail` «Die Anfrage ist unvollständig oder ungültig.» (bestehender Validierungs-Mapper) |
-| G5 Leeres Objekt | Als `alex`: `POST /api/saisons` mit `{}` | 400 mit deutschen Feldmeldungen für `name`, `von`, `bis` |
+| G1 415 | As `alex`: `POST /api/saisons` with `Content-Type: text/plain` | 415 as before |
+| G2 404 | `GET /api/gibtsnicht` | 404 as before |
+| G3 405 | `DELETE /api/saisons` | 405 as before |
+| G4 Empty body | As `alex`: `POST /api/saisons` without body | 400 `application/problem+json`, `detail` «Die Anfrage ist unvollständig oder ungültig.» (existing validation mapper) |
+| G5 Empty object | As `alex`: `POST /api/saisons` with `{}` | 400 with German field messages for `name`, `von`, `bis` |
