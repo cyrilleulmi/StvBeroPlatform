@@ -27,6 +27,11 @@ public class FachFehler extends RuntimeException {
         return new FachFehler(400, "Ungültige Anfrage", meldung, null, List.of(new Fehler.FeldFehler(feld, meldung)));
     }
 
+    /** 422: fachliche Regel verletzt, mit dem Feld, bei dem die Meldung erscheint (z.B. ANM-04). */
+    public static FachFehler regelverletzung(String feld, String titel, String meldung, String regel) {
+        return new FachFehler(422, titel, meldung, regel, List.of(new Fehler.FeldFehler(feld, meldung)));
+    }
+
     /** 409: widerspricht dem aktuellen Zustand. */
     public static FachFehler konflikt(String titel, String detail, String regel) {
         return new FachFehler(409, titel, detail, regel);

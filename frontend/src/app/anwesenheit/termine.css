@@ -126,3 +126,25 @@ li[data-status='ABGESAGT'] .datum {
 .chip[data-art='verschoben'] {
   background: var(--mustard-soft);
 }
+
+/* F-04: eigene Antwort direkt in der Karte (ANM-08) */
+.termin-eintrag {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.karten-antwort {
+  display: block;
+  padding-left: 68px;
+}
+
+@media (max-width: 479px) {
+  .karten-antwort {
+    padding-left: 0;
+  }
+}
+
+.zaehler span {
+  white-space: nowrap;
+}

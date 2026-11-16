@@ -16,6 +16,7 @@ import { AnmeldungService } from '../kern/anmeldung.service';
 import { fehlertext } from '../kern/fehlertext';
 import { Icon } from '../kern/icon';
 import { TEXTE } from '../kern/texte';
+import { MeineAntwort } from './meine-antwort';
 import { jahrVon, monat, monatSchluessel, terminDatum, uhrzeit } from './zeit';
 
 interface Monat {
@@ -25,13 +26,14 @@ interface Monat {
 }
 
 /**
- * Kachel Anwesenheit: Termine aller eigenen Teams, chronologisch (TER-13). Filter `?team=<id>` und
+ * Kachel Anwesenheit: Termine aller eigenen Teams, chronologisch (TER-13), mit der eigenen Antwort direkt
+ * in der Karte (ANM-08) und dem Gesamtzähler, der sich nach einer Antwort ohne Neuladen aktualisiert. Filter `?team=<id>` und
  * Ansicht `?ansicht=vergangen` stehen in der URL (docs/testbarkeit.md, Regel 5).
  */
 @Component({
   selector: 'app-termine',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, MeineAntwort],
   template: `
     <div class="titelzeile">
       <h1>{{ texte.termine.titel }}</h1>
@@ -94,6 +96,7 @@ interface Monat {
           <ul class="liste" [attr.aria-labelledby]="'monat-' + m.schluessel">
             @for (t of m.termine; track t.id) {
               <li
+                class="termin-eintrag"
                 [attr.data-testid]="'termin-karte-' + t.id"
                 [attr.aria-label]="kartenName(t)"
                 [attr.data-status]="t.status"
@@ -122,16 +125,48 @@ interface Monat {
                           <span class="nebentext">{{ t.absagegrund }}</span>
                         }
                       </span>
-                    } @else if (t.verschoben) {
-                      <span class="status-zeile">
-                        <span class="chip" data-art="verschoben" data-testid="termin-status">{{
-                          texte.termine.verschoben
-                        }}</span>
-                      </span>
+                    } @else {
+                      @if (t.verschoben) {
+                        <span class="status-zeile">
+                          <span class="chip" data-art="verschoben" data-testid="termin-status">{{
+                            texte.termine.verschoben
+                          }}</span>
+                        </span>
+                      }
+                      @if (t.zaehler; as z) {
+                        <span class="nebentext zaehler" data-testid="termin-zaehler">
+                          <span data-zaehler="dabei">{{ texte.uebersicht.dabei(z.dabei) }}</span>
+                          ·
+                          <span data-zaehler="nicht-dabei">{{
+                            texte.uebersicht.nichtDabei(z.nichtDabei)
+                          }}</span>
+                          ·
+                          <span data-zaehler="vielleicht">{{
+                            texte.uebersicht.vielleicht(z.vielleicht)
+                          }}</span>
+                          ·
+                          <span data-zaehler="offen">{{ texte.uebersicht.offen(z.offen) }}</span>
+                        </span>
+                      }
+                    }
+                    @if (vergangen()) {
+                      <span class="nebentext" [attr.data-antwort]="t.meineAntwort.status">{{
+                        texte.antwort.deineAntwort(texte.antwort.status[t.meineAntwort.status])
+                      }}</span>
                     }
                   </span>
                   <app-icon name="chevron-right" [groesse]="20" />
                 </a>
+                @if (!vergangen()) {
+                  <app-meine-antwort
+                    class="karten-antwort"
+                    [terminId]="t.id"
+                    [antwort]="t.meineAntwort"
+                    [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
+                    [gesperrt]="t.status === 'ABGESAGT' ? texte.antwort.abgesagt : null"
+                    (geaendert)="nachladen(t.id)"
+                  />
+                }
               </li>
             }
           </ul>
@@ -232,6 +267,16 @@ export class Termine {
       queryParams: { team: teamId || null },
       queryParamsHandling: 'merge',
     });
+  }
+
+  /** Nach einer Antwort: eigene Antwort und Zähler dieses Termins neu holen (ohne Neuladen der Seite). */
+  protected async nachladen(id: string): Promise<void> {
+    try {
+      const neu = await firstValueFrom(this.http.get<TerminKurz>(`/api/termine/${id}`));
+      this.termine.update((liste) => liste.map((t) => (t.id === id ? neu : t)));
+    } catch (e) {
+      this.fehler.set(fehlertext(e));
+    }
   }
 
   private async laden(team: string | undefined, ansicht: string | undefined): Promise<void> {

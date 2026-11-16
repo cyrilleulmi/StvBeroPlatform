@@ -2,7 +2,7 @@
 
 Karte der Oberfläche für Menschen und Agenten. Der Test-Agent nutzt sie, um gezielt per URL an die richtige Stelle zu springen. Wer eine Route oder feste Test-ID ändert, passt diese Datei im selben PR an.
 
-Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) und F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`).
+Stand: Zielbild für den Kern. Die Spalte «Feature» nennt, mit welchem Feature aus dem [Backlog](../pipeline/backlog.md) ein Screen kommt. Gebaut sind F-00 (Grundgerüst: `/anmelden`, `/dev-login`, `/`, `/termine` als leerer Zustand, `/profil`) F-01 (`/teams`, `/teams/:id`, `/verwaltung` mit Personen, Teams und Saisons) F-02 (`/teams/:id/linien`, `/teams/:id` nach Linie) F-03 (`/termine` mit Filtern, `/termine/neu`, `/termine/:id` mit Angaben, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`) und F-04 (Antworten in `/`, `/termine` und `/termine/:id`, Übersicht nach Team und Linie).
 
 ## Navigation
 
@@ -74,9 +74,9 @@ Ohne Berechtigung zeigt ein Screen den Text «Keine Berechtigung» (`role="alert
 
 | Dialog | Geöffnet von | Name (Überschrift) |
 |---|---|---|
-| Vielleicht mit Kommentar | Antwort «vielleicht» | «Vielleicht – bitte kurz begründen» |
-| Absage-Grund | Antwort «nicht dabei» (optional, überspringbar) | «Nicht dabei» |
-| Stellvertretend antworten | Coach in der Übersicht, Menü bei einer Person | «Antwort für <Name> eintragen» |
+| Vielleicht mit Kommentar | Antwort «vielleicht» (Feld «Kommentar», Pflicht; leer: Meldung beim Feld) | «Vielleicht – bitte kurz begründen» |
+| Absage-Grund | Antwort «nicht dabei», nachdem sie schon gespeichert ist (Feld «Grund (freiwillig)», Buttons «Grund speichern», «Überspringen») | «Nicht dabei» |
+| Stellvertretend antworten | Coach in der Übersicht, Button bei einer Person | «Antwort für <Name> eintragen» (Auswahl «Antwort» mit Radiobuttons, Feld «Kommentar (bei «vielleicht» Pflicht)») |
 | Termin absagen | Termin bearbeiten, «Termin absagen» | «Termin absagen» (Feld «Grund», Pflicht) |
 | Linie löschen | Linien, «<Linie> löschen» | «<Linie> löschen?» |
 | Aufgebot veröffentlichen | Aufgebot | «Aufgebot veröffentlichen?» |
@@ -94,7 +94,7 @@ Feste Test-IDs, auf die sich Tests verlassen. Schema und Regeln: [testbarkeit.md
 | `testmodus-hinweis` | Banner «Testmodus» (nur dev/test) |
 | `kachel-<id>` | Kachel auf dem Start-Screen (Link), z.B. `kachel-anwesenheit` |
 | `dev-login-person-<schluessel>` | Eintrag einer Testperson auf `/dev-login`, z.B. `dev-login-person-petra` |
-| `naechster-termin` | Karte «Nächster Termin» auf dem Start-Screen |
+| `naechster-termin` | Karte «Nächster Termin» auf dem Start-Screen: nächster geplanter Termin der eigenen Teams (abgesagte übersprungen) mit Link zum Termin und `meine-antwort`. Ohne Termin: «Keine kommenden Termine» |
 | `benachrichtigungen-zaehler` | Anzahl ungelesener Benachrichtigungen |
 | `keine-saison-hinweis` | Hinweis auf `/keine-saison` |
 
@@ -120,8 +120,9 @@ Erfolgsmeldungen haben `role="status"`, Fehler `role="alert"`. In «Person aufne
 | Test-ID | Element |
 |---|---|
 | `termin-karte-<terminId>` | Eintrag in der Terminliste (`li` mit `aria-label` «<Titel> <Datum> <Beginn>», z.B. «Training Di 17.11. 18:30», und `data-status`) |
-| `meine-antwort` | Antwort-Buttons der angemeldeten Person (in Karte und Detail) |
-| `antwort-dabei`, `antwort-nicht-dabei`, `antwort-vielleicht` | Die drei Antwort-Buttons innerhalb von `meine-antwort` |
+| `meine-antwort` | Antwort-Buttons der angemeldeten Person (in Karte, Detail und Start), `role="group"` mit Namen «Meine Antwort» bzw. «Meine Antwort für <Titel> <Datum> <Beginn>» und `data-antwort`. Rückmeldung «Gespeichert: dabei.» (`role="status"`). Abgesagt: Buttons `disabled`, Erklärung über `aria-describedby` |
+| `antwort-dabei`, `antwort-nicht-dabei`, `antwort-vielleicht` | Die drei Antwort-Buttons innerhalb von `meine-antwort` (Namen «Dabei», «Nicht dabei», «Vielleicht», gewählt: `aria-pressed="true"`) |
+| `termin-zaehler` | Gesamtzähler in der Karte der Terminliste (nicht bei abgesagten Terminen) |
 | `termin-status` | Hinweis «abgesagt» bzw. «verschoben» (in der Karte als Chip, im Detail als Hinweis mit Grund) |
 | `antwortfrist` | Antwortfrist im Detail eines Termins, z.B. «Mo 16.11. 18:30 (24 Stunden vor Beginn)» |
 | `ausnahmen` | Abschnitt «Ausnahmen» auf `/serien/:id` |
@@ -131,7 +132,7 @@ Erfolgsmeldungen haben `role="status"`, Fehler `role="alert"`. In «Person aufne
 | `uebersicht-team-<teamId>-zaehler` | Zähler eines Teams |
 | `uebersicht-gruppe-<gruppeId>` | Linie oder Goalies innerhalb eines Teams |
 | `uebersicht-ohne-linie-<teamId>` | Gruppe «Ohne Linie» eines Teams (nur wenn nicht leer) |
-| `uebersicht-person-<personId>` | Eintrag einer Person, mit `data-antwort` |
+| `uebersicht-person-<personId>` | Eintrag einer Person (`li`), mit `data-antwort`, Status als Text, Kommentar «…» nur für Berechtigte, «eingetragen von …», «kurzfristig abgemeldet». Coaches (bzw. Admins) sehen den Button «Antwort für <Name> eintragen». Dieselbe Person kann in mehreren Teams und im Coach-Block stehen: über den Abschnitt eingrenzen |
 | `coach-block` | Block der Coaches |
 
 Zähler-Elemente tragen `data-zaehler="dabei|nicht-dabei|vielleicht|offen"`.

@@ -1,5 +1,35 @@
 <h1>{{ texte.start.begruessung(anmeldung.ich()?.vorname ?? '') }}</h1>
 
+<section
+  class="karte naechster"
+  data-testid="naechster-termin"
+  aria-labelledby="naechster-termin-titel"
+  [attr.aria-busy]="terminLaedt() ? 'true' : null"
+>
+  <h2 id="naechster-termin-titel" class="eyebrow">{{ texte.start.naechsterTermin }}</h2>
+  @if (terminFehler(); as meldung) {
+    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  } @else if (terminLaedt()) {
+    <p class="leer">{{ texte.allgemein.laden }}</p>
+  } @else if (naechster(); as t) {
+    <a class="termin-link" [routerLink]="['/termine', t.id]">
+      <span class="termin-titel">{{ t.titel }}</span>
+      <span class="nebentext">{{ beschreibung(t) }}</span>
+      @if (t.ort) {
+        <span class="nebentext">{{ t.ort.name }}</span>
+      }
+    </a>
+    <app-meine-antwort
+      [terminId]="t.id"
+      [antwort]="t.meineAntwort"
+      [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
+      (geaendert)="nachladen(t.id)"
+    />
+  } @else {
+    <p class="leer">{{ texte.start.keinTermin }}</p>
+  }
+</section>
+
 <section class="kacheln" aria-labelledby="kacheln-titel" [attr.aria-busy]="laedt() ? 'true' : null">
   <h2 id="kacheln-titel">{{ texte.start.kachelnTitel }}</h2>
   @if (fehler(); as meldung) {

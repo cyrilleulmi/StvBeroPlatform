@@ -509,9 +509,10 @@ export interface paths {
         get?: never;
         /**
          * Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)
-         * @description `VIELLEICHT` verlangt einen Kommentar (sonst 422). Ein Wechsel von `DABEI` weg nach der
-         *     Antwortfrist ist eine kurzfristige Absage und benachrichtigt die Coaches (ANM-10, BEN-02).
-         *     Bei abgesagten Terminen 409.
+         * @description Nur Mitglieder eines beteiligten Teams (jede Funktion), sonst 403. `VIELLEICHT` verlangt einen
+         *     Kommentar (sonst 422, Feld `kommentar`). Ein Wechsel von `DABEI` weg nach der Antwortfrist ist eine
+         *     kurzfristige Absage (`kurzfristig`) und benachrichtigt die Coaches (ANM-10, BEN-02). Die Markierung
+         *     bleibt bis zum nächsten «dabei». Bei abgesagten und vergangenen Terminen 409 (TER-06).
          */
         put: operations["eigeneAntwortSetzen"];
         post?: never;
@@ -534,7 +535,9 @@ export interface paths {
         get?: never;
         /**
          * Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)
-         * @description Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist. Sonst 403.
+         * @description Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist, und Admins (für jedes Mitglied
+         *     eines beteiligten Teams). Sonst 403. Gehört die Person zu keinem beteiligten Team, 404. Es gelten
+         *     dieselben Regeln wie bei der eigenen Antwort; `eingetragenVon` ist die anfragende Person (ANM-12).
          */
         put: operations["antwortStellvertretendSetzen"];
         post?: never;
@@ -2276,6 +2279,7 @@ export interface operations {
                     "application/json": components["schemas"]["Antwort"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];
@@ -2307,6 +2311,7 @@ export interface operations {
                     "application/json": components["schemas"]["Antwort"];
                 };
             };
+            400: components["responses"]["Ungueltig"];
             403: components["responses"]["KeineBerechtigung"];
             404: components["responses"]["NichtGefunden"];
             409: components["responses"]["Konflikt"];

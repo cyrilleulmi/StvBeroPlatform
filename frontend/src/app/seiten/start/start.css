@@ -66,3 +66,24 @@
   background: var(--coral-soft);
   color: var(--coral);
 }
+
+/* F-04: nächster Termin mit Antwort-Buttons */
+.naechster {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.termin-link {
+  display: grid;
+  gap: 2px;
+  min-height: var(--touch);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.termin-titel {
+  font-size: 18px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
