@@ -81,7 +81,7 @@ public class TestResource {
     @Path("/uhr")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testUhrSetzen",
-            summary = "Backend-Uhr auf einen festen Zeitpunkt setzen. Fällige Erinnerungen (BEN-01) gehen sofort raus.")
+            summary = "Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus.")
     @APIResponse(responseCode = "204", description = "Gesetzt")
     @APIResponse(responseCode = "400", description = "Anfrage formal ungültig",
             content = @Content(mediaType = Fehler.MEDIENTYP, schema = @Schema(implementation = Fehler.class)))

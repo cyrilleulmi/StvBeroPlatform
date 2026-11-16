@@ -558,7 +558,7 @@ paths:
       operationId: terminAendern
       summary: Termin ändern oder verschieben (TER-06, TER-12, Coach)
       description: |
-        Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Betroffenen (ab F-06).
+        Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
         Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
         Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
         Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
@@ -858,7 +858,7 @@ paths:
       description: |
         Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
         Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
-        Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Die Benachrichtigung der Betroffenen kommt mit F-06.
+        Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Wer neu dazukommt oder herausfällt, wird benachrichtigt (BEN-05).
       requestBody:
         required: true
         content:
@@ -891,7 +891,7 @@ paths:
       summary: Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
       description: |
         Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
-        Spielerinnen `meinAufgebot`. Die Benachrichtigung (BEN-03) kommt mit F-06.
+        Spielerinnen `meinAufgebot`. Sie werden benachrichtigt (BEN-03).
       responses:
         '200':
           description: Veröffentlicht
@@ -958,6 +958,14 @@ paths:
       tags: [Benachrichtigungen]
       operationId: benachrichtigungenLesen
       summary: Eigene Benachrichtigungen, neueste zuerst (BEN-12)
+      description: |
+        Nur die eigenen. `ungelesen=true` liefert nur ungelesene (Zähler in der Navigation).
+        Benachrichtigt wird bei: Erinnerung 12 Stunden vor der Antwortfrist an alle ohne Antwort, einmal pro
+        Person und Termin (BEN-01, BEN-13); kurzfristiger Absage an die Coaches der Teams, in denen die Person
+        Spielerin ist (BEN-02, O-17); Abmeldung einer Aufgebotenen an dieselben Coaches (BEN-04);
+        Veröffentlichung an alle Spielerinnen des Teams (BEN-03); Änderung eines veröffentlichten Aufgebots an
+        neu Aufgebotene und nicht mehr Aufgebotene (BEN-05); Absage und Verschiebung an alle Mitglieder der
+        beteiligten Teams (BEN-07). Wer etwas auslöst, wird darüber nicht benachrichtigt.
       parameters:
         - name: ungelesen
           in: query
@@ -981,8 +989,12 @@ paths:
       tags: [Benachrichtigungen]
       operationId: benachrichtigungGelesen
       summary: Als gelesen markieren
+      description: |
+        Mehrfach markieren ändert nichts (204). Die Benachrichtigung einer anderen Person: 403 (RR-07).
       responses:
         '204': { description: Markiert }
+        '401': { $ref: '#/components/responses/NichtAngemeldet' }
+        '403': { $ref: '#/components/responses/KeineBerechtigung' }
         '404': { $ref: '#/components/responses/NichtGefunden' }
 
   # ---------------------------------------------------------------- Test
@@ -1091,7 +1103,7 @@ paths:
     get:
       tags: [Test]
       operationId: testBenachrichtigungenLesen
-      summary: Alle seit dem letzten Reset erzeugten Benachrichtigungen aller Personen
+      summary: Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed
       security: []
       responses:
         '200':
