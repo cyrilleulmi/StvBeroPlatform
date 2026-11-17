@@ -1,6 +1,8 @@
 package ch.stvbero.platform.core.auth;
 
 import ch.stvbero.platform.core.person.Account;
+import ch.stvbero.platform.core.team.TeamMembership;
+import ch.stvbero.platform.core.team.TeamRole;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -11,6 +13,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 
 /** Sessions via the cookie {@value #COOKIE}. The production login method is still open (O-01). */
 @ApplicationScoped
@@ -44,7 +47,14 @@ public class SessionService {
         }
         return Session.<Session>findByIdOptional(token)
                 .map(session -> new CurrentUser(session.account.id, session.account.person.id,
-                        session.account.person.firstName, session.account.person.admin));
+                        session.account.person.firstName, session.account.person.admin,
+                        isCoach(session.account.person.id)));
+    }
+
+    /** Coach of at least one team in the current season (RR-03, E-69). Without a current season: no. */
+    static boolean isCoach(UUID personId) {
+        return TeamMembership.count("person.id = ?1 and season.current = true and teamRole = ?2",
+                personId, TeamRole.COACH) > 0;
     }
 
     /**

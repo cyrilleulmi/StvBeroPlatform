@@ -162,9 +162,12 @@ class MatchDaysTest {
     }
 
     @Test
-    void s11CallUpOnlyForCoachesOfTheTeamAndAdmins() {
+    void s11CallUpOnlyForCoachesAndAdmins() {
         callUp(login("anna"), T04).statusCode(403).body("rule", equalTo("RR-07"));
-        callUp(login("marc"), T04).statusCode(403);
+        // Lea is a player only: no call-up. Marc is coach of Team 2 and manages Team 1's call-up too (F-12).
+        callUp(login("lea"), T05).statusCode(403);
+        setCallUp(login("lea"), T05, personIds(ANNA)).statusCode(403);
+        callUp(login("marc"), T04).statusCode(200);
         setCallUp(login("anna"), T04, personIds(ANNA)).statusCode(403);
         publish(login("anna"), T04).statusCode(403);
         callUp(login("alex"), T04).statusCode(200);
@@ -284,7 +287,7 @@ class MatchDaysTest {
         String newMatch = """
                 {"opponent":"UHC Drei","startTime":"2026-11-22T12:30:00+01:00","home":true}""";
         addMatch(login("anna"), T04, newMatch).statusCode(403);
-        addMatch(login("marc"), T04, newMatch).statusCode(403);
+        addMatch(login("lea"), T04, newMatch).statusCode(403);
         addMatch(petra, T01, newMatch).statusCode(409).body("rule", equalTo("AUF-01"))
                 .body("detail", equalTo("Nur ein Spieltag hat Spiele."));
         addMatch(petra, T04, """
@@ -331,7 +334,7 @@ class MatchDaysTest {
         updateMatch(marc, T05, MATCH_03, """
                 {"opponent":"UH Testingen II","startTime":"2026-11-28T14:15:00+01:00","home":false}""")
                 .statusCode(200).body("opponent", equalTo("UH Testingen II")).body("home", equalTo(false));
-        deleteMatch(login("petra"), T05, MATCH_03).statusCode(403);
+        deleteMatch(login("lea"), T05, MATCH_03).statusCode(403);
         deleteMatch(marc, T05, MATCH_03).statusCode(204);
         assertThat(event(marc, T05).extract().jsonPath().getList("matches"), equalTo(List.of()));
         deleteMatch(marc, T05, MATCH_03).statusCode(404);

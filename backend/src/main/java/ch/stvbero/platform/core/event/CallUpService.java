@@ -94,7 +94,7 @@ public class CallUpService {
     }
 
     private void checkCanEdit(CurrentUser user, Event event) {
-        CallUpRules.checkCanEdit(user.admin(), EventService.teamRoles(user, event.teams, event.season));
+        CallUpRules.checkCanEdit(user.allTeams(), EventService.teamRoles(user, event.teams, event.season));
     }
 
     /** Call-up of the event, locked for the transaction; two concurrent requests never result in a 500. */

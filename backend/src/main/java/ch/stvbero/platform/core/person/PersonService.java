@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/** Managing persons (PTF-01, PTF-11). Admins only (RR-04). */
+/** Managing persons (PTF-01, PTF-11). Admins and coaches (RR-03, E-69); only admins change the admin flag (RR-04). */
 @ApplicationScoped
 public class PersonService {
 
     public List<PersonDto> list(CurrentUser user, String search) {
-        user.checkAdmin();
+        user.checkAllTeams();
         List<Person> persons;
         String term = PersonRules.clean(search);
         if (term == null) {
@@ -31,7 +31,7 @@ public class PersonService {
     }
 
     public PersonDetailDto get(CurrentUser user, UUID id) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Person p = find(id);
         List<TeamMembershipDto> memberships = TeamMembership.<TeamMembership>list(
                         "person.id = ?1", id).stream()
@@ -45,29 +45,29 @@ public class PersonService {
 
     @Transactional
     public PersonDto create(CurrentUser user, PersonInput input) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Person p = new Person();
         p.id = UUID.randomUUID();
-        apply(p, input);
+        apply(p, input, PersonRules.adminFlag(user.admin(), false, input.admin()));
         p.persist();
         return PersonDto.of(p);
     }
 
     @Transactional
     public PersonDto update(CurrentUser user, UUID id, PersonInput input) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Person p = find(id);
-        boolean staysAdmin = Boolean.TRUE.equals(input.admin());
+        boolean staysAdmin = PersonRules.adminFlag(user.admin(), p.admin, input.admin());
         PersonRules.checkAdminRevocation(p.admin, staysAdmin, Person.count("admin", true));
-        apply(p, input);
+        apply(p, input, staysAdmin);
         return PersonDto.of(p);
     }
 
-    private static void apply(Person p, PersonInput input) {
+    private static void apply(Person p, PersonInput input, boolean admin) {
         p.firstName = PersonRules.clean(input.firstName());
         p.lastName = PersonRules.clean(input.lastName());
         p.email = PersonRules.clean(input.email());
-        p.admin = Boolean.TRUE.equals(input.admin());
+        p.admin = admin;
     }
 
     public static Person find(UUID id) {

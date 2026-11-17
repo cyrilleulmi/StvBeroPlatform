@@ -18,7 +18,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Teams and team memberships (PTF). Only admins may manage them (RR-04, PTF-11). */
+/**
+ * Teams and team memberships (PTF). Admins and coaches manage them (RR-03, RR-04, PTF-11, E-69); removing a person
+ * from a team is deleting and stays with the admins (RR-08).
+ */
 @ApplicationScoped
 public class TeamService {
 
@@ -30,7 +33,7 @@ public class TeamService {
             .comparing((TeamMembershipDto m) -> m.team().name(), String.CASE_INSENSITIVE_ORDER)
             .thenComparing(m -> m.team().id());
 
-    /** Teams of a season. Admins see all of them, everyone else only their own (PTF-12). */
+    /** Teams of a season. Admins and coaches see all of them, players only their own (PTF-12, RR-03). */
     public List<TeamDto> list(CurrentUser user, UUID seasonId) {
         Season season = Season.orCurrent(seasonId);
         Map<UUID, TeamRole> mine = TeamMembership.<TeamMembership>list("person.id = ?1 and season.id = ?2",
@@ -38,20 +41,20 @@ public class TeamService {
                 .collect(Collectors.toMap(m -> m.team.id, m -> m.teamRole));
         List<TeamSeason> teams = TeamSeason.list("season.id", season.id);
         return teams.stream()
-                .filter(ts -> user.admin() || mine.containsKey(ts.team.id))
+                .filter(ts -> user.allTeams() || mine.containsKey(ts.team.id))
                 .map(ts -> TeamDto.of(ts, mine.get(ts.team.id)))
                 .sorted(BY_NAME)
                 .toList();
     }
 
-    /** Team with coaches and players. Only members of the team in this season and admins. */
+    /** Team with coaches and players. Only members of the team in this season, coaches and admins. */
     public TeamDetailDto get(CurrentUser user, UUID teamId, UUID seasonId) {
         Team team = find(teamId);
         Season season = Season.orCurrent(seasonId);
         List<TeamMembership> memberships = inTeam(team, season);
         Optional<TeamRole> mine = memberships.stream()
                 .filter(m -> m.person.id.equals(user.personId())).map(m -> m.teamRole).findFirst();
-        if (!user.admin() && mine.isEmpty()) {
+        if (!user.allTeams() && mine.isEmpty()) {
             throw DomainError.forbidden();
         }
         if (!team.belongsTo(season)) {
@@ -65,7 +68,7 @@ public class TeamService {
 
     @Transactional
     public TeamDto create(CurrentUser user, UUID seasonId, TeamInput input) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Season season = Season.orCurrent(seasonId);
         season.checkWritable();
         Team team = new Team();
@@ -81,7 +84,7 @@ public class TeamService {
      */
     @Transactional
     public TeamDto update(CurrentUser user, UUID teamId, UUID seasonId, TeamInput input) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Team team = find(teamId);
         Season season = Season.orCurrent(seasonId);
         TeamSeason ts = team.in(season).orElseThrow(
@@ -94,7 +97,7 @@ public class TeamService {
     /** Adds a person with a team role to the team. Exactly one team role per team and season (PTF-04). */
     @Transactional
     public TeamMembershipDto addMember(CurrentUser user, UUID teamId, UUID seasonId, MemberInput input) {
-        user.checkAdmin();
+        user.checkAllTeams();
         Team team = find(teamId);
         Season season = Season.orCurrent(seasonId);
         season.checkWritable();
@@ -114,7 +117,7 @@ public class TeamService {
     @Transactional
     public TeamMembershipDto changeTeamRole(CurrentUser user, UUID teamId, UUID personId, UUID seasonId,
                                                  TeamRole teamRole) {
-        user.checkAdmin();
+        user.checkAllTeams();
         TeamMembership membership = membership(teamId, personId, seasonId);
         membership.season.checkWritable();
         membership.teamRole = teamRole;
@@ -125,6 +128,7 @@ public class TeamService {
         return TeamMembershipDto.of(membership);
     }
 
+    /** Removing a person from a team counts as deleting: admins only (RR-08, E-69). */
     @Transactional
     public void removeMember(CurrentUser user, UUID teamId, UUID personId, UUID seasonId) {
         user.checkAdmin();

@@ -25,13 +25,13 @@ public final class CallUpRules {
         }
     }
 
-    /** View, create and publish a call-up: coaches of the team and admins (RR-03, permission table). */
-    public static boolean canEdit(boolean admin, Collection<TeamRole> teamRolesInTeam) {
-        return admin || teamRolesInTeam.contains(TeamRole.COACH);
+    /** View, create and publish a call-up: coaches (of every team, E-69) and admins (RR-03, permission table). */
+    public static boolean canEdit(boolean allTeams, Collection<TeamRole> teamRolesInTeam) {
+        return allTeams || teamRolesInTeam.contains(TeamRole.COACH);
     }
 
-    public static void checkCanEdit(boolean admin, Collection<TeamRole> teamRolesInTeam) {
-        if (!canEdit(admin, teamRolesInTeam)) {
+    public static void checkCanEdit(boolean allTeams, Collection<TeamRole> teamRolesInTeam) {
+        if (!canEdit(allTeams, teamRolesInTeam)) {
             throw DomainError.forbidden();
         }
     }

@@ -42,7 +42,7 @@ public class SeriesService {
     public SeriesDto create(CurrentUser user, SeriesInput input) {
         Set<Team> teams = EventService.teams(input.teamIds());
         Season season = EventService.seasonOn(input.validFrom(), null);
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, teams, season));
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, teams, season));
         checkInput(input, teams, season);
         Series s = new Series();
         s.id = UUID.randomUUID();
@@ -60,7 +60,7 @@ public class SeriesService {
 
     public SeriesDto get(CurrentUser user, UUID seriesId) {
         Series s = find(seriesId);
-        EventRules.checkCanView(user.admin(), EventService.teamRoles(user, s.teams, s.season));
+        EventRules.checkCanView(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
         return SeriesDto.of(s, user);
     }
 
@@ -72,9 +72,9 @@ public class SeriesService {
     @Transactional
     public SeriesDto update(CurrentUser user, UUID seriesId, SeriesInput input) {
         Series s = find(seriesId);
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, s.teams, s.season));
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
         Set<Team> teams = EventService.teams(input.teamIds());
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, teams, s.season));
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, teams, s.season));
         checkInput(input, teams, s.season);
         apply(s, input, teams);
 
@@ -112,7 +112,7 @@ public class SeriesService {
     @Transactional
     public SeriesDto createException(CurrentUser user, UUID seriesId, SeriesExceptionDto input) {
         Series s = find(seriesId);
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, s.teams, s.season));
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
         EventRules.checkException(input.startDate(), input.endDate());
         s.season.checkWritable();
         SeriesException exception = new SeriesException();

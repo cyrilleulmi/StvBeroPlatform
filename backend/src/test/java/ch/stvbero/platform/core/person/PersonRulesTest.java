@@ -26,6 +26,28 @@ class PersonRulesTest {
     }
 
     @Test
+    void rr04AdminSetsTheFlagFreely() {
+        assertEquals(true, PersonRules.adminFlag(true, false, true));
+        assertEquals(false, PersonRules.adminFlag(true, true, false));
+        // For admins, a missing value means «no admin», as before F-12
+        assertEquals(false, PersonRules.adminFlag(true, true, null));
+    }
+
+    @Test
+    void e69CoachKeepsTheFlagAsItIs() {
+        assertEquals(true, PersonRules.adminFlag(false, true, null));
+        assertEquals(false, PersonRules.adminFlag(false, false, null));
+        assertEquals(true, PersonRules.adminFlag(false, true, true));
+        assertEquals(false, PersonRules.adminFlag(false, false, false));
+    }
+
+    @Test
+    void e69CoachCannotChangeTheFlag() {
+        assertEquals(403, assertThrows(DomainError.class, () -> PersonRules.adminFlag(false, false, true)).status());
+        assertEquals(403, assertThrows(DomainError.class, () -> PersonRules.adminFlag(false, true, false)).status());
+    }
+
+    @Test
     void blankInputsBecomeNull() {
         assertNull(PersonRules.clean("   "));
         assertEquals("Anna", PersonRules.clean(" Anna "));

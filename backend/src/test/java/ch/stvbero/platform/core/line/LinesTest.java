@@ -93,13 +93,13 @@ class LinesTest {
                 .body("groups.name", contains("Powerplay", "Linie 1", "Linie 2", "Goalies"))
                 .body("groups.sortOrder", contains(1, 2, 3, null));
 
-        // Delete line 2: Sara and Nina then have no line (LIN-06), sort order without a gap
-        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(204);
+        // Delete line 2 (admin only, RR-08): Sara and Nina then have no line (LIN-06), sort order without a gap
+        given().cookie("stv_session", login("alex")).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(204);
         given().cookie("stv_session", petra).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200)
                 .body("groups.name", contains("Powerplay", "Linie 1", "Goalies"))
                 .body("groups.sortOrder", contains(1, 2, null))
                 .body("noLine.firstName", contains("Kim", "Sara", "Nina"));
-        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(404);
+        given().cookie("stv_session", login("alex")).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_2).then().statusCode(404);
     }
 
     @Test
@@ -207,7 +207,7 @@ class LinesTest {
 
     @Test
     void k6GoaliesExactlyOnceAndNotDeletable() {
-        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_GOALIES).then().statusCode(409)
+        given().cookie("stv_session", login("alex")).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_GOALIES).then().statusCode(409)
                 .body("rule", equalTo("LIN-05"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body(line("Torhüterinnen"))
                 .put("/api/teams/" + TEAM_1 + "/groups/" + T1_GOALIES).then().statusCode(409)
@@ -228,31 +228,39 @@ class LinesTest {
                 .body("groups.name", contains("Goalies"));
     }
 
+    /** F-12: coaches manage the lines of every team, deleting stays with admins (RR-03, RR-08, E-69). */
     @Test
-    void k7OnlyCoachesOfTheTeamAndAdminsCanEdit() {
+    void k7CoachesOfAnyTeamAndAdminsCanEdit() {
         String marc = login("marc");
         String anna = login("anna");
-        // marc is coach of Team 2, not of Team 1: 403 (RR-07)
-        given().cookie("stv_session", marc).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
+        // marc is coach of Team 2, not of Team 1, and still manages Team 1's lines (criterion 1)
+        given().cookie("stv_session", marc).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200);
         given().cookie("stv_session", marc).contentType(ContentType.JSON).body(line("Linie 3"))
-                .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
-        given().cookie("stv_session", marc).contentType(ContentType.JSON).body(line("X"))
-                .put("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_1).then().statusCode(403);
-        given().cookie("stv_session", marc).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_1).then().statusCode(403);
+                .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(201);
+        given().cookie("stv_session", marc).contentType(ContentType.JSON).body(line("Erste Linie"))
+                .put("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_1).then().statusCode(200);
         given().cookie("stv_session", marc).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
-                .put("/api/teams/" + TEAM_1 + "/assignments/" + ANNA).then().statusCode(403);
+                .put("/api/teams/" + TEAM_1 + "/assignments/" + ANNA).then().statusCode(204);
+        // Deleting a line: admins only (criterion 3)
+        given().cookie("stv_session", marc).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_1).then().statusCode(403)
+                .body("title", equalTo("Keine Berechtigung"));
+        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/groups/" + T1_LINE_1).then().statusCode(403);
 
         // anna is a player: may read, not change
         given().cookie("stv_session", anna).get("/api/teams/" + TEAM_1 + "/groups").then().statusCode(200)
-                .body("groups", hasSize(3));
+                .body("groups", hasSize(4));
+        given().cookie("stv_session", anna).get("/api/teams/" + TEAM_2 + "/groups").then().statusCode(403);
         given().cookie("stv_session", anna).contentType(ContentType.JSON).body(assignment(T1_LINE_2))
                 .put("/api/teams/" + TEAM_1 + "/assignments/" + ANNA).then().statusCode(403);
         given().cookie("stv_session", anna).contentType(ContentType.JSON).body(line("Linie 3"))
                 .post("/api/teams/" + TEAM_1 + "/groups").then().statusCode(403);
 
-        // petra is only a player in Team 2
-        given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T2_LINE_1))
+        // lea is a player in Team 1 and 2, coach in none
+        given().cookie("stv_session", login("lea")).contentType(ContentType.JSON).body(assignment(T2_LINE_1))
                 .put("/api/teams/" + TEAM_2 + "/assignments/" + LEA).then().statusCode(403);
+        // petra is only a player in Team 2, but coach in Team 1: coach rights everywhere (criterion 7)
+        given().cookie("stv_session", petra).contentType(ContentType.JSON).body(assignment(T2_LINE_1))
+                .put("/api/teams/" + TEAM_2 + "/assignments/" + LEA).then().statusCode(204);
 
         // Admin may
         given().cookie("stv_session", login("alex")).contentType(ContentType.JSON).body(assignment(T1_LINE_2))

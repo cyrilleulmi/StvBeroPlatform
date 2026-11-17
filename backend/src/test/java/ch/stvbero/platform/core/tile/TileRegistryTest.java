@@ -12,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /** NF-11, NF-12, RR-05: tiles registry themselves and are visible only to authorized roles. */
 class TileRegistryTest {
 
-    static final CurrentUser PLAYER = new CurrentUser(UUID.randomUUID(), UUID.randomUUID(), "Anna", false);
-    static final CurrentUser ADMIN = new CurrentUser(UUID.randomUUID(), UUID.randomUUID(), "Alex", true);
+    static final CurrentUser PLAYER = new CurrentUser(UUID.randomUUID(), UUID.randomUUID(), "Anna", false, false);
+    static final CurrentUser ADMIN = new CurrentUser(UUID.randomUUID(), UUID.randomUUID(), "Alex", true, false);
 
     record AdminOnly(String id, int sortOrder) implements TileDefinition {
         public String title() { return "Nur Admin"; }

@@ -30,7 +30,7 @@ tags:
   - name: Lines
     description: Lines and goalies (LIN)
   - name: Persons
-    description: Person administration (admin)
+    description: Person administration (admin, coach)
   - name: Events
     description: Events, series (TER)
   - name: Responses
@@ -159,7 +159,7 @@ paths:
     get:
       tags: [Teams]
       operationId: listTeams
-      summary: Teams of a season. Without admin permission only the person's own teams.
+      summary: Teams of a season. Admins and coaches get all teams, players only their own.
       parameters:
         - $ref: '#/components/parameters/season'
       responses:
@@ -174,7 +174,7 @@ paths:
     post:
       tags: [Teams]
       operationId: createTeam
-      summary: Create a team (admin)
+      summary: Create a team (admin, coach)
       description: The team belongs to the given season from now on. Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
@@ -213,7 +213,7 @@ paths:
     put:
       tags: [Teams]
       operationId: renameTeam
-      summary: Rename a team (admin)
+      summary: Rename a team (admin, coach)
       description: |
         The name applies per season. Only the given season is renamed (default: current); older
         seasons keep the name they had. Archived seasons are read-only (409, SAI-02).
@@ -240,7 +240,7 @@ paths:
     post:
       tags: [Teams]
       operationId: addMember
-      summary: Add a person with a team role to the team (PTF-03, PTF-04, admin)
+      summary: Add a person with a team role to the team (PTF-03, PTF-04, admin, coach)
       description: |
         A person has exactly one team role per team and season. If the person is already a member, the
         API responds with 409 (rule PTF-04). Archived seasons are read-only (409, SAI-02).
@@ -268,7 +268,7 @@ paths:
     put:
       tags: [Teams]
       operationId: changeTeamRole
-      summary: Change the team role (admin)
+      summary: Change the team role (admin, coach)
       description: |
         If a player becomes a coach, she loses her line assignment in this team.
         Archived seasons are read-only (409, SAI-02).
@@ -296,7 +296,7 @@ paths:
     delete:
       tags: [Teams]
       operationId: removeMember
-      summary: Remove a person from the team (admin). Existing responses are kept.
+      summary: Remove a person from the team (admin only, RR-08). Existing responses are kept.
       description: Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
@@ -314,7 +314,7 @@ paths:
       tags: [Lines]
       operationId: getLineup
       summary: Lines and goalies of a team with their players, plus «Ohne Linie» (no line)
-      description: Current season. For members of the team (any team role) and admins, otherwise 403.
+      description: Current season. For members of the team (any team role), coaches and admins, otherwise 403.
       responses:
         '200':
           description: OK
@@ -374,7 +374,7 @@ paths:
     delete:
       tags: [Lines]
       operationId: deleteLine
-      summary: Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409).
+      summary: Delete a line (admin only, RR-08). Its players then have no line. Goalies cannot be deleted (409).
       responses:
         '204': { description: Deleted }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -415,7 +415,7 @@ paths:
     get:
       tags: [Persons]
       operationId: listPersons
-      summary: All persons (admin)
+      summary: All persons (admin, coach)
       parameters:
         - name: search
           in: query
@@ -433,7 +433,8 @@ paths:
     post:
       tags: [Persons]
       operationId: createPerson
-      summary: Create a person (admin)
+      summary: Create a person (admin, coach)
+      description: Only admins may set `admin` to true; a coach doing so gets 403 (RR-04, E-69).
       requestBody:
         required: true
         content:
@@ -453,7 +454,7 @@ paths:
     get:
       tags: [Persons]
       operationId: getPerson
-      summary: Person with all team memberships (admin)
+      summary: Person with all team memberships (admin, coach)
       responses:
         '200':
           description: OK
@@ -465,8 +466,10 @@ paths:
     put:
       tags: [Persons]
       operationId: updatePerson
-      summary: Update a person (admin)
-      description: The admin permission cannot be taken away from the last person who has it (409, RR-04).
+      summary: Update a person (admin, coach)
+      description: |
+        The admin permission cannot be taken away from the last person who has it (409, RR-04).
+        Only admins change `admin`. For a coach a missing `admin` keeps the flag, a different value gives 403 (E-69).
       requestBody:
         required: true
         content:
@@ -489,6 +492,10 @@ paths:
       tags: [Events]
       operationId: listEvents
       summary: Events of the person's own teams with the person's own response (TER-13)
+      description: |
+        Without `team`, the events of the person's own teams. With `team`, admins and coaches get the
+        events of that team even if they are not a member (RR-03, E-69); everyone else only if it is one
+        of their teams.
       parameters:
         - name: from
           in: query
@@ -523,7 +530,7 @@ paths:
       operationId: createEvent
       summary: Create a single event, match day or other event (TER-11, AUF-16, coach)
       description: |
-        The person must be an admin or a coach in at least one of the given teams (TER-01, RR-06), otherwise 403.
+        The person must be an admin or a coach (in any team, RR-03, E-69), otherwise 403.
         A match day has exactly one team (AUF-03). An event in the past gives 400, one in an archived
         season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
       requestBody:
@@ -750,8 +757,8 @@ paths:
       operationId: setResponseOnBehalf
       summary: Respond on behalf of a person (ANM-11, ANM-12, RR-06)
       description: |
-        Only coaches of a team in which the person is a player for the event, and admins (for every member
-        of a team involved). Otherwise 403. If the person belongs to no team involved, 404. The same rules
+        Only coaches (of any team, RR-03, E-69) and admins, for every member of a team involved.
+        Otherwise 403. If the person belongs to no team involved, 404. The same rules
         apply as for the person's own response; `enteredBy` is the requesting person (ANM-12).
       requestBody:
         required: true
@@ -842,7 +849,7 @@ paths:
       operationId: getCallUp
       summary: Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)
       description: |
-        Only coaches of the team and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
+        Only coaches (of any team, E-69) and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
         the selection (AUF-28). Groups as in the overview; empty groups are left out.
       responses:
         '200':
@@ -1320,8 +1327,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/Person'
         - type: object
-          required: [season, memberships, now]
+          required: [coach, season, memberships, now]
           properties:
+            coach:
+              type: boolean
+              description: Coach of at least one team in the current season. Coaches manage all teams like admins, but do not delete (RR-03, RR-08, E-69).
             season: { $ref: '#/components/schemas/Season' }
             memberships:
               type: array

@@ -37,7 +37,7 @@ public class PersonResource {
     PersonService persons;
 
     @GET
-    @Operation(operationId = "listPersons", summary = "All persons (admin)")
+    @Operation(operationId = "listPersons", summary = "All persons (admin, coach)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = PersonDto.class)))
     @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
@@ -48,7 +48,7 @@ public class PersonResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createPerson", summary = "Create a person (admin)")
+    @Operation(operationId = "createPerson", summary = "Create a person (admin, coach; only admins set the admin flag)")
     @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -61,7 +61,7 @@ public class PersonResource {
 
     @GET
     @Path("/{personId}")
-    @Operation(operationId = "getPerson", summary = "Person with all team memberships (admin)")
+    @Operation(operationId = "getPerson", summary = "Person with all team memberships (admin, coach)")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDetailDto.class)))
     @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
@@ -75,7 +75,7 @@ public class PersonResource {
     @PUT
     @Path("/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "updatePerson", summary = "Update a person (admin)")
+    @Operation(operationId = "updatePerson", summary = "Update a person (admin, coach; only admins change the admin flag)")
     @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PersonDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
