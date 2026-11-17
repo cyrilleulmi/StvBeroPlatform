@@ -298,7 +298,7 @@ test.describe('Rescheduling an imported match day', () => {
     await expect(page).toHaveURL(`/termine/${T04}/bearbeiten`);
 
     await page.goto(`/termine/${T04}`);
-    await page.getByRole('button', { name: 'Resultat für Team 1 – UHC Musterdorf erfassen' }).click();
+    await page.getByRole('button', { name: 'Resultat erfassen: Team 1 – UHC Musterdorf' }).click();
     const dialog = page.getByRole('dialog', { name: 'Resultat: Team 1 – UHC Musterdorf' });
     await dialog.getByLabel('Resultat (Heim:Gast, z.B. 5:3)').fill('2:1');
     await dialog.getByRole('button', { name: 'Resultat speichern' }).click();
@@ -310,7 +310,7 @@ test.describe('Rescheduling an imported match day', () => {
 test('F-05 K8 AUF-15: Enter a result per match', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
-  await page.getByRole('button', { name: 'Resultat für Team 1 – UHC Musterdorf erfassen' }).click();
+  await page.getByRole('button', { name: 'Resultat erfassen: Team 1 – UHC Musterdorf' }).click();
   const dialog = page.getByRole('dialog', { name: 'Resultat: Team 1 – UHC Musterdorf' });
   await expect(dialog).toBeVisible();
   const field = dialog.getByLabel('Resultat (Heim:Gast, z.B. 5:3)');

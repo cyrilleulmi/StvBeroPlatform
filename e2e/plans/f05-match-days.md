@@ -24,7 +24,7 @@ T04 match day Team 1 `…004`, T05 match day Team 2 `…005`. Matches `50000000-
 | K5 | S9 publish | `anna` → T04 (before); `petra` → call-up → «Veröffentlichen» → dialog «Aufgebot veröffentlichen?» → «Abbrechen», then again → «Veröffentlichen»; `anna`, `kim` → T04 | Before: «noch kein Aufgebot». Cancel changes nothing. Afterwards «veröffentlicht am Mo 16.11. 06:00», Anna «aufgeboten», Kim «nicht aufgeboten». Without a selection, «Veröffentlichen» is disabled with an explanation |
 | K6 | S11 coaches only | `anna` → `/termine/<T04>/aufgebot`; API `GET`/`PUT …/call-up`, `POST …/publish` as `anna`; `marc` `GET …/T04/call-up` | «Keine Berechtigung» (`role="alert"`), API 403. Marc (coach Team 2) 403. Anna sees no link «Aufgebot bearbeiten» in the event |
 | K7 | Coaches not selectable | `petra` → call-up T04; API `PUT …/call-up` with Petra's ID | 7 checkboxes, Petra missing; API 422 rule AUF-28 |
-| K8 | Result | `petra` → T04 → «Resultat für Team 1 – UHC Musterdorf erfassen» → «5-3», then «5:3»; `anna` → T04 | Message at the field for «5-3»; afterwards «Resultat 5:3» in the match, also for Anna. Anna has no button |
+| K8 | Result | `petra` → T04 → «Resultat erfassen: Team 1 – UHC Musterdorf» → «5-3», then «5:3»; `anna` → T04 | Message at the field for «5-3»; afterwards «Resultat 5:3» in the match, also for Anna. Anna has no button |
 
 ## Edge cases (states.md)
 
@@ -39,9 +39,9 @@ T04 match day Team 1 `…004`, T05 match day Team 2 `…005`. Matches `50000000-
 | G7 | Change type | API `PUT …/T04` with `type: PRACTICE` | 409 rule AUF-01 |
 | G8 | Double click | Checkbox twice quickly; «Veröffentlichen» in the dialog twice | All checkboxes disabled during the request, at most one `POST …/publish` |
 | G9 | Dark | Call-up screen, event T04/T05, dialogs | Easy to read, status colors and chips recognizable |
-| G10 | Move an imported match day (O-48) | `petra` → `/termine/<T04>/bearbeiten` → date 29.11.2026 → save → «Resultat für Team 1 – UHC Musterdorf erfassen» → «2:1»; API `PUT …/T04/matches/<match 01>` with result | Saving is prevented: message at the field «Datum» «Der Spieltag hat Spiele von swiss unihockey. Er lässt sich nur am selben Tag verschieben; …» (API 422, rule SUH-05, field `start`). Match day and matches stay on 22.11., result 2:1 can be saved. |
+| G10 | Move an imported match day (O-48) | `petra` → `/termine/<T04>/bearbeiten` → date 29.11.2026 → save → «Resultat erfassen: Team 1 – UHC Musterdorf» → «2:1»; API `PUT …/T04/matches/<match 01>` with result | Saving is prevented: message at the field «Datum» «Der Spieltag hat Spiele von swiss unihockey. Er lässt sich nur am selben Tag verschieben; …» (API 422, rule SUH-05, field `start`). Match day and matches stay on 22.11., result 2:1 can be saved. |
 | G11 | Move a match day entered by hand | `marc` → API `PUT …/T05` with date 29.11. | Match 03 moves along (29.11. 14:00) |
 | G12 | Change call-up after publishing | `petra` → publish call-up T04, then tick Kim; `kim` → T04 | Status stays «veröffentlicht», Kim immediately sees «aufgeboten» |
-| G13 | Permissions matches/result | `anna`, `marc` → API `PUT …/T04/matches/<match 01>` | 403; admin `alex` may view and change the call-up |
-| G14 | Move an imported match day on the same day | `petra` → `/termine/<T04>/bearbeiten` → date 29.11. → save (rejected) → date back to 22.11., start 09:00 → save → «Resultat für Team 1 – UHC Musterdorf erfassen» → «2:1» (double click on «Resultat speichern») | 200, «Der Termin ist verschoben.», matches stay 09:30/11:45, exactly one `PUT …/matches/<match 01>` → 200, «Resultat 2:1» stays after reload |
+| G13 | Permissions matches/result | `anna`, `marc` → API `PUT …/T04/matches/<match 01>` | `anna` 403; `marc` 200 (coach of another team, E-69 / F-12); admin `alex` may view and change the call-up |
+| G14 | Move an imported match day on the same day | `petra` → `/termine/<T04>/bearbeiten` → date 29.11. → save (rejected) → date back to 22.11., start 09:00 → save → «Resultat erfassen: Team 1 – UHC Musterdorf» → «2:1» (double click on «Resultat speichern») | 200, «Der Termin ist verschoben.», matches stay 09:30/11:45, exactly one `PUT …/matches/<match 01>` → 200, «Resultat 2:1» stays after reload |
 | G15 | Matches for a practice | API `POST …/<T01>/matches` | 409 «Nur ein Spieltag hat Spiele.», rule AUF-01 |
