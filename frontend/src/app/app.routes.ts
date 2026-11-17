@@ -69,6 +69,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/teams/lines').then((m) => m.Lines),
       },
       {
+        path: 'teams/:teamId/liga',
+        title: title('Liga'),
+        loadComponent: () => import('./pages/teams/league').then((m) => m.League),
+      },
+      {
         path: 'benachrichtigungen',
         title: title('Benachrichtigungen'),
         loadComponent: () =>
