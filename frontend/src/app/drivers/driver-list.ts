@@ -192,9 +192,9 @@ export function km(value: number | null | undefined): string {
                           [id]="'seats-' + c.id"
                           [value]="c.seats"
                           [disabled]="running()"
-                          (change)="changeSeats(c, $any($event.target).value)"
+                          (change)="changeSeats(c, $any($event.target))"
                         >
-                          @for (n of seatOptions; track n) {
+                          @for (n of seatOptionsFor(c); track n) {
                             <option [value]="n" [selected]="n === c.seats">{{ n }}</option>
                           }
                         </select>
@@ -507,11 +507,19 @@ export class DriverListSection {
     );
   }
 
-  protected changeSeats(c: Car, value: string): void {
-    const seats = Number(value);
-    void this.run('seats-' + c.id, this.http.put<DriverList>(this.url(`/cars/${c.id}`), { seats }), () =>
+  /** Seats 1–8, but never fewer than the passengers already in the car (DRV-03). */
+  protected seatOptionsFor(c: Car): number[] {
+    return SEAT_OPTIONS.filter((n) => n >= c.passengers.length);
+  }
+
+  protected async changeSeats(c: Car, select: HTMLSelectElement): Promise<void> {
+    const seats = Number(select.value);
+    await this.run('seats-' + c.id, this.http.put<DriverList>(this.url(`/cars/${c.id}`), { seats }), () =>
       this.s.seatsSaved(seats),
     );
+    // After a rejection the bindings do not change, so Angular leaves the DOM on the rejected value: show the saved one
+    const saved = this.data()?.cars.find((car) => car.id === c.id)?.seats;
+    if (saved != null) select.value = String(saved);
   }
 
   protected askRemove(c: Car): void {
