@@ -149,7 +149,7 @@ interface Month {
                         </span>
                       }
                     }
-                    @if (past()) {
+                    @if (past() && isMember(t)) {
                       <span class="secondary-text" [attr.data-response]="t.myResponse.status">{{
                         texts.response.yourResponse(texts.response.status[t.myResponse.status])
                       }}</span>
@@ -157,7 +157,7 @@ interface Month {
                   </span>
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
-                @if (!past()) {
+                @if (!past() && isMember(t)) {
                   <app-my-response
                     class="card-response"
                     [eventId]="t.id"
@@ -271,6 +271,15 @@ export class Events {
 
   protected teams(t: EventSummary): string {
     return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
+  }
+
+  /**
+   * Member of an involved team: only then the person can respond for themselves (ANM-01, RR-02). Coaches
+   * and admins also see events of other teams (E-69), but without «Meine Antwort» (same rule as the
+   * event detail page).
+   */
+  protected isMember(t: EventSummary): boolean {
+    return t.teams.some((x) => !!x.myTeamRole);
   }
 
   /** Name of the list entry, e.g. «Training Di 17.11. 18:30». */

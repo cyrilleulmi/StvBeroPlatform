@@ -8,6 +8,7 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
 const TEAM_2 = '10000000-0000-4000-8000-000000000002';
+const TEAM_3 = '10000000-0000-4000-8000-000000000003';
 const ANNA = '20000000-0000-4000-8000-000000000005';
 const MIA = '20000000-0000-4000-8000-000000000007';
 const NINA = '20000000-0000-4000-8000-000000000009';
@@ -15,6 +16,8 @@ const T1_LINE_1 = '30000000-0000-4000-8000-000000000001';
 const T1_LINE_2 = '30000000-0000-4000-8000-000000000002';
 const T01 = '40000000-0000-4000-8000-000000000001';
 const T02 = '40000000-0000-4000-8000-000000000002';
+const T06 = '40000000-0000-4000-8000-000000000006';
+const T07 = '40000000-0000-4000-8000-000000000007';
 const SEASON_2025 = '60000000-0000-4000-8000-000000000001';
 
 test.beforeEach(async ({ request }) => {
@@ -190,4 +193,26 @@ test('F-12 K7 RR-01: Petra (player in Team 2) has coach rights in Team 2 too', a
   // Petra responds on behalf of Marc (coach of Team 2) and sees Eva's comment in Team 2
   await expect(page.getByTestId(`overview-team-${TEAM_2}`)).toContainText('Komme evtl. später');
   await expect(page.getByTestId('coach-block').getByRole('button', { name: 'Antwort für Marc Huber eintragen' })).toBeVisible();
+});
+
+test('F-12 RR-02 RR-03: Marc sees events of other teams without «Meine Antwort»', async ({ page }) => {
+  await login(page, 'marc');
+  await page.goto(`/termine?team=${TEAM_1}`);
+  const t02 = page.getByTestId(`event-card-${T02}`);
+  await expect(t02).toBeVisible();
+  await expect(t02.getByRole('group', { name: /^Meine Antwort für/ })).toHaveCount(0);
+
+  // Team 3: only the «Teamessen» (Team 1 + 2 + 3) includes Marc's own team and keeps the buttons.
+  await page.goto(`/termine?team=${TEAM_3}`);
+  const t06 = page.getByTestId(`event-card-${T06}`);
+  await expect(t06.getByRole('group', { name: /^Meine Antwort für/ })).toBeVisible();
+  await expect(page.getByRole('group', { name: /^Meine Antwort für/ })).toHaveCount(1);
+  await checkAccessibility(page);
+
+  // Past view: no «Deine Antwort» line for events of other teams, but for his own team.
+  await page.goto(`/termine?team=${TEAM_3}&ansicht=vergangen`);
+  await expect(page.locator('[data-testid^="event-card-"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid^="event-card-"] [data-response]')).toHaveCount(0);
+  await page.goto(`/termine?team=${TEAM_1}&ansicht=vergangen`);
+  await expect(page.getByTestId(`event-card-${T07}`).locator('[data-response]')).toBeVisible();
 });
