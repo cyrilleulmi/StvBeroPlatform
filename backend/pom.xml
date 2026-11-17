@@ -69,6 +69,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-scheduler</artifactId>
     </dependency>
+    <!-- F-19 (BEN-10): e-mails over SMTP. In dev/test the simulated transport replaces it (nothing goes out). -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>io.quarkus</groupId>

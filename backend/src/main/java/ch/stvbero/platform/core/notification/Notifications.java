@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,9 +37,11 @@ public class Notifications {
             return;
         }
         Instant now = clock.now();
+        List<Channel> ordered = channels.stream().sorted(Comparator.comparingInt(Channel::order)).toList();
         for (Message message : messages) {
-            for (Channel channel : channels) {
-                channel.send(message, now);
+            UUID id = UUID.randomUUID();
+            for (Channel channel : ordered) {
+                channel.send(id, message, now);
             }
         }
     }
@@ -68,8 +71,7 @@ public class Notifications {
     }
 
     /** All notifications of all persons in the order they were created (test support only). */
-    public List<NotificationDto> all() {
-        return Notification.<Notification>find("order by createdAt, sequenceNumber")
-                .list().stream().map(NotificationDto::of).toList();
+    public List<Notification> all() {
+        return Notification.<Notification>find("order by createdAt, sequenceNumber").list();
     }
 }

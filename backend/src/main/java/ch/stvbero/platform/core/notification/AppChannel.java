@@ -11,14 +11,19 @@ import java.util.UUID;
 public class AppChannel implements Channel {
 
     @Override
-    public void send(Message message, Instant instant) {
+    public void send(UUID notificationId, Message message, Instant instant) {
         Notification notification = new Notification();
-        notification.id = UUID.randomUUID();
+        notification.id = notificationId;
         notification.type = message.type();
         notification.recipient = Person.getEntityManager().getReference(Person.class, message.recipientId());
         notification.text = message.text();
         notification.eventId = message.eventId();
         notification.createdAt = instant;
         notification.persist();
+    }
+
+    @Override
+    public int order() {
+        return 0;
     }
 }

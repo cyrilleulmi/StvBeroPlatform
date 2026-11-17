@@ -12,7 +12,7 @@ import java.util.UUID;
 public record NotificationDto(UUID id, NotificationType type, PersonSummary recipient, String text, UUID eventId,
                                   OffsetDateTime createdAt, boolean read) {
 
-    static NotificationDto of(Notification n) {
+    public static NotificationDto of(Notification n) {
         return new NotificationDto(n.id, n.type, PersonSummary.of(n.recipient), n.text, n.eventId,
                 OffsetDateTime.ofInstant(n.createdAt, BackendClock.ZONE), n.read());
     }
