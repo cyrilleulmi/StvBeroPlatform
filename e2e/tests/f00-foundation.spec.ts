@@ -1,31 +1,31 @@
 import { checkAccessibility, documentRoot, expect, headLink, login, reset, test } from './helpers';
 
-/** F-00 · Grundgerüst (NF-01–NF-24, RR-05). Akzeptanzkriterien aus docs/pipeline/backlog.md. */
+/** F-00 · Foundation (NF-01–NF-24, RR-05). Acceptance criteria from docs/pipeline/backlog.md. */
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test.describe('Anmeldung', () => {
-  test('F-00 K3: /dev-login zeigt alle Seed-Personen, ein Klick meldet an und führt auf /', async ({ page }) => {
+test.describe('Sign-in', () => {
+  test('F-00 K3: /dev-login shows all seed people, one click signs in and leads to /', async ({ page }) => {
     await page.goto('/dev-login');
 
     await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden als …');
-    const liste = page.getByRole('list', { name: 'Testpersonen' });
-    await expect(liste.getByRole('listitem')).toHaveCount(17);
+    const list = page.getByRole('list', { name: 'Testpersonen' });
+    await expect(list.getByRole('listitem')).toHaveCount(17);
     for (const name of ['Alex Admin', 'Petra Keller', 'Marc Huber', 'Ruth Meier', 'Anna Muster', 'Vera Studer']) {
-      await expect(liste.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
+      await expect(list.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
     }
     await checkAccessibility(page);
 
-    await liste.getByRole('button', { name: /^Anna Muster/ }).click();
+    await list.getByRole('button', { name: /^Anna Muster/ }).click();
 
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
   });
 
-  test('F-00 K12: ohne Anmeldung leitet jede Route auf die Anmeldung und danach zurück', async ({ page }) => {
+  test('F-00 K12: without sign-in every route redirects to sign-in and back afterwards', async ({ page }) => {
     for (const route of ['/', '/termine', '/teams', '/profil', '/verwaltung']) {
       await page.goto(route);
       await expect(page).toHaveURL(route === '/' ? '/dev-login' : `/dev-login?ziel=${encodeURIComponent(route)}`);
@@ -38,7 +38,7 @@ test.describe('Anmeldung', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Profil');
   });
 
-  test('F-00 K12: /anmelden erklärt das Verfahren und führt im Testmodus zu /dev-login', async ({ page }) => {
+  test('F-00 K12: /anmelden explains the procedure and leads to /dev-login in test mode', async ({ page }) => {
     await page.goto('/anmelden?ziel=%2Fteams');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden');
@@ -49,7 +49,7 @@ test.describe('Anmeldung', () => {
     await expect(page).toHaveURL('/teams');
   });
 
-  test('F-00: Abmelden beendet die Sitzung', async ({ page }) => {
+  test('F-00: Signing out ends the session', async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/profil');
 
@@ -62,28 +62,28 @@ test.describe('Anmeldung', () => {
   });
 });
 
-test.describe('Start und Kacheln', () => {
-  test('F-00 K4 NF-11 NF-12: Start zeigt Begrüssung und die Kachel Anwesenheit, die auf /termine führt', async ({ page }) => {
+test.describe('Start and tiles', () => {
+  test('F-00 K4 NF-11 NF-12: Start shows the greeting and the tile Anwesenheit, which leads to /termine', async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
-    const kachel = page.getByTestId('tile-anwesenheit');
-    await expect(kachel).toHaveAccessibleName('Anwesenheit');
-    await expect(kachel).toHaveAttribute('href', '/termine');
+    const tile = page.getByTestId('tile-anwesenheit');
+    await expect(tile).toHaveAccessibleName('Anwesenheit');
+    await expect(tile).toHaveAttribute('href', '/termine');
     await checkAccessibility(page);
 
-    await kachel.click();
+    await tile.click();
 
     await expect(page).toHaveURL('/termine');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Termine');
-    // Seit F-03 gibt es Termine im Seed; den leeren Zustand prüft f03-termine.spec.ts (Alex).
+    // Since F-03 the seed has events; f03-events.spec.ts checks the empty state (Alex).
     await expect(page.getByTestId('event-card-40000000-0000-4000-8000-000000000001')).toBeVisible();
     await checkAccessibility(page);
   });
 
-  test('F-00 K4: Teams zeigen ohne Teamzugehörigkeit einen leeren Zustand', async ({ page }) => {
-    // Seit F-01 hat nur Alex (Admin) keine Teamzugehörigkeit.
+  test('F-00 K4: Teams show an empty state without team membership', async ({ page }) => {
+    // Since F-01 only Alex (admin) has no team membership.
     await login(page, 'alex');
     await page.goto('/teams');
 
@@ -92,7 +92,7 @@ test.describe('Start und Kacheln', () => {
     await checkAccessibility(page);
   });
 
-  test('F-00: unbekannte Route zeigt einen Hinweis statt einer leeren Seite', async ({ page }) => {
+  test('F-00: unknown route shows a notice instead of a blank page', async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/gibt-es-nicht');
 
@@ -103,7 +103,7 @@ test.describe('Start und Kacheln', () => {
 });
 
 test.describe('Navigation', () => {
-  test('F-00 K5 NF-03: Navigation mobil unten bzw. ab 1024px links, aktiver Eintrag mit aria-current', async ({ page, isMobile }) => {
+  test('F-00 K5 NF-03: Navigation at the bottom on mobile, on the left from 1024px, active entry with aria-current', async ({ page, isMobile }) => {
     await login(page, 'anna');
     await page.goto('/');
 
@@ -125,7 +125,7 @@ test.describe('Navigation', () => {
 
     for (const link of await nav.getByRole('link').all()) {
       const b = (await link.boundingBox())!;
-      expect(b.height, 'Touch-Ziel mindestens 44px (NF-04)').toBeGreaterThanOrEqual(44);
+      expect(b.height, 'Touch target at least 44px (NF-04)').toBeGreaterThanOrEqual(44);
       expect(b.width).toBeGreaterThanOrEqual(44);
     }
 
@@ -136,7 +136,7 @@ test.describe('Navigation', () => {
     await expect(nav.getByRole('link', { name: 'Start' })).not.toHaveAttribute('aria-current', 'page');
   });
 
-  test('F-00 RR-05: «Verwaltung» nur für Admins', async ({ page }) => {
+  test('F-00 RR-05: «Verwaltung» only for admins', async ({ page }) => {
     await login(page, 'alex');
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
@@ -149,7 +149,7 @@ test.describe('Navigation', () => {
     await checkAccessibility(page);
   });
 
-  test('F-00 RR-05: ohne Admin keine «Verwaltung», direkter Aufruf zeigt «Keine Berechtigung»', async ({ page }) => {
+  test('F-00 RR-05: no «Verwaltung» without admin, direct access shows «Keine Berechtigung»', async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/verwaltung');
 
@@ -159,56 +159,56 @@ test.describe('Navigation', () => {
 });
 
 test.describe('Design', () => {
-  const HELL = 'rgb(240, 245, 242)';
-  /** Hintergrund von GitHub Dark: die dunkle Darstellung, auch bei «System» im Dunkeln (E-67). */
-  const DUNKEL = 'rgb(13, 17, 23)';
-  const hintergrund = (page: import('@playwright/test').Page) =>
+  const LIGHT = 'rgb(240, 245, 242)';
+  /** Background of GitHub Dark: the dark theme, also with «System» in the dark (E-67). */
+  const DARK = 'rgb(13, 17, 23)';
+  const background = (page: import('@playwright/test').Page) =>
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  test('F-00 K6 NF-06 NF-07: Hell/GitHub Dark/System umschalten, die Wahl bleibt nach Neuladen', async ({ page }) => {
+  test('F-00 K6 NF-06 NF-07: Switch Hell/GitHub Dark/System, the choice stays after reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await login(page, 'anna');
     await page.goto('/profil');
 
-    const umschalter = page.getByTestId('theme-switch');
-    await expect(umschalter).toHaveAccessibleName('Darstellung');
-    await expect(umschalter.getByRole('radio', { name: 'System' })).toBeChecked();
-    expect(await hintergrund(page)).toBe(HELL);
+    const themeSwitch = page.getByTestId('theme-switch');
+    await expect(themeSwitch).toHaveAccessibleName('Darstellung');
+    await expect(themeSwitch.getByRole('radio', { name: 'System' })).toBeChecked();
+    expect(await background(page)).toBe(LIGHT);
 
-    await umschalter.getByRole('radio', { name: 'GitHub Dark' }).check();
+    await themeSwitch.getByRole('radio', { name: 'GitHub Dark' }).check();
     await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
-    expect(await hintergrund(page)).toBe(DUNKEL);
+    expect(await background(page)).toBe(DARK);
     await checkAccessibility(page);
 
     await page.reload();
     await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'GitHub Dark' })).toBeChecked();
     await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
-    expect(await hintergrund(page)).toBe(DUNKEL);
+    expect(await background(page)).toBe(DARK);
 
     await page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell' }).check();
     await page.emulateMedia({ colorScheme: 'dark' });
-    expect(await hintergrund(page)).toBe(HELL);
+    expect(await background(page)).toBe(LIGHT);
 
     await page.getByTestId('theme-switch').getByRole('radio', { name: 'System' }).check();
     await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
-    expect(await hintergrund(page)).toBe(DUNKEL);
+    expect(await background(page)).toBe(DARK);
     await page.reload();
     await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System' })).toBeChecked();
   });
 
-  test('F-00 K6: Start im Darkmode ohne Barrierefreiheits-Befunde', async ({ page }) => {
+  test('F-00 K6: Start in dark mode without accessibility findings', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await login(page, 'alex');
     await page.goto('/');
 
     await expect(page.getByTestId('tile-anwesenheit')).toBeVisible();
-    expect(await hintergrund(page)).toBe(DUNKEL);
+    expect(await background(page)).toBe(DARK);
     await checkAccessibility(page);
   });
 });
 
 test.describe('PWA', () => {
-  test('F-00 K7 NF-05: Manifest und Service Worker machen die App installierbar', async ({ page }) => {
+  test('F-00 K7 NF-05: Manifest and service worker make the app installable', async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/');
 
@@ -216,16 +216,16 @@ test.describe('PWA', () => {
     expect(href).toBe('manifest.webmanifest');
     const manifest = await (await page.request.get('/manifest.webmanifest')).json();
     expect(manifest).toMatchObject({ name: 'STV Bero', start_url: '/', display: 'standalone', lang: 'de-CH' });
-    const groessen = manifest.icons.map((i: { sizes: string }) => i.sizes);
-    expect(groessen).toEqual(expect.arrayContaining(['192x192', '512x512']));
+    const sizes = manifest.icons.map((i: { sizes: string }) => i.sizes);
+    expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
     for (const icon of manifest.icons) {
       expect((await page.request.get('/' + icon.src)).status(), icon.src).toBe(200);
     }
 
-    const aktiv = await page.evaluate(async () => {
-      const registrierung = await navigator.serviceWorker.ready;
-      return registrierung.active?.scriptURL ?? null;
+    const active = await page.evaluate(async () => {
+      const registration = await navigator.serviceWorker.ready;
+      return registration.active?.scriptURL ?? null;
     });
-    expect(aktiv).toMatch(/\/sw\.js$/);
+    expect(active).toMatch(/\/sw\.js$/);
   });
 });
