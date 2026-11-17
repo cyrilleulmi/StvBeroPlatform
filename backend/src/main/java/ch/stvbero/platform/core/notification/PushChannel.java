@@ -43,4 +43,10 @@ public class PushChannel implements Channel {
         }
         deliveries.afterCommit();
     }
+
+    /** After the app; e-mail before push, so that the deliveries of a notification have a stable order. */
+    @Override
+    public int order() {
+        return 20;
+    }
 }

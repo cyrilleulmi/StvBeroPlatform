@@ -54,7 +54,8 @@ self.addEventListener('notificationclick', (ereignis) => {
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((fenster) => {
       for (const f of fenster) {
         if (new URL(f.url).origin === self.location.origin && 'focus' in f) {
-          return f.navigate(ziel).then((g) => (g || f).focus());
+          // focus() is only allowed right after a real tap; without it the window still shows the event
+          return f.navigate(ziel).then((g) => (g || f).focus().catch(() => g || f));
         }
       }
       return self.clients.openWindow(ziel);

@@ -33,6 +33,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Roles | At least player, coach, helper/parent, admin. Tiles and actions are visible based on role. |
 | Tile concept | A tile provides metadata (title, icon, route, required role) and registers itself centrally. The dashboard renders the overview from it. |
 | Delivery | Responsive web app, installable as a PWA. |
+| Notifications outside the app | E-mail over SMTP with `quarkus-mailer`; push with Web Push (VAPID) through the service worker of the PWA, encryption (RFC 8291) and signature (RFC 8292) with the JDK, without a library. In `dev`/`test` a simulator replaces both (F-19). |
 | Design | Tokens as CSS custom properties, see [design-principles.md](design-principles.md). |
 
 ## Still open

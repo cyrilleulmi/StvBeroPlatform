@@ -28,6 +28,10 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Meeting point** | Time and place where the team meets before a match day. |
 | **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
 | **Calendar subscription** | Personal address of a person with a random token. Behind it is an iCalendar feed with the events of her teams, which calendar apps fetch without login. Renewing replaces the token (CAL, F-18). |
+| **Notification** | Message to one person about a change (BEN-01 to BEN-07). Always in the list in the app; also by e-mail and push (F-19). |
+| **Channel** | Way a notification reaches the person: the app (always), e-mail, push (BEN-10, BEN-11). |
+| **Push device** | A browser on a device where the person allowed push (push subscription). A person can have several (F-19). |
+| **Delivery** | One e-mail or one push of a notification, with state and attempts. Recorded with the change and sent after it; failed ones are retried (F-19). |
 | **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
 
 ## Relationships
@@ -51,6 +55,10 @@ erDiagram
     EVENT ||--o| ATTENDANCE_RECORD : "has (check on)"
     ATTENDANCE_RECORD ||--o{ ATTENDANCE_ENTRY : includes
     PERSON ||--o{ ATTENDANCE_ENTRY : "is recorded"
+    PERSON ||--o{ NOTIFICATION : receives
+    NOTIFICATION ||--o{ DELIVERY : "sent as e-mail or push"
+    PERSON ||--o{ PUSH_DEVICE : "allows push on"
+    PUSH_DEVICE ||--o{ DELIVERY : receives
 ```
 
 `GROUP` stands for a line or the goalie group of a team.

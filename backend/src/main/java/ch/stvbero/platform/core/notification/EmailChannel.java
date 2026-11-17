@@ -36,4 +36,10 @@ public class EmailChannel implements Channel {
                 settings.subject(message), message.text(), DeliveryRules.path(message.eventId()), instant).persist();
         deliveries.afterCommit();
     }
+
+    /** After the app; e-mail before push, so that the deliveries of a notification have a stable order. */
+    @Override
+    public int order() {
+        return 10;
+    }
 }

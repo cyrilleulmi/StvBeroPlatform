@@ -41,7 +41,7 @@ import { TEXTS } from '../../core/texts';
               aria-describedby="channel-email-hint"
               [checked]="s.email"
               [disabled]="!s.emailAddress || !s.emailAvailable || busy()"
-              (change)="setEmail($any($event.target).checked)"
+              (change)="setEmail($any($event.target))"
             />
             {{ texts.email }}
           </label>
@@ -64,7 +64,7 @@ import { TEXTS } from '../../core/texts';
               aria-describedby="channel-push-hint"
               [checked]="pushOn()"
               [disabled]="!pushPossible() || busy()"
-              (change)="setPush($any($event.target).checked)"
+              (change)="setPush($any($event.target))"
             />
             {{ texts.push }}
           </label>
@@ -229,7 +229,7 @@ export class NotificationSettingsSection {
   }
 
   protected dateText(iso: string): string {
-    return date(iso);
+    return date(iso.slice(0, 10));
   }
 
   private async load(): Promise<void> {
@@ -255,8 +255,13 @@ export class NotificationSettingsSection {
     return true;
   }
 
-  protected async setEmail(on: boolean): Promise<void> {
-    if (!this.start()) return;
+  /** The switch shows the saved state afterwards, also when switching did not work. */
+  protected async setEmail(target: HTMLInputElement): Promise<void> {
+    const on = target.checked;
+    if (!this.start()) {
+      target.checked = !on;
+      return;
+    }
     try {
       this.settings.set(
         await firstValueFrom(
@@ -266,14 +271,19 @@ export class NotificationSettingsSection {
       this.message.set(on ? this.texts.emailOn : this.texts.emailOff);
     } catch (e) {
       this.error.set(errorText(e));
-      this.settings.update((s) => (s ? { ...s } : s));
     } finally {
       this.busy.set(false);
+      target.checked = this.settings()?.email ?? false;
     }
   }
 
-  protected async setPush(on: boolean): Promise<void> {
-    if (!this.start()) return;
+  /** The switch shows afterwards whether push is on for this device, also when the person declined. */
+  protected async setPush(target: HTMLInputElement): Promise<void> {
+    const on = target.checked;
+    if (!this.start()) {
+      target.checked = !on;
+      return;
+    }
     try {
       if (on) {
         await this.pushOnForThisDevice();
@@ -282,6 +292,7 @@ export class NotificationSettingsSection {
       }
     } finally {
       this.busy.set(false);
+      target.checked = this.pushOn();
     }
   }
 
@@ -292,7 +303,6 @@ export class NotificationSettingsSection {
     const answer = permission() === 'granted' ? 'granted' : await Notification.requestPermission();
     if (answer !== 'granted') {
       this.denied.set(answer === 'denied');
-      this.settings.update((s) => (s ? { ...s } : s));
       return;
     }
     try {
@@ -303,7 +313,6 @@ export class NotificationSettingsSection {
       this.message.set(this.texts.pushOn);
     } catch (e) {
       this.error.set(e instanceof DOMException ? this.texts.pushFailed : errorText(e));
-      this.settings.update((s) => (s ? { ...s } : s));
     }
   }
 
@@ -320,7 +329,6 @@ export class NotificationSettingsSection {
       this.message.set(this.texts.pushOff);
     } catch (e) {
       this.error.set(errorText(e));
-      this.settings.update((s) => (s ? { ...s } : s));
     }
   }
 

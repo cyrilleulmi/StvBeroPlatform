@@ -21,7 +21,7 @@ import java.util.Optional;
 /**
  * Web Push in profile {@code prod} (F-19, criterion 4): encrypts the push for the device and sends it with a
  * VAPID signature to its push service. On only if {@code STV_VAPID_PUBLIC_KEY}, {@code STV_VAPID_PRIVATE_KEY}
- * and {@code STV_VAPID_SUBJECT} are set (docs/operations.md).
+ * and {@code STV_VAPID_SUBJECT} are set (docs/requirements/08-notifications.md).
  */
 @ApplicationScoped
 @UnlessBuildProperty(name = "stv.test-support", stringValue = "true")

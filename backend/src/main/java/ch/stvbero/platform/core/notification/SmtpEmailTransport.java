@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /**
  * E-mails over SMTP in profile {@code prod} (F-19). On only if {@code STV_SMTP_HOST} and {@code STV_MAIL_FROM}
- * are set (docs/operations.md); otherwise the e-mail channel is off and the app runs normally.
+ * are set (docs/requirements/08-notifications.md); otherwise the e-mail channel is off and the app runs normally.
  */
 @ApplicationScoped
 @UnlessBuildProperty(name = "stv.test-support", stringValue = "true")

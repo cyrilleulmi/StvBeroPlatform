@@ -106,10 +106,13 @@ These helpers exist only in the Quarkus profiles `dev` and `test`. In the `prod`
 | **Fixed clock** | Set «now» to check response deadlines, late cancellations and reminders | `PUT /api/test/clock`, `DELETE /api/test/clock` |
 | **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/current-season` |
 | **Log in as** | Log in as any seed person without a password | `POST /api/test/login`, page `/dev-login` |
-| **Read notifications** | Check who was notified when and about what | `GET /api/test/notifications` |
+| **Read notifications** | Check who was notified when and about what, with the e-mails and pushes of each notification (channel, address, subject, status, attempts; F-19) | `GET /api/test/notifications` |
+| **Simulate e-mail and push** | Nothing goes out in `dev`/`test`. Let a channel fail (`failing`) or let the push service report devices as gone (`expiredEndpoints`) | `PUT /api/test/delivery` |
 | **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey», the league view of the league page (`league`, F-17) or an outage | `PUT /api/test/swiss-unihockey/matches` |
 
 Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»). The seed data: [test-data.md](test-data.md).
+
+Push in the browser: E2E tests cannot reach a real push service. They replace the browser permission and `PushManager` with an init script (`fakePush` in `e2e/tests/f19-notification-channels.spec.ts`); the service worker stays real, and a push can be dispatched in it with `PushEvent`.
 
 The page `/dev-login` lists all seed persons with team role and team. One click logs in. At the top it clearly shows «Testmodus».
 
