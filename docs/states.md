@@ -189,6 +189,18 @@ The statistics have no state of their own: they are computed on every request fr
 | Attendance counts only for events with the check on and recorded attendance, and only where a value is stored for the player. Values kept while the check is off (PRS-08) do not count. | STA-04 |
 | Team statistics: coaches and admins, otherwise 403. Statistics of a person: herself, coaches and admins, otherwise 403. Period outside one season or end before start: 400. | STA-01, STA-02, STA-08 |
 
+## League data (F-17)
+
+The league data of a linked team is a cache (`league_snapshot`), filled by the daily sync (04:30, after the matches) and by an admin with «Neu laden». The league page only reads the cache and never calls swiss unihockey.
+
+| Rule | Reference |
+|---|---|
+| A successful load replaces league, group, table and matches of the current season and sets «Stand» (`loadedAt`). Data of an earlier season does not count: after a season change the page shows «noch keine Daten» until the next load. | F-17 |
+| A failed load (not reachable, unexpected answer) changes no data and only stores the time of the attempt (`failedAt`); the page shows the last data with a notice. The next successful load clears `failedAt`. The manual reload answers 502 (rule SUH-09), the daily run tries again the next day; a failing team does not hold up the others. | SUH-09 |
+| Own team in the table: the row with the linked team ID; without team IDs the name the team has in the matches, otherwise the name in the app. | F-17 |
+| «Kommende Spiele»: matches without a result that have not ended (start + 75 minutes after «now»), the next five. «Letzte Resultate»: the last five with a result. A match links to the match day of the team in the app that contains it (same SU match ID). | F-17 |
+| Reading: members of the team in the current season, coaches and admins (403 otherwise). Reloading: admins (403); a team without link or outside the current season: 409. | F-17, RR-07 |
+
 ## Match of a match day
 
 | Rule | Reference |

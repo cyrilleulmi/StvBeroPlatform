@@ -52,6 +52,7 @@ The seed grows with the features. What is in the seed today:
 | F-14 | Events 09 and 10 get fixed IDs (series 02, Thu 12.11. and Thu 05.11.2026) and have the switch «Präsenz erfassen» on; all other events and all series have it off. Responses to 09 and 10 as in the tables below, given two days before the event. Attendance of event 10 recorded by Petra on Thu 05.11.2026 21:00; event 09 has nothing recorded |
 | F-15 | Every team membership has a day of joining: the start of its season, except Kim in Team 1 (2026/27): **01.10.2026**. Responses to event 07 as below (given 08.11.2026 20:00); Anna's «nicht dabei» is a **late cancellation** (changed 10.11.2026 17:00, after the response deadline). Expected statistics in scenarios S44–S47 |
 | F-16 | No new records. Every team has the default minimums for warnings (1 goalie, 10 field players for match days, 6 for practices, 3 per line). **Event 02** is the upcoming practice of Team 1 where no goalie responded «dabei» (only Anna responded). Expected warnings in scenarios S48–S51 |
+| F-17 | League data of Team 1 as loaded by the daily sync on **Mon 16.11.2026 04:30**: «Herren Kleinfeld 3. Liga», «Gruppe 12», table with eight teams and ten matches (see [League of Team 1](#league-of-team-1)). The simulator delivers the same league after the reset. Teams 2 and 3 are not linked and have no league data |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -304,6 +305,40 @@ Both with Google Maps link `https://www.google.com/maps/search/?api=1&query=Spor
 
 Match days newly created by the sync are called «Spieltag», have the venue from swiss unihockey, start with the first start time and end 75 minutes after the last one.
 
+### League of Team 1
+
+The league page (F-17) shows the cached data; the seed holds it as loaded on Mon 16.11.2026 04:30 (`loadedAt`), the simulator delivers the same for team ID `900001` (`league` in `PUT /api/test/swiss-unihockey/matches`). The simulator keeps the matches of the league view apart from the matches of the sync, so that a sync after the reset still changes nothing; the real client uses the same match list for both.
+
+League «Herren Kleinfeld 3. Liga», group «Gruppe 12» (2 points per win, 1 per draw):
+
+| Rank | Team | SU team ID | Matches | Wins | Draws | Losses | Goals | Points |
+|---|---|---|---|---|---|---|---|---|
+| 1 | UHC Musterdorf | `900011` | 6 | 5 | 1 | 0 | 38:17 | 11 |
+| 2 | **Team 1** (own team) | `900001` | 6 | 4 | 1 | 1 | 31:22 | 9 |
+| 3 | Unihockey Beispielstadt | `900012` | 6 | 4 | 0 | 2 | 29:24 | 8 |
+| 4 | Floorball Seetal | `900013` | 6 | 3 | 1 | 2 | 27:25 | 7 |
+| 5 | UHC Waldberg | `900014` | 6 | 2 | 1 | 3 | 22:25 | 5 |
+| 6 | Unihockey Bergdorf | `900015` | 6 | 2 | 0 | 4 | 21:30 | 4 |
+| 7 | STV Hügelwil | `900016` | 6 | 0 | 2 | 4 | 15:27 | 2 |
+| 8 | UH Talmatt | `900017` | 6 | 0 | 2 | 4 | 14:27 | 2 |
+
+Matches of Team 1 in the league view:
+
+| SU match ID | Start time | Home team | Away team | Hall, place | Result |
+|---|---|---|---|---|---|
+| `5000011` | Sat 19.09.2026 14:00 | Team 1 | STV Hügelwil | Sporthalle Nord, Beromünster | 7:2 |
+| `5000012` | Sun 04.10.2026 10:00 | UH Talmatt | Team 1 | Turnhalle Talmatt, Talmatt | 3:6 |
+| `5000013` | Sat 17.10.2026 15:30 | Team 1 | Floorball Seetal | Sporthalle Nord, Beromünster | 4:4 |
+| `5000014` | Sun 25.10.2026 11:00 | UHC Waldberg | Team 1 | Mehrzweckhalle Waldberg, Waldberg | 2:5 |
+| `5000015` | Sat 07.11.2026 13:00 | UHC Musterdorf | Team 1 | Sporthalle Seefeld, Musterdorf | 6:3 |
+| `5000016` | Sun 15.11.2026 10:30 | Team 1 | Unihockey Bergdorf | Sporthalle Nord, Beromünster | 6:5 |
+| `5000001` | Sun 22.11.2026 09:30 | Team 1 | UHC Musterdorf | Sporthalle Seefeld, Musterdorf | – (match 01, event 04) |
+| `5000002` | Sun 22.11.2026 11:45 | Unihockey Beispielstadt | Team 1 | Sporthalle Seefeld, Musterdorf | – (match 02, event 04) |
+| `5000017` | Sat 12.12.2026 14:00 | Team 1 | UH Talmatt | Sporthalle Nord, Beromünster | – |
+| `5000018` | Sun 10.01.2027 10:00 | Floorball Seetal | Team 1 | Seehalle, Seetal | – |
+
+So after the reset «Kommende Spiele» shows 01, 02 (both link to event 04), 17 and 18, «Letzte Resultate» shows 16, 15, 14, 13, 12. The past matches are only in the league view, not match days in the app.
+
 ## Scenarios for tests
 
 Every scenario starts with `POST /api/test/reset`.
@@ -360,4 +395,8 @@ Every scenario starts with `POST /api/test/reset`.
 | S49 | Warnings per team | As `alex` open event 01 | «Team 1: Nur 4 Feldspielerinnen angemeldet», «Team 1: Linie 1 nur zu 2», «Team 1: Linie 2 nur zu 1», «Team 2: Kein Goalie angemeldet», «Team 2: Nur 3 Feldspielerinnen angemeldet», «Team 2: Linie 1 nur zu 2», «Team 2: Linie 2 nur zu 1» | ANM-46 |
 | S50 | Warnings in the call-up | As `petra` event 04 → «Aufgebot bearbeiten» | «Nur 4 Feldspielerinnen aufgeboten», «Linie 2 nur zu 1». Untick Jana: «Kein Goalie aufgeboten» is added. «Veröffentlichen»: the dialog lists the warnings under «Achtung:», publishing works | AUF-30, AUF-31 |
 | S51 | Change minimums | As `petra` at `/teams/<Team 1>` section «Warnungen»: «Goalies mindestens» 0, «Feldspielerinnen im Training mindestens» 1, «Pro Linie mindestens» 2, «Mindestzahlen speichern» | «Die Mindestzahlen sind gespeichert.» Event 02 shows only «Linie 1 nur zu 1». `anna` sees no section «Warnungen»; API `PUT /api/teams/<Team 1>/warning-minimums` 403 | ANM-41 |
+| S52 | League of Team 1 | As `anna` `/teams/<Team 1>` → «Liga ansehen» | «Herren Kleinfeld 3. Liga · Gruppe 12», «Stand: Mo 16.11.2026, 04:30». Table with 8 teams, Team 1 on rank 2 with «Unser Team», 9 points. «Kommende Spiele»: 4, the first two link to event 04. «Letzte Resultate»: 5, first «Team 1 – Unihockey Bergdorf 6:5» «Sieg» | F-17 |
+| S53 | Reload by hand | Simulator for `900001` with another `league`. As `alex` `/teams/<Team 1>/liga` → «Neu laden» | «Die Ligadaten sind neu geladen.», new league and table, «Stand: Mo 16.11.2026, 06:00». As `petra`: no «Neu laden», API `POST /api/teams/<Team 1>/league/refresh` 403 | F-17 |
+| S54 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. As `alex` «Neu laden» | Error «swiss unihockey ist im Moment nicht erreichbar. …» (API 502), table stays, notice «swiss unihockey war am Mo 16.11.2026, 06:00 nicht erreichbar. Angezeigt wird der Stand vom Mo 16.11.2026, 04:30.» | SUH-09 |
+| S55 | Team without link | As `marc` `/teams/<Team 2>`; as `alex` the same | Section «Liga» with «Dieses Team ist nicht mit swiss unihockey verknüpft. …»; for `alex` also «In der Verwaltung verknüpfen» | F-17 |
 | S43 | Attendance not before the start | As `petra` create an event for Fri 20.11. with «Präsenz erfassen» | Event shows «Die Präsenz lässt sich ab Beginn des Termins erfassen.», no link; API 409 rule PRS-02. Clock to 20.11. 18:00: link «Präsenz erfassen» | PRS-02 |
