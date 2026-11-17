@@ -85,3 +85,13 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`, Team 3 `…
 | Z2 Double click «Aufnehmen» | `marc` | `/verwaltung/teams/<T3>` → «Kim Baumann» → double click «Aufnehmen» | Kim once in Team 3, no 5xx |
 | Z3 Dark mode | `marc` | `/verwaltung` (375), `/verwaltung/teams/<T1>` (375), `/teams/<T1>/linien` (1280), `/verwaltung/personen/<Anna>` (375) | readable, no white on white |
 | Z4 Console | all | after every case | no console errors, no unexpected 4xx/5xx |
+
+## Round 1 (retest of Z1)
+
+| Case | Person | Steps | Expected |
+|---|---|---|---|
+| R1.1 Upcoming, other team | `marc` | `/termine?team=<Team 3>` | Only «Teamessen Fr 11.12.» (Team 1 + 2 + 3) has a group «Meine Antwort für …»; no other card does |
+| R1.2 Past, other team | `marc` | `/termine?team=<Team 3>&ansicht=vergangen` | No «Deine Antwort: …» on any card |
+| R1.3 No team at all | `alex` (desktop) | `/termine?team=<Team 1>` | No group «Meine Antwort» on any card; filter offers «Alle Teams», «Team 1», «Team 2», «Team 3» |
+| R1.4 Own team unchanged | `anna` | `/termine` | Every card has «Meine Antwort» (all are her own events); no «Termin erfassen», no team filter |
+| R1.5 Double click save | `marc` | `/termine/…002/bearbeiten` → double click «Änderungen speichern»; `/verwaltung/personen/neu` and «Aufnehmen» as `petra` | Exactly one `PUT`/`POST`, no 4xx/5xx |
