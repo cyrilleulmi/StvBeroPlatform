@@ -12,11 +12,11 @@ Status legend: see [README](../../README.md#requirement-status).
 | ANM-04 | With «vielleicht» a comment is required. | Decided |
 | ANM-05 | With «nicht dabei» a reason is optional. | Accepted |
 | ANM-06 | As long as someone has not responded, the status is «offen» (pending). Nobody is attending automatically. | Accepted |
-| ANM-07 | Comments and reasons are visible only to the coaches of the participating teams and to the person themselves. | Accepted |
+| ANM-07 | Comments and reasons are visible only to coaches (of any team, RR-03), admins and the person themselves. | Accepted |
 | ANM-08 | The most common action («dabei» / «nicht dabei») takes one tap, directly from the event list. | Decided |
 | ANM-09 | A response can be changed at any time, also after the response deadline. | Assumption |
 | ANM-10 | If someone changes from «dabei» to «nicht dabei» or «vielleicht» after the response deadline, it counts as a late cancellation. The coaches are notified. | Accepted |
-| ANM-11 | A coach can respond on behalf of players of her team, e.g. when someone cancelled in person. | Accepted |
+| ANM-11 | A coach (of any team, RR-03) can respond on behalf of anyone in the event, e.g. when someone cancelled in person. | Accepted |
 | ANM-12 | For responses on behalf, it is visible who entered them. | Assumption |
 
 ## Event view

@@ -16,7 +16,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | PTF-08 | For now the app is meant for adults. Each person responds for themselves. | Decided |
 | PTF-09 | Account (login) and person are modelled separately, so that later one account can respond for several people (parents for children). Today an account belongs to exactly one person. | Accepted |
 | PTF-10 | Team memberships apply per season (see [09 · Seasons](09-seasons.md)). | Accepted |
-| PTF-11 | Admins manage people, teams and team memberships. | Assumption |
+| PTF-11 | Admins and coaches (RR-03) manage people, teams and team memberships. Removing a person from a team is for admins only (RR-08). | Assumption |
 | PTF-12 | A person sees all teams they belong to and their team role in each. | Assumption |
 
 ## Example

@@ -40,7 +40,7 @@ stateDiagram-v2
 | A late cancellation notifies once, on the change away from ATTENDING. Further changes that stay late do not notify again. Recipients are the coaches of the teams in which the person is a player for the event (O-17). | ANM-10, BEN-02 |
 | The `lateCancellation` mark stays on further changes between DECLINED and MAYBE and is dropped with ATTENDING (assumption O-43). | ANM-10 |
 | Every member of a participating team (any team role) may respond for themselves, otherwise 403. | ANM-01, RR-02 |
-| Responses set on behalf of someone follow the same transitions and store `enteredBy`. Allowed for coaches of a team in which the person is a player, and for admins (any member). Otherwise 403; person in no participating team: 404. If the person then responds themselves, `enteredBy` is dropped. | ANM-11, ANM-12, RR-06 |
+| Responses set on behalf of someone follow the same transitions and store `enteredBy`. Allowed for coaches (of any team) and admins, for any member of a participating team (RR-03, E-69). Otherwise 403; person in no participating team: 404. If the person then responds themselves, `enteredBy` is dropped. | ANM-11, ANM-12, RR-06 |
 | Every response replaces the previous one completely, including the comment. In the UI, «nicht dabei» saves immediately and then offers the reason. | ANM-05, ANM-08 |
 | After the event is cancelled or over, no more changes are possible (409). | TER-06 |
 
@@ -70,8 +70,8 @@ stateDiagram-v2
 
 | Rule | Reference |
 |---|---|
-| An event belongs to the season its date falls into. It is visible to members (any team role) of a participating team in that season and to admins, otherwise 403. | TER-13, RR-02 |
-| Create: admins or coach in **at least one** of the teams (this is how Petra creates the shared practice of Team 1 + Team 2). Only teams in which the person has no role: 403. Edit and cancel: coach of a participating team or admin; after the change, a team in which the person is coach must still take part (assumption O-39). | TER-01, TER-11, RR-06 |
+| An event belongs to the season its date falls into. It is visible to members (any team role) of a participating team in that season, to coaches and to admins, otherwise 403. | TER-13, RR-02 |
+| Create, edit and cancel: admins and coaches (coach of at least one team in the current season), for every team (RR-03, E-69). Players: 403. | TER-01, TER-11, RR-06 |
 | End before start, no team, match day with more than one team, unknown team or an event in the past: 400 with field. Event in an archived season: 409 (SAI-02). | TER-04, AUF-03 |
 | Cancelled or past events can neither be changed nor cancelled again: 409, rule TER-06. | TER-06 |
 | A different start time sets `rescheduled` (stays set afterwards). A series event changed this way no longer takes over later changes of the series. | TER-06 |
@@ -102,7 +102,7 @@ This is an assumption.
 | Creating generates an event for every weekday in the validity period that has not started yet. The period is at most one year (400). | TER-05 |
 | An exception affects future **planned** events of the series whose date lies within the period (including individually rescheduled ones). Cancelled ones stay. | TER-07 |
 | Changing affects only future events: planned events that were not changed individually take over the new details (responses stay, `rescheduled` is not set). New dates get an event. Events whose date no longer fits the series are removed or cancelled as with an exception (reason «Serie geändert»). Past, cancelled and individually changed events stay. | TER-08 |
-| Permissions as for events. Viewing: members of the series' teams and admins (403). | TER-11, RR-06 |
+| Permissions as for events. Viewing: members of the series' teams, coaches and admins (403). | TER-11, RR-06 |
 
 ## Call-up of a match day
 
