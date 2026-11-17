@@ -35,6 +35,8 @@ The cloud browser has no reachable push service. Where a real subscription is ne
 6. Roles: as `anna` `DELETE /api/me/push-subscriptions/<Lea's device>` → 403, also as admin `petra`; without login 401. `POST` with non-https endpoint → 400.
 7. Concurrency (round 1, states.md «never 500»): as `anna` send the same new `POST /api/me/push-subscriptions` body 8 times in parallel → all 201, one device. As `anna` and `lea` register the same endpoint in parallel → all 201, the device belongs to exactly one person.
 8. Concurrent removal: as `lea` send `DELETE /api/me/push-subscriptions/a0000000-0000-4000-8000-000000000001` twice in parallel (two tabs or two devices) → 204 and 204 or 404, never 500. A sequential second `DELETE` → 404 «Dieses Gerät gibt es nicht.».
+9. Removal while the device moves (round 2): as `lea` send `DELETE /api/me/push-subscriptions/a0000000-0000-4000-8000-000000000001` three times while `anna` posts the same endpoint (`https://push.example.test/seed-lea-phone`) three times, all in parallel → only 204/404 and 201, never 500; afterwards the endpoint belongs to at most one person and `GET /api/me/notification-settings` is consistent for both.
+10. UI: as `lea` double tap «Chrome auf Android entfernen» → exactly one `DELETE` (204), message «Push auf «Chrome auf Android» ist ausgeschaltet.».
 
 ## 4. Service worker and tap (criterion 4, BEN-17)
 
