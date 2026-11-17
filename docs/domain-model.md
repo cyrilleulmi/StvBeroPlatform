@@ -21,6 +21,8 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Match** | A single game within a match day, with opponent and start time. |
 | **Response** | A person's answer for an event: attending, declined or maybe. Without a response the status is pending («offen»). |
 | **Call-up** | Selection of the players who play on a match day. Created and published by the coach. |
+| **Attendance check** | Optional for each event or series, off by default: after the start the coach records who was really there (PRS, E-70). |
+| **Attendance** | The fact recorded by the coach per player: present («anwesend»), absent («abwesend») or excused («entschuldigt»). Separate from the response, which is the intention. |
 | **Meeting point** | Time and place where the team meets before a match day. |
 | **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
 
@@ -42,6 +44,9 @@ erDiagram
     EVENT ||--o| CALL_UP : "has (match day only)"
     CALL_UP ||--o{ CALL_UP_ENTRY : includes
     PERSON ||--o{ CALL_UP_ENTRY : "is called up"
+    EVENT ||--o| ATTENDANCE_RECORD : "has (check on)"
+    ATTENDANCE_RECORD ||--o{ ATTENDANCE_ENTRY : includes
+    PERSON ||--o{ ATTENDANCE_ENTRY : "is recorded"
 ```
 
 `GROUP` stands for a line or the goalie group of a team.
@@ -54,3 +59,4 @@ erDiagram
 4. **Coaches are not players.** They respond the same way, but are listed in a block of their own and do not count towards the player total.
 5. **Lines are standard lines.** There are no different lines for single events.
 6. **One match day, one call-up.** All matches of a match day share one response and one call-up.
+7. **Intention and fact stay separate.** A response is never turned into attendance and attendance never changes a response. Attendance is only recorded where the check is switched on (PRS, E-70).

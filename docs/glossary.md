@@ -60,7 +60,9 @@ If a term is missing, add it here in the same style before using it.
 | Darstellung | theme | |
 | Übersicht (Anwesenheit) | overview | |
 | Anwesenheit | attendance | tile «Anwesenheit» |
-| Präsenzkontrolle | attendance check | |
+| Präsenzkontrolle, «Präsenz erfassen» | attendance check | switch per event or series, off by default (PRS-01) |
+| Präsenz (erfasst) | attendance record | who recorded and when, plus one status per player (PRS-04) |
+| anwesend / abwesend / entschuldigt | present / absent / excused | values `PRESENT`, `ABSENT`, `EXCUSED` (PRS-03) |
 | Fahrerliste | driver list | |
 | Übernahme (neue Saison) | carry-over | copying teams, memberships and lines into a new season |
 | Abmelden (Sitzung) | log out | not to be confused with declining an event |

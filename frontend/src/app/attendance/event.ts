@@ -20,7 +20,6 @@ import { MyResponse } from './my-response';
 import { MatchDay } from './match-day';
 import { OverviewSection } from './overview';
 import { yearOf, eventDate, clockTime } from './time';
-import { attendanceKey } from './attendance-check';
 
 /**
  * Event (`/termine/:eventId`): details, status (cancelled with reason, rescheduled), for coaches the
@@ -75,7 +74,7 @@ import { attendanceKey } from './attendance-check';
           </section>
         }
         @if (t.myAttendance; as a) {
-          <section class="card my-attendance" aria-labelledby="event-my-attendance" data-testid="my-attendance" [attr.data-attendance]="attendanceKey(a)">
+          <section class="card my-attendance" aria-labelledby="event-my-attendance" data-testid="my-attendance" [attr.data-attendance]="a">
             <h2 id="event-my-attendance" class="section-title">{{ texts.attendanceCheck.yourAttendance }}</h2>
             <p>{{ texts.attendanceCheck.yourAttendanceText(texts.attendanceCheck.status[a]) }}</p>
           </section>
@@ -193,7 +192,6 @@ export class EventPage {
   private readonly feedback = inject(FeedbackService);
   protected readonly texts = TEXTS;
   protected readonly clockTime = clockTime;
-  protected readonly attendanceKey = attendanceKey;
 
   /** Route `/termine/:eventId` */
   readonly eventId = input.required<string>();

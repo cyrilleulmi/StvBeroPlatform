@@ -176,7 +176,7 @@ test('PRS-04: saving stores who and when, a later correction counts', async ({ p
   await login(page, 'mia');
   await page.goto(`/termine/${T09}`);
   await expect(page.getByTestId('my-response')).toHaveAttribute('data-response', 'DECLINED');
-  await expect(page.getByTestId('my-attendance')).toHaveAttribute('data-attendance', 'excused');
+  await expect(page.getByTestId('my-attendance')).toHaveAttribute('data-attendance', 'EXCUSED');
 });
 
 test('PRS-06: players see only their own attendance', async ({ page }) => {
@@ -185,7 +185,7 @@ test('PRS-06: players see only their own attendance', async ({ page }) => {
   const mine = page.getByTestId('my-attendance');
   await expect(mine.getByRole('heading', { name: 'Deine Präsenz' })).toBeVisible();
   await expect(mine).toContainText('Der Coach hat dich als «abwesend» erfasst.');
-  await expect(mine).toHaveAttribute('data-attendance', 'absent');
+  await expect(mine).toHaveAttribute('data-attendance', 'ABSENT');
   await expect(page.getByTestId('attendance-section')).toHaveCount(0);
   await expect(page.getByText('entschuldigt')).toHaveCount(0);
   await checkAccessibility(page);
@@ -282,5 +282,5 @@ test('PRS-10: seed event 10 is recorded by Petra; Anna only sees her own value',
 
   await login(page, 'anna');
   await page.goto(`/termine/${T10}`);
-  await expect(page.getByTestId('my-attendance')).toHaveAttribute('data-attendance', 'present');
+  await expect(page.getByTestId('my-attendance')).toHaveAttribute('data-attendance', 'PRESENT');
 });
