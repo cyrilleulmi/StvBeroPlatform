@@ -274,7 +274,7 @@ Linie 2      Sara Brun    26  2  0  0  24   8 %  0  0  1  0    0 %
              Nina Roth    26  1  0  1  24   4 %  0  1  0  0  100 %
 Goalies      Jana Wyss    26  2  0  0  24   8 %  0  1  0  0  100 %
 Ohne Linie   Kim Baumann  13  0  0  0  13   0 %  0  0  1  0    0 %
-Teamschnitt             24.1 1.6 0.4 0.1 22  6 % 0.1 0.6 0.3 0.1 57 %
+Teamschnitt             24.1 1.6 0.4 0.1 22.0 6 % 0.1 0.6 0.3 0.1 57 %
 ```
 
 Petra (coach) is not listed. Kim counts only from 01.10.2026 (13 events).

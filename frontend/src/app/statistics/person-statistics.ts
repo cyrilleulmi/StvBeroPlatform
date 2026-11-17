@@ -36,9 +36,14 @@ import { StatisticsFilter } from './statistics-filter';
         <a class="back" routerLink="/profil">{{ t.toProfile }}</a>
         <h1>{{ t.myTitle }}</h1>
       } @else {
-        <a class="back" routerLink="/statistik" [queryParams]="backParams()">{{
-          t.toStatistics
-        }}</a>
+        @if (auth.canManage()) {
+          <a class="back" routerLink="/statistik" [queryParams]="backParams()">{{
+            t.toStatistics
+          }}</a>
+        } @else {
+          <!-- A player on her own /statistik/:personId: the team statistics are not hers to see -->
+          <a class="back" routerLink="/profil">{{ t.toProfile }}</a>
+        }
         <h1>{{ data() ? name(data()!.person) : t.title }}</h1>
       }
       @if (data()?.team; as team) {
@@ -164,6 +169,7 @@ import { StatisticsFilter } from './statistics-filter';
     .number dd {
       margin: 0;
       font-weight: 700;
+      white-space: nowrap;
       font-variant-numeric: tabular-nums;
     }
     .event {
@@ -203,7 +209,7 @@ import { StatisticsFilter } from './statistics-filter';
 })
 export class PersonStatisticsPage {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
   protected readonly t = TEXTS.statistics;
   protected readonly date = date;

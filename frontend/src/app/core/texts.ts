@@ -266,7 +266,7 @@ export const TEXTS = {
     average: 'Teamschnitt',
     averageHint: 'Durchschnitt pro Spielerin.',
     noRate: '–',
-    percent: (value: number) => `${value} %`,
+    percent: (value: number) => `${value}\u00a0%`,
     noPlayers: 'Dieses Team hat noch keine Spielerinnen.',
     noTeams: 'In dieser Saison gibt es noch keine Teams.',
     numbers: 'Zahlen',

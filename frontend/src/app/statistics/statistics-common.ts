@@ -54,9 +54,9 @@ export function percent(value: number | null | undefined): string {
     : TEXTS.statistics.percent(value);
 }
 
-/** Average with one decimal as in Switzerland, e.g. «24.1». */
+/** Average always with one decimal as in Switzerland, e.g. «24.1», «22.0» (STA-05). */
 export function decimal(value: number): string {
-  return value.toLocaleString('de-CH', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+  return value.toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 /** Columns of the table in display order (STA-03, STA-04). */

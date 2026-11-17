@@ -131,7 +131,7 @@ test('STA-05: grouped by line, sortable by rate, with the team average', async (
   await expect(page).toHaveURL(`/statistik?team=${TEAM_1}`);
 
   await expect(page.getByTestId('statistics-average-row').getByRole('cell')).toHaveText([
-    '24.1', '1.6', '0.4', '0.1', '22', '6 %', '0.1', '0.6', '0.3', '0.1', '57 %',
+    '24.1', '1.6', '0.4', '0.1', '22.0', '6 %', '0.1', '0.6', '0.3', '0.1', '57 %',
   ]);
   await checkAccessibility(page);
 });
@@ -199,6 +199,15 @@ test('STA-08: players see only their own numbers, under the profile', async ({ p
   expect((await page.request.get(`/api/statistics/persons/${MIA}`)).status()).toBe(403);
 });
 
+test('STA-08: a player on her own /statistik/:personId is led back to the profile', async ({ page }) => {
+  await login(page, 'anna');
+  await page.goto(`/statistik/${ANNA}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Anna Muster' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Zur Statistik' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Zum Profil' }).click();
+  await expect(page).toHaveURL('/profil');
+});
+
 test.describe('with the expected 403', () => {
   test.use({ expectedConsoleErrors: [/403/] });
 
@@ -222,4 +231,12 @@ test('STA-10: readable at 375px without horizontal page scrolling', async ({ pag
   await page.goto(`/statistik/${ANNA}?team=${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Anna Muster' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  // «100 %» stays on one line next to «Präsenzquote» in the numbers card
+  const rate = page.getByTestId('statistics-numbers').getByRole('definition').last();
+  await expect(rate).toHaveText('100 %');
+  const lines = await rate.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return Math.round(el.getBoundingClientRect().height / parseFloat(style.lineHeight));
+  });
+  expect(lines).toBe(1);
 });
