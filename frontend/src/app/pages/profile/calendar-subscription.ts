@@ -150,7 +150,6 @@ import { TEXTS } from '../../core/texts';
       margin: 0;
     }
     .field input {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 14px;
       text-overflow: ellipsis;
     }
