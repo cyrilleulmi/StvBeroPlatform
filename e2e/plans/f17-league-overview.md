@@ -72,3 +72,7 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…0002`, event 04 `
 ## Result round 0 (head `6ff3fb7`)
 
 All cases passed except one observation in case 7.3: after a failed «Neu laden» on a team that was never loaded, the alert reads «… Es werden weiterhin die zuletzt geladenen Daten angezeigt.» although there are no loaded data (`LeagueService.UNAVAILABLE`, 502 detail).
+
+## Result round 1 (head `81667d1`)
+
+Backend 374 ✅, E2E 410 passed (6 skipped as on main) ✅. Case 7.3 fixed: a failed «Neu laden» on a never-loaded team (Team 2 linked with `900002`, simulator unavailable) shows «swiss unihockey ist im Moment nicht erreichbar. Bitte später nochmals versuchen.» (API 502 detail the same); a team with loaded data (Team 1) still gets «… Es werden weiterhin die zuletzt geladenen Daten angezeigt.» together with the stale notice. Regression of cases 1–6 and 8–9 on mobile and desktop, light and dark: no change.
