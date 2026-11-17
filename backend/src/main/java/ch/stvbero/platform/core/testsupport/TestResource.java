@@ -10,6 +10,8 @@ import ch.stvbero.platform.core.person.Account;
 import ch.stvbero.platform.core.season.Season;
 import ch.stvbero.platform.core.swissunihockey.SuSimulator;
 import ch.stvbero.platform.core.swissunihockey.SuMatchDto;
+import ch.stvbero.platform.core.swissunihockey.SuLeagueDto;
+import ch.stvbero.platform.core.swissunihockey.SuMatch;
 import ch.stvbero.platform.core.event.Reminders;
 import ch.stvbero.platform.core.clock.BackendClock;
 import io.quarkus.arc.properties.IfBuildProperty;
@@ -78,7 +80,10 @@ public class TestResource {
     public record SuPreset(@NotNull @Positive Integer suTeamId,
                             @Schema(defaultValue = "false", description = "Simuliert einen Ausfall (SUH-09)")
                             Boolean unavailable,
-                            @NotNull List<@Valid @NotNull SuMatchDto> matches) {
+                            @NotNull List<@Valid @NotNull SuMatchDto> matches,
+                            @Schema(description = "League view (F-17): league, group, table and its own matches. "
+                                    + "Omitted: the league view of this team ID stays as it is")
+                            @Valid SuLeagueDto league) {
     }
 
     @POST
@@ -94,12 +99,15 @@ public class TestResource {
     @Path("/swiss-unihockey/matches")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testSetSuMatches",
-            summary = "Set the data the simulator delivers for a swiss unihockey team ID")
+            summary = "Set the data the simulator delivers for a swiss unihockey team ID (matches for the sync, "
+                    + "league view for the league page, outage)")
     @APIResponse(responseCode = "204", description = "Set")
     @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void setSuMatches(@Valid @NotNull SuPreset preset) {
-        simulator.set(preset.suTeamId(), preset.matches().stream().map(SuMatchDto::toMatch).toList(),
+        List<SuMatch> matches = preset.matches().stream().map(SuMatchDto::toMatch).toList();
+        simulator.set(preset.suTeamId(), matches,
+                preset.league() == null ? null : preset.league().toLeague(matches),
                 Boolean.TRUE.equals(preset.unavailable()));
     }
 

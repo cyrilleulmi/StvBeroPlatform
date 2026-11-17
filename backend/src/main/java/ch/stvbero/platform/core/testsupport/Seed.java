@@ -3,6 +3,8 @@ package ch.stvbero.platform.core.testsupport;
 import ch.stvbero.platform.core.event.NotificationRules;
 import ch.stvbero.platform.core.event.EventRules;
 import ch.stvbero.platform.core.clock.BackendClock;
+import ch.stvbero.platform.core.league.LeagueService;
+import ch.stvbero.platform.core.swissunihockey.SuSimulator;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,6 +35,9 @@ public class Seed {
 
     /** Default "now" after a reset: Monday, 16.11.2026, 06:00 Europe/Zurich. */
     public static final LocalDateTime DEFAULT_NOW = LocalDateTime.of(2026, 11, 16, 6, 0);
+
+    /** League data of Team 1 was last loaded by the daily sync on the morning of the default "now" (F-17). */
+    public static final LocalDateTime LEAGUE_LOADED_AT = LocalDateTime.of(2026, 11, 16, 4, 30);
 
     record SeedPerson(int nr, String loginKey, String firstName, String lastName, boolean admin) {
     }
@@ -310,6 +315,9 @@ public class Seed {
     @Inject
     BackendClock clock;
 
+    @Inject
+    LeagueService league;
+
     void onStart(@Observes StartupEvent event) {
         reset();
     }
@@ -395,6 +403,10 @@ public class Seed {
         matchesAndCallUps();
         attendance();
         notifications();
+        // League data of Team 1, loaded by the daily sync at 04:30 (F-17)
+        league.store(teamId(1), seasonId(2), SuSimulator.SEED_LEAGUE,
+                LEAGUE_LOADED_AT.atZone(BackendClock.ZONE).toInstant());
+        em.flush();
         em.clear();
 
         clock.fixAt(DEFAULT_NOW.atZone(BackendClock.ZONE).toInstant());

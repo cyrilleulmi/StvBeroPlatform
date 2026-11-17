@@ -1,0 +1,18 @@
+{
+  "type": "table",
+  "data": {
+    "headers": [
+      {"text": "Rang"}, {"text": "Team"}, {"text": "Sp"}, {"text": "S"}, {"text": "SnV"}, {"text": "NnV"},
+      {"text": "N"}, {"text": "T"}, {"text": "TD"}, {"text": "P"}
+    ],
+    "title": "Herren Grossfeld 2. Liga Gruppe 3",
+    "regions": [
+      {
+        "rows": [
+          {"cells": [{"text": ["1"]}, {"text": ["UHC Grossfeld"]}, {"text": ["8"]}, {"text": ["5"]}, {"text": ["1"]},
+                     {"text": ["1"]}, {"text": ["1"]}, {"text": ["50:30"]}, {"text": ["20"]}, {"text": ["18"]}]}
+        ]
+      }
+    ]
+  }
+}

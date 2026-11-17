@@ -40,4 +40,9 @@ public class SuApiSource implements SwissUnihockeySource {
     public List<SuMatch> matches(int suTeamId, int season) {
         return api.matches(suTeamId, season, EventRules.date(clock.now()));
     }
+
+    @Override
+    public SuLeague league(int suTeamId, int season) {
+        return api.league(suTeamId, season, EventRules.date(clock.now()));
+    }
 }
