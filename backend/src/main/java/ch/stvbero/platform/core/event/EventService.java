@@ -89,13 +89,13 @@ public class EventService {
         TypedQuery<Event> query = em.createQuery(jpql.toString(), Event.class);
         parameters.forEach(query::setParameter);
         List<Event> events = query.getResultList();
-        EventReader reader = new EventReader(em, user, events);
+        EventReader reader = new EventReader(em, user, events, now);
         return events.stream().map(reader::summary).toList();
     }
 
     public EventDto get(CurrentUser user, UUID eventId) {
         Event event = find(eventId);
-        EventReader reader = new EventReader(em, user, List.of(event));
+        EventReader reader = new EventReader(em, user, List.of(event), clock.now());
         Set<TeamRole> mine = reader.myTeamRoles(event);
         EventRules.checkCanView(user.allTeams(), mine);
         return reader.full(event, canEdit(user, event, mine), clock.now());

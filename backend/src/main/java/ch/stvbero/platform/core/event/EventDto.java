@@ -18,7 +18,7 @@ import java.util.UUID;
 public record EventDto(UUID id, EventType type, String title, OffsetDateTime start, OffsetDateTime end,
                         EventStatus status, String cancellationReason, boolean rescheduled, List<TeamDto> teams,
                         LocationDto location, OffsetDateTime responseDeadline, ResponseDto myResponse, CountsDto counts,
-                        UUID seriesId, String notes, int responseDeadlineHours, MeetingPointDto meetingPoint,
+                        UUID seriesId, Integer warningCount, String notes, int responseDeadlineHours, MeetingPointDto meetingPoint,
                         List<MatchDto> matches, CallUpStatus callUpStatus, MyCallUp myCallUp,
                         boolean canEdit, boolean attendanceCheck, Boolean attendanceRecorded,
                         boolean canRecordAttendance, AttendanceStatus myAttendance) {

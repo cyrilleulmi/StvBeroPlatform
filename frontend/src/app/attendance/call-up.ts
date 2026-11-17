@@ -20,6 +20,7 @@ import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, responseKey } from './response';
 import { yearOf, eventDate, clockTime } from './time';
+import { Warnings } from './warnings';
 
 /**
  * Call-up of a match day (`/termine/:eventId/aufgebot`, coaches and admins only): all players of the
@@ -29,7 +30,7 @@ import { yearOf, eventDate, clockTime } from './time';
 @Component({
   selector: 'app-call-up',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, Warnings],
   template: `
     <div class="header">
       <a class="back" [routerLink]="['/termine', eventId()]">{{ t.toEvent }}</a>
@@ -58,6 +59,8 @@ import { yearOf, eventDate, clockTime } from './time';
             }}</span>
             <span class="count-text" data-testid="call-up-count">{{ t.count(a.calledUpCount ?? 0) }}</span>
           </p>
+          <!-- From the selection, updated with every change (F-16) -->
+          <app-warnings [warnings]="a.warnings" [calledUp]="true" testId="call-up-warnings" />
           @if (!editable()) {
             <p class="message-notice">{{ t.notEditable }}</p>
           } @else if (a.status === 'PUBLISHED') {
@@ -132,11 +135,22 @@ import { yearOf, eventDate, clockTime } from './time';
       class="card dialog"
       aria-modal="true"
       aria-labelledby="call-up-dialog-title"
-      aria-describedby="call-up-dialog-text"
+      aria-describedby="call-up-dialog-text call-up-dialog-warnings"
     >
       <div class="form">
         <h2 id="call-up-dialog-title">{{ t.dialogTitle }}</h2>
         <p id="call-up-dialog-text">{{ t.dialogText(callUp()?.calledUpCount ?? 0, teamName()) }}</p>
+        <!-- Publishing with warnings is allowed; the dialog repeats them (F-16, criterion 3) -->
+        <div id="call-up-dialog-warnings">
+          @if (callUp()?.warnings; as w) {
+            <app-warnings
+              [warnings]="w"
+              [calledUp]="true"
+              [title]="texts.warnings.dialog"
+              testId="call-up-dialog-warnings"
+            />
+          }
+        </div>
         <div class="dialog-buttons">
           <button
             type="button"

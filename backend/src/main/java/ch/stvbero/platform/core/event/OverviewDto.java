@@ -1,6 +1,7 @@
 package ch.stvbero.platform.core.event;
 
 import ch.stvbero.platform.core.person.PersonSummary;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
@@ -8,10 +9,13 @@ import java.util.UUID;
 
 /**
  * Overview of an event (ANM-20 to ANM-32): teams by name, each with lines, goalies and «Ohne Linie», plus the
- * coach block and the counts. Comments only for those allowed to see them (ANM-07).
+ * coach block and the counts. Comments only for those allowed to see them (ANM-07). Warnings only for coaches and
+ * admins (F-16); for everyone else the field is missing.
  */
 @Schema(name = "Overview")
-public record OverviewDto(UUID eventId, CountsDto total, List<TeamBlock> teams, List<CoachEntry> coaches) {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record OverviewDto(UUID eventId, CountsDto total, List<TeamBlock> teams, List<CoachEntry> coaches,
+                          List<WarningDto> warnings) {
 
     @Schema(name = "OverviewTeamName")
     public record TeamName(UUID id, String name) {

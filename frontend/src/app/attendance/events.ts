@@ -134,11 +134,25 @@ interface Month {
                         }
                       </span>
                     } @else {
-                      @if (t.rescheduled) {
+                      @if (t.rescheduled || t.warningCount) {
                         <span class="status-row">
-                          <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
-                            texts.events.rescheduled
-                          }}</span>
+                          @if (t.rescheduled) {
+                            <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
+                              texts.events.rescheduled
+                            }}</span>
+                          }
+                          <!-- Only coaches and admins get a warning count from the API (F-16) -->
+                          @if (t.warningCount; as n) {
+                            <span
+                              class="chip warning-chip"
+                              data-kind="warning"
+                              data-testid="event-warnings"
+                              [attr.data-warning-count]="n"
+                            >
+                              <app-icon name="triangle-alert" [size]="14" />
+                              {{ texts.warnings.count(n) }}
+                            </span>
+                          }
                         </span>
                       }
                       @if (t.counts; as z) {

@@ -1,6 +1,8 @@
 package ch.stvbero.platform.core.event;
 
 import ch.stvbero.platform.core.auth.CurrentUser;
+import ch.stvbero.platform.core.line.Group;
+import ch.stvbero.platform.core.line.LineRules;
 import ch.stvbero.platform.core.person.Person;
 import ch.stvbero.platform.core.person.PersonSummary;
 import ch.stvbero.platform.core.team.TeamRole;
@@ -33,7 +35,7 @@ final class EventReader {
     private record TeamInSeason(UUID team, UUID season) {
     }
 
-    private record Member(UUID person, TeamRole teamRole) {
+    private record Member(UUID person, TeamRole teamRole, List<LineRules.GroupInfo> groups) {
     }
 
     private record StoredResponse(ResponseStatus status, String comment, Instant changedAt,
@@ -41,20 +43,25 @@ final class EventReader {
     }
 
     private final CurrentUser user;
+    private final Instant now;
     private final Map<TeamInSeason, String> names = new HashMap<>();
     private final Map<TeamInSeason, List<Member>> members = new HashMap<>();
     private final Map<UUID, Map<UUID, StoredResponse>> responses = new HashMap<>();
 
-    EventReader(EntityManager em, CurrentUser user, Collection<Event> events) {
+    EventReader(EntityManager em, CurrentUser user, Collection<Event> events, Instant now) {
         this.user = user;
+        this.now = now;
         Set<UUID> seasons = new LinkedHashSet<>();
         events.forEach(event -> seasons.add(event.season.id));
         if (!seasons.isEmpty()) {
             TeamSeason.<TeamSeason>list("season.id in ?1", seasons)
                     .forEach(ts -> names.put(new TeamInSeason(ts.team.id, ts.season.id), ts.name));
-            TeamMembership.<TeamMembership>list("season.id in ?1", seasons).forEach(m -> members
-                    .computeIfAbsent(new TeamInSeason(m.team.id, m.season.id), key -> new ArrayList<>())
-                    .add(new Member(m.person.id, m.teamRole)));
+            // With the groups, for the warnings in the event list (F-16)
+            em.createQuery("select distinct m from TeamMembership m left join fetch m.groups where m.season.id in :seasons",
+                            TeamMembership.class).setParameter("seasons", seasons).getResultList()
+                    .forEach(m -> members
+                            .computeIfAbsent(new TeamInSeason(m.team.id, m.season.id), key -> new ArrayList<>())
+                            .add(new Member(m.person.id, m.teamRole, m.groups.stream().map(Group::info).toList())));
         }
         List<UUID> ids = events.stream().map(event -> event.id).toList();
         if (!ids.isEmpty()) {
@@ -90,7 +97,32 @@ final class EventReader {
                 event.status, event.cancellationReason, event.rescheduled, teams(event),
                 event.location == null ? null : event.location.dto(),
                 time(EventRules.responseDeadline(event.start, event.responseDeadlineHours)), myResponse(event),
-                counts(event), event.series == null ? null : event.series.id);
+                counts(event), event.series == null ? null : event.series.id, warningCount(event));
+    }
+
+    /**
+     * Number of warnings of the event from the responses, as in the overview (F-16, criterion 8). Only for coaches
+     * and admins; {@code null} for everyone else.
+     */
+    private Integer warningCount(Event event) {
+        if (!WarningRules.visible(user.allTeams())) {
+            return null;
+        }
+        if (!WarningRules.applies(event.type, event.status, event.end, now)) {
+            return 0;
+        }
+        Map<UUID, StoredResponse> eventResponses = responses.getOrDefault(event.id, Map.of());
+        int count = 0;
+        for (Team team : event.teams) {
+            List<WarningRules.Player> players = members.getOrDefault(new TeamInSeason(team.id, event.season.id), List.of())
+                    .stream().filter(m -> m.teamRole() == TeamRole.PLAYER)
+                    .map(m -> new WarningRules.Player(m.person(), m.groups(), eventResponses.containsKey(m.person())
+                            && eventResponses.get(m.person()).status() == ResponseStatus.ATTENDING))
+                    .toList();
+            count += WarningRules.warnings(event.type, new OverviewDto.TeamName(team.id, ""), team.minimums(), players)
+                    .size();
+        }
+        return count;
     }
 
     /**
@@ -128,7 +160,7 @@ final class EventReader {
                 : AttendanceRules.mine(event.attendanceCheck, attendance.entries.get(user.personId()));
         return new EventDto(base.id(), base.type(), base.title(), base.start(), base.end(), base.status(),
                 base.cancellationReason(), base.rescheduled(), base.teams(), base.location(), base.responseDeadline(),
-                base.myResponse(), base.counts(), base.seriesId(),
+                base.myResponse(), base.counts(), base.seriesId(), base.warningCount(),
                 event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit,
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance);
     }

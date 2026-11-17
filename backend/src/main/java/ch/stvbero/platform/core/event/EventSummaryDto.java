@@ -8,11 +8,14 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/** Entry in the event list, with the caller's own response (TER-13). */
+/**
+ * Entry in the event list, with the caller's own response (TER-13). {@code warningCount} only for coaches and admins
+ * (F-16).
+ */
 @Schema(name = "EventSummary")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EventSummaryDto(UUID id, EventType type, String title, OffsetDateTime start, OffsetDateTime end,
                             EventStatus status, String cancellationReason, boolean rescheduled, List<TeamDto> teams,
                             LocationDto location, OffsetDateTime responseDeadline, ResponseDto myResponse, CountsDto counts,
-                            UUID seriesId) {
+                            UUID seriesId, Integer warningCount) {
 }

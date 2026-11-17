@@ -99,6 +99,23 @@ public class TeamResource {
         return teams.update(auth.person(), teamId, season, input);
     }
 
+    @PUT
+    @Path("/{teamId}/warning-minimums")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setWarningMinimums", summary = "Change the minimums for the warnings of the team (F-16, admin, coach)")
+    @APIResponse(responseCode = "200", description = "Updated",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = WarningMinimums.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public WarningMinimums setWarningMinimums(@PathParam("teamId") UUID teamId, @Valid @NotNull WarningMinimums input) {
+        return teams.setWarningMinimums(auth.person(), teamId, input);
+    }
+
     @POST
     @Path("/{teamId}/members")
     @Consumes(MediaType.APPLICATION_JSON)
