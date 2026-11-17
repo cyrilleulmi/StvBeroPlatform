@@ -521,6 +521,47 @@ export const TEXTS = {
     system: 'System',
     logout: 'Abmelden',
   },
+  calendar: {
+    title: 'Kalender abonnieren',
+    intro:
+      'Deine Termine erscheinen im Kalender deines Handys und bleiben dort aktuell, auch wenn ein Termin verschoben oder abgesagt wird.',
+    address: 'Deine Kalenderadresse',
+    copy: 'Adresse kopieren',
+    copied: 'Die Adresse ist kopiert.',
+    copyFailed: 'Kopieren hat nicht geklappt. Markiere die Adresse und kopiere sie von Hand.',
+    open: 'Im Kalender öffnen',
+    howTo: 'So gehts',
+    iphone: 'iPhone',
+    iphoneSteps: [
+      '«Im Kalender öffnen» antippen und «Abonnieren» bestätigen.',
+      'Oder: Adresse kopieren. Dann Einstellungen › Apps › Kalender › Kalenderaccounts › Account hinzufügen › Andere › Kalenderabo hinzufügen.',
+      'Adresse einfügen, «Weiter» und «Sichern» antippen.',
+    ],
+    android: 'Android (Google Kalender)',
+    androidSteps: [
+      'Adresse kopieren.',
+      'Im Browser calendar.google.com öffnen. In der App selbst geht das Abonnieren nicht.',
+      'Links bei «Weitere Kalender» auf «+» und «Per URL» tippen, Adresse einfügen, «Kalender hinzufügen».',
+      'Der Kalender «STV Bero» erscheint danach auch in der App auf dem Handy. Falls nicht: in der App unter Einstellungen «STV Bero» einschalten.',
+    ],
+    outlook: 'Outlook',
+    outlookSteps: [
+      'Adresse kopieren.',
+      'In Outlook den Kalender öffnen, «Kalender hinzufügen» und «Aus dem Internet abonnieren» wählen.',
+      'Adresse einfügen, als Namen «STV Bero» eingeben und bestätigen.',
+    ],
+    refresh:
+      'Kalender-Apps holen Änderungen selbst ab. Je nach App dauert das ein paar Minuten bis einige Stunden.',
+    private:
+      'Behalte die Adresse für dich: Wer sie kennt, sieht deine Termine. Hast du sie weitergegeben, erneuere sie.',
+    renew: 'Adresse erneuern',
+    renewTitle: 'Adresse erneuern?',
+    renewText:
+      'Die bisherige Adresse funktioniert danach sofort nicht mehr. Kalender, die sie abonniert haben, bekommen keine Termine mehr. Trage dort die neue Adresse ein.',
+    renewConfirm: 'Erneuern',
+    cancel: 'Abbrechen',
+    renewed: 'Neue Adresse erstellt. Die bisherige funktioniert nicht mehr.',
+  },
   administration: {
     title: 'Verwaltung',
     areas: 'Bereiche',
