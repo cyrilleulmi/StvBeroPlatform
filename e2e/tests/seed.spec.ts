@@ -1,4 +1,4 @@
-import { anmelden, expect, reset, test } from './hilfen';
+import { anmelden, expect, reset, test } from './helpers';
 
 /** Einstiegstest und Vorlage: Reset, Anmeldung, Dashboard sichtbar. */
 test('F-00: Seed, Anmeldung und Start', async ({ page, request }) => {

@@ -2,7 +2,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
-import { sitzungInterceptor } from './kern/sitzung.interceptor';
+import { sitzungInterceptor } from './core/session.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ThemeService } from './kern/theme.service';
+import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',

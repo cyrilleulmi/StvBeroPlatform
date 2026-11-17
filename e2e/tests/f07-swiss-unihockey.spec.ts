@@ -1,5 +1,5 @@
 import type { APIRequestContext, Page } from '@playwright/test';
-import { anmelden, barrierefrei, expect, reset, test } from './hilfen';
+import { anmelden, barrierefrei, expect, reset, test } from './helpers';
 
 /**
  * F-07 · Anbindung swiss unihockey (SUH). Akzeptanzkriterien aus Issue #8 bzw. docs/pipeline/backlog.md,

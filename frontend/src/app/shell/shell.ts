@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { AnmeldungService } from '../kern/anmeldung.service';
-import { BenachrichtigungenService } from '../kern/benachrichtigungen.service';
-import { Icon } from '../kern/icon';
-import { TEXTE } from '../kern/texte';
+import { AnmeldungService } from '../core/auth.service';
+import { BenachrichtigungenService } from '../core/notifications.service';
+import { Icon } from '../core/icon';
+import { TEXTE } from '../core/texts';
 
 interface NavEintrag {
   route: string;
