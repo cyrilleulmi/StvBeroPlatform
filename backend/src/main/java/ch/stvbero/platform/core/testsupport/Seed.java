@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -153,7 +154,12 @@ public class Seed {
             "1:2026-11-17", 1,
             "2:2026-11-19", 2,
             "1:2026-11-24", 3,
-            "1:2026-11-10", 7);
+            "1:2026-11-10", 7,
+            "2:2026-11-12", 9,
+            "2:2026-11-05", 10);
+
+    /** Seed events with the switch «Präsenz erfassen» on (F-14, PRS-01). */
+    static final Set<Integer> ATTENDANCE_CHECK = Set.of(9, 10);
 
     /** Cancelled seed events: number → reason. */
     static final Map<Integer, String> CANCELLED = Map.of(3, "Halle besetzt");
@@ -185,7 +191,27 @@ public class Seed {
             // Event 05: match day team 2
             new SeedResponse(5, 2, A, null), new SeedResponse(5, 6, A, null), new SeedResponse(5, 12, A, null),
             new SeedResponse(5, 13, A, null), new SeedResponse(5, 14, D, null), new SeedResponse(5, 15, A, null),
-            new SeedResponse(5, 3, A, null));
+            new SeedResponse(5, 3, A, null),
+            // Event 09: past practice team 1 with attendance check, nothing recorded (Kim pending)
+            new SeedResponse(9, 5, A, null), new SeedResponse(9, 6, A, null), new SeedResponse(9, 7, D, "Krank"),
+            new SeedResponse(9, 8, A, null), new SeedResponse(9, 9, M, "Knie schmerzt"), new SeedResponse(9, 10, A, null),
+            // Event 10: past practice team 1 with recorded attendance (Kim pending)
+            new SeedResponse(10, 5, A, null), new SeedResponse(10, 6, A, null), new SeedResponse(10, 7, D, "Ferien"),
+            new SeedResponse(10, 8, A, null), new SeedResponse(10, 9, A, null), new SeedResponse(10, 10, A, null));
+
+    /** Responses to past events are given two days before the event instead of {@link #RESPONDED_AT}. */
+    static final Map<Integer, LocalDateTime> RESPONDED_AT_PER_EVENT = Map.of(
+            9, LocalDateTime.of(2026, 11, 10, 20, 0),
+            10, LocalDateTime.of(2026, 11, 3, 20, 0));
+
+    /** Recorded attendance (F-14): event, recorded by, recorded at, person → status. */
+    record SeedAttendance(int event, int recordedBy, LocalDateTime recordedAt, Map<Integer, String> entries) {
+    }
+
+    static final List<SeedAttendance> ATTENDANCE = List.of(
+            // Event 10 recorded by Petra: Sara responded «dabei» but was absent, Mia excused, Kim absent
+            new SeedAttendance(10, 2, LocalDateTime.of(2026, 11, 5, 21, 0), Map.of(
+                    5, "PRESENT", 6, "PRESENT", 7, "EXCUSED", 8, "ABSENT", 9, "PRESENT", 10, "PRESENT", 11, "ABSENT")));
 
     /** Single event. Venue with address and Google Maps link optional, meeting point only for match days. */
     record SeedEvent(int nr, int season, String type, String title, LocalDateTime start, LocalDateTime end,
@@ -339,10 +365,12 @@ public class Seed {
                             insert into response (event_id, person_id, status, comment, changed_at, late_cancellation)
                             values (?, ?, ?, ?, ?, false)""")
                     .setParameter(1, eventId(r.event())).setParameter(2, personId(r.person()))
-                    .setParameter(3, r.status()).setParameter(4, r.comment()).setParameter(5, zurich(RESPONDED_AT))
+                    .setParameter(3, r.status()).setParameter(4, r.comment())
+                    .setParameter(5, zurich(RESPONDED_AT_PER_EVENT.getOrDefault(r.event(), RESPONDED_AT)))
                     .executeUpdate();
         }
         matchesAndCallUps();
+        attendance();
         notifications();
         em.clear();
 
@@ -379,8 +407,8 @@ public class Seed {
                 UUID id = nr != null ? eventId(nr) : UUID.nameUUIDFromBytes(("termin-" + s.nr() + "-" + day).getBytes());
                 em.createNativeQuery("""
                                 insert into event (id, season_id, type, title, starts_at, ends_at, status, cancellation_reason, location_name,
-                                                    response_deadline_hours, series_id, series_date)
-                                values (?, ?, 'PRACTICE', 'Training', ?, ?, ?, ?, ?, ?, ?, ?)""")
+                                                    response_deadline_hours, series_id, series_date, attendance_check)
+                                values (?, ?, 'PRACTICE', 'Training', ?, ?, ?, ?, ?, ?, ?, ?, ?)""")
                         .setParameter(1, id).setParameter(2, seasonId(2))
                         .setParameter(3, EventRules.instant(day, s.start()))
                         .setParameter(4, EventRules.instant(day, s.end()))
@@ -388,6 +416,7 @@ public class Seed {
                         .setParameter(6, nr != null ? CANCELLED.get(nr) : null)
                         .setParameter(7, s.location()).setParameter(8, EventRules.DEFAULT_RESPONSE_DEADLINE)
                         .setParameter(9, seriesId(s.nr())).setParameter(10, day)
+                        .setParameter(11, nr != null && ATTENDANCE_CHECK.contains(nr))
                         .executeUpdate();
                 assignTeams(id, s.teams());
             }
@@ -406,6 +435,19 @@ public class Seed {
                     .setParameter(13, e.meetingPointLocation())
                     .executeUpdate();
             assignTeams(eventId(e.nr()), e.teams());
+        }
+    }
+
+    /** Recorded attendance of event 10 (F-14). */
+    private void attendance() {
+        for (SeedAttendance a : ATTENDANCE) {
+            em.createNativeQuery("insert into attendance_record (event_id, recorded_at, recorded_by) values (?, ?, ?)")
+                    .setParameter(1, eventId(a.event())).setParameter(2, zurich(a.recordedAt()))
+                    .setParameter(3, personId(a.recordedBy())).executeUpdate();
+            a.entries().forEach((person, status) -> em.createNativeQuery(
+                            "insert into attendance_entry (event_id, person_id, status) values (?, ?, ?)")
+                    .setParameter(1, eventId(a.event())).setParameter(2, personId(person)).setParameter(3, status)
+                    .executeUpdate());
         }
     }
 

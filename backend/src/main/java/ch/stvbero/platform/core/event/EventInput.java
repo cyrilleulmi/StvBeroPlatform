@@ -13,7 +13,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/** Create or change a single event (TER-04, TER-10, TER-11). */
+/**
+ * Create or change a single event (TER-04, TER-10, TER-11). Without {@code attendanceCheck} a new event has the
+ * check off and a changed event keeps its value (PRS-01).
+ */
 @Schema(name = "EventInput")
 public record EventInput(
         @NotNull EventType type,
@@ -25,5 +28,6 @@ public record EventInput(
         @Size(max = 500) String notes,
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
-        @Valid MeetingPointDto meetingPoint) {
+        @Valid MeetingPointDto meetingPoint,
+        Boolean attendanceCheck) {
 }

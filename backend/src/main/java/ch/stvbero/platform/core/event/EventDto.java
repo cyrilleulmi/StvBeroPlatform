@@ -10,7 +10,8 @@ import java.util.UUID;
 
 /**
  * Event with all details (TER-04). Matches, call-up status and the caller's own call-up status exist only for
- * match days (AUF-14, AUF-23, AUF-24).
+ * match days (AUF-14, AUF-23, AUF-24). Whether attendance is recorded only for coaches and admins, the own
+ * attendance only for players with a recorded value (PRS-06, PRS-08).
  */
 @Schema(name = "Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -19,5 +20,6 @@ public record EventDto(UUID id, EventType type, String title, OffsetDateTime sta
                         LocationDto location, OffsetDateTime responseDeadline, ResponseDto myResponse, CountsDto counts,
                         UUID seriesId, String notes, int responseDeadlineHours, MeetingPointDto meetingPoint,
                         List<MatchDto> matches, CallUpStatus callUpStatus, MyCallUp myCallUp,
-                        boolean canEdit) {
+                        boolean canEdit, boolean attendanceCheck, Boolean attendanceRecorded,
+                        boolean canRecordAttendance, AttendanceStatus myAttendance) {
 }

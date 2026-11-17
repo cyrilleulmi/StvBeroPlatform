@@ -14,7 +14,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Create or change a series (TER-05, TER-08, TER-10). */
+/**
+ * Create or change a series (TER-05, TER-08, TER-10). Without {@code attendanceCheck} a new series has the check off
+ * and a changed series keeps its value (PRS-01).
+ */
 @Schema(name = "SeriesInput")
 public record SeriesInput(
         @NotNull SeriesType type,
@@ -27,5 +30,6 @@ public record SeriesInput(
         @NotNull LocalDate validUntil,
         @Valid LocationDto location,
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
-        @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours) {
+        @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
+        Boolean attendanceCheck) {
 }

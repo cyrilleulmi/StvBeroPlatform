@@ -18,12 +18,13 @@ import java.util.UUID;
 @Schema(name = "Series")
 public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamIds, List<TeamDto> teams,
                        Weekday weekday, String startTime, String endTime, LocalDate validFrom,
-                       LocalDate validUntil, LocationDto location, int responseDeadlineHours, List<SeriesExceptionDto> exceptions) {
+                       LocalDate validUntil, LocationDto location, int responseDeadlineHours, boolean attendanceCheck,
+                       List<SeriesExceptionDto> exceptions) {
 
     public static SeriesDto of(Series s, CurrentUser user) {
         return new SeriesDto(s.id, s.type, s.title, s.teams.stream().map(t -> t.id).sorted().toList(), teams(s, user),
                 s.weekday, EventRules.time(s.startTime), EventRules.time(s.endTime), s.validFrom,
-                s.validUntil, s.location == null ? null : s.location.dto(), s.responseDeadlineHours,
+                s.validUntil, s.location == null ? null : s.location.dto(), s.responseDeadlineHours, s.attendanceCheck,
                 s.exceptions.stream().sorted(Comparator.comparing((SeriesException e) -> e.startDate).thenComparing(e -> e.endDate))
                         .map(e -> new SeriesExceptionDto(e.startDate, e.endDate, e.reason)).toList());
     }
