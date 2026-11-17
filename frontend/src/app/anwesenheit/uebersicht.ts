@@ -161,13 +161,13 @@ interface Ziel {
           <span class="status-text" [attr.data-art]="schluessel(e.response.status)">{{
             a.status[status(e.response)]
           }}</span>
-          @if (e.response.kurzfristig) {
+          @if (e.response.lateCancellation) {
             <span class="chip" data-art="kurzfristig">{{ a.kurzfristig }}</span>
           }
-          @if (e.response.kommentar; as k) {
+          @if (e.response.comment; as k) {
             <span class="nebentext kommentar">«{{ k }}»</span>
           }
-          @if (e.response.eingetragenVon; as von) {
+          @if (e.response.enteredBy; as von) {
             <span class="nebentext">{{ a.eingetragenVon(name(von)) }}</span>
           }
         </span>

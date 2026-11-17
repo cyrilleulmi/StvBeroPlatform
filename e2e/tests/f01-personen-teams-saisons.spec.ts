@@ -259,7 +259,7 @@ function postsZaehlen(page: import('@playwright/test').Page, pfad: RegExp): { an
 test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', async ({ page }) => {
   await anmelden(page, 'alex');
   await page.goto('/verwaltung/personen/neu');
-  const posts = postsZaehlen(page, /^\/api\/personen$/);
+  const posts = postsZaehlen(page, /^\/api\/persons$/);
   await page.getByLabel('Vorname').fill('Flurina');
   await page.getByLabel('Nachname').fill('Testerin');
   await page.getByRole('button', { name: 'Speichern' }).dblclick();
@@ -292,7 +292,7 @@ test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohn
   await anmelden(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
-  const posts = postsZaehlen(page, /\/mitglieder$/);
+  const posts = postsZaehlen(page, /\/members$/);
   await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Ruth Meier' });
   await page.getByLabel('Funktion', { exact: true }).selectOption({ label: 'Coach' });
   await page.getByRole('button', { name: 'Aufnehmen' }).dblclick();
@@ -307,7 +307,7 @@ test('F-01 K6 SAI-01: Doppelklick auf Saison anlegen legt die Saison einmal an, 
   await anmelden(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
-  const posts = postsZaehlen(page, /^\/api\/saisons$/);
+  const posts = postsZaehlen(page, /^\/api\/seasons$/);
   await page.getByRole('button', { name: 'Saison anlegen' }).dblclick();
 
   await expect(page.getByRole('status')).toHaveText('Saison 2027/28 ist angelegt. Du kannst sie jetzt anpassen.');

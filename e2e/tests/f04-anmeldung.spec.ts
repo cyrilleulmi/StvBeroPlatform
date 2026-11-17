@@ -81,35 +81,35 @@ test('F-04 K1 K2 S1 ANM-20 bis ANM-32: Übersicht von Termin 01 wie in testdaten
     'Ohne Linie',
   ]);
   expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_1_T1}`))).toEqual([
-    `${MIA} NICHT_DABEI`,
-    `${LEA} DABEI`,
-    `${ANNA} DABEI`,
+    `${MIA} DECLINED`,
+    `${LEA} ATTENDING`,
+    `${ANNA} ATTENDING`,
   ]);
   expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_2_T1}`))).toEqual([
-    `${SARA} DABEI`,
-    `${NINA} OFFEN`,
+    `${SARA} ATTENDING`,
+    `${NINA} PENDING`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T1}`))).toEqual([`${JANA} DABEI`]);
-  expect(await personen(page.getByTestId(`uebersicht-ohne-linie-${TEAM_1}`))).toEqual([`${KIM} DABEI`]);
+  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T1}`))).toEqual([`${JANA} ATTENDING`]);
+  expect(await personen(page.getByTestId(`uebersicht-ohne-linie-${TEAM_1}`))).toEqual([`${KIM} ATTENDING`]);
 
   // ANM-31: Petra als Spielerin in Team 2, Lea in beiden Teams; Team 2 ohne «Ohne Linie» (leer)
   const team2 = page.getByTestId(`uebersicht-team-${TEAM_2}`);
   await expect(team2.getByRole('heading', { level: 4 })).toHaveText(['Linie 1', 'Linie 2', 'Goalies']);
   expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_1_T2}`))).toEqual([
-    `${PETRA} DABEI`,
-    `${EVA} VIELLEICHT`,
-    `${LARA} DABEI`,
+    `${PETRA} ATTENDING`,
+    `${EVA} MAYBE`,
+    `${LARA} ATTENDING`,
   ]);
   expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_2_T2}`))).toEqual([
-    `${LEA} DABEI`,
-    `${ZOE} NICHT_DABEI`,
+    `${LEA} ATTENDING`,
+    `${ZOE} DECLINED`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T2}`))).toEqual([`${ELLA} OFFEN`]);
+  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T2}`))).toEqual([`${ELLA} PENDING`]);
   await expect(page.getByTestId(`uebersicht-ohne-linie-${TEAM_2}`)).toHaveCount(0);
 
   // ANM-22: Coach-Block mit Team, Petra nicht unter den Spielerinnen von Team 1
   const coaches = page.getByTestId('coach-block');
-  expect(await personen(coaches)).toEqual([`${PETRA} DABEI`, `${MARC} NICHT_DABEI`]);
+  expect(await personen(coaches)).toEqual([`${PETRA} ATTENDING`, `${MARC} DECLINED`]);
   await expect(coaches.getByTestId(`uebersicht-person-${PETRA}`)).toContainText('(Team 1)');
   await expect(coaches.getByTestId(`uebersicht-person-${MARC}`)).toContainText('(Team 2)');
   await expect(team1.getByTestId(`uebersicht-person-${PETRA}`)).toHaveCount(0);
