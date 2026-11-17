@@ -1,6 +1,6 @@
 package ch.stvbero.platform.core.notification;
 
-/** Trigger of a notification, matching BEN-01 to BEN-07. */
+/** Trigger of a notification, matching BEN-01 to BEN-07 and DRV-11. */
 public enum NotificationType {
     /** BEN-01: the response deadline is getting close and there is no response yet. */
     REMINDER,
@@ -17,5 +17,7 @@ public enum NotificationType {
     /** BEN-07: event cancelled. */
     EVENT_CANCELLED,
     /** BEN-07: event rescheduled. */
-    EVENT_RESCHEDULED
+    EVENT_RESCHEDULED,
+    /** DRV-11: a car of the driver list changed (passenger added, moved or removed, car added or removed). */
+    DRIVER_LIST_CHANGED
 }

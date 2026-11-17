@@ -414,6 +414,7 @@ public class Seed {
                     .executeUpdate();
         }
         matchesAndCallUps();
+        driverList();
         attendance();
         notifications();
         // League data of Team 1, loaded by the daily sync at 04:30 (F-17)
@@ -536,6 +537,33 @@ public class Seed {
         }
     }
 
+    /** Car of a match day (F-20): number, event, driver, seats, passengers (person numbers). */
+    record SeedCar(int nr, int event, int driver, int seats, List<Integer> passengers) {
+    }
+
+    /**
+     * Driver list of match day 04 (F-20, DRV-13): Petra's car is full (Anna, Lea, Mia), Sara drives with three free
+     * seats, Jana responded «dabei» and has no seat yet. The route is calculated on the first view.
+     */
+    static final List<SeedCar> CARS = List.of(
+            new SeedCar(1, 4, 2, 3, List.of(5, 6, 7)),
+            new SeedCar(2, 4, 8, 3, List.of()));
+
+    private void driverList() {
+        for (SeedCar car : CARS) {
+            em.createNativeQuery("insert into car (id, event_id, driver_id, seats, created_at) values (?, ?, ?, ?, ?)")
+                    .setParameter(1, carId(car.nr())).setParameter(2, eventId(car.event()))
+                    .setParameter(3, personId(car.driver())).setParameter(4, car.seats())
+                    .setParameter(5, zurich(RESPONDED_AT)).executeUpdate();
+            for (int person : car.passengers()) {
+                em.createNativeQuery("""
+                                insert into car_passenger (car_id, event_id, person_id, added_at) values (?, ?, ?, ?)""")
+                        .setParameter(1, carId(car.nr())).setParameter(2, eventId(car.event()))
+                        .setParameter(3, personId(person)).setParameter(4, zurich(RESPONDED_AT)).executeUpdate();
+            }
+        }
+    }
+
     /** Notifications for event 03 (cancellation) and event 05 (call-up), with the same texts as in production (F-06). */
     private void notifications() {
         for (SeedNotification n : NOTIFICATIONS) {
@@ -607,6 +635,10 @@ public class Seed {
 
     public static UUID notificationId(int nr) {
         return id("9", nr);
+    }
+
+    public static UUID carId(int nr) {
+        return id("b", nr);
     }
 
     public static UUID accountId(int nr) {

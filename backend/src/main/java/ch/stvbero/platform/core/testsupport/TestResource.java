@@ -1,5 +1,7 @@
 package ch.stvbero.platform.core.testsupport;
 
+import ch.stvbero.platform.core.driver.Routing;
+import ch.stvbero.platform.core.driver.RoutingSimulator;
 import ch.stvbero.platform.core.auth.Public;
 import ch.stvbero.platform.core.notification.Deliveries;
 import ch.stvbero.platform.core.notification.Delivery;
@@ -24,6 +26,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -83,6 +86,9 @@ public class TestResource {
     @Inject
     DeliverySimulator deliverySimulator;
 
+    @Inject
+    RoutingSimulator routingSimulator;
+
     public record ClockInput(@NotNull OffsetDateTime now) {
     }
 
@@ -108,6 +114,21 @@ public class TestResource {
                             @Valid SuLeagueDto league) {
     }
 
+    @Schema(name = "RoutingPair")
+    public record RoutingPair(@NotBlank String from, @NotBlank String to,
+                              @Schema(description = "One-way distance; omitted: there is no route for this pair")
+                              @PositiveOrZero Double distanceKm,
+                              @PositiveOrZero Integer durationMinutes) {
+    }
+
+    @Schema(name = "RoutingPreset")
+    public record RoutingPreset(
+            @Schema(description = "Routes per pair of places (meeting point text, venue name; case is ignored)")
+            List<@Valid @NotNull RoutingPair> routes,
+            @Schema(defaultValue = "false", description = "Simulates an outage of the routing service (DRV-07)")
+            Boolean unavailable) {
+    }
+
     @POST
     @Path("/reset")
     @Operation(operationId = "testReset", summary = "Reset the database to the seed, the clock to default and the simulator")
@@ -117,7 +138,27 @@ public class TestResource {
             seed.reset();
             simulator.reset();
             deliverySimulator.reset();
+            routingSimulator.reset();
         });
+    }
+
+    @PUT
+    @Path("/routing")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testSetRouting",
+            summary = "Set the routes the routing simulator delivers per pair of places, or an outage (DRV-06)")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public void setRouting(@Valid @NotNull RoutingPreset preset) {
+        if (preset.routes() != null) {
+            for (RoutingPair pair : preset.routes()) {
+                routingSimulator.set(pair.from(), pair.to(), pair.distanceKm() == null ? null
+                        : new Routing.Result((int) Math.round(pair.distanceKm() * 1000),
+                        pair.durationMinutes() == null ? 0 : pair.durationMinutes() * 60));
+            }
+        }
+        routingSimulator.unavailable(Boolean.TRUE.equals(preset.unavailable()));
     }
 
     @PUT
