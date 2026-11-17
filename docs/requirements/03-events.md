@@ -32,4 +32,4 @@ Status legend: see [README](../../README.md#requirement-status).
 
 ## Not part of the core
 
-- Calendar subscription (iCal): see [Later features](../later-features.md).
+- Calendar subscription (iCal): built with F-18, see [13 · Calendar subscription](13-calendar.md).

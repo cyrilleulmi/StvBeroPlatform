@@ -72,6 +72,7 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 10 | [Non-functional requirements](docs/requirements/10-non-functional.md) | NF |
 | 11 | [Attendance check](docs/requirements/11-attendance-check.md) | PRS |
 | 12 | [Attendance statistics](docs/requirements/12-statistics.md) | STA |
+| 13 | [Calendar subscription](docs/requirements/13-calendar.md) | CAL |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 

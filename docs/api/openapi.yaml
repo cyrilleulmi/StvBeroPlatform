@@ -45,6 +45,8 @@ tags:
     description: swiss unihockey integration (SUH)
   - name: Notifications
     description: In-app notifications (BEN)
+  - name: Calendar
+    description: Calendar subscription with an iCalendar feed (CAL)
   - name: Test
     description: Only in the profiles dev and test. See docs/testability.md.
 
@@ -66,6 +68,59 @@ paths:
               schema: { $ref: '#/components/schemas/Me' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/me/calendar:
+    get:
+      tags: [Calendar]
+      operationId: getMyCalendar
+      summary: Personal address of the calendar feed; created on first call (CAL-01)
+      description: |
+        Every person has at most one address. The first call creates it with a new random token; later calls
+        return the same address until it is renewed. The app puts its own address in front of `feedPath`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalendarSubscription' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /api/me/calendar/renew:
+    post:
+      tags: [Calendar]
+      operationId: renewMyCalendar
+      summary: New address for the calendar feed; the old one answers 404 at once (CAL-07)
+      responses:
+        '200':
+          description: New address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalendarSubscription' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /api/calendar/{token}.ics:
+    get:
+      tags: [Calendar]
+      operationId: getCalendarFeed
+      summary: iCalendar feed of a person, reachable with the token alone (CAL-02 to CAL-08)
+      description: |
+        Public, because calendar apps cannot log in (CAL-06). The token grants read access to this feed only;
+        it is not a session. Content: all events of the person's teams (member in the season of the event)
+        that ended at most 30 days ago or are still to come, cancelled ones with `STATUS:CANCELLED`. `UID` is
+        the event ID plus `@stvbero`, so moved events replace their entry. Times are local times in
+        Europe/Zurich with a `VTIMEZONE`. The description holds meeting point, matches, notes, the person's
+        own response and the link into the app, never responses or comments of other people (CAL-08).
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: 43 characters, Base64 URL-safe (256 random bits)
+          schema: { type: string }
+      responses:
+        '200':
+          description: iCalendar (RFC 5545)
+          content:
+            text/calendar:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/tiles:
     get:
       tags: [Me]
@@ -1473,6 +1528,16 @@ components:
             properties:
               field: { type: string, examples: [comment] }
               message: { type: string }
+
+    CalendarSubscription:
+      type: object
+      description: Personal address of the calendar feed (CAL-01). Whoever knows it sees the person's events.
+      required: [feedPath]
+      properties:
+        feedPath:
+          type: string
+          description: Path of the feed with the token. The app puts its own address in front of it.
+          examples: ['/api/calendar/q3XyR0p8vUu6Yc1yZf9xwGx0N2m7oVbE4hT5sK1dLaA.ics']
 
     TeamRole:
       type: string

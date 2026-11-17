@@ -23,6 +23,10 @@ If a term is missing, add it here in the same style before using it.
 | Goalies | goalies | |
 | Ohne Linie | no line | display group for players without a group |
 | Feldspielerin | field player | player outside the goalies (F-16) |
+| Kalender abonnieren, Kalenderabo | calendar subscription | F-18, CAL |
+| Kalenderadresse | calendar address, feed path | personal address of the iCalendar feed with the token |
+| Kalender-Feed | calendar feed | the iCalendar file behind the address |
+| Adresse erneuern | renew (the address) | new token, the old address answers 404 |
 | Warnung | warning | types `GOALIES`, `FIELD_PLAYERS`, `LINE` (F-16) |
 | Mindestzahl (für Warnungen) | warning minimum | per team (F-16) |
 | Termin | event | types `PRACTICE`, `MATCH_DAY`, `OTHER` |

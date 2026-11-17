@@ -25,6 +25,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personal address of the calendar feed; created on first call (CAL-01)
+         * @description Every person has at most one address. The first call creates it with a new random token; later calls
+         *     return the same address until it is renewed. The app puts its own address in front of `feedPath`.
+         */
+        get: operations["getMyCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/calendar/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** New address for the calendar feed; the old one answers 404 at once (CAL-07) */
+        post: operations["renewMyCalendar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calendar/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * iCalendar feed of a person, reachable with the token alone (CAL-02 to CAL-08)
+         * @description Public, because calendar apps cannot log in (CAL-06). The token grants read access to this feed only;
+         *     it is not a session. Content: all events of the person's teams (member in the season of the event)
+         *     that ended at most 30 days ago or are still to come, cancelled ones with `STATUS:CANCELLED`. `UID` is
+         *     the event ID plus `@stvbero`, so moved events replace their entry. Times are local times in
+         *     Europe/Zurich with a `VTIMEZONE`. The description holds meeting point, matches, notes, the person's
+         *     own response and the link into the app, never responses or comments of other people (CAL-08).
+         */
+        get: operations["getCalendarFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tiles": {
         parameters: {
             query?: never;
@@ -1075,6 +1138,14 @@ export interface components {
                 message: string;
             }[];
         };
+        /** @description Personal address of the calendar feed (CAL-01). Whoever knows it sees the person's events. */
+        CalendarSubscription: {
+            /**
+             * @description Path of the feed with the token. The app puts its own address in front of it.
+             * @example /api/calendar/q3XyR0p8vUu6Yc1yZf9xwGx0N2m7oVbE4hT5sK1dLaA.ics
+             */
+            feedPath: string;
+        };
         /**
          * @description Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
          * @enum {string}
@@ -1923,6 +1994,72 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getMyCalendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSubscription"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    renewMyCalendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description New address */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSubscription"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    getCalendarFeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 43 characters, Base64 URL-safe (256 random bits) */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description iCalendar (RFC 5545) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     listTiles: {

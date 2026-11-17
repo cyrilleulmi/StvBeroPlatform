@@ -55,3 +55,4 @@ export type StatisticsTeam = components['schemas']['StatisticsTeam'];
 export type League = components['schemas']['League'];
 export type LeagueRow = components['schemas']['LeagueRow'];
 export type LeagueMatch = components['schemas']['LeagueMatch'];
+export type CalendarSubscription = components['schemas']['CalendarSubscription'];

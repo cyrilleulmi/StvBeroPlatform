@@ -27,6 +27,7 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Warning minimums** | Setting of a team: below these numbers a warning appears (defaults 1 goalie, 10 field players for match days, 6 for practices, 3 per line). |
 | **Meeting point** | Time and place where the team meets before a match day. |
 | **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
+| **Calendar subscription** | Personal address of a person with a random token. Behind it is an iCalendar feed with the events of her teams, which calendar apps fetch without login. Renewing replaces the token (CAL, F-18). |
 | **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
 
 ## Relationships
