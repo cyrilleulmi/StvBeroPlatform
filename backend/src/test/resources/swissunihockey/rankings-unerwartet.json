@@ -1,0 +1,7 @@
+{
+  "type": "table",
+  "data": {
+    "headers": [{"text": "Name"}, {"text": "Wert"}],
+    "regions": [{"rows": [{"cells": [{"text": ["a"]}, {"text": ["b"]}]}]}]
+  }
+}

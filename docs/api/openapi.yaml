@@ -1125,6 +1125,55 @@ paths:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problem' }
 
+  /api/teams/{teamId}/league:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [SwissUnihockey]
+      operationId: getLeague
+      summary: League table, upcoming matches and latest results of a team, from the cache (F-17)
+      description: |
+        Everyone who may see the team: its members in the current season, coaches and admins (F-17, criterion 10);
+        others 403. Always the current season. The data comes from the cache that the daily sync and the manual
+        reload fill; this request never calls swiss unihockey (criterion 6). `linked: false` if the team is not
+        linked with swiss unihockey (all other fields empty). `loadedAt` is the last successful load («Stand»),
+        `null` if never loaded in this season. `failedAt` is set if the last attempt after it failed (SUH-09);
+        the last loaded data is still returned. `upcoming`: matches without a result that have not ended yet,
+        earliest first, at most five. `results`: the last five matches with a result, latest first.
+      responses:
+        '200':
+          description: League data
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/League' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/league/refresh:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [SwissUnihockey]
+      operationId: refreshLeague
+      summary: Reload the league data from swiss unihockey now instead of waiting for the daily sync (F-17, admin)
+      description: |
+        Loads league, group, table and matches of the team in the current season and stores them. 409 if the
+        team is not linked or does not belong to the current season. 502 if swiss unihockey is unavailable or
+        delivers something unexpected: the last loaded data stays and `failedAt` is set (SUH-09).
+      responses:
+        '200':
+          description: Reloaded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/League' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502':
+          description: swiss unihockey unavailable or unexpected answer; the last loaded data stays (SUH-09)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
   # ---------------------------------------------------------------- Notifications
   /api/notifications:
     get:
@@ -1290,7 +1339,13 @@ paths:
     put:
       tags: [Test]
       operationId: testSetSuMatches
-      summary: Set the data the simulator delivers for a swiss unihockey team ID
+      summary: Set the data the simulator delivers for a swiss unihockey team ID (matches for the sync, league view for the league page, outage)
+      description: |
+        `matches` is what the sync receives. `league` is what the league page loads (F-17): league, group, table
+        and the matches of the league view (without `matches` inside `league`, the matches of the sync). Without
+        `league` the league view of this team ID stays as it is. `unavailable` makes both fail (SUH-09).
+        After `POST /api/test/reset` team ID 900001 delivers match 01 and 02 and the league of Team 1
+        (docs/test-data.md).
       security: []
       requestBody:
         required: true
@@ -1308,6 +1363,11 @@ paths:
                 matches:
                   type: array
                   items: { $ref: '#/components/schemas/SuMatch' }
+                league:
+                  description: League view (F-17). Omitted, the league view of this team ID stays as it is
+                  oneOf:
+                    - $ref: '#/components/schemas/SuLeague'
+                    - type: 'null'
       responses:
         '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -2227,6 +2287,97 @@ components:
         latitude: { type: [number, 'null'] }
         longitude: { type: [number, 'null'] }
         result: { type: [string, 'null'] }
+
+    SuLeague:
+      type: object
+      description: League view the simulator delivers (F-17)
+      required: [table]
+      properties:
+        league: { type: [string, 'null'], examples: [Herren Kleinfeld 3. Liga] }
+        group: { type: [string, 'null'], examples: [Gruppe 12] }
+        table:
+          type: array
+          items: { $ref: '#/components/schemas/SuStanding' }
+        matches:
+          type: [array, 'null']
+          description: Matches of the league view; without them the matches of the sync
+          items: { $ref: '#/components/schemas/SuMatch' }
+    SuStanding:
+      type: object
+      description: A table row. `suTeamId` equal to the linked team ID marks the own team
+      required: [rank, team, matches, wins, draws, losses, goalsFor, goalsAgainst, points]
+      properties:
+        rank: { type: integer, minimum: 1 }
+        suTeamId: { type: [integer, 'null'], examples: [900001] }
+        team: { type: string, examples: [UHC Musterdorf] }
+        matches: { type: integer, minimum: 0 }
+        wins: { type: integer, minimum: 0 }
+        draws: { type: integer, minimum: 0 }
+        losses: { type: integer, minimum: 0 }
+        goalsFor: { type: integer, minimum: 0 }
+        goalsAgainst: { type: integer, minimum: 0 }
+        points: { type: integer }
+
+    League:
+      type: object
+      description: League data of a team from the cache (F-17)
+      required: [teamId, teamName, linked, table, upcoming, results]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamName: { type: string, examples: [Team 1] }
+        linked: { type: boolean, description: Linked with swiss unihockey; otherwise all other fields are empty }
+        league: { type: [string, 'null'], examples: [Herren Kleinfeld 3. Liga] }
+        group: { type: [string, 'null'], examples: [Gruppe 12] }
+        loadedAt:
+          type: [string, 'null']
+          format: date-time
+          description: Last successful load («Stand»), `null` if never loaded in this season
+        failedAt:
+          type: [string, 'null']
+          format: date-time
+          description: Last failed attempt after `loadedAt` (SUH-09), `null` if the last attempt worked
+        table:
+          type: array
+          items: { $ref: '#/components/schemas/LeagueRow' }
+        upcoming:
+          type: array
+          description: «Kommende Spiele», earliest first, at most five
+          items: { $ref: '#/components/schemas/LeagueMatch' }
+        results:
+          type: array
+          description: «Letzte Resultate», latest first, at most five
+          items: { $ref: '#/components/schemas/LeagueMatch' }
+    LeagueRow:
+      type: object
+      required: [rank, team, matches, wins, draws, losses, goalsFor, goalsAgainst, points, own]
+      properties:
+        rank: { type: integer }
+        team: { type: string }
+        matches: { type: integer }
+        wins: { type: integer }
+        draws: { type: integer }
+        losses: { type: integer }
+        goalsFor: { type: integer }
+        goalsAgainst: { type: integer }
+        points: { type: integer }
+        own: { type: boolean, description: The own team (criterion 2) }
+    LeagueMatch:
+      type: object
+      required: [suMatchId, startTime, homeTeam, awayTeam, opponent, home, hall]
+      properties:
+        suMatchId: { type: integer }
+        startTime: { type: string, format: date-time }
+        homeTeam: { type: string }
+        awayTeam: { type: string }
+        opponent: { type: string, description: From the view of the own team }
+        home: { type: boolean, description: Home match of the own team }
+        hall: { type: string }
+        location: { type: [string, 'null'] }
+        result: { type: [string, 'null'], description: 'home:away, e.g. 5:3' }
+        eventId:
+          type: [string, 'null']
+          format: uuid
+          description: The match day in the app the match belongs to (criterion 3)
 
     Notification:
       type: object

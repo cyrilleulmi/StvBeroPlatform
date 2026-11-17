@@ -52,3 +52,6 @@ export type PersonStatistics = components['schemas']['PersonStatistics'];
 export type PlayerStatistics = components['schemas']['PlayerStatistics'];
 export type StatisticsAverage = components['schemas']['StatisticsAverage'];
 export type StatisticsTeam = components['schemas']['StatisticsTeam'];
+export type League = components['schemas']['League'];
+export type LeagueRow = components['schemas']['LeagueRow'];
+export type LeagueMatch = components['schemas']['LeagueMatch'];

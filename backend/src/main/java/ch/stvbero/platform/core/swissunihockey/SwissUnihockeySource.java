@@ -16,4 +16,11 @@ public interface SwissUnihockeySource {
      * @throws SuUnavailable if swiss unihockey does not answer or delivers something unexpected (SUH-09)
      */
     List<SuMatch> matches(int suTeamId, int season);
+
+    /**
+     * League data of a team in a season (F-17): league, group, table and the matches of the team.
+     *
+     * @throws SuUnavailable if swiss unihockey does not answer or delivers something unexpected (SUH-09)
+     */
+    SuLeague league(int suTeamId, int season);
 }

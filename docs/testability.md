@@ -107,7 +107,7 @@ These helpers exist only in the Quarkus profiles `dev` and `test`. In the `prod`
 | **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/current-season` |
 | **Log in as** | Log in as any seed person without a password | `POST /api/test/login`, page `/dev-login` |
 | **Read notifications** | Check who was notified when and about what | `GET /api/test/notifications` |
-| **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey» | `PUT /api/test/swiss-unihockey/matches` |
+| **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey», the league view of the league page (`league`, F-17) or an outage | `PUT /api/test/swiss-unihockey/matches` |
 
 Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»). The seed data: [test-data.md](test-data.md).
 

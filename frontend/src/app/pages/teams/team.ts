@@ -101,6 +101,28 @@ import { TEXTS } from '../../core/texts';
             }
           }
         </section>
+        @if (!season()) {
+          <!-- League from swiss unihockey (F-17, criterion 1), current season only -->
+          <section class="card" aria-labelledby="team-league-title" data-testid="team-league">
+            <h2 id="team-league-title" class="section-title">{{ texts.league.title }}</h2>
+            @if (t.suTeamId) {
+              <p class="secondary-text">{{ texts.league.sectionText }}</p>
+              <a
+                class="button button-secondary button-small"
+                [routerLink]="['/teams', t.id, 'liga']"
+                data-testid="team-league-link"
+                >{{ texts.league.open }}</a
+              >
+            } @else {
+              <p class="secondary-text">{{ texts.league.notLinked }}</p>
+              @if (auth.isAdmin()) {
+                <a [routerLink]="['/verwaltung/teams', t.id]">{{
+                  texts.league.linkInAdministration
+                }}</a>
+              }
+            }
+          </section>
+        }
         @if (minimums(); as m) {
           <!-- Minimums for the warnings, coaches and admins in the current season (F-16, criterion 4) -->
           <section
@@ -195,7 +217,7 @@ import { TEXTS } from '../../core/texts';
 })
 export class Team {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
   protected readonly name = name;
   protected readonly teamRole = teamRoleText;

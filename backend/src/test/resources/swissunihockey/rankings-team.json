@@ -1,0 +1,34 @@
+{
+  "type": "table",
+  "subtype": "ranking",
+  "doc": "Rangliste",
+  "data": {
+    "context": {"season": 2026, "team_id": 900001},
+    "headers": [
+      {"text": "Rg."}, {"text": ""}, {"text": "Team"}, {"text": "Sp"}, {"text": "S"}, {"text": "U"},
+      {"text": "N"}, {"text": "T"}, {"text": "TD"}, {"text": "P"}
+    ],
+    "title": "Herren Kleinfeld 3. Liga",
+    "subtitle": "Gruppe 12",
+    "tabs": [],
+    "slider": null,
+    "regions": [
+      {
+        "rows": [
+          {"highlight": false, "data": {"team": {"id": 900011, "name": "UHC Musterdorf"}},
+           "cells": [{"text": ["1"]}, {"image": {"url": "https://example.invalid/logo1.png"}}, {"text": ["UHC Musterdorf"]},
+                     {"text": ["6"]}, {"text": ["5"]}, {"text": ["1"]}, {"text": ["0"]}, {"text": ["38:17"]},
+                     {"text": ["21"]}, {"text": ["11"]}]},
+          {"highlight": true, "data": {"team": {"id": 900001, "name": "STV Beromünster I"}},
+           "cells": [{"text": ["2"]}, {"image": {"url": "https://example.invalid/logo2.png"}}, {"text": ["STV Beromünster I"]},
+                     {"text": ["6"]}, {"text": ["4"]}, {"text": ["1"]}, {"text": ["1"]}, {"text": ["31:22"]},
+                     {"text": ["9"]}, {"text": ["9"]}]},
+          {"highlight": false, "link": {"type": "page", "page": "team_detail", "ids": ["900012"]},
+           "cells": [{"text": ["3"]}, {"image": null}, {"text": ["Unihockey Beispielstadt"]},
+                     {"text": ["6"]}, {"text": ["4"]}, {"text": ["0"]}, {"text": ["2"]}, {"text": ["29:24"]},
+                     {"text": ["5"]}, {"text": ["8"]}]}
+        ]
+      }
+    ]
+  }
+}

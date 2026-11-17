@@ -191,6 +191,11 @@ public final class SyncRules {
         return name.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
+    /** Shortens a text to the length of its column. */
+    public static String truncateText(String text, int maxLength) {
+        return truncate(text, maxLength);
+    }
+
     static String truncate(String text, int maxLength) {
         String stripped = text.strip();
         return stripped.length() <= maxLength ? stripped : stripped.substring(0, maxLength);

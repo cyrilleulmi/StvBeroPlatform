@@ -816,6 +816,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/league": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * League table, upcoming matches and latest results of a team, from the cache (F-17)
+         * @description Everyone who may see the team: its members in the current season, coaches and admins (F-17, criterion 10);
+         *     others 403. Always the current season. The data comes from the cache that the daily sync and the manual
+         *     reload fill; this request never calls swiss unihockey (criterion 6). `linked: false` if the team is not
+         *     linked with swiss unihockey (all other fields empty). `loadedAt` is the last successful load («Stand»),
+         *     `null` if never loaded in this season. `failedAt` is set if the last attempt after it failed (SUH-09);
+         *     the last loaded data is still returned. `upcoming`: matches without a result that have not ended yet,
+         *     earliest first, at most five. `results`: the last five matches with a result, latest first.
+         */
+        get: operations["getLeague"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/league/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reload the league data from swiss unihockey now instead of waiting for the daily sync (F-17, admin)
+         * @description Loads league, group, table and matches of the team in the current season and stores them. 409 if the
+         *     team is not linked or does not belong to the current season. 502 if swiss unihockey is unavailable or
+         *     delivers something unexpected: the last loaded data stays and `failedAt` is set (SUH-09).
+         */
+        post: operations["refreshLeague"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications": {
         parameters: {
             query?: never;
@@ -979,7 +1031,14 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set the data the simulator delivers for a swiss unihockey team ID */
+        /**
+         * Set the data the simulator delivers for a swiss unihockey team ID (matches for the sync, league view for the league page, outage)
+         * @description `matches` is what the sync receives. `league` is what the league page loads (F-17): league, group, table
+         *     and the matches of the league view (without `matches` inside `league`, the matches of the sync). Without
+         *     `league` the league view of this team ID stays as it is. `unavailable` makes both fail (SUH-09).
+         *     After `POST /api/test/reset` team ID 900001 delivers match 01 and 02 and the league of Team 1
+         *     (docs/test-data.md).
+         */
         put: operations["testSetSuMatches"];
         post?: never;
         delete?: never;
@@ -1666,6 +1725,92 @@ export interface components {
             latitude?: number | null;
             longitude?: number | null;
             result?: string | null;
+        };
+        /** @description League view the simulator delivers (F-17) */
+        SuLeague: {
+            /** @example Herren Kleinfeld 3. Liga */
+            league?: string | null;
+            /** @example Gruppe 12 */
+            group?: string | null;
+            table: components["schemas"]["SuStanding"][];
+            /** @description Matches of the league view; without them the matches of the sync */
+            matches?: components["schemas"]["SuMatch"][] | null;
+        };
+        /** @description A table row. `suTeamId` equal to the linked team ID marks the own team */
+        SuStanding: {
+            rank: number;
+            /** @example 900001 */
+            suTeamId?: number | null;
+            /** @example UHC Musterdorf */
+            team: string;
+            matches: number;
+            wins: number;
+            draws: number;
+            losses: number;
+            goalsFor: number;
+            goalsAgainst: number;
+            points: number;
+        };
+        /** @description League data of a team from the cache (F-17) */
+        League: {
+            /** Format: uuid */
+            teamId: string;
+            /** @example Team 1 */
+            teamName: string;
+            /** @description Linked with swiss unihockey; otherwise all other fields are empty */
+            linked: boolean;
+            /** @example Herren Kleinfeld 3. Liga */
+            league?: string | null;
+            /** @example Gruppe 12 */
+            group?: string | null;
+            /**
+             * Format: date-time
+             * @description Last successful load («Stand»), `null` if never loaded in this season
+             */
+            loadedAt?: string | null;
+            /**
+             * Format: date-time
+             * @description Last failed attempt after `loadedAt` (SUH-09), `null` if the last attempt worked
+             */
+            failedAt?: string | null;
+            table: components["schemas"]["LeagueRow"][];
+            /** @description «Kommende Spiele», earliest first, at most five */
+            upcoming: components["schemas"]["LeagueMatch"][];
+            /** @description «Letzte Resultate», latest first, at most five */
+            results: components["schemas"]["LeagueMatch"][];
+        };
+        LeagueRow: {
+            rank: number;
+            team: string;
+            matches: number;
+            wins: number;
+            draws: number;
+            losses: number;
+            goalsFor: number;
+            goalsAgainst: number;
+            points: number;
+            /** @description The own team (criterion 2) */
+            own: boolean;
+        };
+        LeagueMatch: {
+            suMatchId: number;
+            /** Format: date-time */
+            startTime: string;
+            homeTeam: string;
+            awayTeam: string;
+            /** @description From the view of the own team */
+            opponent: string;
+            /** @description Home match of the own team */
+            home: boolean;
+            hall: string;
+            location?: string | null;
+            /** @description home:away, e.g. 5:3 */
+            result?: string | null;
+            /**
+             * Format: uuid
+             * @description The match day in the app the match belongs to (criterion 3)
+             */
+            eventId?: string | null;
         };
         Notification: {
             /** Format: uuid */
@@ -3097,6 +3242,64 @@ export interface operations {
             };
         };
     };
+    getLeague: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description League data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["League"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    refreshLeague: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reloaded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["League"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            /** @description swiss unihockey unavailable or unexpected answer; the last loaded data stays (SUH-09) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     listNotifications: {
         parameters: {
             query?: {
@@ -3339,6 +3542,8 @@ export interface operations {
                      */
                     unavailable?: boolean;
                     matches: components["schemas"]["SuMatch"][];
+                    /** @description League view (F-17). Omitted, the league view of this team ID stays as it is */
+                    league?: components["schemas"]["SuLeague"] | null;
                 };
             };
         };
