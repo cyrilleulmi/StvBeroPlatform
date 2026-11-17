@@ -24,7 +24,7 @@ test.beforeEach(async ({ request }) => {
 test('F-12 K1 RR-03: Marc (coach of Team 2) edits an event of Team 1', async ({ page }) => {
   await login(page, 'marc');
   await page.goto('/termine');
-  await page.getByLabel('Team').selectOption({ label: 'Team 1' });
+  await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Team 1' });
   await expect(page).toHaveURL(`/termine?team=${TEAM_1}`);
   await page.getByTestId(`event-card-${T02}`).getByRole('link').first().click();
   await expect(page).toHaveURL(`/termine/${T02}`);
