@@ -41,7 +41,7 @@ The seed grows with the features. What is in the seed today:
 
 | Feature | Content |
 |---|---|
-| F-00 | Seasons, all people with account and key, clock at the default "now". E-mail of every person: `<schluessel>@example.ch` |
+| F-00 | Seasons, all people with account and key, clock at the default "now". E-mail of every person: `<loginKey>@example.ch` |
 | F-01 | Teams 01–03 (season 2026/27), Team 01 also in season 2025/26, team memberships with team role as in the table "People", still **without lines** (all players «ohne Linie»). Vera: player in Team 1, only season 2025/26. Alex is in no team. The team name applies per season: if Team 1 is renamed, 2025/26 still shows «Team 1» (SAI-02, follow-up fix #21) |
 | F-02 | Groups 01–08 and line assignments as in the tables "Groups" and "People". Kim has no line. In addition group 09: goalies of Team 1 in season 2025/26 (empty, Vera has no line there) |
 | F-03 | Series 01–03 with all their events within the validity period (including past ones), exception «Weihnachtsferien» for series 01, events 01–08 as in the table "Events with fixed IDs". Event 03 cancelled («Halle besetzt»). Match days 04 and 05 with venue, Google Maps link and meeting point, still without matches and call-up. Response deadline 24 hours everywhere |
@@ -53,6 +53,10 @@ The seed grows with the features. What is in the seed today:
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
 
 In the `dev` profile the seed is loaded when the backend starts. Every restart (including live reload) resets the data.
+
+The prefix `termin-` stays, so that these IDs did not change with the English schema (F-10). All other seed IDs are unchanged as well.
+
+A local database created before F-10 must be reset once with `scripts/db-start.sh reset`, then start the backend again. The Flyway migrations were rewritten with English table and column names instead of adding rename migrations, because there is no production data (issue #49, E-74).
 
 ## Seasons
 
@@ -85,7 +89,7 @@ In the `dev` profile the seed is loaded when the backend starts. Every restart (
 
 ## People
 
-The **key** is used for `/dev-login` and `POST /api/test/anmelden`.
+The **key** is used for `/dev-login` and `POST /api/test/login`.
 
 | No. | Key | Name | Team 1 | Team 2 | Team 3 | Admin |
 |---|---|---|---|---|---|---|
@@ -224,18 +228,18 @@ Call-up published on Sat 15.11.2026 21:00: Petra, Eva, Lara, Ella. Lea is «nich
 
 ## Notifications
 
-Texts as in production. `GET /api/test/benachrichtigungen` returns them too; newly created ones have IDs that do not start with `90000000`.
+Texts as in production. `GET /api/test/notifications` returns them too; newly created ones have IDs that do not start with `90000000`.
 
 | No. | Kind | Event | Recipients | Created | Read |
 |---|---|---|---|---|---|
-| 01–12 | `TERMIN_ABGESAGT` «Training Di 24.11. ist abgesagt: Halle besetzt» | 03 | Marc, Anna, Lea, Mia, Sara, Nina, Jana, Kim, Eva, Lara, Zoe, Ella (in this order; all members of Team 1 and 2 except Petra, who cancelled) | Sat 14.11.2026 10:00 | only Mia (no. 04) |
-| 13–18 | `AUFGEBOT_VEROEFFENTLICHT` «Das Aufgebot für Spieltag Sa 28.11. ist da: Du bist (nicht) aufgeboten.» | 05 | Petra, Lea (not called up), Eva, Lara, Zoe (not called up), Ella | Sun 15.11.2026 21:00 | only Petra (no. 13) |
+| 01–12 | `EVENT_CANCELLED` «Training Di 24.11. ist abgesagt: Halle besetzt» | 03 | Marc, Anna, Lea, Mia, Sara, Nina, Jana, Kim, Eva, Lara, Zoe, Ella (in this order; all members of Team 1 and 2 except Petra, who cancelled) | Sat 14.11.2026 10:00 | only Mia (no. 04) |
+| 13–18 | `CALL_UP_PUBLISHED` «Das Aufgebot für Spieltag Sa 28.11. ist da: Du bist (nicht) aufgeboten.» | 05 | Petra, Lea (not called up), Eva, Lara, Zoe (not called up), Ella | Sun 15.11.2026 21:00 | only Petra (no. 13) |
 
 Unread after reset: Lea, Eva, Lara, Zoe, Ella 2 each; Marc, Anna, Sara, Nina, Jana, Kim 1 each; Petra, Mia, Alex, Ruth, Tina 0.
 
 ## Simulated swiss unihockey data
 
-In the `dev`/`test` profiles the app does not talk to swiss unihockey but to a simulator (F-07). After reset it delivers exactly match 01 and match 02 of event 04 for team ID `900001`, and no matches for all other team IDs. A sync directly after the reset therefore changes nothing («2 unverändert»). With `PUT /api/test/swiss-unihockey/spiele` other data or an outage (`"nichtErreichbar": true`) can be set; `POST /api/test/reset` resets the simulator.
+In the `dev`/`test` profiles the app does not talk to swiss unihockey but to a simulator (F-07). After reset it delivers exactly match 01 and match 02 of event 04 for team ID `900001`, and no matches for all other team IDs. A sync directly after the reset therefore changes nothing («2 unverändert»). With `PUT /api/test/swiss-unihockey/matches` other data or an outage (`"unavailable": true`) can be set; `POST /api/test/reset` resets the simulator.
 
 | SU match ID | Start time | Home team | Away team | Hall | Location |
 |---|---|---|---|---|---|
@@ -256,7 +260,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S2 | Response with one tap | As `nina` tap «dabei» for event 01 in the event list | Response saved, Team 1 shows 6 «dabei», 0 «offen» | ANM-08 |
 | S3 | Maybe without comment | As `nina` choose «vielleicht» for event 01, leave the comment empty | Saving not possible, error message at the field | ANM-04 |
 | S4 | Comments only for coaches | As `anna` open event 01 | No comment visible. As `petra`: «Krank» visible for Mia | ANM-07 |
-| S5 | Late cancellation | Clock to 16.11.2026 19:00. As `anna` change to «nicht dabei» for event 01 | Response with `kurzfristig: true`, Petra sees «kurzfristig abgemeldet» for Anna (F-04). Petra (coach Team 1) receives «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», Marc does not (assumption O-17) | ANM-10, BEN-02 |
+| S5 | Late cancellation | Clock to 16.11.2026 19:00. As `anna` change to «nicht dabei» for event 01 | Response with `lateCancellation: true`, Petra sees «kurzfristig abgemeldet» for Anna (F-04). Petra (coach Team 1) receives «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», Marc does not (assumption O-17) | ANM-10, BEN-02 |
 | S6 | Reminder | Clock to 16.11.2026 06:31 | Nina and Ella receive a reminder for event 01, nobody else. Set the clock again (e.g. 07:00): no further one | BEN-01, BEN-13 |
 | S7 | Respond on behalf | As `petra` enter «nicht dabei» for Nina for event 01 | Saved, «eingetragen von Petra Keller» is visible for Nina | ANM-11, ANM-12 |
 | S8 | No responding on behalf for other teams | As `marc` try to respond for Anna for event 01 | Action not offered, API answers 403 | RR-06 |
@@ -269,7 +273,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S14 | Change line | As `petra` assign Kim to Linie 2 in Team 1 | Kim appears in event 01 under Linie 2 of Team 1, «Ohne Linie» is empty and not shown | LIN-07, LIN-06 |
 | S15 | One line per team | As `petra` additionally assign Anna to Linie 2 in Team 1 | Anna moves to Linie 2 and is no longer in Linie 1 | LIN-02 |
 | S24 | Delete line | As `petra` at `/teams/<Team 1>/linien` confirm «Linie 2 löschen» | Sara and Nina are listed under «Ohne Linie», Linie 1 and Goalies unchanged | LIN-06, LIN-07 |
-| S25 | Goalies stay | As `petra` try to delete the goalies of Team 1 (`DELETE /api/teams/<Team 1>/gruppen/<Gruppe 03>`) | UI does not offer it, API 409 with rule LIN-05 | LIN-05 |
+| S25 | Goalies stay | As `petra` try to delete the goalies of Team 1 (`DELETE /api/teams/<Team 1>/groups/<Gruppe 03>`) | UI does not offer it, API 409 with rule LIN-05 | LIN-05 |
 | S26 | Lines read-only | As `anna` open `/teams/<Team 1>/linien`; as `marc` the same | Anna sees the assignment without controls. Marc: «Keine Berechtigung», API 403 | LIN-07, RR-07 |
 | S16 | Archive | As `alex` at `/verwaltung/saisons` click «Teams ansehen» for 2025/26, open Team 1 | Notice «Archiv: nur lesend», Vera visible as player, no editing possible (API 409). Vera sees event 08 under `/termine?ansicht=vergangen` | SAI-02 |
 | S17 | Login in test mode | Open `/profil` without login, choose «Petra Keller» on `/dev-login` | Redirect to `/dev-login?ziel=%2Fprofil`, afterwards back to `/profil` | F-00 |
@@ -277,7 +281,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S20 | Dual role | As `petra` open `/teams` | Team 1 «Coach», Team 2 «Spielerin». In Team 2 Petra is listed among the players, in Team 1 among the coaches | PTF-04, PTF-07, PTF-12 |
 | S21 | New season | As `alex` at `/verwaltung/saisons` create 2027/28 with carry-over from 2026/27, make it current | Teams and memberships taken over, 2026/27 becomes archive | SAI-04, SAI-06 |
 | S22 | One team role per team | As `alex` try to add Petra to Team 1 again | UI: «(schon im Team)», not selectable. API: 409 with rule PTF-04 | PTF-04 |
-| S23 | No current season | `DELETE /api/test/aktuelle-saison`, as `anna` open `/teams` | Redirect to `/keine-saison?ziel=%2Fteams` with notice «Noch keine aktuelle Saison», `GET /api/ich` answers 409 with rule SAI-03 | SAI-03 |
+| S23 | No current season | `DELETE /api/test/current-season`, as `anna` open `/teams` | Redirect to `/keine-saison?ziel=%2Fteams` with notice «Noch keine aktuelle Saison», `GET /api/me` answers 409 with rule SAI-03 | SAI-03 |
 | S27 | Event for two teams | As `petra` at `/termine/neu` create an event for Team 1 + Team 2 | Appears for `anna` and `eva`. As `marc` only for Team 1: API 403 | TER-01, TER-11 |
 | S28 | Exclude holidays | As `petra` add exception 30.11.–06.12.2026 to series 01 | Practice Tue 01.12. disappears (no responses). With a response: cancelled with the reason of the exception | TER-07 |
 | S29 | Reschedule series event | As `petra` move event 02 to Fri 20.11. 19:00 | «verschoben», series 02 unchanged, Thu 26.11. stays | TER-06 |
@@ -285,6 +289,6 @@ Every scenario starts with `POST /api/test/reset`.
 | S31 | Enter result | As `petra` event 04 → «Resultat für Team 1 – UHC Musterdorf erfassen» → 5:3 | Match 01 shows «Resultat 5:3», also for `anna`. Changing the opponent of a match from swiss unihockey: API 409 rule SUH-06 | AUF-15 |
 | S33 | Match day from swiss unihockey | Simulator for `900001`: match 01, 02 and two matches on Sun 06.12.2026 10:00 and 12:30 in «Sporthalle Nord», Beromünster. Trigger sync | One new match day Sun 06.12. with both matches, venue with Google Maps link | SUH-04, SUH-07 |
 | S34 | Match missing at swiss unihockey | Simulator for `900001` only match 01. Trigger sync | Match 02 stays, marked «swiss unihockey liefert dieses Spiel nicht mehr.», coach can delete it | SUH-06 |
-| S35 | swiss unihockey not reachable | Simulator for `900001` with `"nichtErreichbar": true`. Trigger sync | Message «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nothing changed | SUH-09 |
+| S35 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. Trigger sync | Message «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nothing changed | SUH-09 |
 | S19 | Theme | As `anna` at `/profil` choose «GitHub Dark», reload | Stays dark. «System» follows the system setting: light «Hell», dark «GitHub Dark» | NF-06, NF-08 |
 | S36 | Theme Düne | As `anna` at `/profil` choose «Düne», go to `/`, reload | `data-theme` on the document is `duene`, the colors also apply when the system is dark, and stay after reload. No contrast finding | NF-08 |

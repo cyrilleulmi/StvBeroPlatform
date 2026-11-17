@@ -32,9 +32,9 @@ Run all of them and record the result: backend tests, E2E tests (both projects, 
 
 1. **Write a test plan** under `e2e/plans/f<nr>-<shortname>.md` (for a follow-up fix `e2e/plans/nb<issue>-<shortname>.md`), with an English file name, e.g. `e2e/plans/f12-coaches-all-teams.md`. Per acceptance criterion: starting point (seed, clock, person), steps, expectation. Add edge cases from states.md (every forbidden transition) and the matching scenarios from test-data.md. The plan is written so that the Playwright generator can later create automated tests from it.
 2. **Run it with Playwright MCP.** For every case:
-   - `POST /api/test/reset`, set the clock if needed (`PUT /api/test/uhr`), log in via `/dev-login` or `POST /api/test/anmelden`.
+   - `POST /api/test/reset`, set the clock if needed (`PUT /api/test/clock`), log in via `/dev-login` or `POST /api/test/login`.
    - Jump to the screen via deep link. Work with accessibility tree snapshots, not with coordinates.
-   - Check the expectation: displayed texts and counters, `data-antwort`/`data-zaehler`, state after reload, notifications via `GET /api/test/benachrichtigungen`.
+   - Check the expectation: displayed texts and counters, `data-antwort`/`data-zaehler`, state after reload, notifications via `GET /api/test/notifications`.
    - After every case: check console errors and failed network requests (4xx/5xx that are not expected).
 3. **Coverage:**
    - Every criterion on **mobile** (375×812). The central criteria also on **desktop** (1280×800).

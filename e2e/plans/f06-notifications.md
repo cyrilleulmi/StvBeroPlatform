@@ -1,12 +1,12 @@
 # Test plan F-06 · Notifications
 
 Issue #7 · Requirements BEN-01, BEN-02, BEN-03, BEN-04, BEN-05, BEN-07, BEN-11, BEN-12, BEN-13, RR-07 ·
-Tests: `../tests/f06-benachrichtigungen.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/kern/benachrichtigung/BenachrichtigungenTest.java`, `…/kern/termin/BenachrichtigungsRegelnTest.java`
+Tests: `../tests/f06-benachrichtigungen.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/core/notification/NotificationsTest.java`, `…/core/event/NotificationRulesTest.java`
 
 General, for every case:
 
-- Setup: `POST /api/test/reset` (now = Mon 16.11.2026 06:00), then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }` or `/dev-login`.
-- Check notifications via `GET /api/test/benachrichtigungen`. Newly created ones have IDs that do not start with `90000000` (seed 01–18).
+- Setup: `POST /api/test/reset` (now = Mon 16.11.2026 06:00), then `POST /api/test/login` with `{ "loginKey": "<person>" }` or `/dev-login`.
+- Check notifications via `GET /api/test/notifications`. Newly created ones have IDs that do not start with `90000000` (seed 01–18).
 - Views: mobile 375×812, key cases also desktop 1280×800; `/benachrichtigungen` and the bell once in dark mode.
 - After each case: no console errors, no unexpected 4xx/5xx.
 
@@ -23,15 +23,15 @@ Notifications `90000000-0000-4000-8000-0000000000NN` (Anna cancellation T03: 02,
 | K1b | No unread | Reset, `petra`, `mia`; `alex` | `/` and `/benachrichtigungen` | Petra/Mia: no counter, entries without «Neu», no button «Alle als gelesen markieren». Alex: «Keine Benachrichtigungen.» |
 | K1c | Mark all as read | Reset, `lea` | `/benachrichtigungen` → «Alle als gelesen markieren»; reload | «Alle sind als gelesen markiert.», counter gone, stays after reload |
 | K2 | S32 click opens event (BEN-12) | Reset, `anna` | `/benachrichtigungen` → tap the entry for T03; back | `/termine/<T03>` (cancelled with «Halle besetzt»), counter gone; back in the list the entry is read, `data-gelesen="true"`, stays after reload |
-| K2b | Other people's (RR-07) | Reset, `anna` | API `POST /api/benachrichtigungen/<Lea 03>/gelesen`; own one twice | 403, and 204, 204. Without login 401. `GET /api/benachrichtigungen` returns only own ones |
-| K3 | S5 late cancellation (BEN-02) | Reset, clock 16.11.2026 19:00, `anna` | `/termine/<T01>` → «nicht dabei»; then «vielleicht» with comment | Exactly one new `KURZFRISTIGE_ABSAGE` to Petra «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», none to Marc or Anna. Further change: no second one. Petra sees it in `/benachrichtigungen`, counter 1 |
-| K4 | S6 reminder (BEN-01, BEN-13) | Reset | Clock 16.11.2026 06:31; then 07:00 | Exactly two `ERINNERUNG` for T01 to Nina and Ella; none more after 07:00. Nina sees counter 1 and the reminder. None before 06:30 (clock 06:29) |
-| K5 | S9 publish (BEN-03) | Reset, `petra` | `/termine/<T04>/aufgebot` → «Veröffentlichen» → confirm | 7 new `AUFGEBOT_VEROEFFENTLICHT` to all players of team 1 (Anna, Lea, Mia, Sara, Nina, Jana, Kim); Kim and Nina «nicht aufgeboten», others «aufgeboten». Not Petra |
+| K2b | Other people's (RR-07) | Reset, `anna` | API `POST /api/notifications/<Lea 03>/read`; own one twice | 403, and 204, 204. Without login 401. `GET /api/notifications` returns only own ones |
+| K3 | S5 late cancellation (BEN-02) | Reset, clock 16.11.2026 19:00, `anna` | `/termine/<T01>` → «nicht dabei»; then «vielleicht» with comment | Exactly one new `LATE_CANCELLATION` to Petra «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», none to Marc or Anna. Further change: no second one. Petra sees it in `/benachrichtigungen`, counter 1 |
+| K4 | S6 reminder (BEN-01, BEN-13) | Reset | Clock 16.11.2026 06:31; then 07:00 | Exactly two `REMINDER` for T01 to Nina and Ella; none more after 07:00. Nina sees counter 1 and the reminder. None before 06:30 (clock 06:29) |
+| K5 | S9 publish (BEN-03) | Reset, `petra` | `/termine/<T04>/aufgebot` → «Veröffentlichen» → confirm | 7 new `CALL_UP_PUBLISHED` to all players of team 1 (Anna, Lea, Mia, Sara, Nina, Jana, Kim); Kim and Nina «nicht aufgeboten», others «aufgeboten». Not Petra |
 | K6 | S10 called-up player declines (BEN-04) | Reset, `eva` | `/termine/<T05>` → «nicht dabei» | Marc receives «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.», Eva does not; Marc sees it with counter |
 | K7 | Call-up change (BEN-05) | Reset, `marc` | `/termine/<T05>/aufgebot`: tick Lea, untick Ella | Exactly Lea («neu aufgeboten») and Ella («nicht mehr aufgeboten») receive a notification, nobody else. A change in draft T04 (Petra) notifies nobody |
-| K8a | Cancellation (BEN-07) | Reset, `petra` | `/termine/<T01>` → cancel with reason | All 12 members of team 1 + 2 except Petra receive `TERMIN_ABGESAGT` with reason |
-| K8b | Rescheduling (BEN-07) | Reset, `petra` | `/termine/<T01>/bearbeiten` → start 19:00 | All 12 except Petra receive `TERMIN_VERSCHOBEN`. Changing only the location: none |
-| K9 | Interface (BEN-11) | Code | `Kanal`, `AppKanal`, `Benachrichtigungen.senden`, test `ben11…` | Sending goes through the interface, backend test with `TestKanal` green |
+| K8a | Cancellation (BEN-07) | Reset, `petra` | `/termine/<T01>` → cancel with reason | All 12 members of team 1 + 2 except Petra receive `EVENT_CANCELLED` with reason |
+| K8b | Rescheduling (BEN-07) | Reset, `petra` | `/termine/<T01>/bearbeiten` → start 19:00 | All 12 except Petra receive `EVENT_RESCHEDULED`. Changing only the location: none |
+| K9 | Interface (BEN-11) | Code | `Channel`, `AppChannel`, `Notifications.send`, test `ben11…` | Sending goes through the interface, backend test with `TestChannel` green |
 
 ## Edge cases
 

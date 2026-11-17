@@ -45,5 +45,5 @@ Cloud sessions have no Docker daemon. Database: `scripts/db-start.sh`.
 - The repository is English (NF-02, NF-40): code, API, database, documents, skills, scripts, commit messages, PR descriptions and agent comments. Use the terms from [docs/glossary.md](docs/glossary.md).
 - The user interface is German (Switzerland, i.e. «ss» instead of «ß»), plain language, no jargon. UI text quoted in documents stays German in «…».
 - Exceptions that stay German are listed in NF-40 ([docs/requirements/10-non-functional.md](docs/requirements/10-non-functional.md)): UI text, browser routes, IDs, GitHub labels, skill names, `scripts/pipeline.sh` subcommands, comment markers, the `Voraussetzung:` keyword, seed keys and names.
-- Until F-10 and F-11 are done, parts of the application code still use German identifiers. Documents quote them with their current name.
+- Since F-10 backend, database and API are English. Until F-11 is done, the frontend and the E2E tests still use German identifiers (including test IDs). Documents quote them with their current name.
 - Requirements say "player". Which German form the UI shows («Spielerin», «Spieler», …) is still open (see [docs/open-points.md](docs/open-points.md)).

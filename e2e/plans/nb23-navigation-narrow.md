@@ -4,7 +4,7 @@ Issue #23 · PR #34 · Main navigation (`data-testid="hauptnavigation"`, `docs/u
 
 General, for every case:
 
-- Setup: `POST /api/test/reset`, then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }`
+- Setup: `POST /api/test/reset`, then `POST /api/test/login` with `{ "loginKey": "<person>" }`
   (or `/dev-login`). Clock: default, does not matter.
 - Measured per link of the main navigation: label (`a span`) with `scrollWidth <= clientWidth`,
   bounding box of the label inside the content area of the link (link minus padding),

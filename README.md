@@ -16,9 +16,11 @@ Then: http://localhost:4200 – in test mode, log in as a seed person via http:/
 
 Prerequisites: Java 21, Maven, Node 22, PostgreSQL binaries (or a database `stv` on `localhost:5432`, user/password `stv`), Google Chrome for the E2E tests.
 
+After F-10 a local database created before F-10 must be reset once with `scripts/db-start.sh reset`: the Flyway migrations were rewritten in English instead of adding rename migrations, because there is no production data (issue #49, E-74).
+
 | Folder | Content |
 |---|---|
-| `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.kern`. Migrations: `src/main/resources/db/migration` (Flyway) |
+| `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
 | `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobil` and `desktop` |
 | `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py` |

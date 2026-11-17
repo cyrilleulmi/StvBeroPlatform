@@ -41,6 +41,7 @@ If a term is missing, add it here in the same style before using it.
 | aufgeboten | called up | |
 | Treffpunkt | meeting point | |
 | Spielort | venue | |
+| Ort (Termin) | location | place of an event: name, address, map link (`location` in the API) |
 | Halle | hall | |
 | Resultat | result | |
 | Benachrichtigung | notification | |
