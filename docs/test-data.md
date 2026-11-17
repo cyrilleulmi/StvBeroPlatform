@@ -50,6 +50,7 @@ The seed grows with the features. What is in the seed today:
 | F-06 | Notifications 01–18 as in the table "Notifications" below. No reminders yet |
 | F-07 | No new records. Team 1 is linked with team ID `900001`; after reset the simulator delivers exactly matches 01 and 02 (see [Simulated swiss unihockey data](#simulated-swiss-unihockey-data)) |
 | F-14 | Events 09 and 10 get fixed IDs (series 02, Thu 12.11. and Thu 05.11.2026) and have the switch «Präsenz erfassen» on; all other events and all series have it off. Responses to 09 and 10 as in the tables below, given two days before the event. Attendance of event 10 recorded by Petra on Thu 05.11.2026 21:00; event 09 has nothing recorded |
+| F-15 | Every team membership has a day of joining: the start of its season, except Kim in Team 1 (2026/27): **01.10.2026**. Responses to event 07 as below (given 08.11.2026 20:00); Anna's «nicht dabei» is a **late cancellation** (changed 10.11.2026 17:00, after the response deadline). Expected statistics in scenarios S44–S47 |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -119,6 +120,7 @@ Special cases:
 - **Lea** is a player in two teams, with a different line in each.
 - **Kim** is not assigned to any line.
 - **Vera** exists only in the archive.
+- **Kim** joined Team 1 on 01.10.2026 (F-15); all other memberships count from the start of their season.
 
 ## Series
 
@@ -140,7 +142,7 @@ The series generate further events. These ones have fixed IDs and defined respon
 | 04 | Match day Sun 22.11.2026 09:30–13:00 | Team 1 | From swiss unihockey, 2 matches, call-up in **draft** |
 | 05 | Match day Sat 28.11.2026 14:00–16:00 | Team 2 | Entered manually, 1 match, call-up **published** |
 | 06 | Other event Fri 11.12.2026 19:00–22:00 «Teamessen» | Team 1 + 2 + 3 | Nobody has responded, no location |
-| 07 | Practice Tue 10.11.2026 18:30 (series 01) | Team 1 + Team 2 | Past |
+| 07 | Practice Tue 10.11.2026 18:30 (series 01) | Team 1 + Team 2 | Past, Anna cancelled late (F-15) |
 | 08 | Practice Tue 12.05.2026 18:30–20:00 | Team 1 (season 2025/26) | Archive, with Vera |
 | 09 | Practice Thu 12.11.2026 19:00 (series 02) | Team 1 | Past, **attendance check on**, nothing recorded |
 | 10 | Practice Thu 05.11.2026 19:00 (series 02) | Team 1 | Past, **attendance check on**, recorded by Petra |
@@ -253,6 +255,30 @@ Responses (03.11.2026 20:00): Anna, Lea, Sara, Nina, Jana «dabei», Mia «nicht
 
 Attendance recorded by Petra on Thu 05.11.2026 21:00: Anna, Lea, Nina, Jana «anwesend», Mia «entschuldigt», Sara «abwesend» (responded «dabei»), Kim «abwesend». Summary «4 anwesend · 2 abwesend · 1 entschuldigt». Sara sees «Deine Präsenz: abwesend», Anna «anwesend», nobody sees the values of others.
 
+### Event 07: Practice Tue 10.11.2026, Team 1 + Team 2, for the statistics (F-15)
+
+Responses (08.11.2026 20:00): Lea «dabei», Mia «dabei», Eva «vielleicht» («Komme später»). Anna «nicht dabei» («Krank») on 10.11.2026 17:00, after the response deadline: late cancellation, Petra sees «kurzfristig abgemeldet». All others «offen». No attendance check.
+
+### Expected statistics (F-15)
+
+Default "now" Mon 16.11.2026 06:00. Team 1 in season 2026/27 has **26 past events**: 13 Tuesdays of series 01 (18.08.–10.11.) and 13 Thursdays of series 02 (20.08.–12.11.), no past match day. Only event 10 has recorded attendance with the check on.
+
+`/statistik?team=<Team 1>` as `petra` (columns: Termine · dabei · nicht dabei · vielleicht · offen · Zusagequote · kurzfristig abgemeldet · anwesend · abwesend · entschuldigt · Präsenzquote):
+
+```
+26 Termine im Zeitraum. Die Präsenzquote beruht auf 1 Termin mit erfasster Präsenz.
+Linie 1      Mia Frei     26  1  2  0  23   4 %  0  0  0  1    0 %
+             Lea Graf     26  3  0  0  23  12 %  0  1  0  0  100 %
+             Anna Muster  26  2  1  0  23   8 %  1  1  0  0  100 %
+Linie 2      Sara Brun    26  2  0  0  24   8 %  0  0  1  0    0 %
+             Nina Roth    26  1  0  1  24   4 %  0  1  0  0  100 %
+Goalies      Jana Wyss    26  2  0  0  24   8 %  0  1  0  0  100 %
+Ohne Linie   Kim Baumann  13  0  0  0  13   0 %  0  0  1  0    0 %
+Teamschnitt             24.1 1.6 0.4 0.1 22.0 6 % 0.1 0.6 0.3 0.1 57 %
+```
+
+Petra (coach) is not listed. Kim counts only from 01.10.2026 (13 events).
+
 ## Notifications
 
 Texts as in production. `GET /api/test/notifications` returns them too; newly created ones have IDs that do not start with `90000000`.
@@ -325,4 +351,8 @@ Every scenario starts with `POST /api/test/reset`.
 | S40 | Start with a match day first | Clock to 22.11.2026 06:00. As `anna` open `/` | «Nächster Termin»: event 04 (Sun 22.11.). Below two practices: Thu 26.11. and Tue 01.12. (Tue 24.11. is cancelled and skipped). Clock to 28.04.2027 06:00: only Thu 29.04.2027, no «Weitere Trainings» | F-13 |
 | S41 | Record attendance | As `petra` open event 09 → «Präsenz erfassen», set Mia to «entschuldigt», «Präsenz speichern» | «Die Präsenz ist gespeichert.», «Zuletzt gespeichert von Petra Keller am …». Mia sees «Deine Präsenz» «entschuldigt», her response stays «nicht dabei» | PRS-03, PRS-04, PRS-06 |
 | S42 | No attendance without the switch | Clock to 17.11.2026 19:00. As `petra` open event 01 | No section «Präsenz»; `PUT /api/events/<01>/attendance` 409 rule PRS-07 | PRS-07 |
+| S44 | Statistics of Anna | As `petra` open `/termine` → «Statistik» | Team 1, whole season: Anna 26 · 2 · 1 · 0 · 23 · 8 % · 1 · 1 · 0 · 0 · 100 %, base «26 Termine im Zeitraum. Die Präsenzquote beruht auf 1 Termin mit erfasster Präsenz.» Period 01.11.–15.11.2026: Anna 4 · 2 · 1 · 0 · 1 · 50 % · 1. «Spieltage»: 0 events, rates «–» | STA-02–STA-05, STA-09 |
+| S45 | Player's events | As `petra` in `/statistik` click «Anna Muster» | 26 events newest first: Thu 12.11. «dabei» (no attendance), Tue 10.11. «nicht dabei» «kurzfristig abgemeldet», Thu 05.11. «dabei» «anwesend», then «offen» | STA-06 |
+| S46 | What counts | Kim in `/statistik`; clock to 25.11.2026 07:00 | Kim 13 events («Im Team seit 01.10.2026.»). On 25.11.: 29 events (17.11., 19.11., match day 22.11. added, cancelled 24.11. left out) | STA-07 |
+| S47 | Own numbers only | As `anna` `/profil` → «Statistik ansehen»; `/statistik`; `GET /api/statistics/persons/<Mia>` | Same numbers as S44 under «Meine Statistik». `/statistik`: «Keine Berechtigung», no link «Statistik» in `/termine`; API 403 | STA-08 |
 | S43 | Attendance not before the start | As `petra` create an event for Fri 20.11. with «Präsenz erfassen» | Event shows «Die Präsenz lässt sich ab Beginn des Termins erfassen.», no link; API 409 rule PRS-02. Clock to 20.11. 18:00: link «Präsenz erfassen» | PRS-02 |

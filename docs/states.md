@@ -166,6 +166,17 @@ stateDiagram-v2
 | A player sees only their own recorded value (`myAttendance`), only while the switch is on. The overview contains no attendance. | PRS-06 |
 | Switching the check off keeps the recorded attendance; the UI asks first if something is recorded (`attendanceRecorded`). | PRS-08 |
 
+## Statistics
+
+The statistics have no state of their own: they are computed on every request from responses and attendance (STA, F-15).
+
+| Rule | Reference |
+|---|---|
+| An event counts if it belongs to the team, lies in the season and the period, has started (backend clock) and is not cancelled; optionally only one type. A player counts only for events on or after her day of joining (`joinedOn`). | STA-02, STA-07 |
+| Response counters use the current response (none: «offen»). Late cancellations are the stored flag of ANM-10 (cleared when she changes back to «dabei»). | STA-03 |
+| Attendance counts only for events with the check on and recorded attendance, and only where a value is stored for the player. Values kept while the check is off (PRS-08) do not count. | STA-04 |
+| Team statistics: coaches and admins, otherwise 403. Statistics of a person: herself, coaches and admins, otherwise 403. Period outside one season or end before start: 400. | STA-01, STA-02, STA-08 |
+
 ## Match of a match day
 
 | Rule | Reference |

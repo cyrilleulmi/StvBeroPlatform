@@ -37,4 +37,4 @@ The app knows **responses** (intention) and, where recorded, **attendance** (fac
 
 | ID | Requirement | Status |
 |---|---|---|
-| PRS-11 | Statistics per player and season (F-15) and an export, e.g. for J+S. | Later |
+| PRS-11 | Statistics per player and season are built with F-15 ([STA](12-statistics.md), E-78). An export, e.g. for J+S, stays for later. | Decided (statistics), Later (export) |

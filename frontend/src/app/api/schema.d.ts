@@ -692,6 +692,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Statistics of a team per player, by line, with the team average (STA-01 to STA-05, coach)
+         * @description Only coaches (of any team, E-69) and admins (otherwise 403, STA-01). Counts the past events of the team in
+         *     the period (start before «now» of the backend clock), without cancelled ones; a player only from the day
+         *     she joined the team (STA-07). Players by line as in the team page, empty groups are left out. The
+         *     attendance rate is based only on events with recorded attendance and the check switched on
+         *     (`attendanceEvents`, STA-04). Without `team`: the first team the person coaches, otherwise the first team
+         *     by name.
+         */
+        get: operations["getTeamStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/statistics/persons/{personId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Statistics of one player with her events (STA-06, STA-08)
+         * @description The person herself, coaches (of any team, E-69) and admins; everyone else 403 (STA-08). Same counting as
+         *     the team statistics. `teams` are the teams in which the person is a player in the season; without `team`
+         *     the first of them. Without such a team, `team` and `statistics` are null. A team she does not play in: 404.
+         *     Events newest first, with response, late cancellation and, where recorded, attendance.
+         */
+        get: operations["getPersonStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/swiss-unihockey": {
         parameters: {
             query?: never;
@@ -1403,6 +1453,124 @@ export interface components {
                 /** Format: uuid */
                 personId: string;
                 status: components["schemas"]["AttendanceStatus"];
+            }[];
+        };
+        StatisticsTeam: {
+            /** Format: uuid */
+            id: string;
+            /** @description Name in the season */
+            name: string;
+        };
+        StatisticsSeason: {
+            /** Format: uuid */
+            id: string;
+            /** @example 2026/27 */
+            name: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+        };
+        /** @description Numbers of one player in one team (STA-03, STA-04). Rates in whole percent (half up), null without a base. */
+        PlayerStatistics: {
+            person: components["schemas"]["PersonSummary"];
+            /**
+             * Format: date
+             * @description Day she joined the team; counts from here on (STA-07)
+             */
+            joinedOn: string;
+            /** @description Events that count for her */
+            events: number;
+            /** @description «dabei» */
+            attending: number;
+            /** @description «nicht dabei» */
+            declined: number;
+            /** @description «vielleicht» */
+            maybe: number;
+            /** @description «offen» */
+            pending: number;
+            /** @description Share of «dabei» of `events` */
+            attendingRate?: number | null;
+            /** @description Late cancellations (ANM-10) */
+            lateCancellations: number;
+            /** @description Events with recorded attendance for her, the base of `attendanceRate` */
+            attendanceEvents: number;
+            /** @description «anwesend» */
+            present: number;
+            /** @description «abwesend» */
+            absent: number;
+            /** @description «entschuldigt» */
+            excused: number;
+            /** @description Share of «anwesend» of `attendanceEvents` */
+            attendanceRate?: number | null;
+        };
+        /** @description Team average (STA-05) per player; counts with one decimal, rates as mean of the players that have one */
+        StatisticsAverage: {
+            events: number;
+            attending: number;
+            declined: number;
+            maybe: number;
+            pending: number;
+            attendingRate?: number | null;
+            lateCancellations: number;
+            present: number;
+            absent: number;
+            excused: number;
+            attendanceRate?: number | null;
+        };
+        TeamStatistics: {
+            /** @description Chosen team; null if the season has no team */
+            team?: components["schemas"]["StatisticsTeam"] | null;
+            /** @description All teams of the season by name, for the choice */
+            teams: components["schemas"]["StatisticsTeam"][];
+            season: components["schemas"]["StatisticsSeason"];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Chosen event type; null = all */
+            type?: components["schemas"]["EventType"] | null;
+            /** @description Events of the team that count in the period */
+            events: number;
+            /** @description Of them, events with recorded attendance (STA-04) */
+            attendanceEvents: number;
+            /** @description Lines by order, then goalies, then «Ohne Linie»; empty groups are left out (STA-05) */
+            groups: {
+                /** Format: uuid */
+                groupId?: string | null;
+                /** @enum {string} */
+                type: "LINE" | "GOALIES" | "NO_LINE";
+                name: string;
+                /** @description By last name, then first name */
+                players: components["schemas"]["PlayerStatistics"][];
+            }[];
+            /** @description Null without players */
+            average?: components["schemas"]["StatisticsAverage"] | null;
+        };
+        PersonStatistics: {
+            person: components["schemas"]["PersonSummary"];
+            team?: components["schemas"]["StatisticsTeam"] | null;
+            /** @description Teams in which the person is a player in the season, by name */
+            teams: components["schemas"]["StatisticsTeam"][];
+            season: components["schemas"]["StatisticsSeason"];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            type?: components["schemas"]["EventType"] | null;
+            statistics?: components["schemas"]["PlayerStatistics"] | null;
+            /** @description Events that count for her, newest first (STA-06) */
+            events: {
+                /** Format: uuid */
+                id: string;
+                type: components["schemas"]["EventType"];
+                title: string;
+                /** Format: date-time */
+                start: string;
+                response: components["schemas"]["ResponseStatus"];
+                lateCancellation: boolean;
+                /** @description Only where attendance is recorded for her */
+                attendance?: components["schemas"]["AttendanceStatus"] | null;
             }[];
         };
         SyncResult: {
@@ -2697,6 +2865,69 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["RuleViolation"];
+        };
+    };
+    getTeamStatistics: {
+        parameters: {
+            query?: {
+                team?: string;
+                /** @description First day; default the start of the season. Determines the season (otherwise the current one) */
+                from?: string;
+                /** @description Last day (included); default the end of the season. Must lie in the same season (otherwise 400) */
+                to?: string;
+                /** @description Only events of this type; without it all types */
+                type?: components["schemas"]["EventType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamStatistics"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getPersonStatistics: {
+        parameters: {
+            query?: {
+                team?: string;
+                from?: string;
+                to?: string;
+                type?: components["schemas"]["EventType"];
+            };
+            header?: never;
+            path: {
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonStatistics"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     linkSu: {

@@ -55,6 +55,12 @@ public class Seed {
         }
     }
 
+    /**
+     * Memberships that start after the season start (F-15, STA-07): "person:team:season" → day of joining. All
+     * others joined on the first day of their season.
+     */
+    static final Map<String, LocalDate> JOINED_LATER = Map.of("11:1:2", LocalDate.of(2026, 10, 1));
+
     /** Line or goalies (docs/test-data.md, groups). Sort order only for lines. */
     record SeedGroup(int nr, int team, int season, String type, String name, Integer sortOrder) {
     }
@@ -165,8 +171,15 @@ public class Seed {
     static final Map<Integer, String> CANCELLED = Map.of(3, "Halle besetzt");
 
     /** Response in the seed (F-04): event number, person number, status, comment. */
-    record SeedResponse(int event, int person, String status, String comment) {
+    record SeedResponse(int event, int person, String status, String comment, boolean late) {
+
+        SeedResponse(int event, int person, String status, String comment) {
+            this(event, person, status, comment, false);
+        }
     }
+
+    /** Time of the late cancellation on event 07 (F-15): after its response deadline (Mon 09.11. 18:30). */
+    static final LocalDateTime LATE_CANCELLED_AT = LocalDateTime.of(2026, 11, 10, 17, 0);
 
     /** Time of all seed responses: before the default "now" and before every response deadline. */
     static final LocalDateTime RESPONDED_AT = LocalDateTime.of(2026, 11, 15, 20, 0);
@@ -197,10 +210,14 @@ public class Seed {
             new SeedResponse(9, 8, A, null), new SeedResponse(9, 9, M, "Knie schmerzt"), new SeedResponse(9, 10, A, null),
             // Event 10: past practice team 1 with recorded attendance (Kim pending)
             new SeedResponse(10, 5, A, null), new SeedResponse(10, 6, A, null), new SeedResponse(10, 7, D, "Ferien"),
-            new SeedResponse(10, 8, A, null), new SeedResponse(10, 9, A, null), new SeedResponse(10, 10, A, null));
+            new SeedResponse(10, 8, A, null), new SeedResponse(10, 9, A, null), new SeedResponse(10, 10, A, null),
+            // Event 07: past practice team 1 + 2 for the statistics (F-15); Anna cancelled late
+            new SeedResponse(7, 5, D, "Krank", true), new SeedResponse(7, 6, A, null), new SeedResponse(7, 7, A, null),
+            new SeedResponse(7, 12, M, "Komme später"));
 
     /** Responses to past events are given two days before the event instead of {@link #RESPONDED_AT}. */
     static final Map<Integer, LocalDateTime> RESPONDED_AT_PER_EVENT = Map.of(
+            7, LocalDateTime.of(2026, 11, 8, 20, 0),
             9, LocalDateTime.of(2026, 11, 10, 20, 0),
             10, LocalDateTime.of(2026, 11, 3, 20, 0));
 
@@ -348,10 +365,14 @@ public class Seed {
         }
         for (SeedMembership m : MEMBERSHIPS) {
             UUID id = UUID.nameUUIDFromBytes(("tz-" + m.person() + "-" + m.team() + "-" + m.season()).getBytes());
-            em.createNativeQuery("insert into team_membership (id, person_id, team_id, season_id, team_role) values (?, ?, ?, ?, ?)")
+            LocalDate joinedOn = JOINED_LATER.getOrDefault(m.person() + ":" + m.team() + ":" + m.season(),
+                    SEASONS.get(m.season() - 1).startDate());
+            em.createNativeQuery("""
+                            insert into team_membership (id, person_id, team_id, season_id, team_role, joined_on)
+                            values (?, ?, ?, ?, ?, ?)""")
                     .setParameter(1, id)
                     .setParameter(2, personId(m.person())).setParameter(3, teamId(m.team()))
-                    .setParameter(4, seasonId(m.season())).setParameter(5, m.teamRole())
+                    .setParameter(4, seasonId(m.season())).setParameter(5, m.teamRole()).setParameter(6, joinedOn)
                     .executeUpdate();
             if (m.group() != null) {
                 em.createNativeQuery("insert into group_assignment (team_membership_id, group_id) values (?, ?)")
@@ -363,10 +384,12 @@ public class Seed {
         for (SeedResponse r : RESPONSES) {
             em.createNativeQuery("""
                             insert into response (event_id, person_id, status, comment, changed_at, late_cancellation)
-                            values (?, ?, ?, ?, ?, false)""")
+                            values (?, ?, ?, ?, ?, ?)""")
                     .setParameter(1, eventId(r.event())).setParameter(2, personId(r.person()))
                     .setParameter(3, r.status()).setParameter(4, r.comment())
-                    .setParameter(5, zurich(RESPONDED_AT_PER_EVENT.getOrDefault(r.event(), RESPONDED_AT)))
+                    .setParameter(5, zurich(r.late() ? LATE_CANCELLED_AT
+                            : RESPONDED_AT_PER_EVENT.getOrDefault(r.event(), RESPONDED_AT)))
+                    .setParameter(6, r.late())
                     .executeUpdate();
         }
         matchesAndCallUps();

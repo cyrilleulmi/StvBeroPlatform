@@ -38,9 +38,17 @@ interface Month {
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
       @if (canCreate()) {
-        <a class="button button-primary button-small" routerLink="/termine/neu">{{
-          texts.events.create
-        }}</a>
+        <div class="title-actions">
+          <a
+            class="button button-secondary button-small"
+            routerLink="/statistik"
+            data-testid="statistics-link"
+            >{{ texts.statistics.link }}</a
+          >
+          <a class="button button-primary button-small" routerLink="/termine/neu">{{
+            texts.events.create
+          }}</a>
+        </div>
       }
     </div>
 
@@ -135,17 +143,19 @@ interface Month {
                       }
                       @if (t.counts; as z) {
                         <span class="secondary-text counter" data-testid="event-counter">
-                          <span data-counter="attending">{{ texts.overview.attending(z.attending) }}</span>
+                          <span data-counter="attending">{{
+                            texts.overview.attending(z.attending)
+                          }}</span>
                           ·
                           <span data-counter="declined">{{
                             texts.overview.declined(z.declined)
                           }}</span>
                           ·
-                          <span data-counter="maybe">{{
-                            texts.overview.maybe(z.maybe)
-                          }}</span>
+                          <span data-counter="maybe">{{ texts.overview.maybe(z.maybe) }}</span>
                           ·
-                          <span data-counter="pending">{{ texts.overview.pending(z.pending) }}</span>
+                          <span data-counter="pending">{{
+                            texts.overview.pending(z.pending)
+                          }}</span>
                         </span>
                       }
                     }

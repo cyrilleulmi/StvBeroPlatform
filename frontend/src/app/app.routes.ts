@@ -49,6 +49,11 @@ export const routes: Routes = [
         loadChildren: () => import('./attendance/attendance.routes').then((m) => m.SERIES_ROUTES),
       },
       {
+        path: 'statistik',
+        loadChildren: () =>
+          import('./statistics/statistics.routes').then((m) => m.STATISTICS_ROUTES),
+      },
+      {
         path: 'teams',
         title: title('Teams'),
         loadComponent: () => import('./pages/teams/teams').then((m) => m.Teams),
@@ -75,15 +80,22 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
       },
       {
+        path: 'profil/statistik',
+        title: title('Meine Statistik'),
+        loadComponent: () =>
+          import('./statistics/person-statistics').then((m) => m.PersonStatisticsPage),
+      },
+      {
         path: 'verwaltung',
         loadChildren: () =>
-          import('./pages/administration/administration.routes').then((m) => m.ADMINISTRATION_ROUTES),
+          import('./pages/administration/administration.routes').then(
+            (m) => m.ADMINISTRATION_ROUTES,
+          ),
       },
       {
         path: '**',
         title: title('Nicht gefunden'),
-        loadComponent: () =>
-          import('./pages/not-found/not-found').then((m) => m.NotFound),
+        loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
       },
     ],
   },
