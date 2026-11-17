@@ -45,6 +45,13 @@ public class Seed {
      */
     public static final String ANNA_CALENDAR_TOKEN = "seed-anna-calendar-000000000000000000000005";
 
+    /** Push device of Lea (F-19): one phone with push on. Keys are the browser keys of RFC 8291, appendix A. */
+    public static final String LEA_PUSH_ID = "a0000000-0000-4000-8000-000000000001";
+    public static final String LEA_PUSH_ENDPOINT = "https://push.example.test/seed-lea-phone";
+    static final String LEA_PUSH_P256DH =
+            "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4";
+    static final String LEA_PUSH_AUTH = "BTBZMqHH6r4Tts7J_aSIgg";
+
     record SeedPerson(int nr, String loginKey, String firstName, String lastName, boolean admin) {
     }
 
@@ -414,6 +421,16 @@ public class Seed {
                 LEAGUE_LOADED_AT.atZone(BackendClock.ZONE).toInstant());
         em.createNativeQuery("insert into calendar_subscription (person_id, token, created_at) values (?, ?, ?)")
                 .setParameter(1, personId(5)).setParameter(2, ANNA_CALENDAR_TOKEN).setParameter(3, zurich(RESPONDED_AT))
+                .executeUpdate();
+        // F-19: Kim switched e-mails off; Lea has push on one phone. All others: e-mail on (default), no push.
+        em.createNativeQuery("insert into notification_preference (person_id, email) values (?, false)")
+                .setParameter(1, personId(11)).executeUpdate();
+        em.createNativeQuery("""
+                        insert into push_subscription (id, person_id, endpoint, p256dh, auth, label, created_at)
+                        values (?, ?, ?, ?, ?, 'Chrome auf Android', ?)""")
+                .setParameter(1, UUID.fromString(LEA_PUSH_ID)).setParameter(2, personId(6))
+                .setParameter(3, LEA_PUSH_ENDPOINT).setParameter(4, LEA_PUSH_P256DH).setParameter(5, LEA_PUSH_AUTH)
+                .setParameter(6, zurich(RESPONDED_AT))
                 .executeUpdate();
         em.flush();
         em.clear();

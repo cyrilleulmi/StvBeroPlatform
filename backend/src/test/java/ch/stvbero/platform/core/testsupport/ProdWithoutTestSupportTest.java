@@ -54,6 +54,33 @@ class ProdWithoutTestSupportTest {
                 "No simulator without test support");
     }
 
+    /**
+     * F-19, criteria 8 and 9: in the prod profile e-mails go over SMTP and pushes to the push services, not to the
+     * simulator; without configuration (no STV_SMTP_HOST, STV_MAIL_FROM, STV_VAPID_*) both channels are off.
+     */
+    @Test
+    void withoutTestSupportRealChannelsWhichAreOffWithoutConfiguration() {
+        Object email = io.quarkus.arc.ClientProxy.unwrap(io.quarkus.arc.Arc.container()
+                .instance(ch.stvbero.platform.core.notification.EmailTransport.class).get());
+        Object push = io.quarkus.arc.ClientProxy.unwrap(io.quarkus.arc.Arc.container()
+                .instance(ch.stvbero.platform.core.notification.PushTransport.class).get());
+        org.junit.jupiter.api.Assertions.assertInstanceOf(
+                ch.stvbero.platform.core.notification.SmtpEmailTransport.class, email);
+        org.junit.jupiter.api.Assertions.assertInstanceOf(
+                ch.stvbero.platform.core.notification.WebPushTransport.class, push);
+        org.junit.jupiter.api.Assertions.assertFalse(
+                ((ch.stvbero.platform.core.notification.EmailTransport) email).available());
+        org.junit.jupiter.api.Assertions.assertFalse(
+                ((ch.stvbero.platform.core.notification.PushTransport) push).available());
+        org.junit.jupiter.api.Assertions.assertNull(
+                ((ch.stvbero.platform.core.notification.PushTransport) push).publicKey());
+        org.junit.jupiter.api.Assertions.assertTrue(io.quarkus.arc.Arc.container()
+                .select(ch.stvbero.platform.core.notification.DeliverySimulator.class).isUnsatisfied(),
+                "No delivery simulator without test support");
+        given().contentType("application/json").body("{\"failing\":[\"EMAIL\"]}")
+                .put("/api/test/delivery").then().statusCode(404);
+    }
+
     @Test
     void testEndpointsAreAlsoMissingFromOpenApi() {
         String specification = given().get("/q/openapi?format=json").then().statusCode(200).extract().asString();

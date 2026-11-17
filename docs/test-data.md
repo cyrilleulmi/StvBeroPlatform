@@ -34,6 +34,7 @@ All IDs are UUIDs. The first digit shows the type, the last two the number.
 | Series | `70000000-0000-4000-8000-0000000000NN` |
 | Account | `80000000-0000-4000-8000-0000000000NN` (same number as the person) |
 | Notification | `90000000-0000-4000-8000-0000000000NN` |
+| Push device | `a0000000-0000-4000-8000-0000000000NN` |
 
 ## Seed contents
 
@@ -54,6 +55,7 @@ The seed grows with the features. What is in the seed today:
 | F-16 | No new records. Every team has the default minimums for warnings (1 goalie, 10 field players for match days, 6 for practices, 3 per line). **Event 02** is the upcoming practice of Team 1 where no goalie responded «dabei» (only Anna responded). Expected warnings in scenarios S48–S51 |
 | F-17 | League data of Team 1 as loaded by the daily sync on **Mon 16.11.2026 04:30**: «Herren Kleinfeld 3. Liga», «Gruppe 12», table with eight teams and ten matches (see [League of Team 1](#league-of-team-1)). The simulator delivers the same league after the reset. Teams 2 and 3 are not linked and have no league data |
 | F-18 | Anna has a calendar address with the fixed token `seed-anna-calendar-000000000000000000000005` (created 15.11.2026 20:00), so her feed is `/api/calendar/seed-anna-calendar-000000000000000000000005.ics` (through the frontend: `http://localhost:4200/api/calendar/…`). Everybody else gets a random address on the first visit of «Profil». Expected feed in scenario S56 |
+| F-19 | **Kim** switched e-mails off (`notification_preference`); everybody else has e-mails on by default, to `<loginKey>@example.ch`. **Lea** has push on one phone: device `a0000000-0000-4000-8000-000000000001`, «Chrome auf Android», endpoint `https://push.example.test/seed-lea-phone`, registered 15.11.2026 20:00. Nobody else has a push device. The seed notifications 01–18 have no e-mails or pushes. Scenarios S57–S59 |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -401,5 +403,8 @@ Every scenario starts with `POST /api/test/reset`.
 | S54 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. As `alex` «Neu laden» | Error «swiss unihockey ist im Moment nicht erreichbar. …» (API 502), table stays, notice «swiss unihockey war am Mo 16.11.2026, 06:00 nicht erreichbar. Angezeigt wird der Stand vom Mo 16.11.2026, 04:30.» | SUH-09 |
 | S55 | Team without link | As `marc` `/teams/<Team 2>`; as `alex` the same | Section «Liga» with «Dieses Team ist nicht mit swiss unihockey verknüpft. …»; for `alex` also «In der Verwaltung verknüpfen» | F-17 |
 | S56 | Calendar feed of Anna | Open `/api/calendar/seed-anna-calendar-000000000000000000000005.ics` without login | `text/calendar`; events 01, 02, 03 (`STATUS:CANCELLED`, «Abgesagt: Training · Team 1 + Team 2»), 04, 06, 07, 09, 10 and all series events of Team 1 from Tue 20.10.2026 on (Thu 15.10. ended more than 30 days ago); not 05 (Team 2), not 08 (archive). Event 04: «Spieltag · Team 1», 09:30–13:00 Europe/Zurich, «Sporthalle Seefeld, Musterdorf», description with «Treffpunkt: 08:00, Parkplatz Sporthalle Nord», both matches, «Notizen: Weisse Trikots mitnehmen», «Deine Antwort: dabei» and the link to `/termine/40000000-0000-4000-8000-000000000004`. No «Muss evtl. arbeiten» (Mia) | CAL-02–CAL-05, CAL-08 |
+| S57 | Cancellation by e-mail and push | Petra cancels event 01 («Halle gesperrt»), then `GET /api/test/notifications` | 12 notifications in the app; 11 e-mails (not Kim) with subject «Abgesagt: Training Di 17.11.», text «Training Di 17.11. ist abgesagt: Halle gesperrt», path `/termine/40000000-0000-4000-8000-000000000001`, status `SENT`; one push to Lea's phone | BEN-14, BEN-20, BEN-21 |
+| S58 | Mail server down | `PUT /api/test/delivery` `{"failing":["EMAIL"]}`, Petra cancels event 01 | Cancellation goes through (200), e-mails `PENDING` with 1 attempt and next attempt 06:01; after `{}` and clock 06:01 `SENT` with 2 attempts | BEN-19 |
+| S59 | Lea's phone is gone | `PUT /api/test/delivery` `{"expiredEndpoints":["https://push.example.test/seed-lea-phone"]}`, Petra cancels event 01 | Push `DISCARDED`, Lea has no device any more; her e-mail is `SENT` | BEN-19 |
 | S57 | Renew the address | As `anna` at `/profil` «Adresse erneuern» → «Erneuern» | «Neue Adresse erstellt. Die bisherige funktioniert nicht mehr.», the field shows a new address; the seed address answers 404 | CAL-07 |
 | S43 | Attendance not before the start | As `petra` create an event for Fri 20.11. with «Präsenz erfassen» | Event shows «Die Präsenz lässt sich ab Beginn des Termins erfassen.», no link; API 409 rule PRS-02. Clock to 20.11. 18:00: link «Präsenz erfassen» | PRS-02 |

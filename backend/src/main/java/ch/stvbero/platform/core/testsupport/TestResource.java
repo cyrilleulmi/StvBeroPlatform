@@ -1,7 +1,10 @@
 package ch.stvbero.platform.core.testsupport;
 
 import ch.stvbero.platform.core.auth.Public;
-import ch.stvbero.platform.core.notification.NotificationDto;
+import ch.stvbero.platform.core.notification.Deliveries;
+import ch.stvbero.platform.core.notification.Delivery;
+import ch.stvbero.platform.core.notification.DeliverySimulator;
+import ch.stvbero.platform.core.notification.NotificationChannel;
 import ch.stvbero.platform.core.notification.Notifications;
 import ch.stvbero.platform.core.auth.SessionService;
 import ch.stvbero.platform.core.error.DomainError;
@@ -38,7 +41,13 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Test support from docs/testability.md. Exists only in the profiles dev and test: in the prod profile
@@ -68,10 +77,23 @@ public class TestResource {
     @Inject
     SuSimulator simulator;
 
+    @Inject
+    Deliveries deliveries;
+
+    @Inject
+    DeliverySimulator deliverySimulator;
+
     public record ClockInput(@NotNull OffsetDateTime now) {
     }
 
     public record ClockState(OffsetDateTime now, boolean fixed) {
+    }
+
+    public record DeliveryMode(
+            @Schema(description = "Channels whose delivery fails until the next change or reset (F-19, criterion 7)")
+            List<@NotNull NotificationChannel> failing,
+            @Schema(description = "Push endpoints the simulated push service reports as expired (F-19, criterion 7)")
+            List<@NotNull String> expiredEndpoints) {
     }
 
     public record LoginInput(@NotBlank String loginKey) {
@@ -91,8 +113,25 @@ public class TestResource {
     @Operation(operationId = "testReset", summary = "Reset the database to the seed, the clock to default and the simulator")
     @APIResponse(responseCode = "204", description = "Reset")
     public void reset() {
-        seed.reset();
-        simulator.reset();
+        deliveries.exclusively(() -> {
+            seed.reset();
+            simulator.reset();
+            deliverySimulator.reset();
+        });
+    }
+
+    @PUT
+    @Path("/delivery")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testSetDelivery",
+            summary = "Let e-mail or push fail, or report push endpoints as expired (simulated, F-19)")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public void setDelivery(@Valid @NotNull DeliveryMode mode) {
+        deliverySimulator.set(mode.failing() == null || mode.failing().isEmpty()
+                        ? EnumSet.noneOf(NotificationChannel.class) : EnumSet.copyOf(mode.failing()),
+                mode.expiredEndpoints() == null ? Set.of() : new HashSet<>(mode.expiredEndpoints()));
     }
 
     @PUT
@@ -115,13 +154,15 @@ public class TestResource {
     @Path("/clock")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testSetClock",
-            summary = "Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately.")
+            summary = "Set the backend clock to a fixed point in time. Runs due jobs (reminders, retries of e-mails "
+                    + "and pushes) immediately.")
     @APIResponse(responseCode = "204", description = "Set")
     @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public void setClock(@Valid @NotNull ClockInput input) {
         clock.fixAt(input.now().toInstant());
         reminders.check();
+        deliveries.processDue();
     }
 
     @GET
@@ -146,12 +187,21 @@ public class TestResource {
     @Path("/notifications")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testListNotifications",
-            summary = "All notifications of all persons since the last reset, including the seed")
+            summary = "All notifications of all persons since the last reset, including the seed, each with its "
+                    + "e-mails and pushes (F-19). Delivers what is due first.")
     @APIResponse(responseCode = "200", description = "Chronologisch",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(type = SchemaType.ARRAY, implementation = NotificationDto.class)))
-    public List<NotificationDto> notifications() {
-        return notifications.all();
+                    schema = @Schema(type = SchemaType.ARRAY, implementation = TestNotification.class)))
+    public List<TestNotification> notifications() {
+        deliveries.processDue();
+        return listNotifications();
+    }
+
+    private List<TestNotification> listNotifications() {
+        Map<UUID, List<Delivery>> byNotification = Delivery.<Delivery>find("order by createdAt, sequenceNumber")
+                .list().stream().collect(Collectors.groupingBy(d -> d.notification.id));
+        return notifications.all().stream()
+                .map(n -> TestNotification.of(n, byNotification.getOrDefault(n.id, List.of()))).toList();
     }
 
     @DELETE

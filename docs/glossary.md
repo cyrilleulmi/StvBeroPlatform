@@ -54,6 +54,10 @@ If a term is missing, add it here in the same style before using it.
 | Halle | hall | |
 | Resultat | result | |
 | Benachrichtigung | notification | |
+| Kanal (E-Mail, Push) | channel | `NotificationChannel` `EMAIL`, `PUSH`; the app is always there (F-19) |
+| Push, Push-Mitteilung | push | Web Push through the service worker of the PWA |
+| Gerät (mit Push) | push device, push subscription | `push_subscription`, `PushDevice` in the API |
+| Zustellung | delivery | one e-mail or push of a notification (`delivery`, outbox) |
 | Erinnerung | reminder | |
 | Kachel | tile | |
 | Dashboard / Start | dashboard / start page | |

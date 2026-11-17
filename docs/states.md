@@ -269,7 +269,31 @@ stateDiagram-v2
 | Every person sees only their own notifications, newest first. Marking someone else's as read: 403. Marking several times changes nothing. | RR-07 |
 | A click on a notification marks it as read and opens the event. | BEN-12 |
 | Whoever triggers something is not notified about it (e.g. the coach who cancels; assumption F-06, O-50). | BEN |
-| The list in the app always exists. Further channels (e-mail, push) receive the same messages through the `Channel` interface. | BEN-10, BEN-11, E-56 |
+| The list in the app always exists. E-mail and push receive the same messages through the `Channel` interface (F-19). | BEN-10, BEN-11, BEN-14, E-56 |
+| E-mail goes to persons with an e-mail address who did not switch it off (default: on). Push goes to every device the person registered. At most one e-mail and one push per device per notification. | BEN-15, BEN-20 |
+| Registering the same device again updates it (one device). Concurrent registrations or removals of the same device, or concurrent changes of the e-mail switch, never give 500 (a second removal gives 204 or 404). | BEN-15, BEN-16 |
+
+### Delivery (e-mail or push, F-19)
+
+Every e-mail and every push is recorded in the transaction of the change (outbox) and sent right after the commit; the scheduler checks every minute for due retries. A failure never rolls back the change.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Pending: notification created
+    Pending --> Sent: handed over to the mail server or push service
+    Pending --> Pending: attempt failed, retry after 1, 5, 30, 120 min
+    Pending --> Failed: fifth attempt failed
+    Pending --> Discarded: device removed, or push service reports it as gone (404, 410)
+    Sent --> [*]
+    Failed --> [*]
+    Discarded --> [*]
+```
+
+| Rule | Reference |
+|---|---|
+| A push subscription the push service reports as gone is removed; the person sees push off on that device. | BEN-19 |
+| In `dev` and `test` nothing goes out: the simulator accepts every delivery (or fails on purpose with `PUT /api/test/delivery`). | BEN-21 |
 
 ## Season
 

@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -21,7 +22,7 @@ public class TestChannel implements Channel {
     }
 
     @Override
-    public void send(Message message, Instant instant) {
+    public void send(UUID notificationId, Message message, Instant instant) {
         kept.add(message);
     }
 }
