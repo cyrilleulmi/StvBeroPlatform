@@ -169,6 +169,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/warning-minimums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the minimums for the warnings of the team (F-16, admin, coach)
+         * @description Below these numbers coaches and admins see warnings for upcoming practices and match days and for the
+         *     call-up. 0 switches a warning off. The minimums apply to the team, not per season (assumption F-16).
+         */
+        put: operations["setWarningMinimums"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/members": {
         parameters: {
             query?: never;
@@ -1126,6 +1149,45 @@ export interface components {
         TeamDetail: components["schemas"]["Team"] & {
             coaches: components["schemas"]["PersonSummary"][];
             lineup: components["schemas"]["Lineup"];
+            /** @description Only for coaches and admins (F-16) */
+            warningMinimums?: components["schemas"]["WarningMinimums"];
+        };
+        /** @description Minimums of a team for the warnings (F-16). Defaults 1 goalie, 10 field players for match days, 6 for practices, 3 per line. 0 switches the warning off. */
+        WarningMinimums: {
+            /** @example 1 */
+            goalies: number;
+            /** @example 10 */
+            fieldPlayersMatchDay: number;
+            /** @example 6 */
+            fieldPlayersPractice: number;
+            /** @example 3 */
+            perLine: number;
+        };
+        /**
+         * @description GOALIES fewer goalies than the minimum («Kein Goalie angemeldet»), FIELD_PLAYERS fewer field players (all players outside the goalies, including «Ohne Linie»), LINE a line with at least one but fewer players than the line minimum («Linie 2 nur zu 1»)
+         * @enum {string}
+         */
+        WarningType: "GOALIES" | "FIELD_PLAYERS" | "LINE";
+        /** @description A warning for one team of the event (F-16). Counts players with «dabei» (overview) or the selected players (call-up). The frontend builds the German text from it. */
+        Warning: {
+            type: components["schemas"]["WarningType"];
+            team: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /**
+             * Format: uuid
+             * @description Only for LINE
+             */
+            groupId?: string;
+            /**
+             * @description Only for LINE
+             * @example Linie 2
+             */
+            groupName?: string;
+            count: number;
+            minimum: number;
         };
         TeamMembership: {
             team: {
@@ -1218,6 +1280,8 @@ export interface components {
             counts?: components["schemas"]["Counts"];
             /** Format: uuid */
             seriesId?: string | null;
+            /** @description Only for coaches and admins (F-16): number of warnings from the responses, as in the overview. 0 for past, cancelled and other events */
+            warningCount?: number;
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -1321,6 +1385,8 @@ export interface components {
             comment?: string | null;
         };
         Overview: {
+            /** @description Only for coaches and admins (F-16), missing for everyone else. Empty for past, cancelled and other events. By team, then goalies, field players, lines. */
+            warnings?: components["schemas"]["Warning"][];
             /** Format: uuid */
             eventId: string;
             /** @description Each player once, even if she is in several teams (ANM-32) */
@@ -1393,6 +1459,8 @@ export interface components {
             result?: string | null;
         };
         CallUp: {
+            /** @description Warnings from the selected players (F-16). Empty for past and cancelled match days. */
+            warnings: components["schemas"]["Warning"][];
             /** Format: uuid */
             eventId: string;
             status: components["schemas"]["CallUpStatus"];
@@ -1956,6 +2024,35 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    setWarningMinimums: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WarningMinimums"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WarningMinimums"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     addMember: {

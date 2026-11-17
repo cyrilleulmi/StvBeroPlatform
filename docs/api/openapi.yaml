@@ -238,6 +238,30 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/warning-minimums:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    put:
+      tags: [Teams]
+      operationId: setWarningMinimums
+      summary: Change the minimums for the warnings of the team (F-16, admin, coach)
+      description: |
+        Below these numbers coaches and admins see warnings for upcoming practices and match days and for the
+        call-up. 0 switches a warning off. The minimums apply to the team, not per season (assumption F-16).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WarningMinimums' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WarningMinimums' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/members:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -1551,6 +1575,45 @@ components:
               type: array
               items: { $ref: '#/components/schemas/PersonSummary' }
             lineup: { $ref: '#/components/schemas/Lineup' }
+            warningMinimums:
+              $ref: '#/components/schemas/WarningMinimums'
+              description: Only for coaches and admins (F-16)
+    WarningMinimums:
+      type: object
+      description: >-
+        Minimums of a team for the warnings (F-16). Defaults 1 goalie, 10 field players for match days, 6 for
+        practices, 3 per line. 0 switches the warning off.
+      required: [goalies, fieldPlayersMatchDay, fieldPlayersPractice, perLine]
+      properties:
+        goalies: { type: integer, minimum: 0, maximum: 99, examples: [1] }
+        fieldPlayersMatchDay: { type: integer, minimum: 0, maximum: 99, examples: [10] }
+        fieldPlayersPractice: { type: integer, minimum: 0, maximum: 99, examples: [6] }
+        perLine: { type: integer, minimum: 0, maximum: 99, examples: [3] }
+    WarningType:
+      type: string
+      description: >-
+        GOALIES fewer goalies than the minimum («Kein Goalie angemeldet»), FIELD_PLAYERS fewer field players (all
+        players outside the goalies, including «Ohne Linie»), LINE a line with at least one but fewer players than
+        the line minimum («Linie 2 nur zu 1»)
+      enum: [GOALIES, FIELD_PLAYERS, LINE]
+    Warning:
+      type: object
+      description: >-
+        A warning for one team of the event (F-16). Counts players with «dabei» (overview) or the selected
+        players (call-up). The frontend builds the German text from it.
+      required: [type, team, count, minimum]
+      properties:
+        type: { $ref: '#/components/schemas/WarningType' }
+        team:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        groupId: { type: string, format: uuid, description: Only for LINE }
+        groupName: { type: string, description: Only for LINE, examples: [Linie 2] }
+        count: { type: integer, minimum: 0 }
+        minimum: { type: integer, minimum: 1 }
     TeamMembership:
       type: object
       required: [team, person, teamRole, seasonId]
@@ -1662,6 +1725,12 @@ components:
           $ref: '#/components/schemas/Counts'
           description: Total counts of players
         seriesId: { type: [string, 'null'], format: uuid }
+        warningCount:
+          type: integer
+          minimum: 0
+          description: >-
+            Only for coaches and admins (F-16): number of warnings from the responses, as in the overview. 0 for
+            past, cancelled and other events
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
@@ -1810,6 +1879,12 @@ components:
       type: object
       required: [eventId, total, teams, coaches]
       properties:
+        warnings:
+          type: array
+          description: >-
+            Only for coaches and admins (F-16), missing for everyone else. Empty for past, cancelled and other
+            events. By team, then goalies, field players, lines.
+          items: { $ref: '#/components/schemas/Warning' }
         eventId: { type: string, format: uuid }
         total:
           $ref: '#/components/schemas/Counts'
@@ -1895,8 +1970,12 @@ components:
 
     CallUp:
       type: object
-      required: [eventId, status, groups]
+      required: [eventId, status, groups, warnings]
       properties:
+        warnings:
+          type: array
+          description: Warnings from the selected players (F-16). Empty for past and cancelled match days.
+          items: { $ref: '#/components/schemas/Warning' }
         eventId: { type: string, format: uuid }
         status: { $ref: '#/components/schemas/CallUpStatus' }
         publishedAt: { type: [string, 'null'], format: date-time }

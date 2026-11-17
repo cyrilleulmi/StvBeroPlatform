@@ -31,8 +31,32 @@ public class Team extends PanacheEntityBase {
     @Column(name = "su_team_id")
     public Integer suTeamId;
 
+    /** Minimums for the warnings (F-16), see {@link WarningMinimums}. */
+    @Column(name = "min_goalies")
+    public int minGoalies = WarningMinimums.DEFAULTS.goalies();
+
+    @Column(name = "min_field_players_match_day")
+    public int minFieldPlayersMatchDay = WarningMinimums.DEFAULTS.fieldPlayersMatchDay();
+
+    @Column(name = "min_field_players_practice")
+    public int minFieldPlayersPractice = WarningMinimums.DEFAULTS.fieldPlayersPractice();
+
+    @Column(name = "min_per_line")
+    public int minPerLine = WarningMinimums.DEFAULTS.perLine();
+
     @OneToMany(mappedBy = "team", cascade = CascadeType.PERSIST)
     public List<TeamSeason> seasons = new ArrayList<>();
+
+    public WarningMinimums minimums() {
+        return new WarningMinimums(minGoalies, minFieldPlayersMatchDay, minFieldPlayersPractice, minPerLine);
+    }
+
+    public void setMinimums(WarningMinimums minimums) {
+        minGoalies = minimums.goalies();
+        minFieldPlayersMatchDay = minimums.fieldPlayersMatchDay();
+        minFieldPlayersPractice = minimums.fieldPlayersPractice();
+        minPerLine = minimums.perLine();
+    }
 
     public Optional<TeamSeason> in(Season season) {
         return seasons.stream().filter(ts -> ts.season.id.equals(season.id)).findFirst();

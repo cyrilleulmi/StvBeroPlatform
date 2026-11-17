@@ -21,6 +21,7 @@ import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
+import { Warnings } from './warnings';
 
 type Choice = ResponseInput['status'];
 
@@ -37,7 +38,7 @@ interface Target {
 @Component({
   selector: 'app-overview',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, NgTemplateOutlet],
+  imports: [Icon, NgTemplateOutlet, Warnings],
   template: `
     <section class="card overview" data-testid="overview" aria-labelledby="overview-title">
       <h2 id="overview-title" class="section-title">{{ t.title }}</h2>
@@ -53,6 +54,11 @@ interface Target {
           <span data-counter="pending">{{ t.pending(data().total.pending) }}</span>
         </span>
       </p>
+
+      @if (data().warnings; as w) {
+        <!-- Only coaches and admins get warnings from the API (F-16) -->
+        <app-warnings [warnings]="w" [withTeam]="data().teams.length > 1" testId="event-warnings" />
+      }
 
       @if (message(); as m) {
         <p class="message-success" role="status">{{ m }}</p>

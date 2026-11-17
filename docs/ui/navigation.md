@@ -2,7 +2,7 @@
 
 Map of the UI for humans and agents. The test agent uses it to jump straight to the right place by URL. Whoever changes a route or a fixed test ID updates this file in the same PR.
 
-Status: target state for the core. The column «Feature» states with which feature from the [backlog](../pipeline/backlog.md) a screen arrives. Built are F-00 (foundation: `/anmelden`, `/dev-login`, `/`, `/termine` as empty state, `/profil`), F-01 (`/teams`, `/teams/:id`, `/verwaltung` with people, teams and seasons), F-02 (`/teams/:id/linien`, `/teams/:id` by line), F-03 (`/termine` with filters, `/termine/neu`, `/termine/:id` with details, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`), F-04 (responses in `/`, `/termine` and `/termine/:id`, overview by team and line), F-05 (match day in the form with matches, meeting point and Google Maps link; matches, results and call-up status in `/termine/:id`; `/termine/:id/aufgebot`) and F-06 (`/benachrichtigungen`, bell with counter in the navigation). F-14: switch «Präsenz erfassen» in the event and series form, section «Präsenz» in `/termine/:id`, `/termine/:id/praesenz`. F-12: coaches (coach of at least one team in the current season) see «Verwaltung» and manage all teams; delete actions, «Saisons», swiss unihockey and the admin checkbox stay with admins (RR-03, RR-08). F-15: `/statistik`, `/statistik/:personId`, `/profil/statistik`, link «Statistik» in `/termine` and `/teams/:id`, section «Meine Statistik» in `/profil`.
+Status: target state for the core. The column «Feature» states with which feature from the [backlog](../pipeline/backlog.md) a screen arrives. Built are F-00 (foundation: `/anmelden`, `/dev-login`, `/`, `/termine` as empty state, `/profil`), F-01 (`/teams`, `/teams/:id`, `/verwaltung` with people, teams and seasons), F-02 (`/teams/:id/linien`, `/teams/:id` by line), F-03 (`/termine` with filters, `/termine/neu`, `/termine/:id` with details, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`), F-04 (responses in `/`, `/termine` and `/termine/:id`, overview by team and line), F-05 (match day in the form with matches, meeting point and Google Maps link; matches, results and call-up status in `/termine/:id`; `/termine/:id/aufgebot`) and F-06 (`/benachrichtigungen`, bell with counter in the navigation). F-14: switch «Präsenz erfassen» in the event and series form, section «Präsenz» in `/termine/:id`, `/termine/:id/praesenz`. F-12: coaches (coach of at least one team in the current season) see «Verwaltung» and manage all teams; delete actions, «Saisons», swiss unihockey and the admin checkbox stay with admins (RR-03, RR-08). F-15: `/statistik`, `/statistik/:personId`, `/profil/statistik`, link «Statistik» in `/termine` and `/teams/:id`, section «Meine Statistik» in `/profil`. F-16: warnings in the overview of `/termine/:id`, in `/termine/:id/aufgebot` and its confirmation dialog, marker «<n> Warnungen» in `/termine`, section «Warnungen» with the minimums in `/teams/:id` (coaches and admins only).
 
 ## Navigation
 
@@ -67,7 +67,7 @@ flowchart LR
 | `/statistik/:personId` | «Statistik» of a player | coach (any team), admin; the person herself (otherwise «Keine Berechtigung») | `h1` name, link «Zur Statistik» (keeps the filters; the person herself without coach rights sees «Zum Profil» instead), filters as above («Team»: the teams she plays in), card `statistics-numbers` (list of the same 11 values as the table, `dt`/`dd`), `statistics-base` («Präsenzquote auf Basis von 1 Termin mit erfasster Präsenz.», «Im Team seit 01.10.2026.» if she joined after the season start), list «Termine im Zeitraum» (`statistics-events`), newest first: link «Training Do 12.11. 19:00» to the event, chips «Antwort: dabei», «kurzfristig abgemeldet», «Präsenz: anwesend» (only where recorded) | F-15 |
 | `/profil/statistik` | «Meine Statistik» (own statistics) | logged in | Same content as `/statistik/:personId` for the own person, link «Zum Profil». Without a team as player: «Du spielst in dieser Saison in keinem Team.» | F-15 |
 | `/teams` | «Meine Teams» (my teams) | logged in | Own teams of the current season with own team role (PTF-12), link to `/teams/:id` | F-01 |
-| `/teams/:id` | «Team» | members, coach, admin | Coaches and players separate (PTF-07), players by line (lists with the group name, empty groups are missing). Coaches and admins see the link «Linien einteilen» and, in the current season, «Statistik» (to `/statistik?team=<id>`, F-15). `?saison=<id>` shows another season (archive with notice). Without team membership (and not coach or admin) «Keine Berechtigung» | F-01, F-02, F-12 |
+| `/teams/:id` | «Team» | members, coach, admin | Coaches and players separate (PTF-07), players by line (lists with the group name, empty groups are missing). Coaches and admins see the link «Linien einteilen» and, in the current season, «Statistik» (to `/statistik?team=<id>`, F-15) and the section «Warnungen» with the fields «Goalies mindestens», «Feldspielerinnen am Spieltag mindestens», «Feldspielerinnen im Training mindestens», «Pro Linie mindestens» (whole numbers 0–99, error «Bitte eine Zahl von 0 bis 99 eingeben.» at the field) and the button «Mindestzahlen speichern» (feedback «Die Mindestzahlen sind gespeichert.», F-16). `?saison=<id>` shows another season (archive with notice). Without team membership (and not coach or admin) «Keine Berechtigung» | F-01, F-02, F-12, F-16 |
 | `/teams/:id/linien` | «Linien» (lines) | coach (any team), admin (other members read-only) | Add, rename, sort («<Linie> nach oben/unten»), delete (dialog, admins only, RR-08) lines, assign players by drag and drop or select field «Linie von <Name>»; saves immediately. Without team membership (and not coach or admin) «Keine Berechtigung». Current season | F-02, F-12 |
 | `/benachrichtigungen` | «Benachrichtigungen» (notifications) | logged in | Own notifications, newest first (list «Benachrichtigungen»): text, time, unread ones with «Neu». A click marks as read and opens `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (only with unread ones, feedback «Alle sind als gelesen markiert.»). Empty: «Keine Benachrichtigungen.» | F-06 |
 | `/profil` | «Profil» (profile) | logged in | Name, section «Meine Statistik» with the link «Statistik ansehen» (players only, F-15), theme («Hell», «Düne», «GitHub Dark», «System»; NF-08), log out | F-00 |
@@ -92,7 +92,7 @@ Without permission a screen shows the text «Keine Berechtigung» (`role="alert"
 | Respond on behalf | Coach (any team) or admin in the overview, button next to a person | «Antwort für <Name> eintragen» (select «Antwort» with radio buttons, field «Kommentar (bei «vielleicht» Pflicht)») |
 | Cancel event | Edit event, «Termin absagen» | «Termin absagen» (field «Grund», required) |
 | Delete line | Lines, «<Linie> löschen» (admins only) | «<Linie> löschen?» |
-| Publish call-up | Call-up, «Veröffentlichen» (buttons «Veröffentlichen», «Abbrechen») | «Aufgebot veröffentlichen?» |
+| Publish call-up | Call-up, «Veröffentlichen» (buttons «Veröffentlichen», «Abbrechen»; with warnings also the section «Achtung:» with the list, F-16) | «Aufgebot veröffentlichen?» |
 | Switch off attendance check | Edit event, untick «Präsenz erfassen» while attendance is recorded, «Änderungen speichern» (buttons «Ausschalten und speichern», «Abbrechen») | «Präsenz ausschalten?» |
 | Enter result | Event (match day), button «Resultat für <Heim> – <Gast> erfassen» (coach, admin) | «Resultat: <Heim> – <Gast>» (field «Resultat (Heim:Gast, z.B. 5:3)», empty removes it, button «Resultat speichern») |
 
@@ -125,6 +125,7 @@ Fixed test IDs that tests rely on. Scheme and rules: [testability.md](../testabi
 | `team-coaches` | Section «Coaches» (`/teams/:id`, `/verwaltung/teams/:id`) |
 | `team-players` | Section «Spielerinnen» (`/teams/:id`, `/verwaltung/teams/:id`) |
 | `team-person-<personId>` | Person in `/teams/:id` |
+| `team-warning-minimums` | Section «Warnungen» with the minimums in `/teams/:id` (coaches and admins, current season, F-16) |
 | `member-<personId>` | Person in `/verwaltung/teams/:id` (`li` with the name as `aria-label`) |
 | `archive-notice` | Notice «Saison … im Archiv: nur lesend.» |
 | `person-<personId>` | Entry in `/verwaltung/personen` |
@@ -146,6 +147,8 @@ Success messages have `role="status"`, errors `role="alert"`. In «Person aufneh
 | `response-attending`, `response-declined`, `response-maybe` | The three response buttons inside `my-response` (names «Dabei», «Nicht dabei», «Vielleicht», selected: `aria-pressed="true"`) |
 | `event-counter` | Total counter in the card of the event list (not for cancelled events) and on the start screen (F-13) |
 | `event-status` | Notice «abgesagt» or «verschoben» (as a chip in the card, as a notice with reason in the detail) |
+| `event-warnings` | In the card of the event list: chip with icon «3 Warnungen» and `data-warning-count` (coaches and admins, only events with at least one warning). In the overview of `/termine/:id`: live region (`aria-live="polite"`, `data-warning-count`) with the section «Warnungen» (region with a list, one `li` per warning) above the teams; empty for players and when there is no warning (F-16) |
+| `warning` | One warning (`li` with icon and text, `data-warning="GOALIES\|FIELD_PLAYERS\|LINE"`), inside `event-warnings`, `call-up-warnings` and `call-up-dialog-warnings`. Texts: «Kein Goalie angemeldet», «Nur 1 Goalie angemeldet», «Keine Feldspielerinnen angemeldet», «Nur 1 Feldspielerin angemeldet», «Nur 4 Feldspielerinnen angemeldet», «Linie 2 nur zu 1»; in the call-up «aufgeboten» instead of «angemeldet»; in an event of several teams with «<Team>: » in front |
 | `response-deadline` | Response deadline in the detail of an event, e.g. «Mo 16.11. 18:30 (24 Stunden vor Beginn)» |
 | `exceptions` | Section «Ausnahmen» on `/serien/:id` |
 | `overview` | Entire overview of an event |
@@ -173,6 +176,8 @@ Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 | `call-up-publish` | Button «Veröffentlichen» (only in draft; without selection `disabled` with explanation) |
 | `call-up-status` | «Entwurf», «Entwurf: noch niemand ausgewählt» or «veröffentlicht am Mo 16.11. 06:00» |
 | `call-up-count` | Number of called-up players, e.g. «5 aufgeboten» |
+| `call-up-warnings` | Warnings of the call-up from the selection (live region, section «Warnungen»), updated after every change (F-16) |
+| `call-up-dialog-warnings` | The same warnings in the dialog «Aufgebot veröffentlichen?» (section «Achtung:») |
 
 ### Attendance check (F-14)
 

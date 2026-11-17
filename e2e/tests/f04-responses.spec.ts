@@ -71,8 +71,8 @@ test('F-04 K1 K2 S1 ANM-20 to ANM-32: Overview of event 01 as in test-data.md', 
   await expect(page.getByTestId(`overview-team-${TEAM_1}-counter`)).toContainText(counterText(5, 1, 0, 1));
   await expect(page.getByTestId(`overview-team-${TEAM_2}-counter`)).toContainText(counterText(3, 1, 1, 1));
 
-  // ANM-20: teams by name; ANM-21: lines, goalies, «Ohne Linie»
-  await expect(overview.getByRole('heading', { level: 3 })).toHaveText(['Team 1', 'Team 2', 'Coaches']);
+  // ANM-20: teams by name; ANM-21: lines, goalies, «Ohne Linie». Coaches see the warnings first (F-16, ANM-40)
+  await expect(overview.getByRole('heading', { level: 3 })).toHaveText(['Warnungen', 'Team 1', 'Team 2', 'Coaches']);
   const team1 = page.getByTestId(`overview-team-${TEAM_1}`);
   await expect(team1.getByRole('heading', { level: 4 })).toHaveText([
     'Linie 1',

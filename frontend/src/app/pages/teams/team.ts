@@ -11,9 +11,9 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { PersonSummary, Season, TeamDetail } from '../../api/types';
+import type { PersonSummary, Season, TeamDetail, WarningMinimums } from '../../api/types';
 import { AuthService } from '../../core/auth.service';
-import { errorStatus, errorText } from '../../core/error-text';
+import { errorStatus, errorText, fieldErrorsOf } from '../../core/error-text';
 import { teamRoleText, name } from '../../core/format';
 import { TEXTS } from '../../core/texts';
 
@@ -101,6 +101,58 @@ import { TEXTS } from '../../core/texts';
             }
           }
         </section>
+        @if (minimums(); as m) {
+          <!-- Minimums for the warnings, coaches and admins in the current season (F-16, criterion 4) -->
+          <section
+            class="card"
+            aria-labelledby="team-warning-minimums-title"
+            data-testid="team-warning-minimums"
+          >
+            <h2 id="team-warning-minimums-title" class="section-title">{{ w.minimums }}</h2>
+            <p class="secondary-text" id="team-warning-minimums-text">{{ w.minimumsText }}</p>
+            @if (minimumsMessage(); as message) {
+              <p class="message-success" role="status">{{ message }}</p>
+            }
+            @if (minimumsError(); as message) {
+              <p class="message-error" role="alert">{{ message }}</p>
+            }
+            <form class="form minimums" (submit)="saveMinimums($event)" novalidate>
+              <div class="minimum-fields">
+                @for (f of minimumFields; track f.key) {
+                  <div class="field">
+                    <label [for]="'minimum-' + f.key">{{ f.label }}</label>
+                    <input
+                      [id]="'minimum-' + f.key"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="99"
+                      step="1"
+                      required
+                      [value]="m[f.key]"
+                      (input)="setMinimum(f.key, $any($event.target).value)"
+                      [attr.aria-invalid]="minimumErrors()[f.key] ? 'true' : null"
+                      [attr.aria-describedby]="minimumErrors()[f.key] ? 'minimum-' + f.key + '-error' : null"
+                    />
+                    @if (minimumErrors()[f.key]; as message) {
+                      <p class="field-error" [id]="'minimum-' + f.key + '-error'">{{ message }}</p>
+                    }
+                  </div>
+                }
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  class="button button-primary button-small"
+                  [disabled]="savingMinimums()"
+                  [attr.aria-busy]="savingMinimums() ? 'true' : null"
+                >
+                  {{ w.saveMinimums }}
+                </button>
+              </div>
+            </form>
+          </section>
+        }
       }
     </div>
   `,
@@ -126,6 +178,11 @@ import { TEXTS } from '../../core/texts';
     .players-header .section-title {
       margin: 0;
     }
+    .minimum-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
     .group-title {
       margin: 12px 0 0;
       font-size: 13px;
@@ -142,6 +199,13 @@ export class Team {
   protected readonly texts = TEXTS;
   protected readonly name = name;
   protected readonly teamRole = teamRoleText;
+  protected readonly w = TEXTS.warnings;
+  protected readonly minimumFields: { key: keyof WarningMinimums; label: string }[] = [
+    { key: 'goalies', label: TEXTS.warnings.goaliesMinimum },
+    { key: 'fieldPlayersMatchDay', label: TEXTS.warnings.fieldPlayersMatchDayMinimum },
+    { key: 'fieldPlayersPractice', label: TEXTS.warnings.fieldPlayersPracticeMinimum },
+    { key: 'perLine', label: TEXTS.warnings.perLineMinimum },
+  ];
 
   /** Route `/teams/:teamId` */
   readonly teamId = input.required<string>();
@@ -153,6 +217,18 @@ export class Team {
   protected readonly seasonData = signal<Season | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+
+  /** Entered values of the minimums (as text, checked on saving). */
+  private readonly minimumInput = signal<Record<string, string>>({});
+  protected readonly minimumErrors = signal<Record<string, string>>({});
+  protected readonly savingMinimums = signal(false);
+  protected readonly minimumsMessage = signal<string | null>(null);
+  protected readonly minimumsError = signal<string | null>(null);
+
+  /** Only coaches and admins get the minimums from the API; changed in the current season only (F-16). */
+  protected readonly minimums = computed(() =>
+    this.season() ? null : (this.team()?.warningMinimums ?? null),
+  );
 
   /** Non-empty groups in display order, «Ohne Linie» last. */
   protected readonly groups = computed(() => {
@@ -186,6 +262,56 @@ export class Team {
     if (!t) return [];
     return [...t.lineup.groups.flatMap((g) => g.players), ...t.lineup.noLine];
   });
+
+  protected setMinimum(key: keyof WarningMinimums, value: string): void {
+    this.minimumInput.update((v) => ({ ...v, [key]: value }));
+  }
+
+  /** Save the minimums (F-16, criterion 4). Every value is a whole number from 0 to 99. */
+  protected async saveMinimums(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    const t = this.team();
+    const current = t?.warningMinimums;
+    if (!t || !current || this.savingMinimums()) return;
+    const entered = this.minimumInput();
+    const body = { ...current };
+    const errors: Record<string, string> = {};
+    for (const f of this.minimumFields) {
+      const raw = (entered[f.key] ?? String(current[f.key])).trim();
+      const n = Number(raw);
+      if (raw === '' || !Number.isInteger(n) || n < 0 || n > 99) {
+        errors[f.key] = TEXTS.warnings.invalidNumber;
+      } else {
+        body[f.key] = n;
+      }
+    }
+    this.minimumErrors.set(errors);
+    this.minimumsMessage.set(null);
+    this.minimumsError.set(null);
+    const first = this.minimumFields.find((f) => errors[f.key]);
+    if (first) {
+      document.getElementById('minimum-' + first.key)?.focus();
+      return;
+    }
+    this.savingMinimums.set(true);
+    try {
+      const saved = await firstValueFrom(
+        this.http.put<WarningMinimums>(`/api/teams/${t.id}/warning-minimums`, body),
+      );
+      this.team.update((x) => (x ? { ...x, warningMinimums: saved } : x));
+      this.minimumInput.set({});
+      this.minimumsMessage.set(TEXTS.warnings.minimumsSaved);
+    } catch (e) {
+      const fields = fieldErrorsOf(e);
+      if (Object.keys(fields).length > 0) {
+        this.minimumErrors.set(fields);
+      } else {
+        this.minimumsError.set(errorText(e));
+      }
+    } finally {
+      this.savingMinimums.set(false);
+    }
+  }
 
   constructor() {
     effect(() => {

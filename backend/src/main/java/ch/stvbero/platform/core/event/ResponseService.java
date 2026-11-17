@@ -125,6 +125,10 @@ public class ResponseService {
         List<OverviewDto.TeamBlock> blocks = new ArrayList<>();
         List<OverviewDto.CoachEntry> coaches = new ArrayList<>();
         Set<UUID> allPlayers = new LinkedHashSet<>();
+        // Warnings only for coaches and admins (missing for players), empty if they do not apply (F-16)
+        List<WarningDto> warnings = WarningRules.visible(user.allTeams()) ? new ArrayList<>() : null;
+        boolean withWarnings = warnings != null
+                && WarningRules.applies(event.type, event.status, event.end, clock.now());
         for (OverviewDto.TeamName team : teams) {
             boolean commentsVisible = ResponseRules.commentVisible(user.allTeams(), false, mine.get(team.id()));
             List<TeamMembership> inTeam = members.stream().filter(m -> m.team.id.equals(team.id())).toList();
@@ -154,6 +158,11 @@ public class ResponseService {
                 groups.add(new OverviewDto.Group(null, OverviewDto.Type.NO_LINE, NO_LINE, sorted(noLine)));
             }
             blocks.add(new OverviewDto.TeamBlock(team, counts(players.stream().map(m -> m.person.id).toList(), responses), groups));
+            if (withWarnings) {
+                Team entity = event.teams.stream().filter(t -> t.id.equals(team.id())).findFirst().orElseThrow();
+                warnings.addAll(WarningRules.warnings(event.type, team, entity.minimums(),
+                        warningPlayers(players, p -> isAttending(responses.get(p)))));
+            }
 
             inTeam.stream().filter(m -> m.teamRole == TeamRole.COACH)
                     .map(m -> new OverviewDto.CoachEntry(persons.get(m.person.id), team,
@@ -161,7 +170,18 @@ public class ResponseService {
                     .sorted(Comparator.comparing(OverviewDto.CoachEntry::person, PersonSummary.ORDER))
                     .forEach(coaches::add);
         }
-        return new OverviewDto(event.id, counts(allPlayers, responses), blocks, coaches);
+        return new OverviewDto(event.id, counts(allPlayers, responses), blocks, coaches, warnings);
+    }
+
+    /** Players of a team for the warnings (F-16), with their groups and whether they count. */
+    static List<WarningRules.Player> warningPlayers(List<TeamMembership> players,
+                                                    java.util.function.Predicate<UUID> counted) {
+        return players.stream().map(m -> new WarningRules.Player(m.person.id,
+                m.groups.stream().map(Group::info).toList(), counted.test(m.person.id))).toList();
+    }
+
+    private static boolean isAttending(Stored stored) {
+        return stored != null && stored.status() == ResponseStatus.ATTENDING;
     }
 
     // ------------------------------------------------------------------ Helpers

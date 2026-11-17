@@ -69,7 +69,19 @@ public class TeamService {
         TeamRules.Split split = TeamRules.split(members(memberships));
         // Players by line, then goalies, then «Ohne Linie» (LIN-06, LIN-09)
         return new TeamDetailDto(team.id, team.nameIn(season), team.suTeamId, mine.orElse(null), split.coaches(),
-                LineService.lineup(team, season, memberships));
+                LineService.lineup(team, season, memberships), user.allTeams() ? team.minimums() : null);
+    }
+
+    /**
+     * Change the minimums for the warnings (F-16, criterion 4): coaches (of any team, E-69) and admins. They apply
+     * to the team, not per season (assumption).
+     */
+    @Transactional
+    public WarningMinimums setWarningMinimums(CurrentUser user, UUID teamId, WarningMinimums minimums) {
+        user.checkAllTeams();
+        Team team = find(teamId);
+        team.setMinimums(minimums);
+        return team.minimums();
     }
 
     @Transactional

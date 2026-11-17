@@ -84,6 +84,32 @@ export const TEXTS = {
     coachOf: (team: string) => `(${team})`,
     noMembers: 'In den Teams dieses Termins ist noch niemand.',
   },
+  warnings: {
+    title: 'Warnungen',
+    /** Event list (F-16, criterion 8) */
+    count: (n: number) => (n === 1 ? '1 Warnung' : `${n} Warnungen`),
+    goalies: (n: number, verb: string) =>
+      n === 0 ? `Kein Goalie ${verb}` : `Nur ${n} ${n === 1 ? 'Goalie' : 'Goalies'} ${verb}`,
+    fieldPlayers: (n: number, verb: string) =>
+      n === 0
+        ? `Keine Feldspielerinnen ${verb}`
+        : `Nur ${n} ${n === 1 ? 'Feldspielerin' : 'Feldspielerinnen'} ${verb}`,
+    line: (line: string, n: number) => `${line} nur zu ${n}`,
+    withTeam: (team: string, text: string) => `${team}: ${text}`,
+    attending: 'angemeldet',
+    calledUp: 'aufgeboten',
+    dialog: 'Achtung:',
+    minimums: 'Warnungen',
+    minimumsText:
+      'Unter diesen Zahlen sehen Coaches beim Termin, in der Terminliste und im Aufgebot eine Warnung. 0 schaltet die Warnung aus.',
+    goaliesMinimum: 'Goalies mindestens',
+    fieldPlayersMatchDayMinimum: 'Feldspielerinnen am Spieltag mindestens',
+    fieldPlayersPracticeMinimum: 'Feldspielerinnen im Training mindestens',
+    perLineMinimum: 'Pro Linie mindestens',
+    saveMinimums: 'Mindestzahlen speichern',
+    minimumsSaved: 'Die Mindestzahlen sind gespeichert.',
+    invalidNumber: 'Bitte eine Zahl von 0 bis 99 eingeben.',
+  },
   events: {
     title: 'Termine',
     empty: 'Keine kommenden Termine',

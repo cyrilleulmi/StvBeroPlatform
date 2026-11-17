@@ -58,7 +58,21 @@ Coaches       Petra ✓ (Team 1)  Marc ✗ (Team 2)
 
 The sketch shows the structure, not the design. For the look, [design-principles.md](../design-principles.md) applies. «Vielleicht» is missing from the sketch and is added as its own counter and its own symbol.
 
+## Warnings (F-16)
+
+Coaches see at a glance when an event has a gap, for example no goalie (E-79). The call-up has the same warnings, see [AUF-30](05-match-days-call-up.md#warnings-in-the-call-up-f-16).
+
+| ID | Requirement | Status |
+|---|---|---|
+| ANM-40 | The overview of an event shows coaches and admins warnings above the list of responses: «Kein Goalie angemeldet» when fewer goalies than the minimum responded «dabei», «Nur <n> Feldspielerinnen angemeldet» when fewer field players than the minimum responded «dabei», «<Linie> nur zu <n>» when a line has fewer players «dabei» than the line minimum. | Accepted |
+| ANM-41 | The minimums are settings per team with defaults: 1 goalie, 10 field players for match days, 6 for practices, 3 per line. Coaches and admins change them on the team page. 0 switches a warning off. | Accepted (defaults, page), Assumption (0 switches off, applies to the team in every season) |
+| ANM-42 | Warnings are shown for upcoming events only, not for cancelled events. Other events (e.g. «Teamessen») have no warnings. | Accepted, Assumption (other events) |
+| ANM-43 | Players do not see warnings, neither in the UI nor in the API. | Accepted |
+| ANM-44 | Warnings are not only a colour: each has an icon and a text (`accent-mustard`) and is announced to screen readers. | Accepted |
+| ANM-45 | The event list for coaches and admins marks events with at least one warning («3 Warnungen»). | Accepted |
+| ANM-46 | Warnings apply per team, with the minimums of that team. In an event of several teams each warning names its team («Team 2: Kein Goalie angemeldet»). Field players are all players outside the goalies, including «Ohne Linie». A line nobody of comes gives no line warning (the field player warning covers it). | Assumption |
+
 ## Not part of the core
 
-- Attendance check (who was really there): see [Later features](../later-features.md).
-- Warnings such as «kein Goalie angemeldet» (no goalie attending): see [Later features](../later-features.md).
+- Attendance check (who was really there): built with F-14, see [11-attendance-check.md](11-attendance-check.md).
+- Notifications about warnings: not planned (out of scope of F-16).

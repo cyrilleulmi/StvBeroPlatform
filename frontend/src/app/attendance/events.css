@@ -154,3 +154,10 @@ li[data-status='CANCELLED'] .date {
 .counter span {
   white-space: nowrap;
 }
+
+/* F-16: event with warnings, icon and text, not only a colour */
+.warning-chip {
+  gap: 4px;
+  background: var(--mustard-soft);
+  color: var(--mustard);
+}

@@ -149,8 +149,18 @@ public class CallUpService {
                     sorted(noLine)));
         }
         boolean published = callUp != null && callUp.publishedAt != null;
+        // Warnings from the selection, not from the responses (F-16, criterion 2)
+        List<WarningDto> warnings = new ArrayList<>();
+        if (WarningRules.applies(event.type, event.status, event.end, clock.now())) {
+            for (OverviewDto.TeamName team : ResponseService.teamNames(event)) {
+                Team entity = event.teams.stream().filter(t -> t.id.equals(team.id())).findFirst().orElseThrow();
+                List<TeamMembership> inTeam = players.stream().filter(m -> m.team.id.equals(team.id())).toList();
+                warnings.addAll(WarningRules.warnings(event.type, team, entity.minimums(),
+                        ResponseService.warningPlayers(inTeam, calledUp::contains)));
+            }
+        }
         return new CallUpDto(event.id, CallUpRules.status(published, count),
-                callUp == null ? null : EventReader.time(callUp.publishedAt), count, groups);
+                callUp == null ? null : EventReader.time(callUp.publishedAt), count, groups, warnings);
     }
 
     private static List<CallUpDto.Entry> sorted(List<CallUpDto.Entry> entries) {
