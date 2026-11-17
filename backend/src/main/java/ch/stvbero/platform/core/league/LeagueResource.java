@@ -61,8 +61,13 @@ public class LeagueResource {
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public LeagueDto refresh(@PathParam("teamId") UUID teamId) {
         // The failed attempt is stored (committed) before the 502 is returned.
-        if (!league.refresh(auth.person(), teamId)) {
-            throw new DomainError(502, "swiss unihockey nicht erreichbar", LeagueService.UNAVAILABLE, "SUH-09");
+        switch (league.refresh(auth.person(), teamId)) {
+            case FAILED_KEPT_DATA -> throw new DomainError(502, "swiss unihockey nicht erreichbar",
+                    LeagueService.UNAVAILABLE, "SUH-09");
+            case FAILED_NO_DATA -> throw new DomainError(502, "swiss unihockey nicht erreichbar",
+                    LeagueService.UNAVAILABLE_NEVER_LOADED, "SUH-09");
+            case LOADED -> {
+            }
         }
         return league.get(auth.person(), teamId);
     }

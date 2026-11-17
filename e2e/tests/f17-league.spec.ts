@@ -176,7 +176,9 @@ test.describe('swiss unihockey unavailable', () => {
 
     await simulator(request, { suTeamId: 900002, matches: [], unavailable: true });
     await page.getByRole('button', { name: 'Neu laden' }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveText(
+      'swiss unihockey ist im Moment nicht erreichbar. Bitte später nochmals versuchen.',
+    );
     await expect(page.getByTestId('league-stale')).toHaveText(
       'Der letzte Versuch am Mo 16.11.2026, 06:00 hat nicht geklappt: swiss unihockey war nicht erreichbar.',
     );

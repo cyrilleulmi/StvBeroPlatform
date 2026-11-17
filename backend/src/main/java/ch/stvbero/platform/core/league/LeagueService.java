@@ -41,8 +41,13 @@ public class LeagueService {
 
     private static final Logger LOG = Logger.getLogger(LeagueService.class);
 
+    /** Failed reload of a team with data loaded earlier: that data stays visible (SUH-09). */
     public static final String UNAVAILABLE = "swiss unihockey ist im Moment nicht erreichbar. Es werden weiterhin "
             + "die zuletzt geladenen Daten angezeigt.";
+
+    /** Failed reload of a team that has no loaded data yet: there is nothing to keep showing (SUH-09). */
+    public static final String UNAVAILABLE_NEVER_LOADED = "swiss unihockey ist im Moment nicht erreichbar. "
+            + "Bitte später nochmals versuchen.";
 
     private static final TypeReference<List<SuStanding>> STANDINGS = new TypeReference<>() {
     };
@@ -99,11 +104,26 @@ public class LeagueService {
                 LeagueRules.results(matches).stream().map(m -> match(m, ownName, events)).toList());
     }
 
-    /** Reload by hand (criterion 6): admins only. {@code false} if swiss unihockey was not reachable. */
+    /** Outcome of a reload by hand. */
+    public enum RefreshOutcome {
+        /** Loaded. */
+        LOADED,
+        /** swiss unihockey not reachable; the data loaded earlier stays. */
+        FAILED_KEPT_DATA,
+        /** swiss unihockey not reachable and no data was ever loaded for this season. */
+        FAILED_NO_DATA
+    }
+
+    /** Reload by hand (criterion 6): admins only. */
     @Transactional
-    public boolean refresh(CurrentUser user, UUID teamId) {
+    public RefreshOutcome refresh(CurrentUser user, UUID teamId) {
         user.checkAdmin();
-        return refresh(teamId);
+        if (refresh(teamId)) {
+            return RefreshOutcome.LOADED;
+        }
+        LeagueSnapshot snapshot = LeagueSnapshot.findById(teamId);
+        return snapshot != null && snapshot.loadedAt != null
+                ? RefreshOutcome.FAILED_KEPT_DATA : RefreshOutcome.FAILED_NO_DATA;
     }
 
     /**

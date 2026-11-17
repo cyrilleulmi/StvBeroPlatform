@@ -175,7 +175,9 @@ class LeagueTest {
                 .body("linked", equalTo(true)).body("loadedAt", nullValue()).body("table", hasSize(0));
 
         presetSimulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
-        refresh("alex", TEAM_2).statusCode(502);
+        // No data to keep showing: the message must not claim otherwise (test observation round 0)
+        refresh("alex", TEAM_2).statusCode(502).body("rule", equalTo("SUH-09"))
+                .body("detail", equalTo(LeagueService.UNAVAILABLE_NEVER_LOADED));
         league("marc", TEAM_2).statusCode(200)
                 .body("loadedAt", nullValue()).body("failedAt", equalTo("2026-11-16T06:00:00+01:00"));
     }
