@@ -45,6 +45,13 @@ The teams play in tournament format: on a match day several matches take place i
 | AUF-27 | If the coach changes a published call-up, the affected players are notified. | Assumption |
 | AUF-28 | Coaches respond to the match day, are listed in the coach block and are not part of the call-up. | Accepted |
 
+## Warnings in the call-up (F-16)
+
+| ID | Requirement | Status |
+|---|---|---|
+| AUF-30 | The call-up screen shows the same warnings as the overview ([ANM-40](04-responses.md#warnings-f-16)), based on the selected players instead of the responses, and updates them while selecting. The texts say «aufgeboten» instead of «angemeldet» («Kein Goalie aufgeboten»). | Accepted, Assumption (wording) |
+| AUF-31 | Publishing a call-up with warnings is allowed. The confirmation dialog repeats the warnings. | Accepted |
+
 ## Not part of the core
 
 - Different lines for a single match day: dropped (see [LIN-08](02-lines.md)).

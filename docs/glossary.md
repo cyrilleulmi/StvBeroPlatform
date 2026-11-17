@@ -22,6 +22,9 @@ If a term is missing, add it here in the same style before using it.
 | Gruppe (Linie oder Goalies) | group | |
 | Goalies | goalies | |
 | Ohne Linie | no line | display group for players without a group |
+| Feldspielerin | field player | player outside the goalies (F-16) |
+| Warnung | warning | types `GOALIES`, `FIELD_PLAYERS`, `LINE` (F-16) |
+| Mindestzahl (für Warnungen) | warning minimum | per team (F-16) |
 | Termin | event | types `PRACTICE`, `MATCH_DAY`, `OTHER` |
 | Training | practice | |
 | Spieltag | match day | |

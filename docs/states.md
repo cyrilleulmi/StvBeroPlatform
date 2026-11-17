@@ -166,6 +166,18 @@ stateDiagram-v2
 | A player sees only their own recorded value (`myAttendance`), only while the switch is on. The overview contains no attendance. | PRS-06 |
 | Switching the check off keeps the recorded attendance; the UI asks first if something is recorded (`attendanceRecorded`). | PRS-08 |
 
+## Warnings
+
+Warnings have no state of their own: they are computed on every request from responses (overview, event list) or the selection (call-up) and the minimums of the team (F-16, E-79).
+
+| Rule | Reference |
+|---|---|
+| Per team of the event, with its minimums (defaults 1 · 10 · 6 · 3, `0` = off): fewer goalies than the minimum (`GOALIES`), fewer field players than the minimum for the event type (`FIELD_PLAYERS`; all players outside the goalies, including «Ohne Linie»), a line with at least one but fewer players than the line minimum (`LINE`). Order: goalies, field players, lines by order. | ANM-40, ANM-46 |
+| Counted: «dabei» in the overview and the event list (`warningCount`), selected in the call-up. | ANM-40, AUF-30 |
+| Only practices and match days that are planned and not over (end after «now»). Cancelled, past and other events: no warnings (empty list, `warningCount: 0`). | ANM-42 |
+| Only coaches and admins get warnings and the minimums; for players the fields are missing. Changing the minimums: coaches and admins (`PUT /api/teams/{teamId}/warning-minimums`), otherwise 403; values outside 0–99: 400. | ANM-41, ANM-43 |
+| Publishing a call-up with warnings is allowed; the dialog repeats them. | AUF-31 |
+
 ## Statistics
 
 The statistics have no state of their own: they are computed on every request from responses and attendance (STA, F-15).

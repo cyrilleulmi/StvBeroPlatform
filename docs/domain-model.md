@@ -23,6 +23,8 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Call-up** | Selection of the players who play on a match day. Created and published by the coach. |
 | **Attendance check** | Optional for each event or series, off by default: after the start the coach records who was really there (PRS, E-70). |
 | **Attendance** | The fact recorded by the coach per player: present («anwesend»), absent («abwesend») or excused («entschuldigt»). Separate from the response, which is the intention. |
+| **Warning** | Computed note for coaches and admins when an upcoming practice or match day has a gap: too few goalies or field players attending (or called up), or a line with too few players (F-16). Not stored. |
+| **Warning minimums** | Setting of a team: below these numbers a warning appears (defaults 1 goalie, 10 field players for match days, 6 for practices, 3 per line). |
 | **Meeting point** | Time and place where the team meets before a match day. |
 | **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
 | **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
