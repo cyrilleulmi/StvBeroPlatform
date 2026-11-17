@@ -105,3 +105,11 @@ IDs: event 04 `40000000-0000-4000-8000-000000000004` (match day Team 1), event 0
 | A2 Concurrent last seat | `jana`, `kim` | `PUT …/cars/…002 {"seats":1}` as petra, then both `PUT …/cars/…002/passengers/<self>` at the same time | One 200, one 409 «Auto voll», car has exactly 1 passenger |
 | A3 Non-member as passenger | `marc` | `PUT …/cars/…002/passengers/<eva>` (Team 2 only) | 422 rule DRV-02 |
 | A4 After the end, member | `jana` | clock 22.11.2026 14:00, event 04 | No controls (no «mitfahren», «Ich fahre»); API 409 «Spieltag vorbei» |
+
+## Additions by the test agent (round 2)
+
+| Case | Person | Steps | Expected |
+|---|---|---|---|
+| A5 Seat options follow the passengers | `petra` | event 04 → «Plätze im Auto von Petra Keller» | Offers 3–8 (3 passengers); after 3 → 5 and «Anna Muster aussteigen lassen» it offers 2–8 and stays on 5 |
+| A6 Stale page, rejected seat change | `petra`, `marc` | Petra's car on 5 seats with 2 passengers; `marc` puts Jana, Kim, Nina into it via API; on Petra's stale page select 3 | Alert «Im Auto sitzen schon 5 Personen. Weniger Plätze gehen nicht.» (expected 422), select back on 5, options 5–8; after another change in the list it still shows the saved value |
+| A7 Own car without passengers | `sara` | `PUT …/cars/…002 {"seats":1}` | 200; the select offers 1–8 |
