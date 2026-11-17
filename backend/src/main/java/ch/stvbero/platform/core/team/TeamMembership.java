@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -47,19 +48,25 @@ public class TeamMembership extends PanacheEntityBase {
      * Line or goalies, only for the team role PLAYER (LIN-01, LIN-10). A set, so that "several lines per
      * player" can be added later without rework (LIN-04); today at most one (LIN-02).
      */
+    /** Day the person joined the team in this season; statistics count only events from this day on (STA-07). */
+    @Column(name = "joined_on")
+    public LocalDate joinedOn;
+
     @ManyToMany
     @JoinTable(name = "group_assignment",
             joinColumns = @JoinColumn(name = "team_membership_id"),
             inverseJoinColumns = @JoinColumn(name = "group_id"))
     public Set<Group> groups = new LinkedHashSet<>();
 
-    public static TeamMembership create(Person person, Team team, Season season, TeamRole teamRole) {
+    public static TeamMembership create(Person person, Team team, Season season, TeamRole teamRole,
+                                        LocalDate joinedOn) {
         TeamMembership membership = new TeamMembership();
         membership.id = UUID.randomUUID();
         membership.person = person;
         membership.team = team;
         membership.season = season;
         membership.teamRole = teamRole;
+        membership.joinedOn = joinedOn;
         return membership;
     }
 }

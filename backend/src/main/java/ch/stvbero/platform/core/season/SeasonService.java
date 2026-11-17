@@ -67,7 +67,8 @@ public class SeasonService {
         List<TeamMembership> memberships = TeamMembership.list("season.id", source.id);
         Map<TeamMembership, TeamMembership> copies = new LinkedHashMap<>();
         for (TeamMembership membership : memberships) {
-            TeamMembership copy = TeamMembership.create(membership.person, membership.team, target, membership.teamRole);
+            TeamMembership copy = TeamMembership.create(membership.person, membership.team, target, membership.teamRole,
+                    target.startDate);
             copy.persist();
             copies.put(membership, copy);
         }

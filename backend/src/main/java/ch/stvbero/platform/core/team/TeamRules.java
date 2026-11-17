@@ -3,6 +3,7 @@ package ch.stvbero.platform.core.team;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.person.PersonSummary;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -50,5 +51,13 @@ public final class TeamRules {
             case PLAYER -> "Spielerin";
             case COACH -> "Coach";
         };
+    }
+
+    /**
+     * Day a person added to a team joins it (STA-07): today, or the start of the season if it has not begun yet
+     * (adding to a planned season). Assumption: the day of adding is the day of joining.
+     */
+    public static LocalDate joinedOn(LocalDate today, LocalDate seasonStart) {
+        return today.isBefore(seasonStart) ? seasonStart : today;
     }
 }

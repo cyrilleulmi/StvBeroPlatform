@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: StvBeroPlatform API
   version: 0.1.0
-  summary: REST API of the core (persons, teams, lines, events, responses, match days, call-up, attendance check).
+  summary: REST API of the core (persons, teams, lines, events, responses, match days, call-up, attendance check, statistics).
   description: |
     Contract between frontend, backend and test agents. **Contract first:** changes to the API
     are made here first, then implemented. Conventions: [README.md](README.md).
@@ -39,6 +39,8 @@ tags:
     description: Matches and call-up (AUF)
   - name: Attendance
     description: Attendance check (PRS)
+  - name: Statistics
+    description: Attendance statistics (STA)
   - name: SwissUnihockey
     description: swiss unihockey integration (SUH)
   - name: Notifications
@@ -959,6 +961,81 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/RuleViolation' }
+
+  # ---------------------------------------------------------------- Statistics
+  /api/statistics:
+    get:
+      tags: [Statistics]
+      operationId: getTeamStatistics
+      summary: Statistics of a team per player, by line, with the team average (STA-01 to STA-05, coach)
+      description: |
+        Only coaches (of any team, E-69) and admins (otherwise 403, STA-01). Counts the past events of the team in
+        the period (start before «now» of the backend clock), without cancelled ones; a player only from the day
+        she joined the team (STA-07). Players by line as in the team page, empty groups are left out. The
+        attendance rate is based only on events with recorded attendance and the check switched on
+        (`attendanceEvents`, STA-04). Without `team`: the first team the person coaches, otherwise the first team
+        by name.
+      parameters:
+        - name: team
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          description: First day; default the start of the season. Determines the season (otherwise the current one)
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: Last day (included); default the end of the season. Must lie in the same season (otherwise 400)
+          schema: { type: string, format: date }
+        - name: type
+          in: query
+          description: Only events of this type; without it all types
+          schema: { $ref: '#/components/schemas/EventType' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamStatistics' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/statistics/persons/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/personId'
+    get:
+      tags: [Statistics]
+      operationId: getPersonStatistics
+      summary: Statistics of one player with her events (STA-06, STA-08)
+      description: |
+        The person herself, coaches (of any team, E-69) and admins; everyone else 403 (STA-08). Same counting as
+        the team statistics. `teams` are the teams in which the person is a player in the season; without `team`
+        the first of them. Without such a team, `team` and `statistics` are null. A team she does not play in: 404.
+        Events newest first, with response, late cancellation and, where recorded, attendance.
+      parameters:
+        - name: team
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: type
+          in: query
+          schema: { $ref: '#/components/schemas/EventType' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PersonStatistics' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
 
   # ---------------------------------------------------------------- swiss unihockey
   /api/teams/{teamId}/swiss-unihockey:
@@ -1906,6 +1983,144 @@ components:
             properties:
               personId: { type: string, format: uuid }
               status: { $ref: '#/components/schemas/AttendanceStatus' }
+
+    StatisticsTeam:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, description: 'Name in the season' }
+    StatisticsSeason:
+      type: object
+      required: [id, name, startDate, endDate]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: [2026/27] }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+    PlayerStatistics:
+      type: object
+      description: >-
+        Numbers of one player in one team (STA-03, STA-04). Rates in whole percent (half up), null without a base.
+      required: [person, joinedOn, events, attending, declined, maybe, pending, lateCancellations, attendanceEvents,
+                 present, absent, excused]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        joinedOn: { type: string, format: date, description: 'Day she joined the team; counts from here on (STA-07)' }
+        events: { type: integer, description: 'Events that count for her' }
+        attending: { type: integer, description: '«dabei»' }
+        declined: { type: integer, description: '«nicht dabei»' }
+        maybe: { type: integer, description: '«vielleicht»' }
+        pending: { type: integer, description: '«offen»' }
+        attendingRate: { type: [integer, 'null'], description: 'Share of «dabei» of `events`' }
+        lateCancellations: { type: integer, description: 'Late cancellations (ANM-10)' }
+        attendanceEvents: { type: integer, description: 'Events with recorded attendance for her, the base of `attendanceRate`' }
+        present: { type: integer, description: '«anwesend»' }
+        absent: { type: integer, description: '«abwesend»' }
+        excused: { type: integer, description: '«entschuldigt»' }
+        attendanceRate: { type: [integer, 'null'], description: 'Share of «anwesend» of `attendanceEvents`' }
+    StatisticsAverage:
+      type: object
+      description: Team average (STA-05) per player; counts with one decimal, rates as mean of the players that have one
+      required: [events, attending, declined, maybe, pending, lateCancellations, present, absent, excused]
+      properties:
+        events: { type: number }
+        attending: { type: number }
+        declined: { type: number }
+        maybe: { type: number }
+        pending: { type: number }
+        attendingRate: { type: [integer, 'null'] }
+        lateCancellations: { type: number }
+        present: { type: number }
+        absent: { type: number }
+        excused: { type: number }
+        attendanceRate: { type: [integer, 'null'] }
+    TeamStatistics:
+      type: object
+      required: [teams, season, from, to, events, attendanceEvents, groups]
+      properties:
+        team:
+          oneOf:
+            - $ref: '#/components/schemas/StatisticsTeam'
+            - type: 'null'
+          description: Chosen team; null if the season has no team
+        teams:
+          type: array
+          description: All teams of the season by name, for the choice
+          items: { $ref: '#/components/schemas/StatisticsTeam' }
+        season: { $ref: '#/components/schemas/StatisticsSeason' }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        type:
+          oneOf:
+            - $ref: '#/components/schemas/EventType'
+            - type: 'null'
+          description: Chosen event type; null = all
+        events: { type: integer, description: 'Events of the team that count in the period' }
+        attendanceEvents: { type: integer, description: 'Of them, events with recorded attendance (STA-04)' }
+        groups:
+          type: array
+          description: Lines by order, then goalies, then «Ohne Linie»; empty groups are left out (STA-05)
+          items:
+            type: object
+            required: [type, name, players]
+            properties:
+              groupId: { type: [string, 'null'], format: uuid }
+              type:
+                type: string
+                enum: [LINE, GOALIES, NO_LINE]
+              name: { type: string }
+              players:
+                type: array
+                description: By last name, then first name
+                items: { $ref: '#/components/schemas/PlayerStatistics' }
+        average:
+          oneOf:
+            - $ref: '#/components/schemas/StatisticsAverage'
+            - type: 'null'
+          description: Null without players
+    PersonStatistics:
+      type: object
+      required: [person, teams, season, from, to, events]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        team:
+          oneOf:
+            - $ref: '#/components/schemas/StatisticsTeam'
+            - type: 'null'
+        teams:
+          type: array
+          description: Teams in which the person is a player in the season, by name
+          items: { $ref: '#/components/schemas/StatisticsTeam' }
+        season: { $ref: '#/components/schemas/StatisticsSeason' }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        type:
+          oneOf:
+            - $ref: '#/components/schemas/EventType'
+            - type: 'null'
+        statistics:
+          oneOf:
+            - $ref: '#/components/schemas/PlayerStatistics'
+            - type: 'null'
+        events:
+          type: array
+          description: Events that count for her, newest first (STA-06)
+          items:
+            type: object
+            required: [id, type, title, start, response, lateCancellation]
+            properties:
+              id: { type: string, format: uuid }
+              type: { $ref: '#/components/schemas/EventType' }
+              title: { type: string }
+              start: { type: string, format: date-time }
+              response: { $ref: '#/components/schemas/ResponseStatus' }
+              lateCancellation: { type: boolean }
+              attendance:
+                oneOf:
+                  - $ref: '#/components/schemas/AttendanceStatus'
+                  - type: 'null'
+                description: Only where attendance is recorded for her
 
     SyncResult:
       type: object

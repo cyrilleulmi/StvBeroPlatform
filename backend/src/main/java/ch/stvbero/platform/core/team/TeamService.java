@@ -1,6 +1,7 @@
 package ch.stvbero.platform.core.team;
 
 import ch.stvbero.platform.core.auth.CurrentUser;
+import ch.stvbero.platform.core.clock.BackendClock;
 import ch.stvbero.platform.core.error.Unique;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.line.LineService;
@@ -9,8 +10,10 @@ import ch.stvbero.platform.core.person.PersonSummary;
 import ch.stvbero.platform.core.person.PersonService;
 import ch.stvbero.platform.core.season.Season;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,9 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class TeamService {
+
+    @Inject
+    BackendClock clock;
 
     private static final Comparator<TeamDto> BY_NAME = Comparator
             .comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id);
@@ -105,7 +111,9 @@ public class TeamService {
         TeamRules.checkCanAdd(members(inTeam(team, season)), person.id);
         // If the team is new in the season, it takes the name from the latest season it existed in.
         team.addToSeason(season, latestName(team));
-        TeamMembership membership = TeamMembership.create(person, team, season, input.teamRole());
+        LocalDate today = LocalDate.ofInstant(clock.now(), BackendClock.ZONE);
+        TeamMembership membership = TeamMembership.create(person, team, season, input.teamRole(),
+                TeamRules.joinedOn(today, season.startDate));
         membership.persist();
         // The same person added twice at the same time (double click): 409 instead of 500 (PTF-04).
         Unique.save(Team.getEntityManager(), "team_membership_one_role",
