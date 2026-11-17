@@ -23,6 +23,7 @@ The cloud browser has no reachable push service. Where a real subscription is ne
 4. A person without e-mail address (set by the administration): switch «E-Mail» disabled, hint «Für E-Mails braucht es eine E-Mail-Adresse. …».
 5. Roles/API: without login `GET /api/me/notification-settings` → 401; `PUT` with invalid body → 400.
 6. Robustness: double click on the e-mail switch → state consistent with the server after reload.
+7. Concurrency (round 1): as `mia` (no stored choice) send `PUT /api/me/notification-settings` 6 times in parallel with alternating values → all 200.
 
 ## 3. Switching on push (criterion 3, BEN-16, RR-07)
 
@@ -32,6 +33,8 @@ The cloud browser has no reachable push service. Where a real subscription is ne
 4. Several devices: register a second endpoint for `lea` via API → both listed.
 5. iPhone user agent (Safari, not standalone): `push-iphone-hint` with the three steps; push switch disabled.
 6. Roles: as `anna` `DELETE /api/me/push-subscriptions/<Lea's device>` → 403, also as admin `petra`; without login 401. `POST` with non-https endpoint → 400.
+7. Concurrency (round 1, states.md «never 500»): as `anna` send the same new `POST /api/me/push-subscriptions` body 8 times in parallel → all 201, one device. As `anna` and `lea` register the same endpoint in parallel → all 201, the device belongs to exactly one person.
+8. Concurrent removal: as `lea` send `DELETE /api/me/push-subscriptions/a0000000-0000-4000-8000-000000000001` twice in parallel (two tabs or two devices) → 204 and 204 or 404, never 500. A sequential second `DELETE` → 404 «Dieses Gerät gibt es nicht.».
 
 ## 4. Service worker and tap (criterion 4, BEN-17)
 
