@@ -64,7 +64,7 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`, Team 3 `…
 
 | Case | Steps | Expected |
 |---|---|---|
-| K7.1 | As `petra` in Team 2 (where she is a player): `/teams/<T2>/linien` editable, respond for Eva on event 01, assign Zoe to Linie 1, call-up event 05, «Resultat für …» on event 05 | All allowed (200/204) |
+| K7.1 | As `petra` in Team 2 (where she is a player): `/teams/<T2>/linien` editable, respond for Eva on event 01, assign Zoe to Linie 1, call-up event 05, «Resultat erfassen: …» on event 05 | All allowed (200/204) |
 
 ## K8 · Notifications only to the team's coaches
 
