@@ -29,6 +29,8 @@ export const TEXTS = {
     noTiles: 'Für dich gibt es noch keine Kacheln.',
     nextEvent: 'Nächster Termin',
     noEvent: 'Keine kommenden Termine',
+    morePractices: 'Weitere Trainings',
+    allEvents: 'Alle Termine',
     toEvent: (title: string) => `${title} öffnen`,
   },
   response: {
