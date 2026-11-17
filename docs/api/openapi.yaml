@@ -1313,7 +1313,9 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 60 }
         lastName: { type: string, minLength: 1, maxLength: 60 }
         email: { type: [string, 'null'], format: email }
-        admin: { type: boolean, default: false }
+        admin:
+          type: boolean
+          description: Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69).
     PersonDetail:
       allOf:
         - $ref: '#/components/schemas/Person'

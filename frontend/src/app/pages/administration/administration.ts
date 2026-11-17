@@ -1,21 +1,24 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Administration (admins only, RR-04/RR-05): entry point to people, teams and seasons. */
+/**
+ * Administration (admins and coaches, RR-03/RR-05, E-69): entry point to people, teams and, for admins only,
+ * seasons (RR-04).
+ */
 @Component({
   selector: 'app-administration',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
     <h1>{{ texts.administration.title }}</h1>
-    @if (auth.isAdmin()) {
+    @if (auth.canManage()) {
       <section class="card" aria-labelledby="administration-areas">
         <h2 id="administration-areas" class="visually-hidden">{{ texts.administration.areas }}</h2>
         <ul class="list" [attr.aria-label]="texts.administration.areas">
-          @for (b of areas; track b.route) {
+          @for (b of areas(); track b.route) {
             <li>
               <a class="row-link" [routerLink]="b.route">
                 <span class="icon-field"><app-icon [name]="b.icon" [size]="20" /></span>
@@ -55,7 +58,7 @@ import { TEXTS } from '../../core/texts';
 export class Administration {
   protected readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
-  protected readonly areas = [
+  private readonly allAreas = [
     {
       route: '/verwaltung/personen',
       title: TEXTS.administration.people,
@@ -73,6 +76,11 @@ export class Administration {
       title: TEXTS.administration.seasons,
       text: TEXTS.administration.seasonsText,
       icon: 'calendar',
+      adminOnly: true,
     },
   ];
+  /** Seasons only for admins (RR-04). */
+  protected readonly areas = computed(() =>
+    this.allAreas.filter((a) => !a.adminOnly || this.auth.isAdmin()),
+  );
 }

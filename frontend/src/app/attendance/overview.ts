@@ -31,8 +31,8 @@ interface Target {
 
 /**
  * Overview of an event (ANM-20 to ANM-32): total counter, per team counters and groups (lines, goalies,
- * «Ohne Linie»), coach block. Coaches respond on behalf of players of their team (ANM-11, RR-06),
- * admins for everyone (RR-04). The API only delivers comments to those permitted (ANM-07).
+ * «Ohne Linie»), coach block. Coaches (of any team) and admins respond on behalf of everyone (ANM-11,
+ * RR-03, E-69). The API only delivers comments to those permitted (ANM-07).
  */
 @Component({
   selector: 'app-overview',
@@ -253,7 +253,8 @@ export class OverviewSection {
   readonly data = input.required<OverviewData>();
   /** Teams in which the logged-in person is coach (RR-06). */
   readonly coachIn = input<string[]>([]);
-  readonly admin = input(false);
+  /** Admin or coach of any team: responds on behalf of everyone (RR-03, E-69). */
+  readonly allTeams = input(false);
   readonly meId = input<string | null>(null);
   /** Responding possible (event planned and not past). */
   readonly responsesOpen = input(true);
@@ -279,18 +280,18 @@ export class OverviewSection {
     return a.status;
   }
 
-  /** Coaches for players of their team, admins for everyone; not for themselves (ANM-11, RR-06). */
+  /** Coaches and admins for everyone; not for themselves (ANM-11, RR-03, E-69). */
   protected canRespondForPlayer(teamId: string, personId: string): boolean {
     return (
       this.responsesOpen() &&
       personId !== this.meId() &&
-      (this.admin() || this.coachTeams().has(teamId))
+      (this.allTeams() || this.coachTeams().has(teamId))
     );
   }
 
-  /** Only an admin enters responses of other coaches. */
+  /** Coaches and admins also enter responses of other coaches (E-69). */
   protected canRespondForCoach(personId: string): boolean {
-    return this.responsesOpen() && this.admin() && personId !== this.meId();
+    return this.responsesOpen() && this.allTeams() && personId !== this.meId();
   }
 
   protected open(z: Target): void {

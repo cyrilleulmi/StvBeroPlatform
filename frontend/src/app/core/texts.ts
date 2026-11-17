@@ -410,6 +410,7 @@ export const TEXTS = {
     remove: (name: string) => `${name} entfernen`,
     removed: (name: string) => `${name} ist nicht mehr im Team.`,
     allTeams: 'Alle Teams',
+    viewTeam: 'Team ansehen',
     personRequired: 'Bitte eine Person wählen.',
     nameRequired: 'Bitte einen Namen eingeben.',
   },

@@ -161,7 +161,7 @@ export class EventForm {
   protected readonly values = signal<FormValues>({ ...EMPTY });
   protected readonly event = signal<EventDetail | null>(null);
   protected readonly series = signal<Series | null>(null);
-  /** Teams to choose from: own teams, for admins all of the current season. */
+  /** Teams to choose from: for coaches and admins all of the current season (E-69). */
   protected readonly teams = signal<Team[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -181,10 +181,7 @@ export class EventForm {
   private readonly reasonField = viewChild<ElementRef<HTMLInputElement>>('reasonField');
 
   /** Who may create and edit: coaches (in any team) and admins (TER-11). */
-  protected readonly canCreate = computed(() => {
-    const me = this.auth.me();
-    return !!me && (me.admin || me.memberships.some((z) => z.teamRole === 'COACH'));
-  });
+  protected readonly canCreate = computed(() => this.auth.canManage());
 
   /** Whether the form is shown. Otherwise a notice is shown there (`notice()`). */
   protected readonly editable = computed(() => {
@@ -202,7 +199,7 @@ export class EventForm {
     if (this.loading() || this.error()) return null;
     if (this.mode() === 'event' && this.event() && !this.event()!.canEdit) {
       const t = this.event()!;
-      const coach = t.teams.some((x) => x.myTeamRole === 'COACH') || this.auth.isAdmin();
+      const coach = t.teams.some((x) => x.myTeamRole === 'COACH') || this.auth.canManage();
       return coach ? TEXTS.eventForm.notEditable : TEXTS.common.noPermission;
     }
     return this.editable() ? null : TEXTS.common.noPermission;
@@ -665,7 +662,9 @@ export class EventForm {
   private async loadTeams(): Promise<void> {
     const me = this.auth.me();
     const own = (me?.memberships ?? []).map((z) => z.team);
-    const teams = me?.admin ? await firstValueFrom(this.http.get<Team[]>('/api/teams')) : own;
+    const teams = this.auth.canManage()
+      ? await firstValueFrom(this.http.get<Team[]>('/api/teams'))
+      : own;
     this.teams.set([...teams].sort((a, b) => a.name.localeCompare(b.name, 'de-CH')));
   }
 
@@ -680,14 +679,8 @@ export class EventForm {
     }
   }
 
-  /** Series: admins and coaches of a team of the series may edit (TER-11, RR-06). */
+  /** Series: admins and coaches (of any team, E-69) may edit (TER-11, RR-03). */
   private canEditSeries(): boolean {
-    const s = this.series();
-    const me = this.auth.me();
-    if (!s || !me) return false;
-    return (
-      me.admin ||
-      me.memberships.some((z) => z.teamRole === 'COACH' && s.teamIds.includes(z.team.id))
-    );
+    return !!this.series() && this.auth.canManage();
   }
 }

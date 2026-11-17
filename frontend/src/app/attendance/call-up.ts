@@ -288,7 +288,7 @@ export class CallUpPage {
         return;
       }
       const coach = event.teams.some((t) => t.myTeamRole === 'COACH');
-      if (!coach && !this.auth.isAdmin()) {
+      if (!coach && !this.auth.canManage()) {
         this.error.set(TEXTS.common.noPermission);
         return;
       }

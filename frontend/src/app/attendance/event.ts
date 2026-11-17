@@ -151,7 +151,7 @@ import { yearOf, eventDate, clockTime } from './time';
             [eventId]="t.id"
             [data]="u"
             [coachIn]="coachIn()"
-            [admin]="auth.me()?.admin ?? false"
+            [allTeams]="auth.canManage()"
             [meId]="auth.me()?.id ?? null"
             [responsesOpen]="!lock()"
             (changed)="reload()"
@@ -195,9 +195,9 @@ export class EventPage {
     (this.event()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
   );
 
-  /** Coach of an involved team or admin: call-up and results (RR-03). */
+  /** Coach (of any team, E-69) or admin: call-up and results (RR-03). */
   protected readonly coachOrAdmin = computed(
-    () => this.coachIn().length > 0 || (this.auth.me()?.admin ?? false),
+    () => this.coachIn().length > 0 || this.auth.canManage(),
   );
 
   /** Explanation why responding is no longer possible (TER-06), otherwise `null`. */

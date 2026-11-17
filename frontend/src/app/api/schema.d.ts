@@ -131,11 +131,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Teams of a season. Without admin permission only the person's own teams. */
+        /** Teams of a season. Admins and coaches get all teams, players only their own. */
         get: operations["listTeams"];
         put?: never;
         /**
-         * Create a team (admin)
+         * Create a team (admin, coach)
          * @description The team belongs to the given season from now on. Archived seasons are read-only (409, SAI-02).
          */
         post: operations["createTeam"];
@@ -157,7 +157,7 @@ export interface paths {
         /** Team with coaches and players by group */
         get: operations["getTeam"];
         /**
-         * Rename a team (admin)
+         * Rename a team (admin, coach)
          * @description The name applies per season. Only the given season is renamed (default: current); older
          *     seasons keep the name they had. Archived seasons are read-only (409, SAI-02).
          */
@@ -181,7 +181,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add a person with a team role to the team (PTF-03, PTF-04, admin)
+         * Add a person with a team role to the team (PTF-03, PTF-04, admin, coach)
          * @description A person has exactly one team role per team and season. If the person is already a member, the
          *     API responds with 409 (rule PTF-04). Archived seasons are read-only (409, SAI-02).
          */
@@ -204,14 +204,14 @@ export interface paths {
         };
         get?: never;
         /**
-         * Change the team role (admin)
+         * Change the team role (admin, coach)
          * @description If a player becomes a coach, she loses her line assignment in this team.
          *     Archived seasons are read-only (409, SAI-02).
          */
         put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Remove a person from the team (admin). Existing responses are kept.
+         * Remove a person from the team (admin only, RR-08). Existing responses are kept.
          * @description Archived seasons are read-only (409, SAI-02).
          */
         delete: operations["removeMember"];
@@ -231,7 +231,7 @@ export interface paths {
         };
         /**
          * Lines and goalies of a team with their players, plus «Ohne Linie» (no line)
-         * @description Current season. For members of the team (any team role) and admins, otherwise 403.
+         * @description Current season. For members of the team (any team role), coaches and admins, otherwise 403.
          */
         get: operations["getLineup"];
         put?: never;
@@ -265,7 +265,7 @@ export interface paths {
          */
         put: operations["updateLine"];
         post?: never;
-        /** Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409). */
+        /** Delete a line (admin only, RR-08). Its players then have no line. Goalies cannot be deleted (409). */
         delete: operations["deleteLine"];
         options?: never;
         head?: never;
@@ -303,10 +303,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** All persons (admin) */
+        /** All persons (admin, coach) */
         get: operations["listPersons"];
         put?: never;
-        /** Create a person (admin) */
+        /**
+         * Create a person (admin, coach)
+         * @description Only admins may set `admin` to true; a coach doing so gets 403 (RR-04, E-69).
+         */
         post: operations["createPerson"];
         delete?: never;
         options?: never;
@@ -323,11 +326,12 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Person with all team memberships (admin) */
+        /** Person with all team memberships (admin, coach) */
         get: operations["getPerson"];
         /**
-         * Update a person (admin)
+         * Update a person (admin, coach)
          * @description The admin permission cannot be taken away from the last person who has it (409, RR-04).
+         *     Only admins change `admin`. For a coach a missing `admin` keeps the flag, a different value gives 403 (E-69).
          */
         put: operations["updatePerson"];
         post?: never;
@@ -344,12 +348,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Events of the person's own teams with the person's own response (TER-13) */
+        /**
+         * Events of the person's own teams with the person's own response (TER-13)
+         * @description Without `team`, the events of the person's own teams. With `team`, admins and coaches get the
+         *     events of that team even if they are not a member (RR-03, E-69); everyone else only if it is one
+         *     of their teams.
+         */
         get: operations["listEvents"];
         put?: never;
         /**
          * Create a single event, match day or other event (TER-11, AUF-16, coach)
-         * @description The person must be an admin or a coach in at least one of the given teams (TER-01, RR-06), otherwise 403.
+         * @description The person must be an admin or a coach (in any team, RR-03, E-69), otherwise 403.
          *     A match day has exactly one team (AUF-03). An event in the past gives 400, one in an archived
          *     season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
          */
@@ -536,8 +545,8 @@ export interface paths {
         get?: never;
         /**
          * Respond on behalf of a person (ANM-11, ANM-12, RR-06)
-         * @description Only coaches of a team in which the person is a player for the event, and admins (for every member
-         *     of a team involved). Otherwise 403. If the person belongs to no team involved, 404. The same rules
+         * @description Only coaches (of any team, RR-03, E-69) and admins, for every member of a team involved.
+         *     Otherwise 403. If the person belongs to no team involved, 404. The same rules
          *     apply as for the person's own response; `enteredBy` is the requesting person (ANM-12).
          */
         put: operations["setResponseOnBehalf"];
@@ -611,7 +620,7 @@ export interface paths {
         };
         /**
          * Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)
-         * @description Only coaches of the team and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
+         * @description Only coaches (of any team, E-69) and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
          *     the selection (AUF-28). Groups as in the overview; empty groups are left out.
          */
         get: operations["getCallUp"];
@@ -943,13 +952,15 @@ export interface components {
             lastName: string;
             /** Format: email */
             email?: string | null;
-            /** @default false */
-            admin: boolean;
+            /** @description Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69). */
+            admin?: boolean;
         };
         PersonDetail: components["schemas"]["Person"] & {
             memberships: components["schemas"]["TeamMembership"][];
         };
         Me: components["schemas"]["Person"] & {
+            /** @description Coach of at least one team in the current season. Coaches manage all teams like admins, but do not delete (RR-03, RR-08, E-69). */
+            coach: boolean;
             season: components["schemas"]["Season"];
             memberships: components["schemas"]["TeamMembership"][];
             /**

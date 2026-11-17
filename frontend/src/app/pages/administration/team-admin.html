@@ -11,7 +11,7 @@
   }
 </div>
 
-@if (!auth.isAdmin()) {
+@if (!auth.canManage()) {
   <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
   @if (readOnly()) {
@@ -29,6 +29,11 @@
   @if (loading()) {
     <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
   } @else if (team(); as t) {
+    @if (!readOnly()) {
+      <a class="button button-secondary team-link" [routerLink]="['/teams', t.id]">{{
+        texts.teamAdmin.viewTeam
+      }}</a>
+    }
     @if (!readOnly()) {
       <form
         class="card form"
@@ -63,7 +68,8 @@
       </form>
     }
 
-    @if (!readOnly()) {
+    <!-- swiss unihockey: admins only (RR-04, E-69) -->
+    @if (!readOnly() && auth.isAdmin()) {
       <section class="card form" aria-labelledby="su-title" data-testid="swiss-unihockey">
         <h2 id="su-title">{{ texts.swissUnihockey.title }}</h2>
         <p class="secondary-text">{{ texts.swissUnihockey.explanation }}</p>
@@ -179,17 +185,20 @@
                       <option [value]="f" [selected]="f === m.teamRole">{{ teamRole(f) }}</option>
                     }
                   </select>
-                  <button
-                    type="button"
-                    class="button button-secondary button-small"
-                    [disabled]="saving()"
-                    [attr.aria-busy]="
-                      runningAction() === 'remove:' + m.person.id ? 'true' : null
-                    "
-                    (click)="remove(m)"
-                  >
-                    {{ texts.teamAdmin.remove(name(m.person)) }}
-                  </button>
+                  <!-- Removing from a team is deleting: admins only (RR-08) -->
+                  @if (auth.isAdmin()) {
+                    <button
+                      type="button"
+                      class="button button-secondary button-small"
+                      [disabled]="saving()"
+                      [attr.aria-busy]="
+                        runningAction() === 'remove:' + m.person.id ? 'true' : null
+                      "
+                      (click)="remove(m)"
+                    >
+                      {{ texts.teamAdmin.remove(name(m.person)) }}
+                    </button>
+                  }
                 }
               </li>
             }

@@ -100,17 +100,20 @@
           >
             {{ texts.lines.renameShort }}
           </button>
-          <button
-            type="button"
-            class="button button-secondary button-small delete"
-            [id]="'delete-' + g.id"
-            [attr.aria-label]="texts.lines.delete(g.name)"
-            [disabled]="saving()"
-            [attr.aria-busy]="runningAction() === 'delete:' + g.id ? 'true' : null"
-            (click)="askDelete(g)"
-          >
-            {{ texts.lines.deleteShort }}
-          </button>
+          <!-- Deleting a line: admins only (RR-08) -->
+          @if (auth.isAdmin()) {
+            <button
+              type="button"
+              class="button button-secondary button-small delete"
+              [id]="'delete-' + g.id"
+              [attr.aria-label]="texts.lines.delete(g.name)"
+              [disabled]="saving()"
+              [attr.aria-busy]="runningAction() === 'delete:' + g.id ? 'true' : null"
+              (click)="askDelete(g)"
+            >
+              {{ texts.lines.deleteShort }}
+            </button>
+          }
         </div>
       }
     </div>

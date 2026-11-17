@@ -22,6 +22,12 @@ export class AuthService {
 
   readonly me = signal<Me | null>(null);
   readonly isAdmin = computed(() => this.me()?.admin === true);
+  /**
+   * Admins and coaches (coach of at least one team in the current season) manage every team: people,
+   * team memberships, lines, events, responses on behalf, call-ups (RR-03, E-69). Deleting, seasons,
+   * swiss unihockey and the admin flag stay with the admins (RR-04, RR-08): use `isAdmin` for those.
+   */
+  readonly canManage = computed(() => this.me()?.admin === true || this.me()?.coach === true);
 
   /**
    * Loads the logged-in person. Returns `null` when nobody is logged in, and throws

@@ -30,7 +30,7 @@ type Field = 'firstName' | 'lastName' | 'email';
       <a class="back" routerLink="/verwaltung/personen">{{ texts.people.all }}</a>
       <h1>{{ personId() ? texts.people.edit : texts.people.create }}</h1>
     </div>
-    @if (!auth.isAdmin()) {
+    @if (!auth.canManage()) {
       <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       @if (success(); as message) {
@@ -78,10 +78,13 @@ type Field = 'firstName' | 'lastName' | 'email';
               <p class="field-error" id="person-email-error">{{ m }}</p>
             }
           </div>
-          <label class="checkbox">
-            <input type="checkbox" formControlName="admin" />
-            <span>{{ texts.people.adminPermission }}</span>
-          </label>
+          <!-- Only admins grant or remove the admin flag (RR-04, E-69) -->
+          @if (auth.isAdmin()) {
+            <label class="checkbox">
+              <input type="checkbox" formControlName="admin" />
+              <span>{{ texts.people.adminPermission }}</span>
+            </label>
+          }
           <button
             type="submit"
             class="button button-primary"
@@ -164,7 +167,7 @@ export class PersonForm {
   constructor() {
     effect(() => {
       const id = this.personId();
-      if (this.auth.isAdmin()) {
+      if (this.auth.canManage()) {
         untracked(() => void this.load(id));
       }
     });
@@ -229,7 +232,8 @@ export class PersonForm {
       firstName: f.firstName.trim(),
       lastName: f.lastName.trim(),
       email: f.email.trim() || null,
-      admin: f.admin,
+      // Coaches do not send the flag: the backend keeps it as it is (RR-04, E-69).
+      ...(this.auth.isAdmin() ? { admin: f.admin } : {}),
     };
     this.saving.set(true);
     try {

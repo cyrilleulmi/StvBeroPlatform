@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { EventSummary } from '../api/types';
+import type { EventSummary, Team } from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
@@ -195,12 +195,18 @@ export class Events {
   protected readonly past = computed(() => this.view() === 'vergangen');
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
-  /** Own teams of the current season, by name. */
-  protected readonly myTeams = computed(() =>
-    (this.auth.me()?.memberships ?? [])
-      .map((z) => z.team)
-      .sort((a, b) => a.name.localeCompare(b.name, 'de-CH')),
-  );
+  /** All teams of the current season, only loaded for coaches and admins (RR-03, E-69). */
+  private readonly allTeams = signal<{ id: string; name: string }[]>([]);
+
+  /**
+   * Teams to filter by, by name: the own teams of the current season. Coaches and admins choose from
+   * all teams, and then see that team's events even without being a member (E-69).
+   */
+  protected readonly myTeams = computed(() => {
+    const own = (this.auth.me()?.memberships ?? []).map((z) => z.team);
+    const all = this.allTeams();
+    return (all.length > 0 ? [...all] : own).sort((a, b) => a.name.localeCompare(b.name, 'de-CH'));
+  });
 
   /**
    * Select «Team»: the own teams. If `?team=` points to another team (e.g. a shared link), it appears
@@ -218,10 +224,7 @@ export class Events {
   });
 
   /** Create events: coaches (in any team) and admins (TER-11, RR-05). */
-  protected readonly canCreate = computed(() => {
-    const me = this.auth.me();
-    return !!me && (me.admin || me.memberships.some((z) => z.teamRole === 'COACH'));
-  });
+  protected readonly canCreate = computed(() => this.auth.canManage());
 
   /** Events grouped by month, in the order of the API. */
   protected readonly months = computed<Month[]>(() => {
@@ -244,6 +247,18 @@ export class Events {
       const view = this.view();
       untracked(() => void this.load(team, view));
     });
+    if (this.auth.canManage()) {
+      void this.loadAllTeams();
+    }
+  }
+
+  private async loadAllTeams(): Promise<void> {
+    try {
+      const teams = await firstValueFrom(this.http.get<Team[]>('/api/teams'));
+      this.allTeams.set(teams.map((t) => ({ id: t.id, name: t.name })));
+    } catch {
+      // Without the list the select shows the own teams; the event list itself is not affected.
+    }
   }
 
   protected date(iso: string): string {
