@@ -201,6 +201,24 @@ The league data of a linked team is a cache (`league_snapshot`), filled by the d
 | «Kommende Spiele»: matches without a result that have not ended (start + 75 minutes after «now»), the next five. «Letzte Resultate»: the last five with a result. A match links to the match day of the team in the app that contains it (same SU match ID). | F-17 |
 | Reading: members of the team in the current season, coaches and admins (403 otherwise). Reloading: admins (403); a team without link or outside the current season: 409. | F-17, RR-07 |
 
+## Calendar subscription (F-18)
+
+A person has no address until her first visit of «Profil» (`GET /api/me/calendar` creates it), then exactly one. «Adresse erneuern» replaces the token; there is no state «switched off».
+
+```mermaid
+stateDiagram-v2
+    [*] --> None
+    None --> Active: first visit of «Profil»
+    Active --> Active: «Adresse erneuern» (new token, old address 404)
+```
+
+| Rule | Reference |
+|---|---|
+| `GET /api/me/calendar` returns the same address on every call until it is renewed; two first calls at the same time create one address. Without login 401. | CAL-01 |
+| The feed is public and needs only the token; a wrong, malformed or renewed token gives 404. The token is no session: as `stv_session` it gives 401. | CAL-06, CAL-07 |
+| The feed is built anew on every call from the current data and the backend clock: events of the own teams (member in the season of the event) that ended after «now» minus 30 days, chronologically, cancelled ones with `STATUS:CANCELLED`. A changed or moved event keeps its `UID`. | CAL-02, CAL-04 |
+| The feed shows only the own response and the own comment, never those of others. | CAL-08 |
+
 ## Match of a match day
 
 | Rule | Reference |
