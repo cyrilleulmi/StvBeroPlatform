@@ -100,7 +100,7 @@ Without permission a screen shows the text «Keine Berechtigung» (`role="alert"
 | Delete line | Lines, «<Linie> löschen» (admins only) | «<Linie> löschen?» |
 | Publish call-up | Call-up, «Veröffentlichen» (buttons «Veröffentlichen», «Abbrechen»; with warnings also the section «Achtung:» with the list, F-16) | «Aufgebot veröffentlichen?» |
 | Switch off attendance check | Edit event, untick «Präsenz erfassen» while attendance is recorded, «Änderungen speichern» (buttons «Ausschalten und speichern», «Abbrechen») | «Präsenz ausschalten?» |
-| Enter result | Event (match day), button «Resultat für <Heim> – <Gast> erfassen» (coach, admin) | «Resultat: <Heim> – <Gast>» (field «Resultat (Heim:Gast, z.B. 5:3)», empty removes it, button «Resultat speichern») |
+| Enter result | Event (match day), button «Resultat erfassen» (accessible name «Resultat erfassen: <Heim> – <Gast>») (coach, admin) | «Resultat: <Heim> – <Gast>» (field «Resultat (Heim:Gast, z.B. 5:3)», empty removes it, button «Resultat speichern») |
 
 ## Test IDs
 

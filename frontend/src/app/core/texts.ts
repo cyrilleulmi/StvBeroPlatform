@@ -159,7 +159,7 @@ export const TEXTS = {
     result: (r: string) => `Resultat ${r}`,
     missingAtSu: 'swiss unihockey liefert dieses Spiel nicht mehr.',
     enterResult: 'Resultat erfassen',
-    enterResultFor: (pairing: string) => `Resultat für ${pairing} erfassen`,
+    enterResultFor: (pairing: string) => `Resultat erfassen: ${pairing}`,
     resultTitle: (pairing: string) => `Resultat: ${pairing}`,
     resultText:
       'Zuerst die Tore des Heimteams, dann die des Gastteams. Leer lassen, um es zu entfernen.',
