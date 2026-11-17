@@ -71,12 +71,9 @@ import { TEXTS } from '../core/texts';
   styles: `
     .filter {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px 16px;
       align-items: end;
-    }
-    .filter .wide {
-      grid-column: 1 / -1;
     }
     .filter .button {
       justify-self: start;
@@ -86,12 +83,14 @@ import { TEXTS } from '../core/texts';
       min-width: 0;
       width: 100%;
     }
+    @media (min-width: 640px) {
+      .filter {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
     @media (min-width: 1024px) {
       .filter {
         grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-      }
-      .filter .wide {
-        grid-column: auto;
       }
     }
   `,

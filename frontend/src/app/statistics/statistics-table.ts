@@ -73,7 +73,7 @@ import { COLUMNS, averageValue, playerValue } from './statistics-common';
     }
     th,
     td {
-      padding: 10px 8px;
+      padding: 10px 6px;
       text-align: right;
       white-space: nowrap;
       border-bottom: 1px solid var(--border);
@@ -84,7 +84,9 @@ import { COLUMNS, averageValue, playerValue } from './statistics-common';
       color: var(--muted);
       vertical-align: bottom;
       white-space: normal;
-      min-width: 64px;
+      hyphens: auto;
+      hyphenate-limit-chars: 10 4 4;
+      min-width: 44px;
     }
     .name {
       position: sticky;
@@ -92,8 +94,8 @@ import { COLUMNS, averageValue, playerValue } from './statistics-common';
       z-index: 1;
       text-align: left;
       background: var(--surface);
-      min-width: 120px;
-      max-width: 160px;
+      min-width: 108px;
+      max-width: 150px;
       white-space: normal;
     }
     tbody .name {
@@ -101,8 +103,13 @@ import { COLUMNS, averageValue, playerValue } from './statistics-common';
     }
     tbody .name a {
       color: var(--text);
-      display: inline-block;
-      min-height: 24px;
+      display: flex;
+      align-items: center;
+      min-height: var(--touch);
+    }
+    tbody th.name {
+      padding-top: 0;
+      padding-bottom: 0;
     }
     tbody tr:last-child th,
     tbody tr:last-child td {
