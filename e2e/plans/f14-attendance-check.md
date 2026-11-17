@@ -38,3 +38,13 @@ Test IDs: `event-attendance-check`, `attendance-section`, `attendance-recorded`,
 | 9 PRS-09 | Cancelled in the UI | Cancel a series event with the switch, clock after start | No section «Präsenz», `/praesenz` «Für diesen Termin lässt sich keine Präsenz erfassen.» |
 | – | Anonymous | `GET …/attendance` without session | 401 |
 | – | Dark mode | `/praesenz` on mobile in dark mode | Readable, selected states distinguishable |
+
+## Additional cases (test agent, round 1)
+
+| Criterion | Case | Steps | Expected |
+|---|---|---|---|
+| 3 PRS-03 | Shared event grouped by team, then by line | Reset, clock 17.11. 19:00, `petra` ticks «Präsenz erfassen» for event 01 in «Termin bearbeiten», opens «Präsenz erfassen» (mobile, desktop, dark) | Regions «Team 1» (Linie 1, Linie 2, Goalies, Ohne Linie) and «Team 2» (Linie 1, Linie 2, Goalies), same team order as `GET …/overview`; summary «7 anwesend · 5 abwesend · 0 entschuldigt» (Lea counted once) |
+| 3 PRS-03 | Player in two teams | Set Lea «entschuldigt» in the «Team 2» block | Lea's entry in «Team 1» shows «entschuldigt» too; summary «6 anwesend · 5 abwesend · 1 entschuldigt» |
+| 4 PRS-04 | Double click and reload | Double click «Präsenz speichern», reload | Exactly one `PUT`; «Zuletzt gespeichert von Petra Keller am Di 17.11. 19:00.», Lea «entschuldigt» in both blocks |
+| 6 PRS-06 | Own value of a player in two teams | As `lea` `GET /api/events/{01}` | `myAttendance: EXCUSED`; `anna` `GET`/`PUT …/attendance` 403, anonymous 401 |
+| 2, 5, 7 | Rules on the shared event | Clock 18:29:59 → `PUT`; `PUT` with an unknown person; event 02 (switch off) | 409 PRS-02; 422 PRS-05; 409 PRS-07 |
