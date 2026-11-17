@@ -371,12 +371,10 @@ test.describe('Response on behalf with a field error from the API', () => {
   });
 });
 
-test('F-04 K8 S8 RR-06: Marc cannot respond for Anna', async ({ page }) => {
+test('F-04 K8 S8 RR-06 F-12: Marc (coach of Team 2) can respond for Anna (Team 1)', async ({ page }) => {
   await login(page, 'marc');
   await page.goto(`/termine/${T01}`);
-  await expect(page.getByTestId(`overview-person-${ANNA}`)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Antwort für Anna Muster eintragen' })).toHaveCount(0);
-  // For Lea (also a player in Team 2) he can
+  await expect(page.getByRole('button', { name: 'Antwort für Anna Muster eintragen' })).toBeVisible();
   await expect(
     page
       .getByTestId(`overview-team-${TEAM_2}`)
@@ -386,7 +384,7 @@ test('F-04 K8 S8 RR-06: Marc cannot respond for Anna', async ({ page }) => {
   const response = await page.request.put(`/api/events/${T01}/responses/${ANNA}`, {
     data: { status: 'DECLINED' },
   });
-  expect(response.status()).toBe(403);
+  expect(response.status()).toBe(200);
 });
 
 test('F-04 K8 RR-02: Players respond on behalf of nobody', async ({ page }) => {

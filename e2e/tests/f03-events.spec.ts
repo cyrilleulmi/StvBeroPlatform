@@ -306,7 +306,7 @@ test('F-03 K8 TER-09 TER-10: Response deadline per event, default 24 hours', asy
   await expect(page.getByTestId('response-deadline')).toHaveText('Di 17.11. 06:30 (12 Stunden vor Beginn)');
 });
 
-test('F-03 K9: Filter ?team= and view ?ansicht=vergangen are in the URL', async ({ page }) => {
+test('F-03 K9 F-12: Filter ?team= and view ?ansicht=vergangen are in the URL', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine');
   await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Team 2' });
@@ -328,8 +328,12 @@ test('F-03 K9: Filter ?team= and view ?ansicht=vergangen are in the URL', async 
   await expect(card(page, T07)).toBeVisible();
   await checkAccessibility(page);
 
+  // F-12: as a coach Petra sees all events of Team 3, although she is not a member there
   await page.goto(`/termine?team=${TEAM_3}`);
-  await expect.poll(() => entries(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
+  await expect.poll(async () => (await entries(page)).slice(0, 2)).toEqual([
+    'Training Mi 18.11. 18:00',
+    'Training Mi 25.11. 18:00',
+  ]);
   // Test finding F-03: selection and list match, also for a team Petra is not in
   await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
   await expect
@@ -339,6 +343,12 @@ test('F-03 K9: Filter ?team= and view ?ansicht=vergangen are in the URL', async 
         .evaluate((e) => (e as HTMLSelectElement).selectedOptions[0]?.text.trim()),
     )
     .toBe('Team 3');
+
+  // A player (Lea, Team 1 + 2) only sees the shared events of Team 3 (TER-13)
+  await login(page, 'lea');
+  await page.goto(`/termine?team=${TEAM_3}`);
+  await expect.poll(() => entries(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
+  await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
 });
 
 // ------------------------------------------------------------------ Findings from testing (round 1)
