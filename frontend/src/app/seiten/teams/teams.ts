@@ -30,8 +30,8 @@ import { TEXTE } from '../../kern/texte';
             <li [attr.data-testid]="'team-karte-' + t.id">
               <a class="zeile-link" [routerLink]="['/teams', t.id]">
                 <span class="zeile-titel">{{ t.name }}</span>
-                <span class="chip" [attr.data-art]="t.meineFunktion === 'COACH' ? 'coach' : null">{{
-                  funktion(t.meineFunktion)
+                <span class="chip" [attr.data-art]="t.myTeamRole === 'COACH' ? 'coach' : null">{{
+                  funktion(t.myTeamRole)
                 }}</span>
                 <app-icon name="chevron-right" [groesse]="20" />
               </a>
@@ -55,7 +55,7 @@ export class Teams implements OnInit {
     try {
       const alle = await firstValueFrom(this.http.get<Team[]>('/api/teams'));
       // Admins erhalten alle Teams; hier zählen nur die eigenen.
-      this.teams.set(alle.filter((t) => t.meineFunktion != null));
+      this.teams.set(alle.filter((t) => t.myTeamRole != null));
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {

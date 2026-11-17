@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/ich": {
+    "/api/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,11 +12,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Angemeldete Person mit Teamzugehörigkeiten der aktuellen Saison
-         * @description Ist keine Saison als aktuell festgelegt (SAI-03), antwortet die API mit 409, Titel «Keine
-         *     aktuelle Saison», Regel SAI-03. Die Oberfläche zeigt dann einen Hinweis statt der Startseite.
+         * Signed-in person with the team memberships of the current season
+         * @description If no season is set as current (SAI-03), the API responds with 409, title «Keine
+         *     aktuelle Saison», rule SAI-03. The user interface then shows a notice instead of the start page.
          */
-        get: operations["ichLesen"];
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -25,15 +25,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/kacheln": {
+    "/api/tiles": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Kacheln, die die angemeldete Person sehen darf (NF-11, NF-12) */
-        get: operations["kachelnLesen"];
+        /** Tiles the signed-in person may see (NF-11, NF-12) */
+        get: operations["listTiles"];
         put?: never;
         post?: never;
         delete?: never;
@@ -42,7 +42,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sitzung": {
+    "/api/session": {
         parameters: {
             query?: never;
             header?: never;
@@ -50,11 +50,11 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Ob eine gültige Sitzung besteht
-         * @description Öffentlich und immer 200, damit die Oberfläche ohne Fehlerantwort prüfen kann, ob sie zur
-         *     Anmeldung weiterleiten muss. Die Daten der Person liefert `GET /api/ich`.
+         * Whether a valid session exists
+         * @description Public and always 200, so the user interface can check without an error response whether it
+         *     has to redirect to the login. The person's data comes from `GET /api/me`.
          */
-        get: operations["sitzungLesen"];
+        get: operations["getSession"];
         put?: never;
         post?: never;
         delete?: never;
@@ -63,7 +63,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/abmelden": {
+    "/api/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -73,52 +73,51 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Sitzung beenden und Sitzungs-Cookie löschen
-         * @description Auch ohne gültige Sitzung erfolgreich, damit das Abmelden immer funktioniert.
+         * End the session and delete the session cookie
+         * @description Succeeds even without a valid session, so logging out always works.
          */
-        post: operations["abmelden"];
+        post: operations["logout"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/saisons": {
+    "/api/seasons": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Alle Saisons, neueste zuerst */
-        get: operations["saisonsLesen"];
+        /** All seasons, newest first */
+        get: operations["listSeasons"];
         put?: never;
         /**
-         * Saison anlegen, optional mit Übernahme der Vorsaison (SAI-04, Admin)
-         * @description Die neue Saison ist noch nicht aktuell. Mit `uebernehmenAus` werden die Teams und
-         *     Teamzugehörigkeiten dieser Saison übernommen. Name schon vergeben oder Zeitraum überschneidet
-         *     sich mit einer anderen Saison: 409.
+         * Create a season, optionally with carry-over from the previous season (SAI-04, admin)
+         * @description The new season is not current yet. With `copyFrom`, the teams and team memberships of that
+         *     season are carried over. Name already taken or period overlaps with another season: 409.
          */
-        post: operations["saisonAnlegen"];
+        post: operations["createSeason"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/saisons/{saisonId}/aktivieren": {
+    "/api/seasons/{seasonId}/activate": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                saisonId: components["parameters"]["saisonId"];
+                seasonId: components["parameters"]["seasonId"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
-        /** Saison zur aktuellen Saison machen (SAI-03, SAI-06, Admin) */
-        post: operations["saisonAktivieren"];
+        /** Make a season the current season (SAI-03, SAI-06, admin) */
+        post: operations["activateSeason"];
         delete?: never;
         options?: never;
         head?: never;
@@ -132,14 +131,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Teams einer Saison. Ohne Admin-Rechte nur die eigenen. */
-        get: operations["teamsLesen"];
+        /** Teams of a season. Without admin permission only the person's own teams. */
+        get: operations["listTeams"];
         put?: never;
         /**
-         * Team anlegen (Admin)
-         * @description Das Team gehört ab sofort zur angegebenen Saison. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Create a team (admin)
+         * @description The team belongs to the given season from now on. Archived seasons are read-only (409, SAI-02).
          */
-        post: operations["teamAnlegen"];
+        post: operations["createTeam"];
         delete?: never;
         options?: never;
         head?: never;
@@ -155,14 +154,14 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Team mit Coaches und Spielerinnen nach Gruppe */
-        get: operations["teamLesen"];
+        /** Team with coaches and players by group */
+        get: operations["getTeam"];
         /**
-         * Team umbenennen (Admin)
-         * @description Der Name gilt pro Saison. Umbenannt wird nur in der angegebenen Saison (Standard: aktuelle),
-         *     alte Saisons behalten den damaligen Namen. Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Rename a team (admin)
+         * @description The name applies per season. Only the given season is renamed (default: current); older
+         *     seasons keep the name they had. Archived seasons are read-only (409, SAI-02).
          */
-        put: operations["teamAendern"];
+        put: operations["renameTeam"];
         post?: never;
         delete?: never;
         options?: never;
@@ -170,7 +169,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/mitglieder": {
+    "/api/teams/{teamId}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -182,18 +181,18 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Person mit Funktion ins Team aufnehmen (PTF-03, PTF-04, Admin)
-         * @description Eine Person hat pro Team und Saison genau eine Funktion. Ist sie schon Mitglied, antwortet die
-         *     API mit 409 (Regel PTF-04). Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Add a person with a team role to the team (PTF-03, PTF-04, admin)
+         * @description A person has exactly one team role per team and season. If the person is already a member, the
+         *     API responds with 409 (rule PTF-04). Archived seasons are read-only (409, SAI-02).
          */
-        post: operations["mitgliedHinzufuegen"];
+        post: operations["addMember"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/mitglieder/{personId}": {
+    "/api/teams/{teamId}/members/{personId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -205,23 +204,23 @@ export interface paths {
         };
         get?: never;
         /**
-         * Funktion im Team ändern (Admin)
-         * @description Wechselt eine Spielerin zur Coach, verliert sie ihre Linienzuweisung in diesem Team.
-         *     Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Change the team role (admin)
+         * @description If a player becomes a coach, she loses her line assignment in this team.
+         *     Archived seasons are read-only (409, SAI-02).
          */
-        put: operations["funktionAendern"];
+        put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Person aus dem Team entfernen (Admin). Bisherige Antworten bleiben erhalten.
-         * @description Archivierte Saisons sind nur lesbar (409, SAI-02).
+         * Remove a person from the team (admin). Existing responses are kept.
+         * @description Archived seasons are read-only (409, SAI-02).
          */
-        delete: operations["mitgliedEntfernen"];
+        delete: operations["removeMember"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/gruppen": {
+    "/api/teams/{teamId}/groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -231,49 +230,49 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Linien und Goalies eines Teams mit Spielerinnen, plus «Ohne Linie»
-         * @description Aktuelle Saison. Für Mitglieder des Teams (jede Funktion) und Admins, sonst 403.
+         * Lines and goalies of a team with their players, plus «Ohne Linie» (no line)
+         * @description Current season. For members of the team (any team role) and admins, otherwise 403.
          */
-        get: operations["gruppenLesen"];
+        get: operations["getLineup"];
         put?: never;
         /**
-         * Linie anlegen (LIN-07, Coach). Goalies gibt es pro Team automatisch genau einmal.
-         * @description Gilt für die aktuelle Saison (LIN-11). Ohne `reihenfolge` kommt die Linie ans Ende, sonst an
-         *     diese Position (die übrigen rücken nach). Namen sind pro Team eindeutig, sonst 409 (LIN-09).
+         * Create a line (LIN-07, coach). Each team automatically has exactly one goalies group.
+         * @description Applies to the current season (LIN-11). Without `sortOrder` the line goes to the end, otherwise to
+         *     that position (the others move down). Names are unique per team, otherwise 409 (LIN-09).
          */
-        post: operations["linieAnlegen"];
+        post: operations["createLine"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/gruppen/{gruppeId}": {
+    "/api/teams/{teamId}/groups/{groupId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
-                gruppeId: components["parameters"]["gruppeId"];
+                groupId: components["parameters"]["groupId"];
             };
             cookie?: never;
         };
         get?: never;
         /**
-         * Linie umbenennen oder Reihenfolge ändern (Coach)
-         * @description Mit `reihenfolge` rückt die Linie an diese Position, die übrigen werden neu nummeriert (1, 2, …).
-         *     Goalies lassen sich weder umbenennen noch verschieben (409, LIN-05).
+         * Rename a line or change its order (coach)
+         * @description With `sortOrder` the line moves to that position and the others are renumbered (1, 2, …).
+         *     Goalies can neither be renamed nor moved (409, LIN-05).
          */
-        put: operations["linieAendern"];
+        put: operations["updateLine"];
         post?: never;
-        /** Linie löschen (Coach). Ihre Spielerinnen sind danach «ohne Linie». Goalies lassen sich nicht löschen (409). */
-        delete: operations["linieLoeschen"];
+        /** Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409). */
+        delete: operations["deleteLine"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/zuweisungen/{personId}": {
+    "/api/teams/{teamId}/assignments/{personId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -285,11 +284,11 @@ export interface paths {
         };
         get?: never;
         /**
-         * Spielerin einer Gruppe zuweisen oder auf «ohne Linie» setzen (LIN-02, LIN-07, LIN-10)
-         * @description Ersetzt eine bestehende Zuweisung im selben Team (höchstens eine Gruppe pro Team).
-         *     Nur Personen mit Funktion `SPIELERIN` in diesem Team, sonst 409.
+         * Assign a player to a group or set her to no line (LIN-02, LIN-07, LIN-10)
+         * @description Replaces an existing assignment in the same team (at most one group per team).
+         *     Only persons with team role `PLAYER` in this team, otherwise 409.
          */
-        put: operations["zuweisungSetzen"];
+        put: operations["setAssignment"];
         post?: never;
         delete?: never;
         options?: never;
@@ -297,25 +296,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/personen": {
+    "/api/persons": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Alle Personen (Admin) */
-        get: operations["personenLesen"];
+        /** All persons (admin) */
+        get: operations["listPersons"];
         put?: never;
-        /** Person anlegen (Admin) */
-        post: operations["personAnlegen"];
+        /** Create a person (admin) */
+        post: operations["createPerson"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/personen/{personId}": {
+    "/api/persons/{personId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,13 +323,13 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Person mit allen Teamzugehörigkeiten (Admin) */
-        get: operations["personLesen"];
+        /** Person with all team memberships (admin) */
+        get: operations["getPerson"];
         /**
-         * Person ändern (Admin)
-         * @description Der letzten Person mit Admin-Rechten kann das Recht nicht entzogen werden (409, RR-04).
+         * Update a person (admin)
+         * @description The admin permission cannot be taken away from the last person who has it (409, RR-04).
          */
-        put: operations["personAendern"];
+        put: operations["updatePerson"];
         post?: never;
         delete?: never;
         options?: never;
@@ -338,49 +337,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine": {
+    "/api/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Termine der eigenen Teams mit eigener Antwort (TER-13) */
-        get: operations["termineLesen"];
+        /** Events of the person's own teams with the person's own response (TER-13) */
+        get: operations["listEvents"];
         put?: never;
         /**
-         * Einzeltermin, Spieltag oder Anlass erfassen (TER-11, AUF-16, Coach)
-         * @description Die Person muss Admin oder Coach in mindestens einem der angegebenen Teams sein (TER-01, RR-06), sonst 403.
-         *     Ein Spieltag hat genau ein Team (AUF-03). Ein Termin in der Vergangenheit ergibt 400, einer in einer
-         *     Saison im Archiv 409 (SAI-02). Ohne `antwortfristStunden` gelten 24 Stunden (TER-10).
+         * Create a single event, match day or other event (TER-11, AUF-16, coach)
+         * @description The person must be an admin or a coach in at least one of the given teams (TER-01, RR-06), otherwise 403.
+         *     A match day has exactly one team (AUF-03). An event in the past gives 400, one in an archived
+         *     season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
          */
-        post: operations["terminAnlegen"];
+        post: operations["createEvent"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}": {
+    "/api/events/{eventId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
-        /** Termin mit eigener Antwort, bei Spieltag mit Spielen, Treffpunkt und eigenem Aufgebotsstatus */
-        get: operations["terminLesen"];
+        /** Event with the person's own response; for a match day with matches, meeting point and own call-up status */
+        get: operations["getEvent"];
         /**
-         * Termin ändern oder verschieben (TER-06, TER-12, Coach)
-         * @description Eine geänderte Beginnzeit gilt als Verschiebung (`verschoben`) und benachrichtigt alle Mitglieder der beteiligten Teams (BEN-07).
-         *     Antworten bleiben erhalten. Bei einem Serientermin gilt die Änderung nur für diesen Termin; spätere
-         *     Änderungen der Serie übernimmt er nicht mehr (TER-06). Abgesagte oder vergangene Termine: 409.
-         *     Spieltag auf einen anderen Tag: von Hand erfasste Spiele ziehen mit. Hat er Spiele aus swiss unihockey,
-         *     lässt er sich nur am selben Tag verschieben (422 beim Feld `beginn`, Regel SUH-05, Annahme O-48).
+         * Update or reschedule an event (TER-06, TER-12, coach)
+         * @description A changed start time counts as rescheduling (`rescheduled`) and notifies all members of the teams involved (BEN-07).
+         *     Responses are kept. For an event of a series, the change applies only to this event; it no longer takes over
+         *     later changes to the series (TER-06). Cancelled or past events: 409.
+         *     Match day moved to another day: manually entered matches move with it. If it has matches from swiss unihockey,
+         *     it can only be rescheduled on the same day (422 on field `start`, rule SUH-05, assumption O-48).
          */
-        put: operations["terminAendern"];
+        put: operations["updateEvent"];
         post?: never;
         delete?: never;
         options?: never;
@@ -388,26 +387,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/absagen": {
+    "/api/events/{eventId}/cancel": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
-        /** Termin absagen (TER-06, TER-12, Coach). Danach sind keine Antworten mehr möglich. */
-        post: operations["terminAbsagen"];
+        /** Cancel an event (TER-06, TER-12, coach). After that, no more responses are possible. */
+        post: operations["cancelEvent"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/serien": {
+    "/api/series": {
         parameters: {
             query?: never;
             header?: never;
@@ -417,35 +416,35 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Serie anlegen, erzeugt die Termine im Gültigkeitszeitraum (TER-05, Coach)
-         * @description Erzeugt einen Termin für jeden Wochentag im Gültigkeitszeitraum, der noch nicht begonnen hat. Rechte wie bei
-         *     `terminAnlegen`. Der Zeitraum dauert höchstens ein Jahr (400).
+         * Create a series; creates the events in the validity period (TER-05, coach)
+         * @description Creates an event for each matching weekday in the validity period that has not started yet. Permissions as for
+         *     `createEvent`. The period lasts at most one year (400).
          */
-        post: operations["serieAnlegen"];
+        post: operations["createSeries"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/serien/{serieId}": {
+    "/api/series/{seriesId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serieId: components["parameters"]["serieId"];
+                seriesId: components["parameters"]["seriesId"];
             };
             cookie?: never;
         };
-        /** Serie mit Ausnahmen */
-        get: operations["serieLesen"];
+        /** Series with its series exceptions */
+        get: operations["getSeries"];
         /**
-         * Serie ändern. Gilt für künftige Termine, gegebene Antworten bleiben (TER-08, Coach).
-         * @description Künftige Termine übernehmen die neuen Angaben. Einzeln geänderte und abgesagte Termine bleiben unverändert.
-         *     Termine, die nicht mehr zur Serie passen, werden entfernt bzw. abgesagt («Serie geändert»), wenn schon
-         *     jemand geantwortet hat.
+         * Update a series. Applies to future events; given responses are kept (TER-08, coach).
+         * @description Future events take over the new data. Individually changed and cancelled events stay unchanged.
+         *     Events that no longer fit the series are removed, or cancelled («Serie geändert») if someone
+         *     has already responded.
          */
-        put: operations["serieAendern"];
+        put: operations["updateSeries"];
         post?: never;
         delete?: never;
         options?: never;
@@ -453,44 +452,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/serien/{serieId}/ausnahmen": {
+    "/api/series/{seriesId}/exceptions": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serieId: components["parameters"]["serieId"];
+                seriesId: components["parameters"]["seriesId"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
         /**
-         * Zeitraum von der Serie ausnehmen, z.B. Ferien (TER-07, Coach)
-         * @description Künftige geplante Termine der Serie im Zeitraum werden entfernt. Hat schon jemand geantwortet, wird der
-         *     Termin stattdessen abgesagt, Grund = Grund der Ausnahme (O-19).
+         * Exclude a period from the series, e.g. holidays (TER-07, coach)
+         * @description Future planned events of the series in the period are removed. If someone has already responded, the
+         *     event is cancelled instead, with the reason of the series exception as cancellation reason (O-19).
          */
-        post: operations["ausnahmeAnlegen"];
+        post: operations["createSeriesException"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/uebersicht": {
+    "/api/events/{eventId}/overview": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         /**
-         * Antworten nach Team und Gruppe, Coach-Block, Zähler (ANM-20 bis ANM-32)
-         * @description Kommentare sind nur enthalten, wenn die anfragende Person Coach im jeweiligen Team ist
-         *     oder es um ihre eigene Antwort geht (ANM-07). Leere Gruppen fehlen.
+         * Responses by team and group, coach block, counts (ANM-20 to ANM-32)
+         * @description Comments are only included if the requesting person is a coach in the respective team
+         *     or it is their own response (ANM-07). Empty groups are left out.
          */
-        get: operations["uebersichtLesen"];
+        get: operations["getOverview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -499,24 +498,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/antworten/ich": {
+    "/api/events/{eventId}/responses/me": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         get?: never;
         /**
-         * Eigene Antwort setzen oder ändern (ANM-01 bis ANM-10)
-         * @description Nur Mitglieder eines beteiligten Teams (jede Funktion), sonst 403. `VIELLEICHT` verlangt einen
-         *     Kommentar (sonst 422, Feld `kommentar`). Ein Wechsel von `DABEI` weg nach der Antwortfrist ist eine
-         *     kurzfristige Absage (`kurzfristig`) und benachrichtigt die Coaches (ANM-10, BEN-02). Die Markierung
-         *     bleibt bis zum nächsten «dabei». Bei abgesagten und vergangenen Terminen 409 (TER-06).
+         * Set or change the person's own response (ANM-01 to ANM-10)
+         * @description Only members of a team involved (any team role), otherwise 403. `MAYBE` requires a
+         *     comment (otherwise 422, field `comment`). A change away from `ATTENDING` after the response deadline is a
+         *     late cancellation (`lateCancellation`) and notifies the coaches (ANM-10, BEN-02). The flag
+         *     stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06).
          */
-        put: operations["eigeneAntwortSetzen"];
+        put: operations["setOwnResponse"];
         post?: never;
         delete?: never;
         options?: never;
@@ -524,24 +523,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/antworten/{personId}": {
+    "/api/events/{eventId}/responses/{personId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
                 personId: components["parameters"]["personId"];
             };
             cookie?: never;
         };
         get?: never;
         /**
-         * Antwort stellvertretend setzen (ANM-11, ANM-12, RR-06)
-         * @description Nur Coaches eines Teams, in dem die Person beim Termin Spielerin ist, und Admins (für jedes Mitglied
-         *     eines beteiligten Teams). Sonst 403. Gehört die Person zu keinem beteiligten Team, 404. Es gelten
-         *     dieselben Regeln wie bei der eigenen Antwort; `eingetragenVon` ist die anfragende Person (ANM-12).
+         * Respond on behalf of a person (ANM-11, ANM-12, RR-06)
+         * @description Only coaches of a team in which the person is a player for the event, and admins (for every member
+         *     of a team involved). Otherwise 403. If the person belongs to no team involved, 404. The same rules
+         *     apply as for the person's own response; `enteredBy` is the requesting person (ANM-12).
          */
-        put: operations["antwortStellvertretendSetzen"];
+        put: operations["setResponseOnBehalf"];
         post?: never;
         delete?: never;
         options?: never;
@@ -549,80 +548,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/spiele": {
+    "/api/events/{eventId}/matches": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
         /**
-         * Spiel zu einem Spieltag hinzufügen (AUF-14, Coach)
-         * @description Nur bei Spieltagen (sonst 409, Regel AUF-01), solange der Spieltag weder abgesagt noch vorbei ist (409, TER-06).
-         *     Die Anspielzeit liegt am Tag des Spieltags (sonst 400 beim Feld `anspielzeit`).
+         * Add a match to a match day (AUF-14, coach)
+         * @description Only for match days (otherwise 409, rule AUF-01), as long as the match day is neither cancelled nor over (409, TER-06).
+         *     The start time lies on the day of the match day (otherwise 400 on field `startTime`).
          */
-        post: operations["spielHinzufuegen"];
+        post: operations["addMatch"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/spiele/{spielId}": {
+    "/api/events/{eventId}/matches/{matchId}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
-                spielId: components["parameters"]["spielId"];
+                eventId: components["parameters"]["eventId"];
+                matchId: components["parameters"]["matchId"];
             };
             cookie?: never;
         };
         get?: never;
         /**
-         * Spiel ändern, z.B. Resultat erfassen (AUF-15, Coach). Importierte Felder sind schreibgeschützt (409).
-         * @description Das Resultat (Heim:Gast) lässt sich auch nach dem Spieltag erfassen; nur ein abgesagter Spieltag ergibt 409 (TER-06).
-         *     Bei Spielen aus swiss unihockey sind Gegner, Anspielzeit und Heim/Auswärts schreibgeschützt (409, Regel SUH-06).
+         * Update a match, e.g. enter the result (AUF-15, coach). Imported fields are read-only (409).
+         * @description The result (home:away) can also be entered after the match day; only a cancelled match day gives 409 (TER-06).
+         *     For matches from swiss unihockey, opponent, start time and home/away are read-only (409, rule SUH-06).
          */
-        put: operations["spielAendern"];
+        put: operations["updateMatch"];
         post?: never;
         /**
-         * Von Hand erfasstes Spiel löschen (Coach)
-         * @description Spiele aus swiss unihockey nur, wenn swiss unihockey sie nicht mehr liefert (sonst 409, Regel SUH-06).
-         *     Abgesagte oder vergangene Spieltage: 409 (TER-06).
+         * Delete a manually entered match (coach)
+         * @description Matches from swiss unihockey only if swiss unihockey no longer delivers them (otherwise 409, rule SUH-06).
+         *     Cancelled or past match days: 409 (TER-06).
          */
-        delete: operations["spielLoeschen"];
+        delete: operations["deleteMatch"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/aufgebot": {
+    "/api/events/{eventId}/call-up": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         /**
-         * Aufgebot mit allen Spielerinnen des Teams, gruppiert, mit Antwortstatus (AUF-21, AUF-22, Coach)
-         * @description Nur Coaches des Teams und Admins (sonst 403). Kein Spieltag: 409 (Regel AUF-02). Coaches stehen nicht in der
-         *     Auswahl (AUF-28). Gruppen wie in der Übersicht, leere Gruppen fehlen.
+         * Call-up with all players of the team, grouped, with response status (AUF-21, AUF-22, coach)
+         * @description Only coaches of the team and admins (otherwise 403). Not a match day: 409 (rule AUF-02). Coaches are not part of
+         *     the selection (AUF-28). Groups as in the overview; empty groups are left out.
          */
-        get: operations["aufgebotLesen"];
+        get: operations["getCallUp"];
         /**
-         * Auswahl speichern (Coach). Ist das Aufgebot veröffentlicht, werden Betroffene benachrichtigt (AUF-27).
-         * @description Ersetzt die ganze Auswahl. Jede Spielerin des Teams lässt sich aufbieten, unabhängig von ihrer Antwort (AUF-22).
-         *     Coaches oder Personen ausserhalb des Teams: 422 (Regel AUF-28). Kein Spieltag, abgesagt oder vorbei: 409.
-         *     Ein veröffentlichtes Aufgebot bleibt veröffentlicht. Wer neu dazukommt oder herausfällt, wird benachrichtigt (BEN-05).
+         * Save the selection (coach). If the call-up is published, the players affected are notified (AUF-27).
+         * @description Replaces the whole selection. Every player of the team can be called up, regardless of her response (AUF-22).
+         *     Coaches or persons outside the team: 422 (rule AUF-28). Not a match day, cancelled or over: 409.
+         *     A published call-up stays published. Players who are added or removed are notified (BEN-05).
          */
-        put: operations["aufgebotSetzen"];
+        put: operations["setCallUp"];
         post?: never;
         delete?: never;
         options?: never;
@@ -630,23 +629,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/termine/{terminId}/aufgebot/veroeffentlichen": {
+    "/api/events/{eventId}/call-up/publish": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
         /**
-         * Aufgebot veröffentlichen und alle Spielerinnen des Teams benachrichtigen (AUF-23, AUF-24, Coach)
-         * @description Nur ein Entwurf mit mindestens einer Spielerin (sonst 409, Regel AUF-23), nur einmal. Danach sehen die
-         *     Spielerinnen `meinAufgebot`. Sie werden benachrichtigt (BEN-03).
+         * Publish the call-up and notify all players of the team (AUF-23, AUF-24, coach)
+         * @description Only a draft with at least one player (otherwise 409, rule AUF-23), only once. After that the
+         *     players see `myCallUp`. They are notified (BEN-03).
          */
-        post: operations["aufgebotVeroeffentlichen"];
+        post: operations["publishCallUp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -664,11 +663,11 @@ export interface paths {
         };
         get?: never;
         /**
-         * Team mit swiss unihockey verknüpfen oder Verknüpfung lösen (SUH-02, Admin)
-         * @description Die Team-ID findet man auf swissunihockey.ch in der Adresse der Team-Seite. Eine Team-ID gehört zu
-         *     höchstens einem Team (sonst 409). Das Lösen lässt bereits importierte Spieltage unverändert.
+         * Link a team to swiss unihockey or remove the link (SUH-02, admin)
+         * @description The team ID can be found on swissunihockey.ch in the address of the team page. A team ID belongs to
+         *     at most one team (otherwise 409). Removing the link leaves already imported match days unchanged.
          */
-        put: operations["suVerknuepfen"];
+        put: operations["linkSu"];
         post?: never;
         delete?: never;
         options?: never;
@@ -676,7 +675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/teams/{teamId}/swiss-unihockey/abgleich": {
+    "/api/teams/{teamId}/swiss-unihockey/sync": {
         parameters: {
             query?: never;
             header?: never;
@@ -688,23 +687,23 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Abgleich sofort ausführen statt auf den täglichen Lauf zu warten (SUH-03, Admin)
-         * @description Gleicht die Spiele des Teams in der aktuellen Saison ab. Spiele am selben Tag in derselben Halle werden
-         *     ein Spieltag (SUH-04). Geänderte Spiele werden übernommen, Treffpunkt, Hinweise, Antworten und Aufgebot
-         *     bleiben (SUH-05, SUH-06), alle Mitglieder des Teams werden benachrichtigt (BEN-06). Spiele, die swiss
-         *     unihockey nicht mehr liefert, werden markiert, nicht gelöscht. Von Hand erfasste Spieltage bleiben
-         *     unberührt (SUH-10). 409, wenn das Team nicht verknüpft ist oder nicht zur aktuellen Saison gehört.
-         *     502, wenn swiss unihockey nicht erreichbar ist oder Unerwartetes liefert: Dann ändert sich nichts (SUH-09).
-         *     Derselbe Abgleich läuft täglich für alle verknüpften Teams.
+         * Run the sync now instead of waiting for the daily run (SUH-03, admin)
+         * @description Syncs the team's matches in the current season. Matches on the same day in the same hall become
+         *     one match day (SUH-04). Changed matches are taken over; meeting point, notes, responses and call-up
+         *     are kept (SUH-05, SUH-06), and all members of the team are notified (BEN-06). Matches that swiss
+         *     unihockey no longer delivers are marked, not deleted. Manually entered match days stay
+         *     untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
+         *     502 if swiss unihockey is unavailable or delivers something unexpected: then nothing changes (SUH-09).
+         *     The same sync runs daily for all linked teams.
          */
-        post: operations["suAbgleichen"];
+        post: operations["syncSu"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/benachrichtigungen": {
+    "/api/notifications": {
         parameters: {
             query?: never;
             header?: never;
@@ -712,16 +711,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Eigene Benachrichtigungen, neueste zuerst (BEN-12)
-         * @description Nur die eigenen. `ungelesen=true` liefert nur ungelesene (Zähler in der Navigation).
-         *     Benachrichtigt wird bei: Erinnerung 12 Stunden vor der Antwortfrist an alle ohne Antwort, einmal pro
-         *     Person und Termin (BEN-01, BEN-13); kurzfristiger Absage an die Coaches der Teams, in denen die Person
-         *     Spielerin ist (BEN-02, O-17); Abmeldung einer Aufgebotenen an dieselben Coaches (BEN-04);
-         *     Veröffentlichung an alle Spielerinnen des Teams (BEN-03); Änderung eines veröffentlichten Aufgebots an
-         *     neu Aufgebotene und nicht mehr Aufgebotene (BEN-05); Absage und Verschiebung an alle Mitglieder der
-         *     beteiligten Teams (BEN-07). Wer etwas auslöst, wird darüber nicht benachrichtigt.
+         * The person's own notifications, newest first (BEN-12)
+         * @description Only the person's own. `unread=true` returns only unread ones (counter in the navigation).
+         *     Notifications are sent for: a reminder 12 hours before the response deadline to everyone without a response,
+         *     once per person and event (BEN-01, BEN-13); a late cancellation to the coaches of the teams in which the
+         *     person is a player (BEN-02, O-17); a called-up player declining, to the same coaches (BEN-04);
+         *     publishing a call-up to all players of the team (BEN-03); a change to a published call-up to newly
+         *     called-up players and players no longer called up (BEN-05); cancellation and rescheduling to all members
+         *     of the teams involved (BEN-07). Whoever triggers something is not notified about it.
          */
-        get: operations["benachrichtigungenLesen"];
+        get: operations["listNotifications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -730,22 +729,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/benachrichtigungen/{benachrichtigungId}/gelesen": {
+    "/api/notifications/{notificationId}/read": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                benachrichtigungId: string;
+                notificationId: string;
             };
             cookie?: never;
         };
         get?: never;
         put?: never;
         /**
-         * Als gelesen markieren
-         * @description Mehrfach markieren ändert nichts (204). Die Benachrichtigung einer anderen Person: 403 (RR-07).
+         * Mark as read
+         * @description Marking more than once changes nothing (204). Another person's notification: 403 (RR-07).
          */
-        post: operations["benachrichtigungGelesen"];
+        post: operations["markNotificationRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -762,8 +761,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Datenbank auf den Seed zurücksetzen, Uhr auf Standard, Simulator zurücksetzen
-         * @description Seed siehe docs/testdaten.md. Nur Profile dev und test.
+         * Reset the database to the seed, the clock to default and the simulator
+         * @description For the seed see docs/test-data.md. Only profiles dev and test.
          */
         post: operations["testReset"];
         delete?: never;
@@ -772,26 +771,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/test/uhr": {
+    "/api/test/clock": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Aktuelle Backend-Zeit */
-        get: operations["testUhrLesen"];
-        /** Backend-Uhr auf einen festen Zeitpunkt setzen. Löst fällige Jobs (Erinnerungen) sofort aus. */
-        put: operations["testUhrSetzen"];
+        /** Current backend time */
+        get: operations["testGetClock"];
+        /** Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately. */
+        put: operations["testSetClock"];
         post?: never;
-        /** Wieder die echte Zeit verwenden */
-        delete: operations["testUhrLoesen"];
+        /** Use the real time again */
+        delete: operations["testReleaseClock"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/test/aktuelle-saison": {
+    "/api/test/current-season": {
         parameters: {
             query?: never;
             header?: never;
@@ -801,14 +800,14 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Keine Saison mehr als aktuell markieren (Zustand «keine aktuelle Saison»). Reset stellt den Seed wieder her. */
-        delete: operations["testAktuelleSaisonEntfernen"];
+        /** Mark no season as current any more (state «no current season»). Reset restores the seed. */
+        delete: operations["testRemoveCurrentSeason"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/test/anmelden": {
+    "/api/test/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -817,23 +816,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ohne Passwort als Seed-Person anmelden. Setzt das Sitzungs-Cookie. */
-        post: operations["testAnmelden"];
+        /** Log in as a seed person without a password. Sets the session cookie. */
+        post: operations["testLogin"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/test/personen": {
+    "/api/test/persons": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Personen mit Schlüssel für die Testmodus-Anmeldung (/dev-login) */
-        get: operations["testPersonenLesen"];
+        /** Persons with their key for the test mode login (/dev-login) */
+        get: operations["testListPersons"];
         put?: never;
         post?: never;
         delete?: never;
@@ -842,15 +841,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/test/benachrichtigungen": {
+    "/api/test/notifications": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Alle Benachrichtigungen aller Personen seit dem letzten Reset, inklusive Seed */
-        get: operations["testBenachrichtigungenLesen"];
+        /** All notifications of all persons since the last reset, including the seed */
+        get: operations["testListNotifications"];
         put?: never;
         post?: never;
         delete?: never;
@@ -859,7 +858,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/test/swiss-unihockey/spiele": {
+    "/api/test/swiss-unihockey/matches": {
         parameters: {
             query?: never;
             header?: never;
@@ -867,8 +866,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Daten vorgeben, die der Simulator für eine swiss-unihockey-Team-ID liefert */
-        put: operations["testSuSpieleSetzen"];
+        /** Set the data the simulator delivers for a swiss unihockey team ID */
+        put: operations["testSetSuMatches"];
         post?: never;
         delete?: never;
         options?: never;
@@ -880,11 +879,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description RFC 9457 Problem Details. `detail` ist ein deutscher Text, der direkt angezeigt werden kann. */
-        Fehler: {
+        /** @description RFC 9457 Problem Details. `title`, `detail` and `fields[].message` are German texts that can be shown to users directly. `type`, `rule` and `fields[].field` are machine-readable and English. */
+        Problem: {
             /**
              * Format: uri
-             * @example urn:stv:fehler:kommentar-pflicht
+             * @example urn:stv:problem:comment-required
              */
             type?: string;
             /** @example Kommentar fehlt */
@@ -894,126 +893,126 @@ export interface components {
             /** @example Bei «vielleicht» ist ein Kommentar Pflicht. */
             detail?: string;
             /**
-             * @description Verletzte Anforderung
+             * @description Violated requirement
              * @example ANM-04
              */
-            regel?: string;
-            felder?: {
-                /** @example kommentar */
-                feld: string;
-                meldung: string;
+            rule?: string;
+            fields?: {
+                /** @example comment */
+                field: string;
+                message: string;
             }[];
         };
         /**
-         * @description Erweiterbar (PTF-06). Clients behandeln unbekannte Werte wie ein Mitglied ohne Sonderrechte.
+         * @description Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
          * @enum {string}
          */
-        Funktion: "SPIELERIN" | "COACH";
+        TeamRole: "PLAYER" | "COACH";
         /** @enum {string} */
-        TerminTyp: "TRAINING" | "SPIELTAG" | "ANLASS";
+        EventType: "PRACTICE" | "MATCH_DAY" | "OTHER";
         /**
-         * @description Ob ein Termin vorbei ist, ergibt sich aus `ende` und der Backend-Uhr.
+         * @description Whether an event is over follows from `end` and the backend clock.
          * @enum {string}
          */
-        TerminStatus: "GEPLANT" | "ABGESAGT";
+        EventStatus: "PLANNED" | "CANCELLED";
         /** @enum {string} */
-        AntwortStatus: "OFFEN" | "DABEI" | "NICHT_DABEI" | "VIELLEICHT";
+        ResponseStatus: "PENDING" | "ATTENDING" | "DECLINED" | "MAYBE";
         /** @enum {string} */
-        GruppenArt: "LINIE" | "GOALIES";
+        GroupType: "LINE" | "GOALIES";
         /** @enum {string} */
-        AufgebotStatus: "KEINES" | "ENTWURF" | "VEROEFFENTLICHT";
+        CallUpStatus: "NONE" | "DRAFT" | "PUBLISHED";
         /** @enum {string} */
-        MeinAufgebot: "NOCH_KEIN_AUFGEBOT" | "AUFGEBOTEN" | "NICHT_AUFGEBOTEN";
+        MyCallUp: "NO_CALL_UP_YET" | "CALLED_UP" | "NOT_CALLED_UP";
         /** @enum {string} */
-        Quelle: "MANUELL" | "SWISS_UNIHOCKEY";
-        PersonKurz: {
+        MatchSource: "MANUAL" | "SWISS_UNIHOCKEY";
+        PersonSummary: {
             /** Format: uuid */
             id: string;
             /** @example Anna */
-            vorname: string;
+            firstName: string;
             /** @example Muster */
-            nachname: string;
+            lastName: string;
         };
-        Person: components["schemas"]["PersonKurz"] & {
+        Person: components["schemas"]["PersonSummary"] & {
             /** Format: email */
             email?: string | null;
             admin: boolean;
         };
-        PersonSchreiben: {
-            vorname: string;
-            nachname: string;
+        PersonInput: {
+            firstName: string;
+            lastName: string;
             /** Format: email */
             email?: string | null;
             /** @default false */
             admin: boolean;
         };
         PersonDetail: components["schemas"]["Person"] & {
-            zugehoerigkeiten: components["schemas"]["Teamzugehoerigkeit"][];
+            memberships: components["schemas"]["TeamMembership"][];
         };
-        Ich: components["schemas"]["Person"] & {
-            saison: components["schemas"]["Saison"];
-            zugehoerigkeiten: components["schemas"]["Teamzugehoerigkeit"][];
+        Me: components["schemas"]["Person"] & {
+            season: components["schemas"]["Season"];
+            memberships: components["schemas"]["TeamMembership"][];
             /**
              * Format: date-time
-             * @description Zeitpunkt der Backend-Uhr beim Laden, z.B. für «Jahr nur anzeigen, wenn nicht das aktuelle» (F-03)
+             * @description Time of the backend clock when loading, e.g. for «show the year only if it is not the current one» (F-03)
              */
-            jetzt: string;
+            now: string;
         };
-        Sitzung: {
-            angemeldet: boolean;
+        Session: {
+            signedIn: boolean;
         };
-        Kachel: {
+        Tile: {
             /** @example anwesenheit */
             id: string;
             /** @example Anwesenheit */
-            titel: string;
+            title: string;
             /**
-             * @description Lucide-Icon-Name
+             * @description Lucide icon name
              * @example calendar-check
              */
             icon: string;
             /** @example /termine */
             route: string;
             /** @enum {string} */
-            farbe: "primary" | "blue" | "mustard" | "coral";
-            /** @description Kurzer Status, z.B. «2 offen» */
-            hinweis?: string | null;
+            color: "primary" | "blue" | "mustard" | "coral";
+            /** @description Short status, e.g. «2 offen» */
+            hint?: string | null;
         };
-        /** @description Seed-Person mit Schlüssel aus docs/testdaten.md. Nur Profile dev und test. */
+        /** @description Seed person with key from docs/test-data.md. Only profiles dev and test. */
         TestPerson: {
             /** @example petra */
-            schluessel: string;
+            loginKey: string;
             /** Format: uuid */
             id: string;
-            vorname: string;
-            nachname: string;
+            firstName: string;
+            lastName: string;
             admin: boolean;
         };
-        Saison: {
+        Season: {
             /** Format: uuid */
             id: string;
             /** @example 2026/27 */
             name: string;
             /** Format: date */
-            von: string;
+            startDate: string;
             /** Format: date */
-            bis: string;
-            aktuell: boolean;
-            /** @description Saison vor der aktuellen. Nur lesbar (SAI-02). */
-            archiv: boolean;
+            endDate: string;
+            current: boolean;
+            /** @description Season before the current one. Read-only (SAI-02). */
+            archived: boolean;
         };
-        SaisonAnlegen: {
+        NewSeason: {
             /** @example 2027/28 */
             name: string;
             /** Format: date */
-            von: string;
+            startDate: string;
             /** Format: date */
-            bis: string;
+            endDate: string;
             /**
              * Format: uuid
-             * @description Saison, deren Teams, Zugehörigkeiten und Linien übernommen werden (SAI-04)
+             * @description Season whose teams, memberships and lines are carried over (SAI-04)
              */
-            uebernehmenAus?: string | null;
+            copyFrom?: string | null;
         };
         Team: {
             /** Format: uuid */
@@ -1022,399 +1021,399 @@ export interface components {
             name: string;
             /** @example 900001 */
             suTeamId?: number | null;
-            meineFunktion?: components["schemas"]["Funktion"] | null;
+            myTeamRole?: components["schemas"]["TeamRole"] | null;
         };
-        TeamSchreiben: {
+        TeamInput: {
             name: string;
         };
         TeamDetail: components["schemas"]["Team"] & {
-            coaches: components["schemas"]["PersonKurz"][];
-            einteilung: components["schemas"]["Gruppeneinteilung"];
+            coaches: components["schemas"]["PersonSummary"][];
+            lineup: components["schemas"]["Lineup"];
         };
-        Teamzugehoerigkeit: {
+        TeamMembership: {
             team: {
                 /** Format: uuid */
                 id: string;
                 name: string;
             };
-            person: components["schemas"]["PersonKurz"];
-            funktion: components["schemas"]["Funktion"];
+            person: components["schemas"]["PersonSummary"];
+            teamRole: components["schemas"]["TeamRole"];
             /** Format: uuid */
-            saisonId: string;
+            seasonId: string;
             /**
              * Format: uuid
-             * @description Nur bei Funktion SPIELERIN
+             * @description Only for team role PLAYER
              */
-            gruppeId?: string | null;
+            groupId?: string | null;
         };
-        MitgliedSchreiben: {
+        MemberInput: {
             /** Format: uuid */
             personId: string;
-            funktion: components["schemas"]["Funktion"];
+            teamRole: components["schemas"]["TeamRole"];
         };
-        Gruppe: {
+        Group: {
             /** Format: uuid */
             id: string;
-            art: components["schemas"]["GruppenArt"];
+            type: components["schemas"]["GroupType"];
             /** @example Linie 1 */
             name: string;
-            /** @description Nur bei LINIE */
-            reihenfolge?: number | null;
+            /** @description Only for LINE */
+            sortOrder?: number | null;
         };
-        LinieSchreiben: {
+        LineInput: {
             name: string;
-            reihenfolge?: number;
+            sortOrder?: number;
         };
-        /** @description Alle Gruppen eines Teams in Anzeigereihenfolge, auch leere */
-        Gruppeneinteilung: {
-            gruppen: (components["schemas"]["Gruppe"] & {
-                spielerinnen: components["schemas"]["PersonKurz"][];
+        /** @description All groups of a team in display order, including empty ones */
+        Lineup: {
+            groups: (components["schemas"]["Group"] & {
+                players: components["schemas"]["PersonSummary"][];
             })[];
-            ohneLinie: components["schemas"]["PersonKurz"][];
+            noLine: components["schemas"]["PersonSummary"][];
         };
-        Ort: {
+        Location: {
             /**
              * @example Sporthalle Seefeld
              * @example Musterdorf
              */
             name: string;
-            adresse?: string | null;
+            address?: string | null;
             /**
              * Format: uri
-             * @description Google-Maps-Link (AUF-10). Muss mit https:// beginnen.
+             * @description Google Maps link (AUF-10). Must start with https://.
              */
             mapsUrl?: string | null;
-            breite?: number | null;
-            laenge?: number | null;
+            latitude?: number | null;
+            longitude?: number | null;
         };
-        Treffpunkt: {
+        MeetingPoint: {
             /** Format: date-time */
-            zeit: string;
+            time: string;
             /** @example Parkplatz Sporthalle Nord */
-            ort: string;
+            location: string;
         };
-        Zaehler: {
-            dabei: number;
-            nichtDabei: number;
-            vielleicht: number;
-            offen: number;
+        Counts: {
+            attending: number;
+            declined: number;
+            maybe: number;
+            pending: number;
         };
-        TerminKurz: {
+        EventSummary: {
             /** Format: uuid */
             id: string;
-            typ: components["schemas"]["TerminTyp"];
+            type: components["schemas"]["EventType"];
             /** @example Training */
-            titel: string;
+            title: string;
             /** Format: date-time */
-            beginn: string;
+            start: string;
             /** Format: date-time */
-            ende: string;
-            status: components["schemas"]["TerminStatus"];
-            absagegrund?: string | null;
+            end: string;
+            status: components["schemas"]["EventStatus"];
+            cancellationReason?: string | null;
             /** @default false */
-            verschoben: boolean;
+            rescheduled: boolean;
             teams: components["schemas"]["Team"][];
-            ort?: components["schemas"]["Ort"] | null;
+            location?: components["schemas"]["Location"] | null;
             /** Format: date-time */
-            antwortfrist: string;
-            meineAntwort: components["schemas"]["Antwort"];
-            /** @description Gesamtzähler Spielerinnen */
-            zaehler?: components["schemas"]["Zaehler"];
+            responseDeadline: string;
+            myResponse: components["schemas"]["Response"];
+            /** @description Total counts of players */
+            counts?: components["schemas"]["Counts"];
             /** Format: uuid */
-            serieId?: string | null;
+            seriesId?: string | null;
         };
-        Termin: components["schemas"]["TerminKurz"] & {
+        Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
-            hinweise?: string | null;
-            antwortfristStunden?: number;
-            treffpunkt?: components["schemas"]["Treffpunkt"] | null;
-            /** @description Nur bei SPIELTAG, nach Anspielzeit sortiert */
-            spiele?: components["schemas"]["Spiel"][];
-            /** @description Nur bei SPIELTAG. Wer nicht Coach des Teams oder Admin ist, sieht vor der Veröffentlichung KEINES (AUF-23). */
-            aufgebotStatus?: components["schemas"]["AufgebotStatus"];
-            /** @description Nur bei SPIELTAG und Funktion SPIELERIN */
-            meinAufgebot?: components["schemas"]["MeinAufgebot"] | null;
-            /** @description Für die Anzeige von Coach-Aktionen */
-            darfBearbeiten?: boolean;
+            notes?: string | null;
+            responseDeadlineHours?: number;
+            meetingPoint?: components["schemas"]["MeetingPoint"] | null;
+            /** @description Only for MATCH_DAY, sorted by start time */
+            matches?: components["schemas"]["Match"][];
+            /** @description Only for MATCH_DAY. Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23). */
+            callUpStatus?: components["schemas"]["CallUpStatus"];
+            /** @description Only for MATCH_DAY and team role PLAYER */
+            myCallUp?: components["schemas"]["MyCallUp"] | null;
+            /** @description For showing coach actions */
+            canEdit?: boolean;
         };
-        TerminSchreiben: {
-            typ: components["schemas"]["TerminTyp"];
-            titel: string;
+        EventInput: {
+            type: components["schemas"]["EventType"];
+            title: string;
             /** Format: date-time */
-            beginn: string;
+            start: string;
             /** Format: date-time */
-            ende: string;
+            end: string;
             teamIds: string[];
-            ort?: components["schemas"]["Ort"] | null;
-            hinweise?: string | null;
+            location?: components["schemas"]["Location"] | null;
+            notes?: string | null;
             /**
-             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @description Hours before the start (TER-09, TER-10)
              * @default 24
              */
-            antwortfristStunden: number;
-            treffpunkt?: components["schemas"]["Treffpunkt"] | null;
+            responseDeadlineHours: number;
+            meetingPoint?: components["schemas"]["MeetingPoint"] | null;
         };
-        Serie: components["schemas"]["SerieSchreiben"] & {
+        Series: components["schemas"]["SeriesInput"] & {
             /** Format: uuid */
             id: string;
-            /** @description Alle Teams der Serie nach Name, mit dem Namen in der Saison der Serie (TER-11) */
+            /** @description All teams of the series by name, with the name in the season of the series (TER-11) */
             teams: components["schemas"]["Team"][];
-            ausnahmen: components["schemas"]["Ausnahme"][];
+            exceptions: components["schemas"]["SeriesException"][];
         };
-        SerieSchreiben: {
+        SeriesInput: {
             /** @enum {string} */
-            typ: "TRAINING" | "ANLASS";
+            type: "PRACTICE" | "OTHER";
             /** @example Training */
-            titel: string;
+            title: string;
             teamIds: string[];
             /** @enum {string} */
-            wochentag: "MONTAG" | "DIENSTAG" | "MITTWOCH" | "DONNERSTAG" | "FREITAG" | "SAMSTAG" | "SONNTAG";
+            weekday: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
             /** @example 18:30 */
-            beginnZeit: string;
+            startTime: string;
             /** @example 20:00 */
-            endeZeit: string;
+            endTime: string;
             /** Format: date */
-            gueltigVon: string;
+            validFrom: string;
             /** Format: date */
-            gueltigBis: string;
-            ort?: components["schemas"]["Ort"] | null;
+            validUntil: string;
+            location?: components["schemas"]["Location"] | null;
             /**
-             * @description Stunden vor Beginn (TER-09, TER-10)
+             * @description Hours before the start (TER-09, TER-10)
              * @default 24
              */
-            antwortfristStunden: number;
+            responseDeadlineHours: number;
         };
-        Ausnahme: {
+        SeriesException: {
             /** Format: date */
-            von: string;
+            startDate: string;
             /** Format: date */
-            bis: string;
+            endDate: string;
             /** @example Weihnachtsferien */
-            grund: string;
+            reason: string;
         };
-        Antwort: {
-            status: components["schemas"]["AntwortStatus"];
-            /** @description Nur für die Person selbst und Coaches des Teams sichtbar (ANM-07), sonst nicht enthalten */
-            kommentar?: string | null;
+        Response: {
+            status: components["schemas"]["ResponseStatus"];
+            /** @description Only visible to the person themselves and the coaches of the team (ANM-07), otherwise not included */
+            comment?: string | null;
             /** Format: date-time */
-            geaendertAm?: string | null;
-            /** @description Gesetzt, wenn stellvertretend eingetragen (ANM-12) */
-            eingetragenVon?: components["schemas"]["PersonKurz"] | null;
+            changedAt?: string | null;
+            /** @description Set if entered on behalf of the person (ANM-12) */
+            enteredBy?: components["schemas"]["PersonSummary"] | null;
             /**
-             * @description Abgesagt oder auf «vielleicht» nach der Antwortfrist (ANM-10)
+             * @description Changed to `DECLINED` or `MAYBE` after the response deadline (ANM-10)
              * @default false
              */
-            kurzfristig: boolean;
+            lateCancellation: boolean;
         };
-        AntwortSetzen: {
+        ResponseInput: {
             /** @enum {string} */
-            status: "DABEI" | "NICHT_DABEI" | "VIELLEICHT";
-            /** @description Pflicht bei VIELLEICHT (ANM-04), freiwillig bei NICHT_DABEI (ANM-05) */
-            kommentar?: string | null;
+            status: "ATTENDING" | "DECLINED" | "MAYBE";
+            /** @description Required for MAYBE (ANM-04), optional for DECLINED (ANM-05) */
+            comment?: string | null;
         };
-        Uebersicht: {
+        Overview: {
             /** Format: uuid */
-            terminId: string;
-            /** @description Jede Spielerin einmal, auch wenn sie in mehreren Teams ist (ANM-32) */
-            total: components["schemas"]["Zaehler"];
-            /** @description Nach Teamname sortiert */
-            teams: components["schemas"]["UebersichtTeam"][];
-            /** @description Coach-Block (ANM-22) */
+            eventId: string;
+            /** @description Each player once, even if she is in several teams (ANM-32) */
+            total: components["schemas"]["Counts"];
+            /** @description Sorted by team name */
+            teams: components["schemas"]["OverviewTeam"][];
+            /** @description Coach block (ANM-22) */
             coaches: {
-                person: components["schemas"]["PersonKurz"];
+                person: components["schemas"]["PersonSummary"];
                 team: {
                     /** Format: uuid */
                     id: string;
                     name: string;
                 };
-                antwort: components["schemas"]["Antwort"];
+                response: components["schemas"]["Response"];
             }[];
         };
-        UebersichtTeam: {
+        OverviewTeam: {
             team: {
                 /** Format: uuid */
                 id: string;
                 name: string;
             };
-            zaehler: components["schemas"]["Zaehler"];
-            /** @description Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie». Leere Gruppen fehlen. */
-            gruppen: {
+            counts: components["schemas"]["Counts"];
+            /** @description Lines by sort order, then goalies, then «Ohne Linie» (no line). Empty groups are left out. */
+            groups: {
                 /**
                  * Format: uuid
-                 * @description `null` bei «Ohne Linie»
+                 * @description `null` for «Ohne Linie» (no line)
                  */
-                gruppeId?: string | null;
+                groupId?: string | null;
                 /** @enum {string} */
-                art: "LINIE" | "GOALIES" | "OHNE_LINIE";
+                type: "LINE" | "GOALIES" | "NO_LINE";
                 /**
                  * @example Linie 1
                  * @example Goalies
                  * @example Ohne Linie
                  */
                 name: string;
-                /** @description Nach Nachname, dann Vorname */
-                eintraege: {
-                    person: components["schemas"]["PersonKurz"];
-                    antwort: components["schemas"]["Antwort"];
+                /** @description By last name, then first name */
+                entries: {
+                    person: components["schemas"]["PersonSummary"];
+                    response: components["schemas"]["Response"];
                 }[];
             }[];
         };
-        Spiel: {
+        Match: {
             /** Format: uuid */
             id: string;
             /** @example UHC Musterdorf */
-            gegner: string;
+            opponent: string;
             /** Format: date-time */
-            anspielzeit: string;
-            heim: boolean;
+            startTime: string;
+            home: boolean;
             /** @example 5:3 */
-            resultat?: string | null;
-            quelle: components["schemas"]["Quelle"];
-            suSpielId?: number | null;
+            result?: string | null;
+            source: components["schemas"]["MatchSource"];
+            suMatchId?: number | null;
             /**
-             * @description swiss unihockey liefert das Spiel nicht mehr. Wird nicht automatisch gelöscht.
+             * @description swiss unihockey no longer delivers the match. It is not deleted automatically.
              * @default false
              */
-            beiSuNichtMehrVorhanden: boolean;
+            missingAtSu: boolean;
         };
-        SpielSchreiben: {
-            gegner: string;
+        MatchInput: {
+            opponent: string;
             /** Format: date-time */
-            anspielzeit: string;
-            heim: boolean;
-            resultat?: string | null;
+            startTime: string;
+            home: boolean;
+            result?: string | null;
         };
-        Aufgebot: {
+        CallUp: {
             /** Format: uuid */
-            terminId: string;
-            status: components["schemas"]["AufgebotStatus"];
+            eventId: string;
+            status: components["schemas"]["CallUpStatus"];
             /** Format: date-time */
-            veroeffentlichtAm?: string | null;
-            anzahlAufgeboten?: number;
-            /** @description Alle Spielerinnen des Teams, gruppiert wie in der Übersicht, auch ohne Antwort (AUF-21, AUF-22) */
-            gruppen: {
+            publishedAt?: string | null;
+            calledUpCount?: number;
+            /** @description All players of the team, grouped as in the overview, including those without a response (AUF-21, AUF-22) */
+            groups: {
                 /** Format: uuid */
-                gruppeId?: string | null;
+                groupId?: string | null;
                 /** @enum {string} */
-                art: "LINIE" | "GOALIES" | "OHNE_LINIE";
+                type: "LINE" | "GOALIES" | "NO_LINE";
                 name: string;
-                eintraege: {
-                    person: components["schemas"]["PersonKurz"];
-                    antwort: components["schemas"]["Antwort"];
-                    aufgeboten: boolean;
+                entries: {
+                    person: components["schemas"]["PersonSummary"];
+                    response: components["schemas"]["Response"];
+                    calledUp: boolean;
                 }[];
             }[];
         };
-        AbgleichErgebnis: {
-            /** @description Neu angelegte Spiele */
-            neu: number;
-            geaendert: number;
-            nichtMehrVorhanden: number;
-            unveraendert: number;
-            betroffeneTermine?: string[];
+        SyncResult: {
+            /** @description Newly created matches */
+            created: number;
+            changed: number;
+            missing: number;
+            unchanged: number;
+            affectedEvents?: string[];
         };
-        /** @description Vereinfachte Form eines Spiels, wie sie der Simulator liefert */
-        SuSpiel: {
+        /** @description Simplified form of a match as the simulator delivers it */
+        SuMatch: {
             /** @example 5000002 */
-            suSpielId: number;
+            suMatchId: number;
             /** Format: date-time */
-            anspielzeit: string;
-            heimteam: string;
-            gastteam: string;
+            startTime: string;
+            homeTeam: string;
+            awayTeam: string;
             /** @example Sporthalle Seefeld */
-            halle: string;
+            hall: string;
             /** @example Musterdorf */
-            ort?: string | null;
+            location?: string | null;
             /** Format: uri */
             mapsUrl?: string | null;
-            breite?: number | null;
-            laenge?: number | null;
-            resultat?: string | null;
+            latitude?: number | null;
+            longitude?: number | null;
+            result?: string | null;
         };
-        Benachrichtigung: {
+        Notification: {
             /** Format: uuid */
             id: string;
             /**
-             * @description Entspricht BEN-01 bis BEN-07
+             * @description Corresponds to BEN-01 to BEN-07
              * @enum {string}
              */
-            art: "ERINNERUNG" | "KURZFRISTIGE_ABSAGE" | "AUFGEBOT_VEROEFFENTLICHT" | "AUFGEBOT_GEAENDERT" | "AUFGEBOTENE_ABGEMELDET" | "SPIEL_GEAENDERT" | "TERMIN_ABGESAGT" | "TERMIN_VERSCHOBEN";
-            empfaenger: components["schemas"]["PersonKurz"];
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED";
+            recipient: components["schemas"]["PersonSummary"];
             /** @example Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet. */
             text: string;
             /** Format: uuid */
-            terminId?: string | null;
+            eventId?: string | null;
             /** Format: date-time */
-            erstelltAm: string;
-            gelesen: boolean;
+            createdAt: string;
+            read: boolean;
         };
     };
     responses: {
-        /** @description Nicht angemeldet */
-        NichtAngemeldet: {
+        /** @description Not logged in */
+        Unauthenticated: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Keine Berechtigung (RR-07) */
-        KeineBerechtigung: {
+        /** @description No permission (RR-07) */
+        Forbidden: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Nicht gefunden */
-        NichtGefunden: {
+        /** @description Not found */
+        NotFound: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Anfrage formal ungültig */
-        Ungueltig: {
+        /** @description Request formally invalid */
+        BadRequest: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Widerspricht dem aktuellen Zustand (z.B. Termin abgesagt, schon Mitglied) */
-        Konflikt: {
+        /** @description Conflicts with the current state (e.g. event cancelled, already a member) */
+        Conflict: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Fachliche Regel verletzt (z.B. «vielleicht» ohne Kommentar) */
-        Regelverletzung: {
+        /** @description Domain rule violated (e.g. `MAYBE` without a comment) */
+        RuleViolation: {
             headers: {
                 [name: string]: unknown;
             };
             content: {
-                "application/problem+json": components["schemas"]["Fehler"];
+                "application/problem+json": components["schemas"]["Problem"];
             };
         };
     };
     parameters: {
-        /** @description Saison-ID. Standard ist die aktuelle Saison. */
-        saison: string;
-        saisonId: string;
+        /** @description Season ID. Default is the current season. */
+        season: string;
+        seasonId: string;
         teamId: string;
         personId: string;
-        gruppeId: string;
-        terminId: string;
-        serieId: string;
-        spielId: string;
+        groupId: string;
+        eventId: string;
+        seriesId: string;
+        matchId: string;
     };
     requestBodies: never;
     headers: never;
@@ -1422,7 +1421,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    ichLesen: {
+    getMe: {
         parameters: {
             query?: never;
             header?: never;
@@ -1437,14 +1436,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Ich"];
+                    "application/json": components["schemas"]["Me"];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
-            409: components["responses"]["Konflikt"];
+            401: components["responses"]["Unauthenticated"];
+            409: components["responses"]["Conflict"];
         };
     };
-    kachelnLesen: {
+    listTiles: {
         parameters: {
             query?: never;
             header?: never;
@@ -1459,13 +1458,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Kachel"][];
+                    "application/json": components["schemas"]["Tile"][];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
+            401: components["responses"]["Unauthenticated"];
         };
     };
-    sitzungLesen: {
+    getSession: {
         parameters: {
             query?: never;
             header?: never;
@@ -1480,12 +1479,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Sitzung"];
+                    "application/json": components["schemas"]["Session"];
                 };
             };
         };
     };
-    abmelden: {
+    logout: {
         parameters: {
             query?: never;
             header?: never;
@@ -1494,7 +1493,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Abgemeldet */
+            /** @description Logged out */
             204: {
                 headers: {
                     "Set-Cookie"?: string;
@@ -1504,7 +1503,7 @@ export interface operations {
             };
         };
     };
-    saisonsLesen: {
+    listSeasons: {
         parameters: {
             query?: never;
             header?: never;
@@ -1519,13 +1518,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Saison"][];
+                    "application/json": components["schemas"]["Season"][];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
+            401: components["responses"]["Unauthenticated"];
         };
     };
-    saisonAnlegen: {
+    createSeason: {
         parameters: {
             query?: never;
             header?: never;
@@ -1534,52 +1533,52 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SaisonAnlegen"];
+                "application/json": components["schemas"]["NewSeason"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Saison"];
+                    "application/json": components["schemas"]["Season"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    saisonAktivieren: {
+    activateSeason: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                saisonId: components["parameters"]["saisonId"];
+                seasonId: components["parameters"]["seasonId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Aktiviert */
+            /** @description Activated */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    teamsLesen: {
+    listTeams: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path?: never;
@@ -1596,14 +1595,14 @@ export interface operations {
                     "application/json": components["schemas"]["Team"][];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
+            401: components["responses"]["Unauthenticated"];
         };
     };
-    teamAnlegen: {
+    createTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path?: never;
@@ -1611,11 +1610,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TeamSchreiben"];
+                "application/json": components["schemas"]["TeamInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1624,17 +1623,17 @@ export interface operations {
                     "application/json": components["schemas"]["Team"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    teamLesen: {
+    getTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path: {
@@ -1653,15 +1652,15 @@ export interface operations {
                     "application/json": components["schemas"]["TeamDetail"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    teamAendern: {
+    renameTeam: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path: {
@@ -1671,11 +1670,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TeamSchreiben"];
+                "application/json": components["schemas"]["TeamInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1684,17 +1683,17 @@ export interface operations {
                     "application/json": components["schemas"]["Team"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    mitgliedHinzufuegen: {
+    addMember: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path: {
@@ -1704,30 +1703,30 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MitgliedSchreiben"];
+                "application/json": components["schemas"]["MemberInput"];
             };
         };
         responses: {
-            /** @description Aufgenommen */
+            /** @description Added */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Teamzugehoerigkeit"];
+                    "application/json": components["schemas"]["TeamMembership"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    funktionAendern: {
+    changeTeamRole: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path: {
@@ -1739,31 +1738,31 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    funktion: components["schemas"]["Funktion"];
+                    teamRole: components["schemas"]["TeamRole"];
                 };
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Teamzugehoerigkeit"];
+                    "application/json": components["schemas"]["TeamMembership"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    mitgliedEntfernen: {
+    removeMember: {
         parameters: {
             query?: {
-                /** @description Saison-ID. Standard ist die aktuelle Saison. */
-                saison?: components["parameters"]["saison"];
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
             };
             header?: never;
             path: {
@@ -1774,19 +1773,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entfernt */
+            /** @description Removed */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    gruppenLesen: {
+    getLineup: {
         parameters: {
             query?: never;
             header?: never;
@@ -1803,14 +1802,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Gruppeneinteilung"];
+                    "application/json": components["schemas"]["Lineup"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    linieAnlegen: {
+    createLine: {
         parameters: {
             query?: never;
             header?: never;
@@ -1821,81 +1820,81 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LinieSchreiben"];
+                "application/json": components["schemas"]["LineInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Gruppe"];
+                    "application/json": components["schemas"]["Group"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    linieAendern: {
+    updateLine: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
-                gruppeId: components["parameters"]["gruppeId"];
+                groupId: components["parameters"]["groupId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LinieSchreiben"];
+                "application/json": components["schemas"]["LineInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Gruppe"];
+                    "application/json": components["schemas"]["Group"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    linieLoeschen: {
+    deleteLine: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 teamId: components["parameters"]["teamId"];
-                gruppeId: components["parameters"]["gruppeId"];
+                groupId: components["parameters"]["groupId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöscht */
+            /** @description Deleted */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    zuweisungSetzen: {
+    setAssignment: {
         parameters: {
             query?: never;
             header?: never;
@@ -1910,31 +1909,31 @@ export interface operations {
                 "application/json": {
                     /**
                      * Format: uuid
-                     * @description `null` = ohne Linie
+                     * @description `null` = no line
                      */
-                    gruppeId: string | null;
+                    groupId: string | null;
                 };
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    personenLesen: {
+    listPersons: {
         parameters: {
             query?: {
-                /** @description Teil von Vor- oder Nachname */
-                suche?: string;
+                /** @description Part of the first or last name */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -1951,10 +1950,10 @@ export interface operations {
                     "application/json": components["schemas"]["Person"][];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
+            403: components["responses"]["Forbidden"];
         };
     };
-    personAnlegen: {
+    createPerson: {
         parameters: {
             query?: never;
             header?: never;
@@ -1963,11 +1962,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonSchreiben"];
+                "application/json": components["schemas"]["PersonInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1976,11 +1975,11 @@ export interface operations {
                     "application/json": components["schemas"]["Person"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
         };
     };
-    personLesen: {
+    getPerson: {
         parameters: {
             query?: never;
             header?: never;
@@ -2000,11 +1999,11 @@ export interface operations {
                     "application/json": components["schemas"]["PersonDetail"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    personAendern: {
+    updatePerson: {
         parameters: {
             query?: never;
             header?: never;
@@ -2015,11 +2014,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonSchreiben"];
+                "application/json": components["schemas"]["PersonInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2028,21 +2027,21 @@ export interface operations {
                     "application/json": components["schemas"]["Person"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    termineLesen: {
+    listEvents: {
         parameters: {
             query?: {
-                /** @description Standard ist «jetzt» (Backend-Uhr) */
-                von?: string;
-                bis?: string;
+                /** @description Default is «now» (backend clock) */
+                from?: string;
+                to?: string;
                 team?: string;
-                typ?: components["schemas"]["TerminTyp"];
-                ansicht?: "kommend" | "vergangen";
+                type?: components["schemas"]["EventType"];
+                view?: "upcoming" | "past";
             };
             header?: never;
             path?: never;
@@ -2050,19 +2049,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chronologisch sortiert (vergangene absteigend) */
+            /** @description Sorted chronologically (past events descending) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TerminKurz"][];
+                    "application/json": components["schemas"]["EventSummary"][];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
+            401: components["responses"]["Unauthenticated"];
         };
     };
-    terminAnlegen: {
+    createEvent: {
         parameters: {
             query?: never;
             header?: never;
@@ -2071,30 +2070,30 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TerminSchreiben"];
+                "application/json": components["schemas"]["EventInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Termin"];
+                    "application/json": components["schemas"]["Event"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
         };
     };
-    terminLesen: {
+    getEvent: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
@@ -2106,50 +2105,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Termin"];
+                    "application/json": components["schemas"]["Event"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    terminAendern: {
+    updateEvent: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TerminSchreiben"];
+                "application/json": components["schemas"]["EventInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Termin"];
+                    "application/json": components["schemas"]["Event"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
-            422: components["responses"]["Regelverletzung"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
-    terminAbsagen: {
+    cancelEvent: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
@@ -2157,27 +2156,27 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @example Halle besetzt */
-                    grund: string;
+                    reason: string;
                 };
             };
         };
         responses: {
-            /** @description Abgesagt */
+            /** @description Cancelled */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Termin"];
+                    "application/json": components["schemas"]["Event"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    serieAnlegen: {
+    createSeries: {
         parameters: {
             query?: never;
             header?: never;
@@ -2186,30 +2185,30 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SerieSchreiben"];
+                "application/json": components["schemas"]["SeriesInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Serie"];
+                    "application/json": components["schemas"]["Series"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
         };
     };
-    serieLesen: {
+    getSeries: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serieId: components["parameters"]["serieId"];
+                seriesId: components["parameters"]["seriesId"];
             };
             cookie?: never;
         };
@@ -2221,79 +2220,79 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Serie"];
+                    "application/json": components["schemas"]["Series"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    serieAendern: {
+    updateSeries: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serieId: components["parameters"]["serieId"];
+                seriesId: components["parameters"]["seriesId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SerieSchreiben"];
+                "application/json": components["schemas"]["SeriesInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Serie"];
+                    "application/json": components["schemas"]["Series"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    ausnahmeAnlegen: {
+    createSeriesException: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                serieId: components["parameters"]["serieId"];
+                seriesId: components["parameters"]["seriesId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Ausnahme"];
+                "application/json": components["schemas"]["SeriesException"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Serie"];
+                    "application/json": components["schemas"]["Series"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    uebersichtLesen: {
+    getOverview: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
@@ -2305,167 +2304,167 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Uebersicht"];
+                    "application/json": components["schemas"]["Overview"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
-    eigeneAntwortSetzen: {
+    setOwnResponse: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AntwortSetzen"];
+                "application/json": components["schemas"]["ResponseInput"];
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Antwort"];
+                    "application/json": components["schemas"]["Response"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
-            422: components["responses"]["Regelverletzung"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
-    antwortStellvertretendSetzen: {
+    setResponseOnBehalf: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
                 personId: components["parameters"]["personId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AntwortSetzen"];
+                "application/json": components["schemas"]["ResponseInput"];
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Antwort"];
+                    "application/json": components["schemas"]["Response"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
-            422: components["responses"]["Regelverletzung"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
-    spielHinzufuegen: {
+    addMatch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SpielSchreiben"];
+                "application/json": components["schemas"]["MatchInput"];
             };
         };
         responses: {
-            /** @description Angelegt */
+            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Spiel"];
+                    "application/json": components["schemas"]["Match"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    spielAendern: {
+    updateMatch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
-                spielId: components["parameters"]["spielId"];
+                eventId: components["parameters"]["eventId"];
+                matchId: components["parameters"]["matchId"];
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SpielSchreiben"];
+                "application/json": components["schemas"]["MatchInput"];
             };
         };
         responses: {
-            /** @description Geändert */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Spiel"];
+                    "application/json": components["schemas"]["Match"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    spielLoeschen: {
+    deleteMatch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
-                spielId: components["parameters"]["spielId"];
+                eventId: components["parameters"]["eventId"];
+                matchId: components["parameters"]["matchId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöscht */
+            /** @description Deleted */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    aufgebotLesen: {
+    getCallUp: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
@@ -2477,20 +2476,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Aufgebot"];
+                    "application/json": components["schemas"]["CallUp"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    aufgebotSetzen: {
+    setCallUp: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
@@ -2502,48 +2501,48 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Aufgebot"];
+                    "application/json": components["schemas"]["CallUp"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
-            422: components["responses"]["Regelverletzung"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
-    aufgebotVeroeffentlichen: {
+    publishCallUp: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                terminId: components["parameters"]["terminId"];
+                eventId: components["parameters"]["eventId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Veröffentlicht */
+            /** @description Published */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Aufgebot"];
+                    "application/json": components["schemas"]["CallUp"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    suVerknuepfen: {
+    linkSu: {
         parameters: {
             query?: never;
             header?: never;
@@ -2556,7 +2555,7 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description `null` löst die Verknüpfung
+                     * @description `null` removes the link
                      * @example 900001
                      */
                     suTeamId: number | null;
@@ -2564,7 +2563,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Gespeichert */
+            /** @description Saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2573,13 +2572,13 @@ export interface operations {
                     "application/json": components["schemas"]["Team"];
                 };
             };
-            400: components["responses"]["Ungueltig"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
-    suAbgleichen: {
+    syncSu: {
         parameters: {
             query?: never;
             header?: never;
@@ -2590,33 +2589,33 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Ergebnis des Abgleichs */
+            /** @description Result of the sync */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AbgleichErgebnis"];
+                    "application/json": components["schemas"]["SyncResult"];
                 };
             };
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
-            409: components["responses"]["Konflikt"];
-            /** @description swiss unihockey nicht erreichbar oder unerwartete Antwort (SUH-09) */
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            /** @description swiss unihockey unavailable or unexpected answer (SUH-09) */
             502: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["Fehler"];
+                    "application/problem+json": components["schemas"]["Problem"];
                 };
             };
         };
     };
-    benachrichtigungenLesen: {
+    listNotifications: {
         parameters: {
             query?: {
-                ungelesen?: boolean;
+                unread?: boolean;
             };
             header?: never;
             path?: never;
@@ -2630,33 +2629,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Benachrichtigung"][];
+                    "application/json": components["schemas"]["Notification"][];
                 };
             };
-            401: components["responses"]["NichtAngemeldet"];
+            401: components["responses"]["Unauthenticated"];
         };
     };
-    benachrichtigungGelesen: {
+    markNotificationRead: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                benachrichtigungId: string;
+                notificationId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Markiert */
+            /** @description Marked */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            401: components["responses"]["NichtAngemeldet"];
-            403: components["responses"]["KeineBerechtigung"];
-            404: components["responses"]["NichtGefunden"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     testReset: {
@@ -2668,7 +2667,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Zurückgesetzt */
+            /** @description Reset */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2677,7 +2676,7 @@ export interface operations {
             };
         };
     };
-    testUhrLesen: {
+    testGetClock: {
         parameters: {
             query?: never;
             header?: never;
@@ -2694,14 +2693,14 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** Format: date-time */
-                        jetzt: string;
-                        fest: boolean;
+                        now: string;
+                        fixed: boolean;
                     };
                 };
             };
         };
     };
-    testUhrSetzen: {
+    testSetClock: {
         parameters: {
             query?: never;
             header?: never;
@@ -2715,22 +2714,22 @@ export interface operations {
                      * Format: date-time
                      * @example 2026-11-16T19:00:00+01:00
                      */
-                    jetzt: string;
+                    now: string;
                 };
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["Ungueltig"];
+            400: components["responses"]["BadRequest"];
         };
     };
-    testUhrLoesen: {
+    testReleaseClock: {
         parameters: {
             query?: never;
             header?: never;
@@ -2739,7 +2738,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Gelöst */
+            /** @description Released */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2748,7 +2747,7 @@ export interface operations {
             };
         };
     };
-    testAktuelleSaisonEntfernen: {
+    testRemoveCurrentSeason: {
         parameters: {
             query?: never;
             header?: never;
@@ -2757,7 +2756,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entfernt */
+            /** @description Removed */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2766,7 +2765,7 @@ export interface operations {
             };
         };
     };
-    testAnmelden: {
+    testLogin: {
         parameters: {
             query?: never;
             header?: never;
@@ -2777,15 +2776,15 @@ export interface operations {
             content: {
                 "application/json": {
                     /**
-                     * @description Schlüssel aus docs/testdaten.md
+                     * @description Key from docs/test-data.md
                      * @example petra
                      */
-                    schluessel: string;
+                    loginKey: string;
                 };
             };
         };
         responses: {
-            /** @description Angemeldet */
+            /** @description Logged in */
             204: {
                 headers: {
                     "Set-Cookie"?: string;
@@ -2793,11 +2792,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            400: components["responses"]["Ungueltig"];
-            404: components["responses"]["NichtGefunden"];
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
         };
     };
-    testPersonenLesen: {
+    testListPersons: {
         parameters: {
             query?: never;
             header?: never;
@@ -2806,7 +2805,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Nach Nachname, dann Vorname */
+            /** @description By last name, then first name */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2817,7 +2816,7 @@ export interface operations {
             };
         };
     };
-    testBenachrichtigungenLesen: {
+    testListNotifications: {
         parameters: {
             query?: never;
             header?: never;
@@ -2826,18 +2825,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chronologisch */
+            /** @description Chronological */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Benachrichtigung"][];
+                    "application/json": components["schemas"]["Notification"][];
                 };
             };
         };
     };
-    testSuSpieleSetzen: {
+    testSetSuMatches: {
         parameters: {
             query?: never;
             header?: never;
@@ -2850,23 +2849,23 @@ export interface operations {
                     /** @example 900001 */
                     suTeamId: number;
                     /**
-                     * @description Simuliert einen Ausfall (SUH-09)
+                     * @description Simulates an outage (SUH-09)
                      * @default false
                      */
-                    nichtErreichbar?: boolean;
-                    spiele: components["schemas"]["SuSpiel"][];
+                    unavailable?: boolean;
+                    matches: components["schemas"]["SuMatch"][];
                 };
             };
         };
         responses: {
-            /** @description Gesetzt */
+            /** @description Set */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            400: components["responses"]["Ungueltig"];
+            400: components["responses"]["BadRequest"];
         };
     };
 }

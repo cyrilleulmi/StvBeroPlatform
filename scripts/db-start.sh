@@ -11,6 +11,9 @@
 #   scripts/db-start.sh          # start (creates the cluster the first time)
 #   scripts/db-start.sh stop     # stop
 #   scripts/db-start.sh reset    # delete the cluster and create it again
+#
+# After F-10 (issue #49) run 'reset' once on a database created before F-10:
+# the Flyway migrations were rewritten with English names (no production data).
 set -euo pipefail
 
 PGPORT="${PGPORT:-5432}"

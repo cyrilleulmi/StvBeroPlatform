@@ -26,16 +26,16 @@
               <span
                 class="chip"
                 data-testid="saison-status"
-                [attr.data-art]="s.aktuell ? null : s.archiv ? 'archiv' : 'geplant'"
+                [attr.data-art]="s.current ? null : s.archived ? 'archiv' : 'geplant'"
                 >{{ status(s) }}</span
               >
             </div>
-            <span class="nebentext">{{ texte.saisons.zeitraum(datum(s.von), datum(s.bis)) }}</span>
+            <span class="nebentext">{{ texte.saisons.zeitraum(datum(s.startDate), datum(s.endDate)) }}</span>
             <div class="aktionen">
               <a routerLink="/verwaltung/teams" [queryParams]="{ saison: s.id }">{{
                 texte.saisons.teamsAnsehen
               }}</a>
-              @if (!s.aktuell) {
+              @if (!s.current) {
                 <button
                   type="button"
                   class="button button-sekundaer button-klein"

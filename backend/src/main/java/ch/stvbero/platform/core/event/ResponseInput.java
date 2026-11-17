@@ -1,0 +1,12 @@
+package ch.stvbero.platform.core.event;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+/** Set or change a response. Comment: required for «vielleicht» (ANM-04), optional for «nicht dabei» (ANM-05). */
+@Schema(name = "ResponseInput")
+public record ResponseInput(
+        @NotNull ResponseChoice status,
+        @Size(max = 200, message = "Höchstens 200 Zeichen.") String comment) {
+}

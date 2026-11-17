@@ -29,12 +29,12 @@ import { TEXTE } from '../../kern/texte';
     <div class="kopf">
       <a class="zurueck" routerLink="/teams">{{ texte.teams.alleTeams }}</a>
       <h1>{{ team()?.name ?? texte.teams.titel }}</h1>
-      @if (team()?.meineFunktion; as f) {
+      @if (team()?.myTeamRole; as f) {
         <p class="nebentext">{{ funktion(f) }}</p>
       }
     </div>
     @if (saisonDaten(); as s) {
-      @if (s.archiv) {
+      @if (s.archived) {
         <p class="meldung-hinweis" data-testid="archiv-hinweis">
           {{ texte.saison.archivHinweis(s.name) }}
         </p>
@@ -144,29 +144,29 @@ export class Team {
     const t = this.team();
     if (!t) return [];
     return [
-      ...t.einteilung.gruppen.map((g) => ({
+      ...t.lineup.groups.map((g) => ({
         schluessel: g.id,
         name: g.name,
-        spielerinnen: g.spielerinnen,
+        spielerinnen: g.players,
       })),
       {
         schluessel: 'ohne-linie',
         name: TEXTE.linien.ohneLinie,
-        spielerinnen: t.einteilung.ohneLinie,
+        spielerinnen: t.lineup.noLine,
       },
     ].filter((g) => g.spielerinnen.length > 0);
   });
 
   /** Coaches des Teams und Admins teilen die Linien ein (LIN-07), nur in der aktuellen Saison. */
   protected readonly darfLinienBearbeiten = computed(
-    () => !this.saison() && (this.anmeldung.istAdmin() || this.team()?.meineFunktion === 'COACH'),
+    () => !this.saison() && (this.anmeldung.istAdmin() || this.team()?.myTeamRole === 'COACH'),
   );
 
   /** Alle Spielerinnen: nach Gruppen, dann ohne Linie. Coaches sind nie dabei (PTF-07). */
   protected readonly spielerinnen = computed<PersonKurz[]>(() => {
     const t = this.team();
     if (!t) return [];
-    return [...t.einteilung.gruppen.flatMap((g) => g.spielerinnen), ...t.einteilung.ohneLinie];
+    return [...t.lineup.groups.flatMap((g) => g.players), ...t.lineup.noLine];
   });
 
   constructor() {
@@ -182,7 +182,7 @@ export class Team {
     this.fehler.set(null);
     this.team.set(null);
     const ich = this.anmeldung.ich();
-    const mitglied = ich?.zugehoerigkeiten.some((z) => z.team.id === teamId) ?? false;
+    const mitglied = ich?.memberships.some((z) => z.team.id === teamId) ?? false;
     if (!saisonId && ich && !ich.admin && !mitglied) {
       // Ohne Zugehörigkeit in der aktuellen Saison gar nicht erst anfragen; das Backend lehnt ab (403).
       this.fehler.set(TEXTE.allgemein.keineBerechtigung);
@@ -190,12 +190,12 @@ export class Team {
       return;
     }
     try {
-      const params: Record<string, string> = saisonId ? { saison: saisonId } : {};
+      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
       this.team.set(
         await firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
       );
       if (saisonId) {
-        const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/saisons'));
+        const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/seasons'));
         this.saisonDaten.set(saisons.find((s) => s.id === saisonId) ?? null);
       } else {
         this.saisonDaten.set(null);

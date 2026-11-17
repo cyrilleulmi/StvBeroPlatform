@@ -17,7 +17,7 @@
   border-color: var(--blue);
 }
 
-.gruppe[data-art='OHNE_LINIE'] {
+.gruppe[data-art='NO_LINE'] {
   background: transparent;
   border-style: dashed;
 }

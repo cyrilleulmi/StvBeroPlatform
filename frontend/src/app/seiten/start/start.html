@@ -1,4 +1,4 @@
-<h1>{{ texte.start.begruessung(anmeldung.ich()?.vorname ?? '') }}</h1>
+<h1>{{ texte.start.begruessung(anmeldung.ich()?.firstName ?? '') }}</h1>
 
 <section
   class="karte naechster"
@@ -13,15 +13,15 @@
     <p class="leer">{{ texte.allgemein.laden }}</p>
   } @else if (naechster(); as t) {
     <a class="termin-link" [routerLink]="['/termine', t.id]">
-      <span class="termin-titel">{{ t.titel }}</span>
+      <span class="termin-titel">{{ t.title }}</span>
       <span class="nebentext">{{ beschreibung(t) }}</span>
-      @if (t.ort) {
-        <span class="nebentext">{{ t.ort.name }}</span>
+      @if (t.location) {
+        <span class="nebentext">{{ t.location.name }}</span>
       }
     </a>
     <app-meine-antwort
       [terminId]="t.id"
-      [antwort]="t.meineAntwort"
+      [antwort]="t.myResponse"
       [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
       (geaendert)="nachladen(t.id)"
     />
@@ -43,12 +43,12 @@
       @for (kachel of kacheln(); track kachel.id) {
         <li>
           <a class="kachel" [routerLink]="kachel.route" [attr.data-testid]="'kachel-' + kachel.id">
-            <span class="icon-feld" [attr.data-farbe]="kachel.farbe">
+            <span class="icon-feld" [attr.data-farbe]="kachel.color">
               <app-icon [name]="kachel.icon" />
             </span>
-            <span class="kachel-titel">{{ kachel.titel }}</span>
-            @if (kachel.hinweis) {
-              <span class="nebentext">{{ kachel.hinweis }}</span>
+            <span class="kachel-titel">{{ kachel.title }}</span>
+            @if (kachel.hint) {
+              <span class="nebentext">{{ kachel.hint }}</span>
             }
           </a>
         </li>

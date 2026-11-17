@@ -35,24 +35,24 @@ const TEAM_1_UND_2_OHNE_PETRA = [ANNA, LEA, MIA, SARA, NINA, JANA, KIM, MARC, EV
 
 interface Benachrichtigung {
   id: string;
-  art: string;
-  empfaenger: { id: string };
+  type: string;
+  recipient: { id: string };
   text: string;
-  terminId: string | null;
+  eventId: string | null;
 }
 
 /** Nach dem Reset neu entstandene Benachrichtigungen einer Art zu einem Termin (ohne Seed). */
 async function neue(request: APIRequestContext, art: string, terminId: string): Promise<Benachrichtigung[]> {
-  const antwort = await request.get('/api/test/benachrichtigungen');
+  const antwort = await request.get('/api/test/notifications');
   expect(antwort.status()).toBe(200);
   const alle = (await antwort.json()) as Benachrichtigung[];
-  return alle.filter((b) => b.art === art && b.terminId === terminId && !b.id.startsWith('90000000'));
+  return alle.filter((b) => b.type === art && b.eventId === terminId && !b.id.startsWith('90000000'));
 }
 
-const empfaenger = (liste: Benachrichtigung[]) => liste.map((b) => b.empfaenger.id).sort();
+const empfaenger = (liste: Benachrichtigung[]) => liste.map((b) => b.recipient.id).sort();
 
 async function uhr(request: APIRequestContext, jetzt: string): Promise<void> {
-  const antwort = await request.put('/api/test/uhr', { data: { jetzt } });
+  const antwort = await request.put('/api/test/clock', { data: { now: jetzt } });
   expect(antwort.status()).toBe(204);
 }
 
@@ -141,17 +141,17 @@ test('F-06 K1: «Alle als gelesen markieren»', async ({ page }) => {
 
 test('F-06 RR-07: fremde Benachrichtigung lässt sich nicht als gelesen markieren (403)', async ({ page }) => {
   await anmelden(page, 'anna');
-  const antwort = await page.request.post(`/api/benachrichtigungen/${LEA_ABSAGE_T03}/gelesen`);
+  const antwort = await page.request.post(`/api/notifications/${LEA_ABSAGE_T03}/read`);
   expect(antwort.status()).toBe(403);
 });
 
 test('F-06 K3 S5 BEN-02: kurzfristige Absage benachrichtigt Petra, nicht Marc', async ({ page, request }) => {
   await uhr(request, '2026-11-16T19:00:00+01:00');
   await anmelden(page, 'anna');
-  const antwort = await page.request.put(`/api/termine/${T01}/antworten/ich`, { data: { status: 'NICHT_DABEI' } });
+  const antwort = await page.request.put(`/api/events/${T01}/responses/me`, { data: { status: 'DECLINED' } });
   expect(antwort.status()).toBe(200);
 
-  const neu = await neue(request, 'KURZFRISTIGE_ABSAGE', T01);
+  const neu = await neue(request, 'LATE_CANCELLATION', T01);
   expect(empfaenger(neu)).toEqual([PETRA]);
 
   await anmelden(page, 'petra');
@@ -166,18 +166,18 @@ test('F-06 K3 S5 BEN-02: kurzfristige Absage benachrichtigt Petra, nicht Marc', 
 
 test('F-06 K4 S6 BEN-01 BEN-13: Erinnerung an Personen ohne Antwort, genau einmal', async ({ page, request }) => {
   await uhr(request, '2026-11-16T06:31:00+01:00');
-  expect(empfaenger(await neue(request, 'ERINNERUNG', T01))).toEqual([NINA, ELLA].sort());
+  expect(empfaenger(await neue(request, 'REMINDER', T01))).toEqual([NINA, ELLA].sort());
   // Erneute Prüfungen erinnern nicht nochmals
   await uhr(request, '2026-11-16T07:00:00+01:00');
   await uhr(request, '2026-11-16T12:00:00+01:00');
-  expect(await neue(request, 'ERINNERUNG', T01)).toHaveLength(2);
+  expect(await neue(request, 'REMINDER', T01)).toHaveLength(2);
 
   await anmelden(page, 'nina');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Erinnerung: Bitte gib bis Mo 16.11. 18:30 Bescheid, ob du bei Training Di 17.11. dabei bist.',
   );
-  await expect(liste(page).getByRole('listitem').first()).toHaveAttribute('data-art', 'ERINNERUNG');
+  await expect(liste(page).getByRole('listitem').first()).toHaveAttribute('data-art', 'REMINDER');
 });
 
 test('F-06 K5 S9 BEN-03: Veröffentlichen benachrichtigt alle Spielerinnen des Teams', async ({ page, request }) => {
@@ -187,7 +187,7 @@ test('F-06 K5 S9 BEN-03: Veröffentlichen benachrichtigt alle Spielerinnen des T
   await page.getByRole('dialog', { name: 'Aufgebot veröffentlichen?' }).getByRole('button', { name: 'Veröffentlichen' }).click();
   await expect(page.getByTestId('aufgebot-status')).toContainText('veröffentlicht am');
 
-  const neu = await neue(request, 'AUFGEBOT_VEROEFFENTLICHT', T04);
+  const neu = await neue(request, 'CALL_UP_PUBLISHED', T04);
   expect(empfaenger(neu)).toEqual([ANNA, LEA, MIA, SARA, NINA, JANA, KIM].sort());
 
   await anmelden(page, 'kim');
@@ -204,7 +204,7 @@ test('F-06 K6 S10 BEN-04: Abmeldung einer Aufgebotenen benachrichtigt die Coache
   await expect(page.getByRole('dialog', { name: 'Nicht dabei' })).toBeVisible();
   await page.getByRole('button', { name: 'Überspringen' }).click();
 
-  await expect.poll(async () => empfaenger(await neue(request, 'AUFGEBOTENE_ABGEMELDET', T05))).toEqual([MARC]);
+  await expect.poll(async () => empfaenger(await neue(request, 'CALLED_UP_PLAYER_DECLINED', T05))).toEqual([MARC]);
 
   await anmelden(page, 'marc');
   await page.goto('/benachrichtigungen');
@@ -216,12 +216,12 @@ test('F-06 K6 S10 BEN-04: Abmeldung einer Aufgebotenen benachrichtigt die Coache
 test('F-06 K7 BEN-05: Änderung eines veröffentlichten Aufgebots benachrichtigt nur Betroffene', async ({ page, request }) => {
   await anmelden(page, 'marc');
   // Termin 05 ist veröffentlicht mit Petra, Eva, Lara, Ella. Ella fällt heraus, Lea kommt dazu.
-  const antwort = await page.request.put(`/api/termine/${T05}/aufgebot`, {
+  const antwort = await page.request.put(`/api/events/${T05}/call-up`, {
     data: { personIds: [PETRA, EVA, LARA, LEA] },
   });
   expect(antwort.status()).toBe(200);
 
-  const neu = await neue(request, 'AUFGEBOT_GEAENDERT', T05);
+  const neu = await neue(request, 'CALL_UP_CHANGED', T05);
   expect(empfaenger(neu)).toEqual([LEA, ELLA].sort());
 
   await anmelden(page, 'ella');
@@ -233,9 +233,9 @@ test('F-06 K7 BEN-05: Änderung eines veröffentlichten Aufgebots benachrichtigt
 
 test('F-06 K8 BEN-07: Absage benachrichtigt alle Mitglieder der beteiligten Teams', async ({ page, request }) => {
   await anmelden(page, 'petra');
-  const antwort = await page.request.post(`/api/termine/${T01}/absagen`, { data: { grund: 'Halle gesperrt' } });
+  const antwort = await page.request.post(`/api/events/${T01}/cancel`, { data: { reason: 'Halle gesperrt' } });
   expect(antwort.status()).toBe(200);
-  expect(empfaenger(await neue(request, 'TERMIN_ABGESAGT', T01))).toEqual([...TEAM_1_UND_2_OHNE_PETRA].sort());
+  expect(empfaenger(await neue(request, 'EVENT_CANCELLED', T01))).toEqual([...TEAM_1_UND_2_OHNE_PETRA].sort());
 
   await anmelden(page, 'zoe');
   await page.goto('/benachrichtigungen');
@@ -244,18 +244,18 @@ test('F-06 K8 BEN-07: Absage benachrichtigt alle Mitglieder der beteiligten Team
 
 test('F-06 K8 BEN-07: Verschiebung benachrichtigt alle Mitglieder der beteiligten Teams', async ({ page, request }) => {
   await anmelden(page, 'marc');
-  const antwort = await page.request.put(`/api/termine/${T01}`, {
+  const antwort = await page.request.put(`/api/events/${T01}`, {
     data: {
-      typ: 'TRAINING',
-      titel: 'Training',
-      beginn: '2026-11-17T19:00:00+01:00',
-      ende: '2026-11-17T20:30:00+01:00',
+      type: 'PRACTICE',
+      title: 'Training',
+      start: '2026-11-17T19:00:00+01:00',
+      end: '2026-11-17T20:30:00+01:00',
       teamIds: [TEAM_1, TEAM_2],
-      ort: { name: 'Sporthalle Nord' },
+      location: { name: 'Sporthalle Nord' },
     },
   });
   expect(antwort.status()).toBe(200);
-  const neu = await neue(request, 'TERMIN_VERSCHOBEN', T01);
+  const neu = await neue(request, 'EVENT_RESCHEDULED', T01);
   expect(empfaenger(neu)).toEqual([...TEAM_1_UND_2_OHNE_PETRA.filter((p) => p !== MARC), PETRA].sort());
 
   await anmelden(page, 'anna');

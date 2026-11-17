@@ -63,7 +63,7 @@ test.beforeEach(async ({ request }) => {
 
 test('Nachbesserung #14 K1: Doppelklick unter /dev-login meldet genau einmal an', async ({ page }) => {
   await page.goto('/dev-login');
-  const bremse = await bremsen(page, 'POST', /^\/api\/test\/anmelden$/);
+  const bremse = await bremsen(page, 'POST', /^\/api\/test\/login$/);
   const anna = page.getByRole('button', { name: /Anna Muster/ });
   const petra = page.getByRole('button', { name: /Petra Keller/ });
 
@@ -87,7 +87,7 @@ test.describe('fehlerhafte Anmeldung', () => {
   test('Nachbesserung #14 K1: Nach einem Fehler ist die Anmeldung unter /dev-login wieder möglich', async ({ page }) => {
     await page.goto('/dev-login');
     let erster = true;
-    await page.route('**/api/test/anmelden', async (route) => {
+    await page.route('**/api/test/login', async (route) => {
       if (erster) {
         erster = false;
         await route.fulfill({ status: 503, body: '' });
@@ -110,7 +110,7 @@ test.describe('fehlerhafte Anmeldung', () => {
 test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Profil meldet einmal ab', async ({ page }) => {
   await anmelden(page, 'anna');
   await page.goto('/profil');
-  const bremse = await bremsen(page, 'POST', /^\/api\/abmelden$/);
+  const bremse = await bremsen(page, 'POST', /^\/api\/logout$/);
 
   await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Abmelden' }), bremse);
 
@@ -122,11 +122,11 @@ test.describe('ohne aktuelle Saison', () => {
   test.use({ erwarteteKonsolenfehler: [/status of 409/] });
 
   test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» meldet einmal ab', async ({ page, request }) => {
-    expect((await request.delete('/api/test/aktuelle-saison')).status()).toBe(204);
+    expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     await anmelden(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
-    const bremse = await bremsen(page, 'POST', /^\/api\/abmelden$/);
+    const bremse = await bremsen(page, 'POST', /^\/api\/logout$/);
 
     await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Abmelden' }), bremse);
 
@@ -155,7 +155,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Entfernen entfernt die Person einmal
   await anmelden(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
-  const bremse = await bremsen(page, 'DELETE', new RegExp(`/mitglieder/${ANNA}$`));
+  const bremse = await bremsen(page, 'DELETE', new RegExp(`/members/${ANNA}$`));
 
   await doppelklickWaehrendAnfrage(
     page.getByRole('button', { name: 'Anna Muster entfernen' }),
@@ -176,7 +176,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Speichern einer Person speichert ein
   await anmelden(page, 'alex');
   await page.goto(`/verwaltung/personen/${ANNA}`);
   await expect(page.getByLabel('Vorname')).toHaveValue('Anna');
-  const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/personen/${ANNA}$`));
+  const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/persons/${ANNA}$`));
   await page.getByLabel('Vorname').fill('Annina');
 
   await doppelklickWaehrendAnfrage(page.getByRole('button', { name: 'Speichern' }), bremse);
@@ -191,7 +191,7 @@ test('Nachbesserung #14 K2: Doppelklick auf «Zur aktuellen Saison machen» wech
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
   await page.getByRole('button', { name: 'Saison anlegen' }).click();
   await expect(page.getByRole('status')).toContainText('2027/28 ist angelegt');
-  const bremse = await bremsen(page, 'POST', /^\/api\/saisons\/[^/]+\/aktivieren$/);
+  const bremse = await bremsen(page, 'POST', /^\/api\/seasons\/[^/]+\/activate$/);
 
   const knopf = page
     .getByRole('listitem', { name: '2027/28' })

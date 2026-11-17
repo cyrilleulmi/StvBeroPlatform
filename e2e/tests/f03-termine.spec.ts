@@ -114,12 +114,12 @@ test('F-03 K3 TER-01 TER-11: Petra erfasst einen Termin für Team 1 + Team 2', a
 
 test('F-03 K3 RR-07: Marc darf nicht für Team 1 erfassen (403)', async ({ page }) => {
   await anmelden(page, 'marc');
-  const antwort = await page.request.post('/api/termine', {
+  const antwort = await page.request.post('/api/events', {
     data: {
-      typ: 'TRAINING',
-      titel: 'Training',
-      beginn: '2026-11-20T18:00:00+01:00',
-      ende: '2026-11-20T19:30:00+01:00',
+      type: 'PRACTICE',
+      title: 'Training',
+      start: '2026-11-20T18:00:00+01:00',
+      end: '2026-11-20T19:30:00+01:00',
       teamIds: [TEAM_1],
     },
   });
@@ -243,6 +243,26 @@ test('F-03 K7 S13 TER-06: Abgesagter Termin ist erkennbar, mit Grund', async ({ 
   await expect(page.getByTestId('termin-status')).toContainText('Antworten ist nicht mehr möglich.');
   await expect(page.getByRole('link', { name: 'Termin bearbeiten' })).toHaveCount(0);
   await barrierefrei(page);
+});
+
+test('F-03 K7 TER-06: Abgesagter Termin hat in der Liste ein korallfarbenes Datum', async ({ page }) => {
+  await anmelden(page, 'anna');
+  await page.goto('/termine');
+  // Das Datum ist das erste Element im Link der Karte (aria-hidden, darum ohne Rolle).
+  const hintergrund = (id: string) =>
+    karte(page, id)
+      .getByRole('link')
+      .evaluate((a) => getComputedStyle(a.firstElementChild as Element).backgroundColor);
+  const koralle = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.background = 'var(--coral-soft)';
+    document.body.append(probe);
+    const farbe = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return farbe;
+  });
+  expect(await hintergrund(T03)).toBe(koralle);
+  expect(await hintergrund(T01)).not.toBe(koralle);
 });
 
 test('F-03 K7 TER-06: Coach sagt einen Termin mit Grund ab', async ({ page }) => {

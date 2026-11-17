@@ -11,12 +11,12 @@ const TEAM_1 = "10000000-0000-4000-8000-000000000001";
 const T04 = "40000000-0000-4000-8000-000000000004";
 
 const SPIEL_01_SU = {
-  suSpielId: 5000001,
-  anspielzeit: "2026-11-22T09:30:00+01:00",
-  heimteam: "Team 1",
-  gastteam: "UHC Musterdorf",
-  halle: "Sporthalle Seefeld",
-  ort: "Musterdorf",
+  suMatchId: 5000001,
+  startTime: "2026-11-22T09:30:00+01:00",
+  homeTeam: "Team 1",
+  awayTeam: "UHC Musterdorf",
+  hall: "Sporthalle Seefeld",
+  location: "Musterdorf",
 };
 
 /** Spiele in der Liste «Spiele» der Termin-Detailseite, als zugängliche Namen. */
@@ -34,13 +34,13 @@ test.beforeEach(async ({ request }) => {
 test("NB-44 K1 SUH-06: Nicht mehr geliefertes Spiel lässt sich im Formular entfernen", async ({
   page,
 }) => {
-  const sim = await page.request.put("/api/test/swiss-unihockey/spiele", {
-    data: { suTeamId: 900001, spiele: [SPIEL_01_SU] },
+  const sim = await page.request.put("/api/test/swiss-unihockey/matches", {
+    data: { suTeamId: 900001, matches: [SPIEL_01_SU] },
   });
   expect(sim.status()).toBe(204);
   await anmelden(page, "alex");
   const abgleich = await page.request.post(
-    `/api/teams/${TEAM_1}/swiss-unihockey/abgleich`,
+    `/api/teams/${TEAM_1}/swiss-unihockey/sync`,
   );
   expect(abgleich.ok()).toBe(true);
 
@@ -71,9 +71,9 @@ test("NB-44 K1 SUH-06: Nicht mehr geliefertes Spiel lässt sich im Formular entf
   await expect
     .poll(() => spiele(page))
     .toEqual(["09:30 Team 1 – UHC Musterdorf"]);
-  const termin = await page.request.get(`/api/termine/${T04}`);
-  const daten = (await termin.json()) as { spiele: { suSpielId: number }[] };
-  expect(daten.spiele.map((s) => s.suSpielId)).toEqual([5000001]);
+  const termin = await page.request.get(`/api/events/${T04}`);
+  const daten = (await termin.json()) as { matches: { suMatchId: number }[] };
+  expect(daten.matches.map((s) => s.suMatchId)).toEqual([5000001]);
 });
 
 test("NB-44 K2 SUH-06: Importierte Spiele, die swiss unihockey noch liefert, haben keinen Knopf zum Entfernen", async ({

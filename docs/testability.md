@@ -39,7 +39,7 @@ Color alone carries no information (see also [design-principles.md](design-princ
 | State | Markup |
 |---|---|
 | Selected response | Response buttons as a group with `role="radiogroup"` or `aria-pressed="true"` |
-| A person's response in lists | Visible text or `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **and** `data-antwort="DABEI"` |
+| A person's response in lists | Visible text or `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **and** `data-antwort="ATTENDING"` |
 | Active navigation item | `aria-current="page"` |
 | Called up | Checkbox with `aria-checked` or the text «aufgeboten» |
 | Loading | Container with `aria-busy="true"`, removed afterwards |
@@ -103,11 +103,11 @@ These helpers exist only in the Quarkus profiles `dev` and `test`. In the `prod`
 | Helper | Purpose | Interface |
 |---|---|---|
 | **Reset seed** | Bring the database into the defined initial state | `POST /api/test/reset` |
-| **Fixed clock** | Set «now» to check response deadlines, late cancellations and reminders | `PUT /api/test/uhr`, `DELETE /api/test/uhr` |
-| **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/aktuelle-saison` |
-| **Log in as** | Log in as any seed person without a password | `POST /api/test/anmelden`, page `/dev-login` |
-| **Read notifications** | Check who was notified when and about what | `GET /api/test/benachrichtigungen` |
-| **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey» | `PUT /api/test/swiss-unihockey/spiele` |
+| **Fixed clock** | Set «now» to check response deadlines, late cancellations and reminders | `PUT /api/test/clock`, `DELETE /api/test/clock` |
+| **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/current-season` |
+| **Log in as** | Log in as any seed person without a password | `POST /api/test/login`, page `/dev-login` |
+| **Read notifications** | Check who was notified when and about what | `GET /api/test/notifications` |
+| **Simulate swiss unihockey** | Set the match data that the sync receives «from swiss unihockey» | `PUT /api/test/swiss-unihockey/matches` |
 
 Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»). The seed data: [test-data.md](test-data.md).
 
@@ -127,7 +127,7 @@ Conventions for E2E tests:
 - **Only exception:** document elements without a role that do not appear in the accessibility tree (`<html>`, e.g. for `data-theme`, and `<link>` in the head, e.g. the manifest). For these, `e2e/tests/hilfen.ts` has the helpers `dokumentWurzel(page)` and `kopfLink(page, rel)`; only there is the CSS selector written. Tests use these helpers and write none themselves. If another such element is needed, a helper is added there.
 - `e2e/tests/nb17-keine-css-selektoren.spec.ts` checks this statically: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` as well as `css=`/`xpath=` outside `hilfen.ts` make the test fail.
 - No `waitForTimeout`. Wait for states (`expect(...).toBeVisible()` etc.).
-- Every test starts with `POST /api/test/reset` and logs in via `POST /api/test/anmelden`.
+- Every test starts with `POST /api/test/reset` and logs in via `POST /api/test/login`.
 - Every test runs in two projects: `mobil` (375×812, touch) and `desktop` (1280×800).
 - The test name states the requirement ID: `test('ANM-04: vielleicht verlangt einen Kommentar', …)`.
 - `e2e/tests/seed.spec.ts` is the entry test (reset, login, dashboard visible). It also serves as the template when tests are generated with the Playwright test agents (planner/generator/healer).

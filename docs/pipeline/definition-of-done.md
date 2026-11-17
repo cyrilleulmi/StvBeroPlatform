@@ -15,7 +15,7 @@ A PR is done when all items are met. The development agent ticks them in the PR 
 - [ ] The API matches [openapi.yaml](../api/openapi.yaml). Changes to the contract are in the same PR, `redocly lint` runs without errors and warnings.
 - [ ] Permissions are checked in the backend (RR-07), with a test for the forbidden case (403).
 - [ ] Domain rules live in the domain logic, not in the REST layer, and have unit tests.
-- [ ] Schema changes as a new Flyway migration. Existing migrations are unchanged.
+- [ ] Schema changes as a new Flyway migration. Existing migrations are unchanged (one-time exception: F-10 rewrote them in English, E-74).
 - [ ] Test endpoints only in the profiles `dev`/`test`.
 - [ ] «Now» comes from the injected clock, never from `LocalDateTime.now()` directly.
 

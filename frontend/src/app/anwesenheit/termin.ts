@@ -33,9 +33,9 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
   template: `
     <div class="kopf">
       <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
-      <h1>{{ termin()?.titel ?? texte.termine.titel }}</h1>
+      <h1>{{ termin()?.title ?? texte.termine.titel }}</h1>
       @if (termin(); as t) {
-        <p class="nebentext">{{ datum(t.beginn) }} · {{ zeitraum() }} · {{ teams() }}</p>
+        <p class="nebentext">{{ datum(t.start) }} · {{ zeitraum() }} · {{ teams() }}</p>
       }
     </div>
     @if (erfolg(); as meldung) {
@@ -48,12 +48,12 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
       @if (laedt()) {
         <p class="leer">{{ texte.allgemein.laden }}</p>
       } @else if (termin(); as t) {
-        @if (t.status === 'ABGESAGT') {
+        @if (t.status === 'CANCELLED') {
           <div class="meldung-fehler status" data-testid="termin-status">
-            <strong>{{ texte.termine.abgesagtMitGrund(t.absagegrund ?? '') }}</strong>
+            <strong>{{ texte.termine.abgesagtMitGrund(t.cancellationReason ?? '') }}</strong>
             <span>{{ texte.termine.abgesagtHinweis }}</span>
           </div>
-        } @else if (t.verschoben) {
+        } @else if (t.rescheduled) {
           <p class="meldung-hinweis" data-testid="termin-status">
             {{ texte.termine.verschobenHinweis }}
           </p>
@@ -65,7 +65,7 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
             </h2>
             <app-meine-antwort
               [terminId]="t.id"
-              [antwort]="t.meineAntwort"
+              [antwort]="t.myResponse"
               [name]="texte.antwort.meineAntwort"
               [gesperrt]="sperre()"
               [details]="true"
@@ -73,11 +73,11 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
             />
           </section>
         }
-        @if (t.typ === 'SPIELTAG') {
+        @if (t.type === 'MATCH_DAY') {
           <app-spieltag
             [termin]="t"
             [darfAufgebot]="coachOderAdmin()"
-            [darfResultat]="coachOderAdmin() && t.status !== 'ABGESAGT'"
+            [darfResultat]="coachOderAdmin() && t.status !== 'CANCELLED'"
             (geaendert)="nachladen()"
           />
         }
@@ -85,22 +85,22 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
           <h2 id="termin-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
           <dl class="angaben">
             <dt>{{ texte.termine.datum }}</dt>
-            <dd>{{ datum(t.beginn) }}</dd>
+            <dd>{{ datum(t.start) }}</dd>
             <dt>{{ texte.termine.zeit }}</dt>
             <dd>{{ zeitraum() }}</dd>
             <dt>{{ texte.termine.teams }}</dt>
             <dd>{{ teams() }}</dd>
-            @if (t.ort) {
+            @if (t.location) {
               <dt>{{ texte.termine.ort }}</dt>
               <dd>
-                {{ t.ort.name }}
-                @if (t.ort.adresse) {
-                  , {{ t.ort.adresse }}
+                {{ t.location.name }}
+                @if (t.location.address) {
+                  , {{ t.location.address }}
                 }
-                @if (t.ort.mapsUrl) {
+                @if (t.location.mapsUrl) {
                   <br />
                   <a
-                    [href]="t.ort.mapsUrl"
+                    [href]="t.location.mapsUrl"
                     target="_blank"
                     rel="noopener"
                     data-testid="spielort-karte"
@@ -109,36 +109,36 @@ import { jahrVon, terminDatum, uhrzeit } from './zeit';
                 }
               </dd>
             }
-            @if (t.treffpunkt; as tp) {
+            @if (t.meetingPoint; as tp) {
               <dt>{{ texte.termine.treffpunkt }}</dt>
-              <dd data-testid="treffpunkt">{{ uhrzeit(tp.zeit) }} · {{ tp.ort }}</dd>
+              <dd data-testid="treffpunkt">{{ uhrzeit(tp.time) }} · {{ tp.location }}</dd>
             }
             <dt>{{ texte.termine.antwortfrist }}</dt>
             <dd data-testid="antwortfrist">
               {{
                 texte.termine.antwortfristText(
-                  datum(t.antwortfrist),
-                  uhrzeit(t.antwortfrist),
-                  t.antwortfristStunden ?? 24
+                  datum(t.responseDeadline),
+                  uhrzeit(t.responseDeadline),
+                  t.responseDeadlineHours ?? 24
                 )
               }}
             </dd>
-            @if (t.hinweise) {
+            @if (t.notes) {
               <dt>{{ texte.termine.hinweise }}</dt>
-              <dd class="hinweise">{{ t.hinweise }}</dd>
+              <dd class="hinweise">{{ t.notes }}</dd>
             }
-            @if (t.serieId) {
+            @if (t.seriesId) {
               <dt>{{ texte.termine.serie }}</dt>
               <dd>
-                @if (t.darfBearbeiten) {
-                  <a [routerLink]="['/serien', t.serieId]">{{ texte.termine.serieAnsehen }}</a>
+                @if (t.canEdit) {
+                  <a [routerLink]="['/serien', t.seriesId]">{{ texte.termine.serieAnsehen }}</a>
                 } @else {
                   {{ texte.termine.teilEinerSerie }}
                 }
               </dd>
             }
           </dl>
-          @if (t.darfBearbeiten) {
+          @if (t.canEdit) {
             <a
               class="button button-sekundaer button-klein bearbeiten"
               [routerLink]="['/termine', t.id, 'bearbeiten']"
@@ -178,21 +178,21 @@ export class Termin {
   protected readonly fehler = signal<string | null>(null);
   protected readonly erfolg = signal<string | null>(null);
 
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.jetzt));
+  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
 
   protected readonly zeitraum = computed(() => {
     const t = this.termin();
-    return t ? TEXTE.termine.zeitraum(uhrzeit(t.beginn), uhrzeit(t.ende)) : '';
+    return t ? TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end)) : '';
   });
 
   /** Mitglied eines beteiligten Teams: kann für sich antworten (ANM-01). */
   protected readonly binMitglied = computed(() =>
-    (this.termin()?.teams ?? []).some((t) => !!t.meineFunktion),
+    (this.termin()?.teams ?? []).some((t) => !!t.myTeamRole),
   );
 
   /** Teams des Termins, in denen die angemeldete Person Coach ist (RR-06). */
   protected readonly coachIn = computed(() =>
-    (this.termin()?.teams ?? []).filter((t) => t.meineFunktion === 'COACH').map((t) => t.id),
+    (this.termin()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
   );
 
   /** Coach eines beteiligten Teams oder Admin: Aufgebot und Resultate (RR-03). */
@@ -204,9 +204,9 @@ export class Termin {
   protected readonly sperre = computed(() => {
     const t = this.termin();
     if (!t) return null;
-    if (t.status === 'ABGESAGT') return TEXTE.antwort.abgesagt;
-    const jetzt = this.anmeldung.ich()?.jetzt;
-    if (jetzt && Date.parse(t.ende) <= Date.parse(jetzt)) return TEXTE.antwort.vorbei;
+    if (t.status === 'CANCELLED') return TEXTE.antwort.abgesagt;
+    const jetzt = this.anmeldung.ich()?.now;
+    if (jetzt && Date.parse(t.end) <= Date.parse(jetzt)) return TEXTE.antwort.vorbei;
     return null;
   });
 
@@ -231,8 +231,8 @@ export class Termin {
     const id = this.terminId();
     try {
       const [termin, uebersicht] = await Promise.all([
-        firstValueFrom(this.http.get<TerminDaten>(`/api/termine/${id}`)),
-        firstValueFrom(this.http.get<UebersichtDaten>(`/api/termine/${id}/uebersicht`)),
+        firstValueFrom(this.http.get<TerminDaten>(`/api/events/${id}`)),
+        firstValueFrom(this.http.get<UebersichtDaten>(`/api/events/${id}/overview`)),
       ]);
       this.termin.set(termin);
       this.uebersicht.set(uebersicht);
@@ -248,8 +248,8 @@ export class Termin {
     this.uebersicht.set(null);
     try {
       const [termin, uebersicht] = await Promise.all([
-        firstValueFrom(this.http.get<TerminDaten>(`/api/termine/${id}`)),
-        firstValueFrom(this.http.get<UebersichtDaten>(`/api/termine/${id}/uebersicht`)),
+        firstValueFrom(this.http.get<TerminDaten>(`/api/events/${id}`)),
+        firstValueFrom(this.http.get<UebersichtDaten>(`/api/events/${id}/overview`)),
       ]);
       this.termin.set(termin);
       this.uebersicht.set(uebersicht);

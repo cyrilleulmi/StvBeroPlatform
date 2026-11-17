@@ -47,7 +47,7 @@ flowchart LR
 | Route | Screen | Who | Content | Feature |
 |---|---|---|---|---|
 | `/anmelden` | «Anmelden» (login) | everyone | Login (method open, O-01). In test mode link «Zur Anmeldung im Testmodus». `?ziel=` is passed on | F-00 |
-| `/dev-login` | «Testmodus-Anmeldung» (test mode login) | only `dev`/`test` (development build) | List of seed persons (`GET /api/test/personen`); one click logs in and leads to `?ziel=` or `/` | F-00 |
+| `/dev-login` | «Testmodus-Anmeldung» (test mode login) | only `dev`/`test` (development build) | List of seed persons (`GET /api/test/persons`); one click logs in and leads to `?ziel=` or `/` | F-00 |
 | `/` | «Start» | logged in | Greeting, own next event with response buttons, tiles depending on role | F-00, F-04 |
 | `/termine` | «Termine» (events) | logged in | Upcoming events of all own teams by month, switch «Kommend»/«Vergangen» (`nav` «Ansicht», `?ansicht=vergangen`), select «Team» (`?team=<id>`), coaches and admins: link «Termin erfassen». From F-04 own response can be changed directly | F-03, F-04 |
 | `/termine/:id` | «Termin» (event) | members of the teams involved, admin | Details (date, time, teams, location, meeting point, response deadline, notes, series), status «Abgesagt: <Grund>» or «verschoben», coaches: «Termin bearbeiten», «Serie ansehen». From F-04: own response, overview by team and line, coach block. For a match day from F-05: matches, own call-up status | F-03, F-04, F-05 |
@@ -62,7 +62,7 @@ flowchart LR
 | `/benachrichtigungen` | «Benachrichtigungen» (notifications) | logged in | Own notifications, newest first (list «Benachrichtigungen»): text, time, unread ones with «Neu». A click marks as read and opens `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (only with unread ones, feedback «Alle sind als gelesen markiert.»). Empty: «Keine Benachrichtigungen.» | F-06 |
 | `/profil` | «Profil» (profile) | logged in | Name, theme («Hell», «Düne», «GitHub Dark», «System»; NF-08), log out | F-00 |
 | `/verwaltung` | «Verwaltung» (administration) | admin | Entry page: links «Personen», «Teams verwalten», «Saisons». Others see «Keine Berechtigung» | F-00, F-01 |
-| `/keine-saison` | «Keine aktuelle Saison» (no current season) | logged in | Notice when `GET /api/ich` responds with 409 (no season set as current, SAI-03). Without navigation, buttons «Nochmals versuchen» (back to `?ziel=`) and «Abmelden». In this state every route redirects here with `?ziel=`. Opened directly: without login to the login page, with a current season straight on to the target | Follow-up fix #13 |
+| `/keine-saison` | «Keine aktuelle Saison» (no current season) | logged in | Notice when `GET /api/me` responds with 409 (no season set as current, SAI-03). Without navigation, buttons «Nochmals versuchen» (back to `?ziel=`) and «Abmelden». In this state every route redirects here with `?ziel=`. Opened directly: without login to the login page, with a current season straight on to the target | Follow-up fix #13 |
 | `/**` | «Nicht gefunden» (not found) | logged in | «Diese Seite gibt es nicht.» with link «Zur Startseite» | F-00 |
 | `/verwaltung/personen` | «Personen» (people) | admin | List by last name, search `?suche=`, link «Person erfassen» | F-01 |
 | `/verwaltung/personen/neu` | «Person erfassen» (create person) | admin | First name, last name, e-mail, admin. After saving on to `/verwaltung/personen/:id` | F-01 |
@@ -71,7 +71,7 @@ flowchart LR
 | `/verwaltung/teams/:id` | «Team verwalten» (manage team) | admin | Rename, section «swiss unihockey» (field «Team-ID bei swiss unihockey», «Verknüpfen», «Verknüpfung lösen», «Jetzt abgleichen» with result as `role="status"`, failure as `role="alert"`; not in the archive), coaches and players with select «Funktion von <Name>» and «<Name> entfernen», «Person aufnehmen». `?saison=<id>`; archive read-only | F-01, F-07 |
 | `/verwaltung/saisons` | «Saisons» (seasons) | admin | Seasons with status (current, archive, planned), «Teams ansehen», «Zur aktuellen Saison machen», form «Neue Saison» with carry-over | F-01 |
 
-Without permission a screen shows the text «Keine Berechtigung» (`role="alert"`) instead of an empty screen. Without login every route redirects to `/anmelden` (or `/dev-login` in test mode) with `?ziel=<original route>` and returns there after login. The frontend checks whether someone is logged in via `GET /api/sitzung` (always 200), so that no errors appear in the console without login.
+Without permission a screen shows the text «Keine Berechtigung» (`role="alert"`) instead of an empty screen. Without login every route redirects to `/anmelden` (or `/dev-login` in test mode) with `?ziel=<original route>` and returns there after login. The frontend checks whether someone is logged in via `GET /api/session` (always 200), so that no errors appear in the console without login.
 
 ## Dialogs
 
@@ -100,7 +100,7 @@ Fixed test IDs that tests rely on. Scheme and rules: [testability.md](../testabi
 | `dev-login-person-<schluessel>` | Entry of a test person on `/dev-login`, e.g. `dev-login-person-petra` |
 | `naechster-termin` | Card «Nächster Termin» on the start screen: next planned event of the own teams (cancelled ones skipped) with link to the event and `meine-antwort`. Without an event: «Keine kommenden Termine» |
 | `benachrichtigungen-zaehler` | Number of unread notifications in the navigation (missing when everything is read) |
-| `benachrichtigung-<id>` | Entry in `/benachrichtigungen` (`li` with `data-gelesen="true\|false"` and `data-art`, e.g. `ERINNERUNG`) |
+| `benachrichtigung-<id>` | Entry in `/benachrichtigungen` (`li` with `data-gelesen="true\|false"` and `data-art`, e.g. `REMINDER`) |
 | `keine-saison-hinweis` | Notice on `/keine-saison` |
 
 ### Teams and administration (F-01)

@@ -115,7 +115,7 @@ export function zurich(datum: string, zeit: string): string {
   return `${datum}T${zeit}:00${vorzeichen}${zwei(Math.floor(betrag / 60))}:${zwei(betrag % 60)}`;
 }
 
-/** Jahr der Backend-Uhr («jetzt» aus `GET /api/ich`). */
+/** Jahr der Backend-Uhr («jetzt» aus `GET /api/me`). */
 export function jahrVon(jetzt: string | undefined): number | null {
   return jetzt ? teile(jetzt).jahr : null;
 }

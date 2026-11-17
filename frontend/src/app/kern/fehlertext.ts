@@ -20,23 +20,29 @@ export function fehlerstatus(fehler: unknown): number {
   return fehler instanceof HttpErrorResponse ? fehler.status : 0;
 }
 
-/** Regel-ID eines Fehlers vom Backend (Problem Details, Feld `regel`), sonst null. */
+/** Regel-ID eines Fehlers vom Backend (Problem Details, Feld `rule`), sonst null. */
 export function fehlerregel(fehler: unknown): string | null {
   if (fehler instanceof HttpErrorResponse) {
-    const regel = (fehler.error as { regel?: unknown } | null)?.regel;
+    const regel = (fehler.error as { rule?: unknown } | null)?.rule;
     return typeof regel === 'string' ? regel : null;
   }
   return null;
 }
 
-/** Feldfehler aus Problem Details (`felder`), als Zuordnung Feld → Meldung. */
-export function feldfehler(fehler: unknown): Record<string, string> {
+/**
+ * Feldfehler aus Problem Details (`fields`), als Zuordnung Feld → Meldung. Die API nennt die Felder
+ * englisch; `zuordnung` übersetzt sie bei Bedarf in die Feldnamen des Formulars.
+ */
+export function feldfehler(
+  fehler: unknown,
+  zuordnung: Record<string, string> = {},
+): Record<string, string> {
   const ergebnis: Record<string, string> = {};
   if (fehler instanceof HttpErrorResponse) {
-    const felder = (fehler.error as { felder?: { feld: string; meldung: string }[] } | null)
-      ?.felder;
+    const felder = (fehler.error as { fields?: { field: string; message: string }[] } | null)
+      ?.fields;
     for (const f of felder ?? []) {
-      ergebnis[f.feld] = f.meldung;
+      ergebnis[zuordnung[f.field] ?? f.field] = f.message;
     }
   }
   return ergebnis;

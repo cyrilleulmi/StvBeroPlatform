@@ -116,8 +116,8 @@ export class Personen {
     const nr = ++this.anfrage;
     this.laedt.set(true);
     try {
-      const params: Record<string, string> = suche?.trim() ? { suche: suche.trim() } : {};
-      const liste = await firstValueFrom(this.http.get<Person[]>('/api/personen', { params }));
+      const params: Record<string, string> = suche?.trim() ? { search: suche.trim() } : {};
+      const liste = await firstValueFrom(this.http.get<Person[]>('/api/persons', { params }));
       if (nr === this.anfrage) {
         this.personen.set(liste);
         this.fehler.set(null);

@@ -64,7 +64,7 @@
       <h2 [id]="titelId(g)" class="abschnitt-titel">
         {{ g.name }} <span class="anzahl">{{ g.spielerinnen.length }}</span>
       </h2>
-      @if (darfBearbeiten() && g.art === 'LINIE' && umbenennenId() !== g.id) {
+      @if (darfBearbeiten() && g.art === 'LINE' && umbenennenId() !== g.id) {
         <div class="knoepfe reihenfolge">
           <button
             type="button"

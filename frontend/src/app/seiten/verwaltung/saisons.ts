@@ -105,7 +105,7 @@ export class Saisons implements OnInit {
   private async laden(vorschlag: boolean): Promise<void> {
     this.laedt.set(true);
     try {
-      const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/saisons'));
+      const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/seasons'));
       this.saisons.set(saisons);
       if (vorschlag) {
         this.vorschlagen(saisons);
@@ -120,12 +120,12 @@ export class Saisons implements OnInit {
   /** Vorschlag für die nächste Saison: ein Jahr nach der neuesten, Übernahme aus der aktuellen. */
   private vorschlagen(saisons: Saison[]): void {
     const neueste = saisons[0];
-    const aktuelle = saisons.find((s) => s.aktuell);
+    const aktuelle = saisons.find((s) => s.current);
     if (!neueste) {
       this.neu.set({ name: '', von: '', bis: '', uebernehmenAus: '' });
       return;
     }
-    const von = verschieben(neueste.bis, 1);
+    const von = verschieben(neueste.endDate, 1);
     const bis = verschieben(von, -1, 1);
     const jahr = Number(von.slice(0, 4));
     this.neu.set({
@@ -151,17 +151,17 @@ export class Saisons implements OnInit {
 
     const eingabe: SaisonAnlegen = {
       name: n.name.trim(),
-      von: n.von,
-      bis: n.bis,
-      uebernehmenAus: n.uebernehmenAus || null,
+      startDate: n.von,
+      endDate: n.bis,
+      copyFrom: n.uebernehmenAus || null,
     };
     this.laufendeAktion.set('anlegen');
     try {
-      const saison = await firstValueFrom(this.http.post<Saison>('/api/saisons', eingabe));
+      const saison = await firstValueFrom(this.http.post<Saison>('/api/seasons', eingabe));
       await this.laden(true);
       this.erfolg.set(TEXTE.saisons.angelegt(saison.name));
     } catch (e) {
-      this.feldFehler.set(feldfehler(e));
+      this.feldFehler.set(feldfehler(e, { startDate: 'von', endDate: 'bis' }));
       this.fehler.set(fehlertext(e));
     } finally {
       this.laufendeAktion.set(null);
@@ -174,7 +174,7 @@ export class Saisons implements OnInit {
     this.fehler.set(null);
     this.laufendeAktion.set(`aktivieren:${s.id}`);
     try {
-      await firstValueFrom(this.http.post<void>(`/api/saisons/${s.id}/aktivieren`, null));
+      await firstValueFrom(this.http.post<void>(`/api/seasons/${s.id}/activate`, null));
       await Promise.all([this.laden(false), this.anmeldung.laden()]);
       this.erfolg.set(TEXTE.saisons.aktiviert(s.name));
     } catch (e) {

@@ -8,7 +8,7 @@ Viewports: mobile 375×812, desktop 1280×800. After each case: console without 
 ## K1 · `scripts/start.sh`
 
 1. Run `scripts/start.sh` from the repo state (DB, backend profile `dev`, frontend).
-2. Expected: message «Bereit.», `http://localhost:4200` answers 200, `GET http://localhost:4200/api/sitzung` (proxy) answers 200 with `angemeldet: false`.
+2. Expected: message «Bereit.», `http://localhost:4200` answers 200, `GET http://localhost:4200/api/session` (proxy) answers 200 with `signedIn: false`.
 
 ## K2 · `scripts/test.sh`
 
@@ -23,17 +23,17 @@ Starting point: reset, not signed in.
 2. Expected: all 17 seed people are visible (test ID `dev-login-person-<schluessel>`, e.g. `dev-login-person-petra`), with name. Banner `testmodus-hinweis` visible.
 3. Click «Anna Muster».
 4. Expected: URL `/`, greeting with «Anna». Still signed in after reload.
-5. Edge case: `POST /api/test/anmelden {schluessel: "gibtsnicht"}` → 400 or 404 (Problem Details), no session. Empty body → 400.
+5. Edge case: `POST /api/test/login {loginKey: "gibtsnicht"}` → 400 or 404 (Problem Details), no session. Empty body → 400.
 
 ## K4 · Start page and tiles
 
 Starting point: reset, signed in as `anna`.
 
 1. Open `/`.
-2. Expected: heading with «Anna». Tiles match `GET /api/kacheln`; tile `kachel-anwesenheit` visible.
+2. Expected: heading with «Anna». Tiles match `GET /api/tiles`; tile `kachel-anwesenheit` visible.
 3. Tap the tile «Anwesenheit».
 4. Expected: URL `/termine`, empty state with text (no blank screen).
-5. Role: as `alex` (admin), compare `GET /api/kacheln` and the start page.
+5. Role: as `alex` (admin), compare `GET /api/tiles` and the start page.
 
 ## K5 · Navigation (RR-05)
 
@@ -58,16 +58,16 @@ Starting point: reset, signed in as `anna`.
 
 ## K8 · Test endpoints
 
-1. Profile dev: `POST /api/test/reset` 204, `PUT /api/test/uhr` 204, `POST /api/test/anmelden` 204 with cookie.
-2. Profile prod: automated test `ProdOhneTesthilfenTest` (404, not in OpenAPI).
+1. Profile dev: `POST /api/test/reset` 204, `PUT /api/test/clock` 204, `POST /api/test/login` 204 with cookie.
+2. Profile prod: automated test `ProdWithoutTestSupportTest` (404, not in OpenAPI).
 
 ## K9 · OpenAPI comparison
 
-`OpenApiVertragTest` runs green in the backend tests.
+`OpenApiContractTest` runs green in the backend tests.
 
 ## K10 · Clock
 
-1. `PUT /api/test/uhr` to 2027-01-05T10:00 → `GET /api/ich` still delivers consistent data; backend test `uhrSetzenVeraendertJetztImGanzenBackend` green.
+1. `PUT /api/test/clock` to 2027-01-05T10:00 → `GET /api/me` still delivers consistent data; backend test `settingClockChangesNowInWholeBackend` green.
 2. Invalid clock (`{}` or text) → 400.
 
 ## K11 · CI

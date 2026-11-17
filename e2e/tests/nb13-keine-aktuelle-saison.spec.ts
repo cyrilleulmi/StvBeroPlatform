@@ -1,17 +1,17 @@
 import { anmelden, barrierefrei, expect, reset, test } from './hilfen';
 
 /**
- * Nachbesserung #13 · Ohne aktuelle Saison antwortet GET /api/ich mit 409 (SAI-03).
+ * Nachbesserung #13 · Ohne aktuelle Saison antwortet GET /api/me mit 409 (SAI-03).
  * Die Oberfläche zeigt dann einen verständlichen Hinweis statt eines leeren Bildschirms.
  */
 
 test.describe('ohne aktuelle Saison', () => {
-  // Der Browser meldet die erwartete 409-Antwort von /api/ich in der Konsole.
+  // Der Browser meldet die erwartete 409-Antwort von /api/me in der Konsole.
   test.use({ erwarteteKonsolenfehler: [/status of 409/] });
 
   test.beforeEach(async ({ request }) => {
     await reset(request);
-    const antwort = await request.delete('/api/test/aktuelle-saison');
+    const antwort = await request.delete('/api/test/current-season');
     expect(antwort.status()).toBe(204);
   });
 

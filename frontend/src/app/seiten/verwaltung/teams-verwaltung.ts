@@ -41,7 +41,7 @@ import { TEXTE } from '../../kern/texte';
           }
         </select>
       </div>
-      @if (saisonDaten()?.archiv) {
+      @if (saisonDaten()?.archived) {
         <p class="meldung-hinweis" data-testid="archiv-hinweis">
           {{ texte.saison.archivHinweis(saisonDaten()!.name) }}
         </p>
@@ -86,7 +86,7 @@ import { TEXTE } from '../../kern/texte';
           </ul>
         }
       </section>
-      @if (saisonDaten() && !saisonDaten()!.archiv) {
+      @if (saisonDaten() && !saisonDaten()!.archived) {
         <form
           class="karte formular"
           (submit)="anlegen($event)"
@@ -151,7 +151,7 @@ export class TeamsVerwaltung {
   protected readonly saisons = signal<Saison[]>([]);
   protected readonly saisonDaten = computed(() => {
     const id = this.saison();
-    return this.saisons().find((s) => (id ? s.id === id : s.aktuell)) ?? null;
+    return this.saisons().find((s) => (id ? s.id === id : s.current)) ?? null;
   });
   protected readonly teams = signal<Team[]>([]);
   protected readonly laedt = signal(true);
@@ -179,9 +179,9 @@ export class TeamsVerwaltung {
     this.fehler.set(null);
     this.erfolg.set(null);
     try {
-      const params: Record<string, string> = saisonId ? { saison: saisonId } : {};
+      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
       const [saisons, teams] = await Promise.all([
-        firstValueFrom(this.http.get<Saison[]>('/api/saisons')),
+        firstValueFrom(this.http.get<Saison[]>('/api/seasons')),
         firstValueFrom(this.http.get<Team[]>('/api/teams', { params })),
       ]);
       this.saisons.set(saisons);
@@ -208,7 +208,7 @@ export class TeamsVerwaltung {
     this.speichert.set(true);
     try {
       const params: Record<string, string> = this.saisonDaten()
-        ? { saison: this.saisonDaten()!.id }
+        ? { season: this.saisonDaten()!.id }
         : {};
       const team = await firstValueFrom(this.http.post<Team>('/api/teams', { name }, { params }));
       this.neuerName.set('');

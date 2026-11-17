@@ -26,7 +26,7 @@ import { TEXTE } from '../../kern/texte';
 /** Eine Gruppe im Screen: Linie, Goalies oder «Ohne Linie» (`id` = null). */
 interface Anzeigegruppe {
   id: string | null;
-  art: Gruppe['art'] | 'OHNE_LINIE';
+  art: Gruppe['type'] | 'NO_LINE';
   name: string;
   spielerinnen: PersonKurz[];
   /** Position unter den Linien (0-basiert), sonst -1. */
@@ -87,7 +87,7 @@ export class Linien {
   protected readonly dropZiel = signal<string | null>(null);
 
   protected readonly darfBearbeiten = computed(
-    () => this.anmeldung.istAdmin() || this.team()?.meineFunktion === 'COACH',
+    () => this.anmeldung.istAdmin() || this.team()?.myTeamRole === 'COACH',
   );
 
   /** Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). */
@@ -95,24 +95,24 @@ export class Linien {
     const t = this.team();
     if (!t) return [];
     let linie = 0;
-    const gruppen: Anzeigegruppe[] = t.einteilung.gruppen.map((g) => ({
+    const gruppen: Anzeigegruppe[] = t.lineup.groups.map((g) => ({
       id: g.id,
-      art: g.art,
+      art: g.type,
       name: g.name,
-      spielerinnen: g.spielerinnen,
-      index: g.art === 'LINIE' ? linie++ : -1,
+      spielerinnen: g.players,
+      index: g.type === 'LINE' ? linie++ : -1,
     }));
     gruppen.push({
       id: null,
-      art: 'OHNE_LINIE',
+      art: 'NO_LINE',
       name: TEXTE.linien.ohneLinie,
-      spielerinnen: t.einteilung.ohneLinie,
+      spielerinnen: t.lineup.noLine,
       index: -1,
     });
     return gruppen;
   });
-  protected readonly linien = computed(() => this.gruppen().filter((g) => g.art === 'LINIE'));
-  protected readonly uebrige = computed(() => this.gruppen().filter((g) => g.art !== 'LINIE'));
+  protected readonly linien = computed(() => this.gruppen().filter((g) => g.art === 'LINE'));
+  protected readonly uebrige = computed(() => this.gruppen().filter((g) => g.art !== 'LINE'));
 
   /** Auswahl im Feld «Linie von …»: alle Gruppen in Anzeigereihenfolge, dann «Ohne Linie». */
   protected readonly optionen = computed(() =>
@@ -138,7 +138,7 @@ export class Linien {
     this.laedt.set(true);
     this.ladefehler.set(null);
     const ich = this.anmeldung.ich();
-    if (ich && !ich.admin && !ich.zugehoerigkeiten.some((z) => z.team.id === teamId)) {
+    if (ich && !ich.admin && !ich.memberships.some((z) => z.team.id === teamId)) {
       // Ohne Zugehörigkeit gar nicht erst anfragen; das Backend lehnt ab (403, RR-07).
       this.team.set(null);
       this.ladefehler.set(TEXTE.allgemein.keineBerechtigung);
@@ -219,8 +219,8 @@ export class Linien {
       `zuweisen:${person.id}`,
       async () => {
         await firstValueFrom(
-          this.http.put(`/api/teams/${this.teamId()}/zuweisungen/${person.id}`, {
-            gruppeId: ziel.id,
+          this.http.put(`/api/teams/${this.teamId()}/assignments/${person.id}`, {
+            groupId: ziel.id,
           }),
         );
         return ziel.id
@@ -238,7 +238,7 @@ export class Linien {
     while (namen.has(TEXTE.linien.neueLinie(nr).toLowerCase())) nr++;
     const neu = TEXTE.linien.neueLinie(nr);
     void this.ausfuehren('hinzufuegen', async () => {
-      await firstValueFrom(this.http.post(`/api/teams/${this.teamId()}/gruppen`, { name: neu }));
+      await firstValueFrom(this.http.post(`/api/teams/${this.teamId()}/groups`, { name: neu }));
       return TEXTE.linien.hinzugefuegt(neu);
     });
   }
@@ -254,9 +254,9 @@ export class Linien {
       `${richtung < 0 ? 'oben' : 'unten'}:${g.id}`,
       async () => {
         await firstValueFrom(
-          this.http.put(`/api/teams/${this.teamId()}/gruppen/${g.id}`, {
+          this.http.put(`/api/teams/${this.teamId()}/groups/${g.id}`, {
             name: g.name,
-            reihenfolge: ziel,
+            sortOrder: ziel,
           }),
         );
         return TEXTE.linien.verschoben(g.name);
@@ -301,7 +301,7 @@ export class Linien {
       `umbenennen:${g.id}`,
       async () => {
         await firstValueFrom(
-          this.http.put(`/api/teams/${this.teamId()}/gruppen/${g.id}`, { name: neu }),
+          this.http.put(`/api/teams/${this.teamId()}/groups/${g.id}`, { name: neu }),
         );
         return TEXTE.linien.umbenannt(neu);
       },
@@ -340,7 +340,7 @@ export class Linien {
     if (!g?.id) return;
     this.loeschenDialog()?.nativeElement.close();
     void this.ausfuehren(`loeschen:${g.id}`, async () => {
-      await firstValueFrom(this.http.delete(`/api/teams/${this.teamId()}/gruppen/${g.id}`));
+      await firstValueFrom(this.http.delete(`/api/teams/${this.teamId()}/groups/${g.id}`));
       return TEXTE.linien.geloescht(g.name);
     });
   }

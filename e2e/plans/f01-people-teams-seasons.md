@@ -4,7 +4,7 @@ Issue #2 · PR #20 · Requirements PTF, SAI, RR-04, RR-07
 
 General for every case:
 
-- Preparation: `POST /api/test/reset`, then `POST /api/test/anmelden` with `{ "schluessel": "<person>" }`.
+- Preparation: `POST /api/test/reset`, then `POST /api/test/login` with `{ "loginKey": "<person>" }`.
 - Clock: default ("now" = Mon 16.11.2026 06:00), unless stated otherwise.
 - Views: mobile 375×812 (all cases), desktop 1280×800 (core cases K2–K6).
 - After each case: no console errors, no unexpected 4xx/5xx.
@@ -31,7 +31,7 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 | K2.3 Invalid e-mail | Save e-mail «kein-mail» for Kim | «Bitte eine gültige E-Mail-Adresse eingeben.», nothing saved |
 | K2.4 Edit | Kim last name «Baumann-Huber» → save → reload | «Änderungen gespeichert.», «Baumann-Huber» after reload |
 | K2.5 Long input | Enter a first name with 500 characters | Field takes at most 60 characters. API with 61 characters: 400 «Höchstens 60 Zeichen.». List `/verwaltung/personen` without horizontal scrolling at 375px |
-| K2.6 Double click | K2.1 with a double click on «Speichern» | Person created only **once** (exactly one `POST /api/personen`) |
+| K2.6 Double click | K2.1 with a double click on «Speichern» | Person created only **once** (exactly one `POST /api/persons`) |
 | K2.7 Last admin | Untick «Admin» for Alex → save | Message «Es braucht mindestens eine Person mit Admin-Rechten.» (409, RR-04), checkbox stays ticked after reload |
 
 ## K3 · Add a person with a team role to the team (PTF-04)
@@ -40,7 +40,7 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 |---|---|---|
 | K3.1 Add | `alex` → `/verwaltung/teams/<Team 1>` → «Person» = Ruth Meier, «Funktion» = Coach → «Aufnehmen» | Status «Ruth Meier ist jetzt Coach in Team 1.», Ruth under coaches, still there after reload |
 | K3.2 Already in the team (UI) | Open the «Person» select | Members with «(schon im Team)» and not selectable |
-| K3.3 Already in the team (API) | `POST /api/teams/<Team 1>/mitglieder` with Petra, `SPIELERIN` | 409, `regel: PTF-04` |
+| K3.3 Already in the team (API) | `POST /api/teams/<Team 1>/members` with Petra, `PLAYER` | 409, `rule: PTF-04` |
 | K3.4 Double click | K3.1 with a double click on «Aufnehmen» | Exactly one addition, no error message, no 500 |
 | K3.5 Change team role | «Funktion von Anna Muster» = Coach | Anna moves to the coaches, counters coaches 2 / players 6 |
 | K3.6 Remove | «Mia Frei entfernen» → reload | Mia no longer in the team, person still exists under `/verwaltung/personen` |
@@ -69,14 +69,14 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 | K6.2 Activate | For 2027/28 «Zur aktuellen Saison machen» → reload | 2027/28 «aktuell», 2026/27 and 2025/26 «Archiv» |
 | K6.3 Carry-over | `/verwaltung/teams` → Team 1 | Season 2027/28, same coaches and players as 2026/27 |
 | K6.4 Double click | K6.1 with a double click on «Saison anlegen» | Season created once, no 500, no error message |
-| K6.5 Duplicate name (API) | `POST /api/saisons` with name «2026/27» | 409 |
+| K6.5 Duplicate name (API) | `POST /api/seasons` with name «2026/27» | 409 |
 
 ## K7 · Archive read-only (S16, SAI-02)
 
 | Steps | Expected |
 |---|---|
 | `alex` → `/verwaltung/saisons` → for 2025/26 «Teams ansehen» → Team 1 | «Saison 2025/26 im Archiv: nur lesend.», Vera Studer as player, no controls for changes |
-| API: add member, remove member, create team with `?saison=<2025/26>` | 409 each, `regel: SAI-02` |
+| API: add member, remove member, create team with `?season=<2025/26>` | 409 each, `rule: SAI-02` |
 | `alex` → `/teams/<Team 1>?saison=<2025/26>` | Archive notice, Vera visible |
 
 ## K8 · Administration locked for non-admins (RR-04, RR-07)
@@ -84,7 +84,7 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 | Steps | Expected |
 |---|---|
 | As `anna` and `petra` every route: `/verwaltung`, `/verwaltung/personen`, `/verwaltung/personen/neu`, `/verwaltung/personen/<id>`, `/verwaltung/teams`, `/verwaltung/teams/<id>`, `/verwaltung/saisons` | `role="alert"` «Keine Berechtigung», no forms |
-| As `anna` and `petra`: `GET/POST /api/personen`, `PUT /api/personen/<id>`, `POST /api/teams`, `PUT /api/teams/<id>`, `POST/PUT/DELETE …/mitglieder`, `POST /api/saisons` (valid content), `POST /api/saisons/<id>/aktivieren` | 403 |
+| As `anna` and `petra`: `GET/POST /api/persons`, `PUT /api/persons/<id>`, `POST /api/teams`, `PUT /api/teams/<id>`, `POST/PUT/DELETE …/members`, `POST /api/seasons` (valid content), `POST /api/seasons/<id>/activate` | 403 |
 | As `marc` navigation | no entry «Verwaltung» |
 
 ## Theme
@@ -96,9 +96,9 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 
 | Case | Steps | Expected |
 |---|---|---|
-| R1.1 Double click activate | `alex` → `/verwaltung/saisons` (2027/28 created) → double click «Zur aktuellen Saison machen» | Exactly one `POST …/aktivieren` 204, status «2027/28 ist jetzt die aktuelle Saison.», no alert |
+| R1.1 Double click activate | `alex` → `/verwaltung/saisons` (2027/28 created) → double click «Zur aktuellen Saison machen» | Exactly one `POST …/activate` 204, status «2027/28 ist jetzt die aktuelle Saison.», no alert |
 | R1.2 Double click remove | `alex` → `/verwaltung/teams/<Team 1>` → double click «Mia Frei entfernen» | Mia removed, no alert, no console errors |
-| R1.3 Concurrent addition (API) | 3 × concurrently `POST /api/teams/<Team 1>/mitglieder` with Ruth, `COACH` | Exactly one 201, otherwise 409 `regel: PTF-04`, never 500 |
-| R1.4 Concurrent season (API) | 3 × concurrently `POST /api/saisons` with name «2028/29», `von` 2028-07-01, `bis` 2029-06-30 | Exactly one 201, otherwise 409 `regel: SAI-01`, season exists once |
+| R1.3 Concurrent addition (API) | 3 × concurrently `POST /api/teams/<Team 1>/members` with Ruth, `COACH` | Exactly one 201, otherwise 409 `rule: PTF-04`, never 500 |
+| R1.4 Concurrent season (API) | 3 × concurrently `POST /api/seasons` with name «2028/29», `startDate` 2028-07-01, `endDate` 2029-06-30 | Exactly one 201, otherwise 409 `rule: SAI-01`, season exists once |
 | R1.5 «noch keinen Coach» | `alex` → `/teams/<Team 1>?saison=<2025/26>` and `/verwaltung/teams/<Team 1>?saison=<2025/26>` | «Dieses Team hat noch keinen Coach.» |
 | R1.6 Long name | Enter a first name of 80 × «X» for Kim → save → `/verwaltung/personen` at 375px | Field takes 60 characters, `scrollWidth` = 375 |

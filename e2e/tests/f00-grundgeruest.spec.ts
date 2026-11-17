@@ -56,7 +56,7 @@ test.describe('Anmeldung', () => {
     await page.getByRole('button', { name: 'Abmelden' }).click();
 
     await expect(page).toHaveURL('/dev-login');
-    expect((await page.request.get('/api/ich')).status()).toBe(401);
+    expect((await page.request.get('/api/me')).status()).toBe(401);
     await page.goto('/');
     await expect(page).toHaveURL('/dev-login');
   });

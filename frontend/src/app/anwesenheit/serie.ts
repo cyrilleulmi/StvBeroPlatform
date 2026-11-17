@@ -31,7 +31,7 @@ type AusnahmeFeld = 'von' | 'bis' | 'grund';
   template: `
     <div class="kopf">
       <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
-      <h1>{{ serie()?.titel ?? texte.termine.serie }}</h1>
+      <h1>{{ serie()?.title ?? texte.termine.serie }}</h1>
       @if (serie(); as s) {
         <p class="nebentext">{{ regel() }}</p>
       }
@@ -50,21 +50,21 @@ type AusnahmeFeld = 'von' | 'bis' | 'grund';
           <h2 id="serie-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
           <dl class="angaben">
             <dt>{{ texte.terminFormular.typ }}</dt>
-            <dd>{{ texte.termine.typ[s.typ] }}</dd>
+            <dd>{{ texte.termine.typ[s.type] }}</dd>
             <dt>{{ texte.terminFormular.wochentag }}</dt>
-            <dd>{{ texte.terminFormular.wochentage[s.wochentag] }}</dd>
+            <dd>{{ texte.terminFormular.wochentage[s.weekday] }}</dd>
             <dt>{{ texte.termine.zeit }}</dt>
-            <dd>{{ texte.termine.zeitraum(s.beginnZeit, s.endeZeit) }}</dd>
+            <dd>{{ texte.termine.zeitraum(s.startTime, s.endTime) }}</dd>
             <dt>{{ texte.serie.zeitraum }}</dt>
-            <dd>{{ texte.serie.zeitraumText(datum(s.gueltigVon), datum(s.gueltigBis)) }}</dd>
+            <dd>{{ texte.serie.zeitraumText(datum(s.validFrom), datum(s.validUntil)) }}</dd>
             <dt>{{ texte.termine.teams }}</dt>
             <dd>{{ teams() }}</dd>
-            @if (s.ort) {
+            @if (s.location) {
               <dt>{{ texte.termine.ort }}</dt>
-              <dd>{{ s.ort.name }}</dd>
+              <dd>{{ s.location.name }}</dd>
             }
             <dt>{{ texte.termine.antwortfrist }}</dt>
-            <dd>{{ s.antwortfristStunden ?? 24 }} Stunden vor Beginn</dd>
+            <dd>{{ s.responseDeadlineHours ?? 24 }} Stunden vor Beginn</dd>
           </dl>
           @if (darfBearbeiten()) {
             <a
@@ -77,13 +77,13 @@ type AusnahmeFeld = 'von' | 'bis' | 'grund';
 
         <section class="karte" aria-labelledby="serie-ausnahmen" data-testid="ausnahmen">
           <h2 id="serie-ausnahmen" class="abschnitt-titel">
-            {{ texte.serie.ausnahmen }} <span class="anzahl">{{ s.ausnahmen.length }}</span>
+            {{ texte.serie.ausnahmen }} <span class="anzahl">{{ s.exceptions.length }}</span>
           </h2>
-          @if (s.ausnahmen.length === 0) {
+          @if (s.exceptions.length === 0) {
             <p class="leer">{{ texte.serie.keineAusnahmen }}</p>
           } @else {
             <ul class="liste" [attr.aria-label]="texte.serie.ausnahmen">
-              @for (a of s.ausnahmen; track $index) {
+              @for (a of s.exceptions; track $index) {
                 <li class="zeile">{{ ausnahmeText(a) }}</li>
               }
             </ul>
@@ -190,7 +190,7 @@ export class Serie {
   protected readonly regel = computed(() => {
     const s = this.serie();
     return s
-      ? TEXTE.serie.regel(TEXTE.terminFormular.wochentage[s.wochentag], s.beginnZeit, s.endeZeit)
+      ? TEXTE.serie.regel(TEXTE.terminFormular.wochentage[s.weekday], s.startTime, s.endTime)
       : '';
   });
 
@@ -208,7 +208,7 @@ export class Serie {
     if (!s || !ich) return false;
     return (
       ich.admin ||
-      ich.zugehoerigkeiten.some((z) => z.funktion === 'COACH' && s.teamIds.includes(z.team.id))
+      ich.memberships.some((z) => z.teamRole === 'COACH' && s.teamIds.includes(z.team.id))
     );
   });
 
@@ -221,7 +221,7 @@ export class Serie {
   }
 
   protected ausnahmeText(a: Ausnahme): string {
-    return TEXTE.serie.ausnahmeText(a.grund, datum(a.von), datum(a.bis));
+    return TEXTE.serie.ausnahmeText(a.reason, datum(a.startDate), datum(a.endDate));
   }
 
   protected setzen(feld: AusnahmeFeld, wert: string): void {
@@ -251,17 +251,17 @@ export class Serie {
     this.erfolg.set(null);
     try {
       const s = await firstValueFrom(
-        this.http.post<SerieDaten>(`/api/serien/${this.serieId()}/ausnahmen`, {
-          von: n.von,
-          bis: n.bis,
-          grund: n.grund.trim(),
+        this.http.post<SerieDaten>(`/api/series/${this.serieId()}/exceptions`, {
+          startDate: n.von,
+          endDate: n.bis,
+          reason: n.grund.trim(),
         }),
       );
       this.serie.set(s);
       this.neu.set({ von: '', bis: '', grund: '' });
       this.erfolg.set(TEXTE.serie.ausnahmeAngelegt(n.grund.trim()));
     } catch (e) {
-      const felder = feldfehler(e);
+      const felder = feldfehler(e, { startDate: 'von', endDate: 'bis', reason: 'grund' });
       if (Object.keys(felder).length > 0) {
         this.feldFehler.set(felder);
       } else {
@@ -277,7 +277,7 @@ export class Serie {
     this.fehler.set(null);
     this.serie.set(null);
     try {
-      this.serie.set(await firstValueFrom(this.http.get<SerieDaten>(`/api/serien/${id}`)));
+      this.serie.set(await firstValueFrom(this.http.get<SerieDaten>(`/api/series/${id}`)));
     } catch (e) {
       const status = fehlerstatus(e);
       this.fehler.set(status === 404 || status === 400 ? TEXTE.serie.nichtGefunden : fehlertext(e));

@@ -14,7 +14,7 @@ General:
 |---|---|---|
 | K1.1 Static | `grep -n "spiele(page)" e2e/tests/f05-spieltage.spec.ts` | Every call is inside `await expect.poll(() => spiele(page))`, no `expect(await spiele(page))` anymore |
 | K1.2 No fixed-time waits | `grep -n waitForTimeout e2e/tests/f05-spieltage.spec.ts` | No match |
-| K1.3 Counter-check delayed response | Locally (do not commit) in the test «F-05 K2», before saving, insert `page.route('**/api/termine/*', …)` with a 2 s delay for GET, run the test | Test green in `mobil` and `desktop` (the check waits until both matches are there) |
+| K1.3 Counter-check delayed response | Locally (do not commit) in the test «F-05 K2», before saving, insert `page.route('**/api/events/*', …)` with a 2 s delay for GET, run the test | Test green in `mobil` and `desktop` (the check waits until both matches are there) |
 | K1.4 Counter-check old state | As K1.3, but line 109 back to `expect(await spiele(page)).toEqual(…)` | Test red with `Received []` – proves that K1.3 triggers the original failure |
 | K1.5 Clean up | Discard the changes from K1.3/K1.4 | `git status` clean |
 

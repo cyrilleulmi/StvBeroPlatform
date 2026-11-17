@@ -33,7 +33,7 @@ export class DevLogin implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      this.personen.set(await firstValueFrom(this.http.get<TestPerson[]>('/api/test/personen')));
+      this.personen.set(await firstValueFrom(this.http.get<TestPerson[]>('/api/test/persons')));
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {
@@ -43,10 +43,10 @@ export class DevLogin implements OnInit {
 
   protected async anmelden(person: TestPerson): Promise<void> {
     if (this.anmeldend()) return;
-    this.anmeldend.set(person.schluessel);
+    this.anmeldend.set(person.loginKey);
     this.fehler.set(null);
     try {
-      await this.anmeldung.alsTestpersonAnmelden(person.schluessel);
+      await this.anmeldung.alsTestpersonAnmelden(person.loginKey);
       await this.router.navigateByUrl(sicheresZiel(this.ziel()));
     } catch (e) {
       this.fehler.set(fehlertext(e));

@@ -42,30 +42,30 @@ import { TEXTE } from '../../kern/texte';
           @for (b of liste(); track b.id) {
             <li
               [attr.data-testid]="'benachrichtigung-' + b.id"
-              [attr.data-gelesen]="b.gelesen"
-              [attr.data-art]="b.art"
+              [attr.data-gelesen]="b.read"
+              [attr.data-art]="b.type"
             >
-              @if (b.terminId) {
-                <a class="zeile-link eintrag" [href]="'/termine/' + b.terminId" (click)="oeffnen($event, b)">
+              @if (b.eventId) {
+                <a class="zeile-link eintrag" [href]="'/termine/' + b.eventId" (click)="oeffnen($event, b)">
                   <span class="text">
-                    @if (!b.gelesen) {
+                    @if (!b.read) {
                       <span class="chip" data-art="neu">{{ texte.neu }}</span>
                     }
                     <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ zeitpunkt(b.erstelltAm) }}</span>
+                    <span class="zeit">{{ zeitpunkt(b.createdAt) }}</span>
                   </span>
                   <app-icon name="chevron-right" [groesse]="20" />
                 </a>
               } @else {
                 <div class="zeile eintrag">
                   <span class="text">
-                    @if (!b.gelesen) {
+                    @if (!b.read) {
                       <span class="chip" data-art="neu">{{ texte.neu }}</span>
                     }
                     <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ zeitpunkt(b.erstelltAm) }}</span>
+                    <span class="zeit">{{ zeitpunkt(b.createdAt) }}</span>
                   </span>
-                  @if (!b.gelesen) {
+                  @if (!b.read) {
                     <button type="button" class="button button-klein button-sekundaer" (click)="markieren(b)">
                       {{ texte.alsGelesen }}
                     </button>
@@ -85,7 +85,7 @@ export class Benachrichtigungen implements OnInit {
   private readonly router = inject(Router);
   private readonly anmeldung = inject(AnmeldungService);
   /** Jahr der Backend-Uhr, nicht des Browsers (testbarkeit.md). */
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.jetzt));
+  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
   protected readonly texte = TEXTE.benachrichtigungen;
   protected readonly allgemein = TEXTE.allgemein;
   protected readonly liste = signal<Benachrichtigung[]>([]);
@@ -93,7 +93,7 @@ export class Benachrichtigungen implements OnInit {
   protected readonly beschaeftigt = signal(false);
   protected readonly fehler = signal<string | null>(null);
   protected readonly rueckmeldung = signal('');
-  protected readonly ungelesene = computed(() => this.liste().filter((b) => !b.gelesen).length);
+  protected readonly ungelesene = computed(() => this.liste().filter((b) => !b.read).length);
 
   async ngOnInit(): Promise<void> {
     try {
@@ -119,10 +119,10 @@ export class Benachrichtigungen implements OnInit {
     if (this.beschaeftigt()) return;
     this.beschaeftigt.set(true);
     try {
-      if (!b.gelesen) {
+      if (!b.read) {
         await this.service.gelesen(b.id);
       }
-      await this.router.navigate(['/termine', b.terminId]);
+      await this.router.navigate(['/termine', b.eventId]);
     } catch (e) {
       this.fehler.set(fehlertext(e));
     } finally {
@@ -140,7 +140,7 @@ export class Benachrichtigungen implements OnInit {
 
   protected async alleGelesen(): Promise<void> {
     await this.ausfuehren(async () => {
-      const offen = this.liste().filter((b) => !b.gelesen);
+      const offen = this.liste().filter((b) => !b.read);
       for (const b of offen) {
         await this.service.gelesen(b.id);
       }
@@ -150,7 +150,7 @@ export class Benachrichtigungen implements OnInit {
   }
 
   private alsGelesen(ids: string[]): void {
-    this.liste.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, gelesen: true } : b)));
+    this.liste.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, read: true } : b)));
   }
 
   private async ausfuehren(aktion: () => Promise<void>): Promise<void> {

@@ -18,17 +18,17 @@
   justify-self: start;
 }
 
-.chip[data-art='aufgeboten'] {
+.chip[data-art='called_up'] {
   background: var(--primary);
   color: var(--on-primary);
 }
 
-.chip[data-art='nicht_aufgeboten'] {
+.chip[data-art='not_called_up'] {
   background: var(--coral-soft);
   color: var(--text);
 }
 
-.chip[data-art='noch_kein_aufgebot'] {
+.chip[data-art='no_call_up_yet'] {
   background: var(--border);
   color: var(--text);
 }

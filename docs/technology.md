@@ -7,15 +7,15 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Topic | Convention |
 |---|---|
 | Versions | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
-| Backend packages | `ch.stvbero.platform.kern.*` (clock, person, season, team, login, tile, errors, test helpers), `ch.stvbero.platform.<tile>` per tile (e.g. `anwesenheit`) |
-| Registering a tile | Backend: CDI bean that implements `KachelDefinition` (metadata, `sichtbarFuer`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `kern/icon.ts` |
-| «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/uhr` |
-| Test helpers | Build property `stv.testhilfen` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
-| Login | Cookie `stv_sitzung` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Oeffentlich` require a session (401) |
-| Errors | `FachFehler` → Problem Details (`application/problem+json`), validation → 400 with `felder` |
-| Domain rules | One class `…Regeln` per area without database access (e.g. `TeamRegeln`, `SaisonRegeln`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
-| Season parameter | Endpoints related to a season take `?saison=<id>`; without it the current season applies. Seasons before the current one are read-only (409, SAI-02) |
-| Contract | `OpenApiVertragTest` compares `/q/openapi` with `docs/api/openapi.yaml` (paths, methods, operationId, status codes, schemas) |
+| Backend packages | `ch.stvbero.platform.core.*` (clock, person, season, team, login, tile, errors, test helpers), `ch.stvbero.platform.<tile>` per tile (e.g. `anwesenheit`) |
+| Registering a tile | Backend: CDI bean that implements `TileDefinition` (metadata, `visibleFor`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `kern/icon.ts` |
+| «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/clock` |
+| Test helpers | Build property `stv.test-support` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
+| Login | Cookie `stv_session` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Public` require a session (401) |
+| Errors | `DomainError` → Problem Details (`application/problem+json`), validation → 400 with `fields` |
+| Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
+| Season parameter | Endpoints related to a season take `?season=<id>`; without it the current season applies. Seasons before the current one are read-only (409, SAI-02) |
+| Contract | `OpenApiContractTest` compares `/q/openapi` with `docs/api/openapi.yaml` (paths, methods, operationId, status codes, schemas) |
 | Frontend types | `npm run api-typen` generates `src/app/api/schema.d.ts` from the contract (runs before `start` and `build`) |
 | Texts | `frontend/src/app/kern/texte.ts` |
 | Font | Plus Jakarta Sans served locally via `@fontsource` (no requests to Google Fonts) |

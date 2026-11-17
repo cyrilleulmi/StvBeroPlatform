@@ -34,7 +34,7 @@ export async function reset(request: APIRequestContext): Promise<void> {
 
 /** Als Seed-Person anmelden (Schlüssel aus docs/testdaten.md). Das Cookie gilt für die Seite. */
 export async function anmelden(page: Page, schluessel: string): Promise<void> {
-  const antwort = await page.request.post('/api/test/anmelden', { data: { schluessel } });
+  const antwort = await page.request.post('/api/test/login', { data: { loginKey: schluessel } });
   expect(antwort.status()).toBe(204);
 }
 

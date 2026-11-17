@@ -15,7 +15,7 @@ export class BenachrichtigungenService {
   async zaehlerAktualisieren(): Promise<void> {
     try {
       const liste = await firstValueFrom(
-        this.http.get<Benachrichtigung[]>('/api/benachrichtigungen', { params: { ungelesen: true } }),
+        this.http.get<Benachrichtigung[]>('/api/notifications', { params: { unread: true } }),
       );
       this.ungelesen.set(liste.length);
     } catch {
@@ -25,13 +25,13 @@ export class BenachrichtigungenService {
 
   /** Alle eigenen, neueste zuerst (Reihenfolge der API). */
   async alle(): Promise<Benachrichtigung[]> {
-    const liste = await firstValueFrom(this.http.get<Benachrichtigung[]>('/api/benachrichtigungen'));
-    this.ungelesen.set(liste.filter((b) => !b.gelesen).length);
+    const liste = await firstValueFrom(this.http.get<Benachrichtigung[]>('/api/notifications'));
+    this.ungelesen.set(liste.filter((b) => !b.read).length);
     return liste;
   }
 
   async gelesen(id: string): Promise<void> {
-    await firstValueFrom(this.http.post<void>(`/api/benachrichtigungen/${id}/gelesen`, null));
+    await firstValueFrom(this.http.post<void>(`/api/notifications/${id}/read`, null));
     this.ungelesen.update((n) => Math.max(0, n - 1));
   }
 }

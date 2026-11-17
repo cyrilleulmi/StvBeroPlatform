@@ -57,13 +57,13 @@ type Wahl = AntwortSetzen['status'];
         <p class="nebentext" [id]="id('sperre')">{{ text }}</p>
       }
       @if (details()) {
-        @if (aktuell().kommentar; as k) {
+        @if (aktuell().comment; as k) {
           <p class="nebentext kommentar">{{ texte.dein(k) }}</p>
         }
-        @if (aktuell().eingetragenVon; as von) {
-          <p class="nebentext">{{ texte.eingetragenVon(von.vorname + ' ' + von.nachname) }}</p>
+        @if (aktuell().enteredBy; as von) {
+          <p class="nebentext">{{ texte.eingetragenVon(von.firstName + ' ' + von.lastName) }}</p>
         }
-        @if (aktuell().kurzfristig) {
+        @if (aktuell().lateCancellation) {
           <p><span class="chip" data-art="kurzfristig">{{ texte.kurzfristig }}</span></p>
         }
       }
@@ -108,7 +108,7 @@ type Wahl = AntwortSetzen['status'];
             type="submit"
             class="button button-primaer button-klein"
             [disabled]="laeuft() !== null"
-            [attr.aria-busy]="laeuft() === 'VIELLEICHT' ? 'true' : null"
+            [attr.aria-busy]="laeuft() === 'MAYBE' ? 'true' : null"
           >
             {{ texte.speichern }}
           </button>
@@ -157,7 +157,7 @@ type Wahl = AntwortSetzen['status'];
             type="submit"
             class="button button-primaer button-klein"
             [disabled]="laeuft() !== null"
-            [attr.aria-busy]="laeuft() === 'NICHT_DABEI' ? 'true' : null"
+            [attr.aria-busy]="laeuft() === 'DECLINED' ? 'true' : null"
           >
             {{ texte.grundSpeichern }}
           </button>
@@ -180,7 +180,7 @@ export class MeineAntwort {
   protected readonly texte = TEXTE.antwort;
   protected readonly icon = ANTWORT_ICON;
   protected readonly schluessel = antwortSchluessel;
-  protected readonly wahlen: Wahl[] = ['DABEI', 'NICHT_DABEI', 'VIELLEICHT'];
+  protected readonly wahlen: Wahl[] = ['ATTENDING', 'DECLINED', 'MAYBE'];
 
   readonly terminId = input.required<string>();
   readonly antwort = input.required<Antwort>();
@@ -214,19 +214,19 @@ export class MeineAntwort {
     if (this.gesperrt() || this.laeuft()) return;
     const bisher = this.aktuell();
     this.kommentarFehler.set(null);
-    if (w === 'VIELLEICHT') {
-      this.kommentar.set(bisher.status === 'VIELLEICHT' ? (bisher.kommentar ?? '') : '');
+    if (w === 'MAYBE') {
+      this.kommentar.set(bisher.status === 'MAYBE' ? (bisher.comment ?? '') : '');
       this.oeffnen(this.vielleichtDialog());
       return;
     }
-    if (w === 'NICHT_DABEI' && bisher.status === 'NICHT_DABEI') {
-      this.kommentar.set(bisher.kommentar ?? '');
+    if (w === 'DECLINED' && bisher.status === 'DECLINED') {
+      this.kommentar.set(bisher.comment ?? '');
       this.oeffnen(this.grundDialog());
       return;
     }
     // Ein Tap: sofort speichern (ANM-08). Bei «nicht dabei» danach den freiwilligen Grund anbieten (ANM-05).
     if (await this.speichern({ status: w })) {
-      if (w === 'NICHT_DABEI') {
+      if (w === 'DECLINED') {
         this.kommentar.set('');
         this.oeffnen(this.grundDialog());
       }
@@ -241,7 +241,7 @@ export class MeineAntwort {
       this.fokus('kommentar');
       return;
     }
-    if (await this.speichern({ status: 'VIELLEICHT', kommentar })) {
+    if (await this.speichern({ status: 'MAYBE', comment: kommentar })) {
       this.vielleichtDialog()?.nativeElement.close();
     } else {
       this.fokus('kommentar');
@@ -251,7 +251,7 @@ export class MeineAntwort {
   protected async grundSpeichern(ereignis: Event): Promise<void> {
     ereignis.preventDefault();
     const kommentar = this.kommentar().trim();
-    if (await this.speichern({ status: 'NICHT_DABEI', kommentar: kommentar || null }, true)) {
+    if (await this.speichern({ status: 'DECLINED', comment: kommentar || null }, true)) {
       this.grundDialog()?.nativeElement.close();
     } else {
       this.fokus('grund');
@@ -293,8 +293,8 @@ export class MeineAntwort {
       return true;
     } catch (e) {
       const felder = feldfehler(e);
-      if (felder['kommentar']) {
-        this.kommentarFehler.set(felder['kommentar']);
+      if (felder['comment']) {
+        this.kommentarFehler.set(felder['comment']);
       } else {
         // Dialog schliessen, damit die Meldung sichtbar ist (z.B. Termin inzwischen abgesagt, 409).
         this.fehler.set(fehlertext(e));

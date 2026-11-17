@@ -10,7 +10,7 @@ export const sitzungInterceptor: HttpInterceptorFn = (anfrage, weiter) => {
   const anmeldung = inject(AnmeldungService);
   return weiter(anfrage).pipe(
     catchError((fehler: unknown) => {
-      const istIch = anfrage.url.endsWith('/api/ich');
+      const istIch = anfrage.url.endsWith('/api/me');
       if (
         fehler instanceof HttpErrorResponse &&
         fehler.status === 401 &&
