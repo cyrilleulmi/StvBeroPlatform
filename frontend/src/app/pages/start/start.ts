@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Tile, EventSummary } from '../../api/types';
@@ -9,15 +10,17 @@ import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
+import { startEvents } from './start-events';
 
 /**
- * Start: greeting, next own event with response buttons (F-04, ANM-08) and tiles from
- * `GET /api/tiles` (NF-11, NF-12, RR-05).
+ * Start: greeting, next own event with response buttons (F-04, ANM-08), then the next practices so
+ * that at least two upcoming practices are visible (F-13), and tiles from `GET /api/tiles`
+ * (NF-11, NF-12, RR-05).
  */
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse],
+  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
@@ -32,6 +35,8 @@ export class Start implements OnInit {
 
   /** Next planned event of the own teams; skip cancelled ones. */
   protected readonly next = signal<EventSummary | null>(null);
+  /** Further practices after the next event (F-13), cancelled ones skipped. */
+  protected readonly practices = signal<EventSummary[]>([]);
   protected readonly eventLoading = signal(true);
   protected readonly eventError = signal<string | null>(null);
 
@@ -57,10 +62,12 @@ export class Start implements OnInit {
     return TEXTS.events.card(t.title, eventDate(t.start, this.year()), clockTime(t.start));
   }
 
-  /** After a response: reload the counters without reloading the page. */
+  /** After a response: reload the counters of this event without reloading the page (F-13 K3). */
   protected async reload(id: string): Promise<void> {
     try {
-      this.next.set(await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`)));
+      const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
+      if (this.next()?.id === id) this.next.set(updated);
+      this.practices.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
       this.eventError.set(errorText(e));
     }
@@ -69,7 +76,9 @@ export class Start implements OnInit {
   private async loadEvent(): Promise<void> {
     try {
       const events = await firstValueFrom(this.http.get<EventSummary[]>('/api/events'));
-      this.next.set(events.find((t) => t.status !== 'CANCELLED') ?? null);
+      const shown = startEvents(events);
+      this.next.set(shown.next);
+      this.practices.set(shown.practices);
     } catch (e) {
       this.eventError.set(errorText(e));
     } finally {
