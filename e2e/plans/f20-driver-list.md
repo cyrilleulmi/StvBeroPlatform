@@ -96,3 +96,12 @@ IDs: event 04 `40000000-0000-4000-8000-000000000004` (match day Team 1), event 0
 | Case | Steps | Expected |
 |---|---|---|
 | R1 | `scripts/test.sh` | All green (backend, E2E both projects, axe) |
+
+## Additions by the test agent (round 1)
+
+| Case | Person | Steps | Expected |
+|---|---|---|---|
+| A1 Rejected seat change resets the select | `petra` | event 04 → «Plätze im Auto von Petra Keller» 3 → 2 (car has 3 passengers) | Alert «Im Auto sitzen schon 3 Personen. Weniger Plätze gehen nicht.» and the select shows 3 again (the saved value), also after another change in the list. Values below the number of passengers are not offered, or are rejected without leaving the select on them |
+| A2 Concurrent last seat | `jana`, `kim` | `PUT …/cars/…002 {"seats":1}` as petra, then both `PUT …/cars/…002/passengers/<self>` at the same time | One 200, one 409 «Auto voll», car has exactly 1 passenger |
+| A3 Non-member as passenger | `marc` | `PUT …/cars/…002/passengers/<eva>` (Team 2 only) | 422 rule DRV-02 |
+| A4 After the end, member | `jana` | clock 22.11.2026 14:00, event 04 | No controls (no «mitfahren», «Ich fahre»); API 409 «Spieltag vorbei» |
