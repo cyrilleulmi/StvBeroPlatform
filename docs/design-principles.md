@@ -83,7 +83,7 @@ Tokens as CSS custom properties in `frontend/src/styles.css`. The theme is set a
   --radius-card: 22px; --radius-tile: 18px; --radius-icon: 12px; --radius-pill: 999px;
   --font: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
-[data-theme="duene"] { /* values of the column «Düne» */ }
+[data-theme="dune"] { /* values of the column «Düne» */ }
 [data-theme="github-dark"] { /* values of the column «GitHub Dark» */ }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) { /* same values as [data-theme="github-dark"] */ }
@@ -96,8 +96,8 @@ Decided on 16.11.2026 (E-65 to E-67, NF-08). Reason: the base design was far too
 
 | Entry in the profile | `data-theme` | Stored value | Shows |
 |---|---|---|---|
-| «Hell» | `light` | `hell` | Colors of «Salbei frisch» |
-| «Düne» | `duene` | `duene` | Warm sand with petrol |
+| «Hell» | `light` | `light` | Colors of «Salbei frisch» |
+| «Düne» | `dune` | `dune` | Warm sand with petrol |
 | «GitHub Dark» | `github-dark` | `github-dark` | Almost black with blue |
 | «System» (default) | none | `system` | «Hell» in light mode, «GitHub Dark» in dark mode |
 
@@ -107,9 +107,9 @@ Rules:
 - Every theme sets all 14 color tokens. Components use only the tokens, never fixed colors.
 - The meaning of the tokens stays: `primary` main action and «dabei», `accent-coral` cancellation and «nicht dabei» (reddish), `accent-mustard` «vielleicht» (yellowish), `accent-blue` coaches. `primary` is never red, orange or yellow.
 - Contrast at least 4.5:1 (WCAG AA) for text and accent colors on `bg`, `surface` and the `*-soft` areas, and for `on-primary` on `primary`. The colors of «GitHub Dark» are based on the theme of the same name.
-- «Düne» and «GitHub Dark» apply regardless of the system setting. The choice is stored in the browser (`localStorage`, key `stv-theme`), not in the account. A stored value that no longer exists falls back to «System».
+- «Düne» and «GitHub Dark» apply regardless of the system setting. The choice is stored in the browser (`localStorage`, key `stv-theme`), not in the account. A stored value that no longer exists falls back to «System», without an error. This also applies to the German values from before F-11 (`hell`, `duene`); they are not migrated.
 - In the switcher, each choice is shown in its own colors (background, font and the four accent colors as dots).
-- Another theme needs: a block `[data-theme='<id>']` in `styles.css`, an entry in `theme.service.ts`, in the inline script of `index.html` and in the switcher (`profil.ts`), and a test in `e2e/tests/darstellungen.spec.ts`.
+- Another theme needs: a block `[data-theme='<id>']` in `styles.css`, an entry in `theme.service.ts`, in the inline script of `index.html` and in the switcher (`pages/profile/profile.ts`), and a test in `e2e/tests/themes.spec.ts`.
 
 It is open what «System» should show in light mode ([O-53](open-points.md)).
 

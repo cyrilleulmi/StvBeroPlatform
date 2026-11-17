@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "api-typen": "npx -y openapi-typescript@7.13.0 ../docs/api/openapi.yaml -o src/app/api/schema.d.ts",
-    "prestart": "npm run api-typen",
+    "api-types": "npx -y openapi-typescript@7.13.0 ../docs/api/openapi.yaml -o src/app/api/schema.d.ts",
+    "prestart": "npm run api-types",
     "start": "ng serve",
-    "prebuild": "npm run api-typen",
+    "prebuild": "npm run api-types",
     "build": "ng build",
     "lint": "ng lint"
   },

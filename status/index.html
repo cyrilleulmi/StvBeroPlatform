@@ -44,10 +44,10 @@ h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacin
 .icon.coral { background: var(--coral-soft); color: var(--coral); } .icon.mustard { background: var(--mustard-soft); color: var(--mustard); } .icon.blue { background: var(--blue-soft); color: var(--blue); } .icon.muted { background: var(--bg); color: var(--muted); }
 .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .btn { display: inline-flex; align-items: center; gap: 8px; }
-.kopf { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
-.marke { display: inline-flex; align-items: center; gap: 10px; }
-.marke .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
-.marke .logo svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.heading { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; gap: 10px; }
+.brand .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.brand .logo svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .grow { flex: 1; min-width: 0; }
 .title { font-weight: 700; }
 .meta { color: var(--muted); font-size: 13px; }
@@ -82,41 +82,41 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
 <body>
 <main>
   <header>
-    <div class="marke">
+    <div class="brand">
       <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg></div>
       <div>
         <h1>StvBero Pipeline</h1>
-        <div class="sub" id="stand">Lädt …</div>
+        <div class="sub" id="state">Lädt …</div>
       </div>
     </div>
     <div class="btns">
-      <button class="btn" id="neu-laden" type="button" data-testid="neu-laden"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Aktualisieren</button>
-      <button class="btn primary" id="gelesen" type="button" data-testid="gelesen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>Alles gelesen</button>
+      <button class="btn" id="reload" type="button" data-testid="reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>Aktualisieren</button>
+      <button class="btn primary" id="mark-read" type="button" data-testid="mark-read"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>Alles gelesen</button>
     </div>
   </header>
 
   <section id="alarm" aria-label="Braucht dich"></section>
 
-  <section class="card" aria-labelledby="h-jetzt">
-    <h2 id="h-jetzt">Gerade in Arbeit</h2>
-    <div id="jetzt"><p class="empty">Lädt …</p></div>
+  <section class="card" aria-labelledby="h-now">
+    <h2 id="h-now">Gerade in Arbeit</h2>
+    <div id="now"><p class="empty">Lädt …</p></div>
   </section>
 
-  <section aria-labelledby="h-seit">
-    <h2 id="h-seit" style="margin-left:4px">Was passiert ist</h2>
+  <section aria-labelledby="h-since">
+    <h2 id="h-since" style="margin-left:4px">Was passiert ist</h2>
     <div class="seg" role="group" aria-label="Zeitraum">
-      <button type="button" data-range="besuch" aria-pressed="true">Seit letztem Besuch</button>
+      <button type="button" data-range="visit" aria-pressed="true">Seit letztem Besuch</button>
       <button type="button" data-range="24h" aria-pressed="false">24 Stunden</button>
       <button type="button" data-range="7d" aria-pressed="false">7 Tage</button>
     </div>
-    <div class="chips" id="zahlen"></div>
-    <label class="toggle"><input type="checkbox" id="alle"> auch Starts und Zwischenschritte zeigen</label>
-    <div id="verlauf"></div>
+    <div class="chips" id="numbers"></div>
+    <label class="toggle"><input type="checkbox" id="all"> auch Starts und Zwischenschritte zeigen</label>
+    <div id="history"></div>
   </section>
 
-  <section class="card" aria-labelledby="h-schlange" style="margin-top:14px">
-    <h2 id="h-schlange">Warteschlange</h2>
-    <div id="schlange"><p class="empty">Lädt …</p></div>
+  <section class="card" aria-labelledby="h-queue" style="margin-top:14px">
+    <h2 id="h-queue">Warteschlange</h2>
+    <div id="queue"><p class="empty">Lädt …</p></div>
   </section>
 
   <p class="meta" style="margin:20px 4px 0">Live aus GitHub (<a href="https://github.com/cyrilleulmi/StvBeroPlatform">cyrilleulmi/StvBeroPlatform</a>). «Letzter Besuch» wird pro Gerät im Browser gespeichert. Aktualisiert sich alle 5 Minuten.</p>
@@ -126,30 +126,30 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
 (() => {
   const REPO = 'cyrilleulmi/StvBeroPlatform';
   const API = 'https://api.github.com/repos/' + REPO;
-  const AGENT = 'cyrilleulmi';   // Die Agenten schreiben unter diesem Konto; Inhalte anderer sind ausgeblendet.
-  const STUFEN = ['Entwicklung', 'Review', 'Test', 'Gemergt'];
+  const AGENT = 'cyrilleulmi';   // The agents write under this account; content by others is hidden.
+  const STAGES = ['Entwicklung', 'Review', 'Test', 'Gemergt'];
   const $ = id => document.getElementById(id);
 
-  // Linien-Icons (Lucide, ISC-Lizenz)
-  const PFADE = {
-    warnung: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
-    fahne: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
-    aktiv: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-    uhr: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  // Line icons (Lucide, ISC license)
+  const PATHS = {
+    warning: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+    active: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     code: '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
     review: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     test: '<path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>',
-    waechter: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    watchdog: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
     merge: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
-    neu: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/>',
+    new: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/>',
     start: '<path d="M6 3l14 9-14 9V3z"/>',
-    kommentar: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
-    zurueck: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    comment: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    back: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
   };
-  const ic = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${PFADE[name]}</svg>`;
-  // Emojis aus Agenten-Texten entfernen; Häkchen und Kreuze in Tabellen bleiben als Textzeichen lesbar.
-  const ohneEmoji = s => String(s ?? '').replace(/✅|✔️|✔/g, '✓').replace(/❌|✖️/g, '✗')
-    .replace(/\p{Extended_Pictographic}\uFE0F?/gu, '').replace(/[ \t]{2,}/g, ' ').replace(/ ·\s*$/,'').trim();
+  const ic = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${PATHS[name]}</svg>`;
+  // Remove emojis from agent texts; check marks and crosses in tables stay readable as text characters.
+  const withoutEmoji = s => String(s ?? '').replace(/✅|✔️|✔/g, '✓').replace(/❌|✖️/g, '✗')
+    .replace(/\p{Extended_Pictographic}️?/gu, '').replace(/[ \t]{2,}/g, ' ').replace(/ ·\s*$/,'').trim();
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -157,26 +157,30 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
     sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
     sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
   };
+  // Storage keys. The old German keys (before F-11) are still read once, so the last visit is not lost.
+  const KEY_VISIT = 'stvbero.visit', OLD_KEY_VISIT = 'stvbero.besuch';
+  const KEY_LAST_VISIT = 'stvbero.lastVisit', OLD_KEY_LAST_VISIT = 'stvbero.letzterBesuch';
+  const KEY_DATA = 'stvbero.data', OLD_KEY_DATA = 'stvbero.daten';
 
-  // «Seit letztem Besuch»: der Stand vor diesem Besuch gilt für die ganze Sitzung (auch nach Neuladen im selben Tab).
-  const jetzt = Date.now();
-  let besuch = Number(store.sget('stvbero.besuch') || store.get('stvbero.letzterBesuch') || (jetzt - 86400000));
-  store.sset('stvbero.besuch', String(besuch));
-  store.set('stvbero.letzterBesuch', String(jetzt));
+  // «Seit letztem Besuch»: the state before this visit applies to the whole session (also after reloading in the same tab).
+  const now = Date.now();
+  let visit = Number(store.sget(KEY_VISIT) || store.sget(OLD_KEY_VISIT) || store.get(KEY_LAST_VISIT) || store.get(OLD_KEY_LAST_VISIT) || (now - 86400000));
+  store.sset(KEY_VISIT, String(visit));
+  store.set(KEY_LAST_VISIT, String(now));
 
-  let range = 'besuch';
-  let daten = null;
+  let range = 'visit';
+  let data = null;
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const zeit = t => new Date(t).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
-  const tag = t => {
+  const time = t => new Date(t).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  const day = t => {
     const d = new Date(t), h = new Date(); h.setHours(0, 0, 0, 0);
     const diff = Math.round((h - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
     if (diff === 0) return 'Heute';
     if (diff === 1) return 'Gestern';
     return d.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long' });
   };
-  const vor = t => {
+  const ago = t => {
     const m = Math.round((Date.now() - new Date(t)) / 60000);
     if (m < 1) return 'gerade eben';
     if (m < 60) return 'vor ' + m + ' Min.';
@@ -187,160 +191,168 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
   const labels = it => (it.labels || []).map(l => l.name);
   const link = it => `<a href="${esc(it.html_url)}">#${it.number}</a>`;
 
-  async function holen(pfad) {
-    const r = await fetch(API + pfad, { headers: { Accept: 'application/vnd.github+json' } });
+  async function fetchJson(path) {
+    const r = await fetch(API + path, { headers: { Accept: 'application/vnd.github+json' } });
     if (r.status === 403 || r.status === 429) {
       const reset = Number(r.headers.get('x-ratelimit-reset')) * 1000;
-      throw new Error('GitHub-Abfragelimit erreicht' + (reset ? ', wieder möglich um ' + zeit(reset) : '') + '.');
+      throw new Error('GitHub-Abfragelimit erreicht' + (reset ? ', wieder möglich um ' + time(reset) : '') + '.');
     }
     if (!r.ok) throw new Error('GitHub antwortet mit ' + r.status + '.');
     return r.json();
   }
 
-  async function laden() {
-    $('stand').textContent = 'Lädt …';
+  async function load() {
+    $('state').textContent = 'Lädt …';
     try {
-      const seit = new Date(Math.min(besuch, Date.now() - 7 * 86400000)).toISOString();
-      const [items, kommentare, ereignisse] = await Promise.all([
-        holen('/issues?state=all&sort=updated&direction=desc&per_page=100'),
-        holen('/issues/comments?sort=created&direction=desc&per_page=100&since=' + encodeURIComponent(seit)),
-        holen('/issues/events?per_page=100'),
+      const since = new Date(Math.min(visit, Date.now() - 7 * 86400000)).toISOString();
+      const [items, comments, events] = await Promise.all([
+        fetchJson('/issues?state=all&sort=updated&direction=desc&per_page=100'),
+        fetchJson('/issues/comments?sort=created&direction=desc&per_page=100&since=' + encodeURIComponent(since)),
+        fetchJson('/issues/events?per_page=100'),
       ]);
-      daten = { items, kommentare: kommentare.filter(k => k.user && k.user.login === AGENT), ereignisse, geladen: Date.now() };
-      store.set('stvbero.daten', JSON.stringify(daten));
-      zeichnen();
+      data = { items, comments: comments.filter(k => k.user && k.user.login === AGENT), events, loaded: Date.now() };
+      store.set(KEY_DATA, JSON.stringify(data));
+      render();
     } catch (e) {
-      const alt = store.get('stvbero.daten');
-      if (alt && !daten) { daten = JSON.parse(alt); zeichnen(); }
-      $('stand').innerHTML = `<span class="error">${esc(e.message)}</span>` + (daten ? ' Angezeigt wird der Stand von ' + zeit(daten.geladen) + '.' : '');
+      const cached = store.get(KEY_DATA);
+      if (cached && !data) { data = JSON.parse(cached); render(); }
+      else if (!data && store.get(OLD_KEY_DATA)) { data = fromOldData(JSON.parse(store.get(OLD_KEY_DATA))); render(); }
+      $('state').innerHTML = `<span class="error">${esc(e.message)}</span>` + (data ? ' Angezeigt wird der Stand von ' + time(data.loaded) + '.' : '');
     }
   }
 
-  function itemNr(url) { return Number(String(url).split('/').pop()); }
-
-  // Einordnung eines Agenten-Kommentars
-  function einordnen(k) {
-    const b = k.body || '';
-    const kopf = (b.match(/^##\s+(.+)$/m) || [])[1] || '';
-    const ersteZeile = b.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/^#+\s*/, '');
-    if (/<!-- pipeline:anspruch/.test(b)) return null;
-    const art = (b.match(/<!-- pipeline:([a-z-]+)/) || [])[1] || '';
-    const blockiert = /blockiert|⛔/i.test(kopf);
-    const zurueck = /🔁|nacharbeit/i.test(kopf);
-    const gemergt = /gemergt/i.test(kopf);
-    let wichtig = ['entwicklung', 'review', 'test', 'waechter'].includes(art) && !!kopf;
-    if (/startet|gestartet|beansprucht/i.test(ersteZeile) && !kopf) wichtig = false;
-    if (!art && !/startet|gestartet/i.test(ersteZeile)) wichtig = true; // freie Kommentare (z.B. Fragen, Befunde) zeigen
-    let ton = 'primary', icon = 'kommentar';
-    if (art === 'entwicklung') icon = 'code';
-    if (art === 'review') icon = 'review';
-    if (art === 'test') icon = 'test';
-    if (art === 'waechter') icon = 'waechter';
-    if (zurueck) { ton = 'mustard'; }
-    if (gemergt) { icon = 'merge'; }
-    if (blockiert) { ton = 'coral'; icon = 'warnung'; }
-    if (!wichtig) { ton = 'muted'; icon = 'start'; }
-    // «Test · Runde 0 · 🔁 Nacharbeit» → Titel «Test · Runde 0», Marke «Nacharbeit»
-    let titel = kopf || ersteZeile || 'Kommentar', status = '';
-    const teile = titel.split(' · ');
-    if (kopf && teile.length > 1 && /\p{Extended_Pictographic}|✅/u.test(teile[teile.length - 1])) status = ohneEmoji(teile.pop());
-    titel = ohneEmoji(teile.join(' · '));
-    status = status.replace(/^[✓✗]\s*/, '');
-    if (status) status = status.charAt(0).toUpperCase() + status.slice(1);
-    return { zeit: k.created_at, nr: itemNr(k.issue_url), titel, status, text: ohneEmoji(b.replace(/<!--[\s\S]*?-->/g, '').trim()), url: k.html_url, ton, icon, wichtig, gemergt, zurueck, blockiert };
+  // Cached data saved before F-11 used German field names.
+  function fromOldData(old) {
+    return { items: old.items || [], comments: old.kommentare || [], events: old.ereignisse || [], loaded: old.geladen };
   }
 
-  function zeichnen() {
-    if (!daten) return;
-    const ab = range === 'besuch' ? besuch : Date.now() - (range === '24h' ? 86400000 : 7 * 86400000);
-    const byNr = Object.fromEntries(daten.items.map(i => [i.number, i]));
-    const offen = daten.items.filter(i => i.state === 'open');
+  function itemNo(url) { return Number(String(url).split('/').pop()); }
 
-    $('stand').textContent = 'Stand ' + zeit(daten.geladen) + ' · letzter Besuch ' + (besuch ? tag(besuch).toLowerCase().replace(/^(heute|gestern)$/, m => m) + ' ' + zeit(besuch) : '–');
+  // Classifies an agent comment
+  function classify(k) {
+    const b = k.body || '';
+    const heading = (b.match(/^##\s+(.+)$/m) || [])[1] || '';
+    const firstLine = b.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/^#+\s*/, '');
+    if (/<!-- pipeline:anspruch/.test(b)) return null;
+    const kind = (b.match(/<!-- pipeline:([a-z-]+)/) || [])[1] || '';
+    const blocked = /blockiert|⛔/i.test(heading);
+    const back = /🔁|nacharbeit/i.test(heading);
+    // English comments since F-09 («✅ merged», «started», «claimed»); the German words match comments written before (O-54).
+    const merged = /gemergt|✅\s*merged/i.test(heading);
+    let important = ['entwicklung', 'review', 'test', 'waechter'].includes(kind) && !!heading;
+    if (/startet|gestartet|beansprucht|started|claimed/i.test(firstLine) && !heading) important = false;
+    if (!kind && !/startet|gestartet|started/i.test(firstLine)) important = true; // show free comments (e.g. questions, findings)
+    let tone = 'primary', icon = 'comment';
+    if (kind === 'entwicklung') icon = 'code';
+    if (kind === 'review') icon = 'review';
+    if (kind === 'test') icon = 'test';
+    if (kind === 'waechter') icon = 'watchdog';
+    if (back) { tone = 'mustard'; }
+    if (merged) { icon = 'merge'; }
+    if (blocked) { tone = 'coral'; icon = 'warning'; }
+    if (!important) { tone = 'muted'; icon = 'start'; }
+    // «Test · Round 0 · 🔁 rework» → title «Test · Round 0», tag «Rework»
+    let title = heading || firstLine || 'Kommentar', status = '';
+    const parts = title.split(' · ');
+    if (heading && parts.length > 1 && /\p{Extended_Pictographic}|✅/u.test(parts[parts.length - 1])) status = withoutEmoji(parts.pop());
+    title = withoutEmoji(parts.join(' · '));
+    status = status.replace(/^[✓✗]\s*/, '');
+    if (status) status = status.charAt(0).toUpperCase() + status.slice(1);
+    return { time: k.created_at, no: itemNo(k.issue_url), title, status, text: withoutEmoji(b.replace(/<!--[\s\S]*?-->/g, '').trim()), url: k.html_url, tone, icon, important, merged, back, blocked };
+  }
 
-    // Braucht dich
-    const blockiert = offen.filter(i => labels(i).includes('pipeline:blockiert'));
-    const freigabe = offen.filter(i => labels(i).includes('typ:nachbesserung') && !labels(i).includes('status:bereit') && !labels(i).includes('status:in-arbeit'));
+  function render() {
+    if (!data) return;
+    const from = range === 'visit' ? visit : Date.now() - (range === '24h' ? 86400000 : 7 * 86400000);
+    const byNo = Object.fromEntries(data.items.map(i => [i.number, i]));
+    const open = data.items.filter(i => i.state === 'open');
+
+    $('state').textContent = 'Stand ' + time(data.loaded) + ' · letzter Besuch ' + (visit ? day(visit).toLowerCase().replace(/^(heute|gestern)$/, m => m) + ' ' + time(visit) : '–');
+
+    // Needs you
+    const blocked = open.filter(i => labels(i).includes('pipeline:blockiert'));
+    const release = open.filter(i => labels(i).includes('typ:nachbesserung') && !labels(i).includes('status:bereit') && !labels(i).includes('status:in-arbeit'));
     let alarm = '';
-    if (blockiert.length || freigabe.length) {
+    if (blocked.length || release.length) {
       alarm = '<div class="card alarm"><h2 style="color:var(--coral)">Braucht dich</h2>';
-      for (const i of blockiert) {
-        const letzter = daten.kommentare.filter(k => itemNr(k.issue_url) === i.number)[0];
-        alarm += `<div class="row"><div class="icon coral">${ic('warnung')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Blockiert: die Pipeline wartet auf deinen Entscheid.${letzter ? ' Letzter Kommentar ' + vor(letzter.created_at) + '.' : ''}</div></div></div>`;
+      for (const i of blocked) {
+        const last = data.comments.filter(k => itemNo(k.issue_url) === i.number)[0];
+        alarm += `<div class="row"><div class="icon coral">${ic('warning')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Blockiert: die Pipeline wartet auf deinen Entscheid.${last ? ' Letzter Kommentar ' + ago(last.created_at) + '.' : ''}</div></div></div>`;
       }
-      for (const i of freigabe) {
-        alarm += `<div class="row"><div class="icon mustard">${ic('fahne')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Nachbesserung ohne Freigabe. Mit Label <b>status:bereit</b> wird sie automatisch umgesetzt.</div></div></div>`;
+      for (const i of release) {
+        alarm += `<div class="row"><div class="icon mustard">${ic('flag')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Nachbesserung ohne Freigabe. Mit Label <b>status:bereit</b> wird sie automatisch umgesetzt.</div></div></div>`;
       }
       alarm += '</div>';
     }
     $('alarm').innerHTML = alarm;
 
-    // Gerade in Arbeit
-    const prs = offen.filter(i => i.pull_request && labels(i).some(l => l.startsWith('pipeline:')));
-    const inArbeit = offen.filter(i => !i.pull_request && labels(i).includes('status:in-arbeit') && !prs.some(p => p.title === i.title));
-    let jetztHtml = '';
+    // In progress
+    const prs = open.filter(i => i.pull_request && labels(i).some(l => l.startsWith('pipeline:')));
+    const inProgress = open.filter(i => !i.pull_request && labels(i).includes('status:in-arbeit') && !prs.some(p => p.title === i.title));
+    let nowHtml = '';
     for (const p of prs) {
       const l = labels(p);
-      const stufe = l.includes('pipeline:test') ? 2 : l.includes('pipeline:review') ? 1 : 0;
-      const nacharbeit = l.includes('pipeline:nacharbeit');
-      const aktiv = l.includes('agent:aktiv');
-      const k = daten.kommentare.filter(c => itemNr(c.issue_url) === p.number);
-      const runde = Math.max(0, k.filter(c => /<!-- pipeline:entwicklung -->/.test(c.body)).length - (nacharbeit ? 0 : 1));
-      const wer = nacharbeit ? 'Nacharbeit' : STUFEN[stufe];
-      const zustand = aktiv ? `${wer}: Agent arbeitet` : `${wer}: wartet auf den Agenten`;
-      const flow = STUFEN.map((s, x) => `<span class="${l.includes('pipeline:blockiert') && x === stufe ? 'bad' : x < stufe ? 'done' : x === stufe ? 'on' : ''}">${x === 0 && nacharbeit ? 'Nacharbeit' : s}</span>`).join('');
-      jetztHtml += `<div class="row"><div class="icon ${nacharbeit ? 'mustard' : 'blue'}">${ic(aktiv ? 'aktiv' : 'uhr')}</div><div class="grow"><div class="title">${esc(p.title)} ${link(p)}</div><div class="meta">${esc(zustand)} · Runde ${runde}${k[0] ? ' · letzte Meldung ' + vor(k[0].created_at) : ''}</div><div class="flow">${flow}</div></div></div>`;
+      const stage = l.includes('pipeline:test') ? 2 : l.includes('pipeline:review') ? 1 : 0;
+      const rework = l.includes('pipeline:nacharbeit');
+      const active = l.includes('agent:aktiv');
+      const k = data.comments.filter(c => itemNo(c.issue_url) === p.number);
+      const round = Math.max(0, k.filter(c => /<!-- pipeline:entwicklung -->/.test(c.body)).length - (rework ? 0 : 1));
+      const who = rework ? 'Nacharbeit' : STAGES[stage];
+      const condition = active ? `${who}: Agent arbeitet` : `${who}: wartet auf den Agenten`;
+      const flow = STAGES.map((s, x) => `<span class="${l.includes('pipeline:blockiert') && x === stage ? 'bad' : x < stage ? 'done' : x === stage ? 'on' : ''}">${x === 0 && rework ? 'Nacharbeit' : s}</span>`).join('');
+      nowHtml += `<div class="row"><div class="icon ${rework ? 'mustard' : 'blue'}">${ic(active ? 'active' : 'clock')}</div><div class="grow"><div class="title">${esc(p.title)} ${link(p)}</div><div class="meta">${esc(condition)} · Runde ${round}${k[0] ? ' · letzte Meldung ' + ago(k[0].created_at) : ''}</div><div class="flow">${flow}</div></div></div>`;
     }
-    for (const i of inArbeit) {
-      jetztHtml += `<div class="row"><div class="icon blue">${ic('code')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Entwicklung läuft, noch kein PR</div><div class="flow">${STUFEN.map((s, x) => `<span class="${x === 0 ? 'on' : ''}">${s}</span>`).join('')}</div></div></div>`;
+    for (const i of inProgress) {
+      nowHtml += `<div class="row"><div class="icon blue">${ic('code')}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">Entwicklung läuft, noch kein PR</div><div class="flow">${STAGES.map((s, x) => `<span class="${x === 0 ? 'on' : ''}">${s}</span>`).join('')}</div></div></div>`;
     }
-    $('jetzt').innerHTML = jetztHtml || '<p class="empty">Nichts in Arbeit.</p>';
+    $('now').innerHTML = nowHtml || '<p class="empty">Nichts in Arbeit.</p>';
 
-    // Verlauf
-    const eintraege = daten.kommentare.map(einordnen).filter(Boolean).filter(e => new Date(e.zeit) >= ab);
-    const neueNb = daten.items.filter(i => labels(i).includes('typ:nachbesserung') && new Date(i.created_at) >= ab);
-    for (const i of neueNb) eintraege.push({ zeit: i.created_at, nr: i.number, titel: 'Neue Nachbesserung: ' + i.title.replace(/^Nachbesserung · /, ''), status: '', text: '', url: i.html_url, ton: 'blue', icon: 'neu', wichtig: true });
-    const gemergtEv = daten.ereignisse.filter(e => e.event === 'merged' && new Date(e.created_at) >= ab);
-    const blockEv = daten.ereignisse.filter(e => e.event === 'labeled' && e.label && e.label.name === 'pipeline:blockiert' && new Date(e.created_at) >= ab);
-    for (const e of blockEv) eintraege.push({ zeit: e.created_at, nr: e.issue.number, titel: 'Blockiert', status: '', text: '', url: e.issue.html_url, ton: 'coral', icon: 'warnung', wichtig: true, blockiert: true });
-    eintraege.sort((a, b) => new Date(b.zeit) - new Date(a.zeit));
+    // History
+    const entries = data.comments.map(classify).filter(Boolean).filter(e => new Date(e.time) >= from);
+    const newFixes = data.items.filter(i => labels(i).includes('typ:nachbesserung') && new Date(i.created_at) >= from);
+    for (const i of newFixes) entries.push({ time: i.created_at, no: i.number, title: 'Neue Nachbesserung: ' + i.title.replace(/^(Nachbesserung|Follow-up fix) · /, ''), status: '', text: '', url: i.html_url, tone: 'blue', icon: 'new', important: true });
+    const mergedEvents = data.events.filter(e => e.event === 'merged' && new Date(e.created_at) >= from);
+    const blockedEvents = data.events.filter(e => e.event === 'labeled' && e.label && e.label.name === 'pipeline:blockiert' && new Date(e.created_at) >= from);
+    for (const e of blockedEvents) entries.push({ time: e.created_at, no: e.issue.number, title: 'Blockiert', status: '', text: '', url: e.issue.html_url, tone: 'coral', icon: 'warning', important: true, blocked: true });
+    entries.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-    const runden = eintraege.filter(e => e.zurueck && e.wichtig).length;
-    $('zahlen').innerHTML = [
-      ['primary', gemergtEv.length, 'gemergt'],
-      ['mustard', runden, 'zurück in Nacharbeit'],
-      ['', neueNb.length, 'neue Nachbesserungen'],
-      ['coral', blockEv.length, 'blockiert'],
+    const rounds = entries.filter(e => e.back && e.important).length;
+    $('numbers').innerHTML = [
+      ['primary', mergedEvents.length, 'gemergt'],
+      ['mustard', rounds, 'zurück in Nacharbeit'],
+      ['', newFixes.length, 'neue Nachbesserungen'],
+      ['coral', blockedEvents.length, 'blockiert'],
     ].map(([c, n, t]) => `<div class="chip ${n ? c : ''}"><b>${n}</b><span>${t}</span></div>`).join('');
 
-    const zeigeAlle = $('alle').checked;
-    const sicht = eintraege.filter(e => zeigeAlle || e.wichtig);
-    let html = '', letzterTag = '';
-    for (const e of sicht) {
-      const t = tag(e.zeit);
-      if (t !== letzterTag) { if (html) html += '</div>'; html += `<div class="day">${esc(t)}</div><div class="card">`; letzterTag = t; }
-      const it = byNr[e.nr];
-      const neu = new Date(e.zeit) > besuch;
-      const tagTon = e.blockiert ? 'coral' : e.zurueck ? 'mustard' : e.gemergt ? '' : 'muted';
-      html += `<div class="row"><div class="icon ${e.ton === 'primary' ? '' : e.ton}">${ic(e.icon)}</div><div class="grow">`
-        + `<div class="kopf"><div class="title">${neu ? '<span class="new" title="neu"></span>' : ''}${esc(e.titel)}</div>${e.status ? `<span class="tag ${tagTon}">${esc(e.status)}</span>` : ''}</div>`
-        + `<div class="meta">${zeit(e.zeit)} · ${it ? esc(it.title) + ' ' : ''}<a href="${esc(e.url)}">#${e.nr}</a></div>`
-        + (e.text && e.wichtig ? `<details><summary>Ganze Meldung</summary><div class="body">${esc(e.text)}</div></details>` : '')
+    const showAll = $('all').checked;
+    const visible = entries.filter(e => showAll || e.important);
+    let html = '', lastDay = '';
+    for (const e of visible) {
+      const t = day(e.time);
+      if (t !== lastDay) { if (html) html += '</div>'; html += `<div class="day">${esc(t)}</div><div class="card">`; lastDay = t; }
+      const it = byNo[e.no];
+      const isNew = new Date(e.time) > visit;
+      const tagTone = e.blocked ? 'coral' : e.back ? 'mustard' : e.merged ? '' : 'muted';
+      html += `<div class="row"><div class="icon ${e.tone === 'primary' ? '' : e.tone}">${ic(e.icon)}</div><div class="grow">`
+        + `<div class="heading"><div class="title">${isNew ? '<span class="new" title="neu"></span>' : ''}${esc(e.title)}</div>${e.status ? `<span class="tag ${tagTone}">${esc(e.status)}</span>` : ''}</div>`
+        + `<div class="meta">${time(e.time)} · ${it ? esc(it.title) + ' ' : ''}<a href="${esc(e.url)}">#${e.no}</a></div>`
+        + (e.text && e.important ? `<details><summary>Ganze Meldung</summary><div class="body">${esc(e.text)}</div></details>` : '')
         + `</div></div>`;
     }
     if (html) html += '</div>';
-    $('verlauf').innerHTML = html || `<div class="card"><p class="empty" style="margin:0">${range === 'besuch' ? 'Seit deinem letzten Besuch ist nichts passiert.' : 'In diesem Zeitraum ist nichts passiert.'}</p></div>`;
+    $('history').innerHTML = html || `<div class="card"><p class="empty" style="margin:0">${range === 'visit' ? 'Seit deinem letzten Besuch ist nichts passiert.' : 'In diesem Zeitraum ist nichts passiert.'}</p></div>`;
 
-    // Warteschlange (gleiche Reihenfolge wie scripts/pipeline.sh naechstes-feature)
-    const bereit = offen.filter(i => !i.pull_request && labels(i).includes('status:bereit') && !labels(i).includes('pipeline:blockiert'));
-    const nb = bereit.filter(i => labels(i).includes('typ:nachbesserung')).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const f = bereit.filter(i => /^F-\d{2} /.test(i.title)).sort((a, b) => a.title.localeCompare(b.title));
-    const geschlossenF = new Set(daten.items.filter(i => i.state === 'closed' && /^F-\d{2} /.test(i.title)).map(i => i.title.slice(0, 4)));
-    const schlange = [...nb, ...f];
-    $('schlange').innerHTML = schlange.length ? schlange.map((i, x) => {
-      const vor = ((i.body || '').match(/Voraussetzung:\**([^\n]*)/) || [])[1] || '';
-      const offenV = (vor.match(/F-\d{2}/g) || []).filter(v => !geschlossenF.has(v));
-      const meta = labels(i).includes('typ:nachbesserung') ? 'Nachbesserung' : offenV.length ? 'wartet auf ' + offenV.join(', ') : 'bereit';
+    // Queue (same order as scripts/pipeline.sh naechstes-feature)
+    const ready = open.filter(i => !i.pull_request && labels(i).includes('status:bereit') && !labels(i).includes('pipeline:blockiert'));
+    const fixes = ready.filter(i => labels(i).includes('typ:nachbesserung')).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const features = ready.filter(i => /^F-\d{2} /.test(i.title)).sort((a, b) => a.title.localeCompare(b.title));
+    const closedFeatures = new Set(data.items.filter(i => i.state === 'closed' && /^F-\d{2} /.test(i.title)).map(i => i.title.slice(0, 4)));
+    const queue = [...fixes, ...features];
+    $('queue').innerHTML = queue.length ? queue.map((i, x) => {
+      // The German keyword «Voraussetzung:» (prerequisite) in issue bodies stays (E-68).
+      const prerequisites = ((i.body || '').match(/Voraussetzung:\**([^\n]*)/) || [])[1] || '';
+      const openPrerequisites = (prerequisites.match(/F-\d{2}/g) || []).filter(v => !closedFeatures.has(v));
+      const meta = labels(i).includes('typ:nachbesserung') ? 'Nachbesserung' : openPrerequisites.length ? 'wartet auf ' + openPrerequisites.join(', ') : 'bereit';
       return `<div class="row"><div class="icon ${labels(i).includes('typ:nachbesserung') ? 'mustard' : ''}">${x + 1}</div><div class="grow"><div class="title">${esc(i.title)} ${link(i)}</div><div class="meta">${esc(meta)}</div></div></div>`;
     }).join('') : '<p class="empty">Die Warteschlange ist leer.</p>';
   }
@@ -348,18 +360,18 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
   document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
     range = b.dataset.range;
     document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    zeichnen();
+    render();
   }));
-  $('alle').addEventListener('change', zeichnen);
-  $('neu-laden').addEventListener('click', laden);
-  $('gelesen').addEventListener('click', () => {
-    besuch = Date.now();
-    store.sset('stvbero.besuch', String(besuch));
-    store.set('stvbero.letzterBesuch', String(besuch));
-    zeichnen();
+  $('all').addEventListener('change', render);
+  $('reload').addEventListener('click', load);
+  $('mark-read').addEventListener('click', () => {
+    visit = Date.now();
+    store.sset(KEY_VISIT, String(visit));
+    store.set(KEY_LAST_VISIT, String(visit));
+    render();
   });
-  setInterval(() => { if (document.visibilityState === 'visible') laden(); }, 5 * 60000);
-  laden();
+  setInterval(() => { if (document.visibilityState === 'visible') load(); }, 5 * 60000);
+  load();
 })();
 </script>
 </body>

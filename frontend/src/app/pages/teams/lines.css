@@ -1,0 +1,148 @@
+.groups {
+  display: grid;
+  gap: 14px;
+}
+
+.notice {
+  margin: 0;
+}
+
+.group {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+
+.group[data-kind='GOALIES'] {
+  border-color: var(--blue);
+}
+
+.group[data-kind='NO_LINE'] {
+  background: transparent;
+  border-style: dashed;
+}
+
+.group.target {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.group-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-header .section-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Mobile: arrows next to the title, rename and delete below */
+.group-header .actions {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 640px) {
+  .group-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .group-header .actions {
+    grid-column: auto;
+  }
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rename {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-icon);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.delete {
+  color: var(--coral);
+}
+
+.add {
+  justify-self: start;
+}
+
+.player {
+  flex-wrap: nowrap;
+  min-height: 56px;
+}
+
+.player[draggable='true'] {
+  cursor: grab;
+}
+
+.player.dragged {
+  opacity: 0.5;
+}
+
+.handle {
+  color: var(--muted);
+  flex: none;
+}
+
+.player .row-title {
+  font-size: 15px;
+}
+
+.player select {
+  flex: none;
+  max-width: 46%;
+  min-height: var(--touch);
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-icon);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 14px/1.2 var(--font);
+}
+
+.dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  color: var(--text);
+  display: grid;
+  gap: 12px;
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog p {
+  margin: 0;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+}

@@ -13,16 +13,16 @@ General:
 
 | Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Docs | Read `docs/testability.md`, section "Conventions for E2E tests" | Names as the only exception document elements without a role (`<html>`, `<link>` in the head) and refers to `dokumentWurzel(page)` and `kopfLink(page, rel)` in `e2e/tests/hilfen.ts` |
-| K1.2 Helpers exist | `e2e/tests/hilfen.ts` | Exports `dokumentWurzel(page)` and `kopfLink(page, rel)`; the CSS selectors are only there |
-| K1.3 Automated | `npx playwright test nb17` | «AK1» green in `mobil` and `desktop` |
+| K1.1 Docs | Read `docs/testability.md`, section "Conventions for E2E tests" | Names as the only exception document elements without a role (`<html>`, `<link>` in the head) and refers to `documentRoot(page)` and `headLink(page, rel)` in `e2e/tests/helpers.ts` |
+| K1.2 Helpers exist | `e2e/tests/helpers.ts` | Exports `documentRoot(page)` and `headLink(page, rel)`; the CSS selectors are only there |
+| K1.3 Automated | `npx playwright test nb17` | «AK1» green in `mobile` and `desktop` |
 
 ## K2 · No CSS selectors outside the exception (criterion 2)
 
 | Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Current state | `npx playwright test nb17` | «AK2» green; outside `hilfen.ts` no match for `locator(`, `$(`, `$$(`, `$eval(`, `waitForSelector(`, `css=`, `xpath=` |
-| K2.2 Counter-check `locator` | Append the line `page.locator("html")` in `seed.spec.ts`, run AK2 | AK2 red, message names `seed.spec.ts:<zeile>: locator() mit CSS-Selektor` |
+| K2.1 Current state | `npx playwright test nb17` | «AK2» green; outside `helpers.ts` no match for `locator(`, `$(`, `$$(`, `$eval(`, `waitForSelector(`, `css=`, `xpath=` |
+| K2.2 Counter-check `locator` | Append the line `page.locator("html")` in `seed.spec.ts`, run AK2 | AK2 red, message names `seed.spec.ts:<line>: locator() with CSS selector` |
 | K2.3 Counter-check chained | As K2.2 with `getByRole('x').locator('y')` | AK2 red, `locator()` |
 | K2.4 Counter-check `$eval`, `$$` | As K2.2 with `page.$eval('div', e => e)` and `page.$$('a')` | AK2 red, one match `$()/$$()/$eval()` each |
 | K2.5 Counter-check `waitForSelector` | As K2.2 with `page.waitForSelector('x')` | AK2 red, `waitForSelector()` |

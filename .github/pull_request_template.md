@@ -35,6 +35,6 @@ http://localhost:4200/dev-login → log in as `…` → …
 - [ ] Permissions checked in the backend, with 403 tests
 - [ ] Testability according to docs/testability.md, navigation.md updated
 - [ ] Design tokens, light and dark checked, mobile and desktop checked
-- [ ] Backend tests and E2E tests (mobil, desktop, axe) green
+- [ ] Backend tests and E2E tests (mobile, desktop, axe) green
 - [ ] test-data.md and states.md updated
 - [ ] Starts from a fresh clone

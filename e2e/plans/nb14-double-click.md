@@ -49,7 +49,7 @@ General, for every case:
 | Case | Steps | Expected |
 |---|---|---|
 | R1 Normal use | Single click on all actions above without throttling | Works as before, buttons usable again afterwards |
-| R2 Automated | `e2e/tests/nb14-doppelklick.spec.ts` and all other E2E tests | Green, mobile and desktop, axe without findings |
+| R2 Automated | `e2e/tests/nb14-double-click.spec.ts` and all other E2E tests | Green, mobile and desktop, axe without findings |
 
 ## Result round 1 (at `b5962d6`)
 

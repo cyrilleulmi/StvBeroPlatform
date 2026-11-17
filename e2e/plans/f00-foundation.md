@@ -20,7 +20,7 @@ Viewports: mobile 375×812, desktop 1280×800. After each case: console without 
 Starting point: reset, not signed in.
 
 1. Open `/dev-login`.
-2. Expected: all 17 seed people are visible (test ID `dev-login-person-<schluessel>`, e.g. `dev-login-person-petra`), with name. Banner `testmodus-hinweis` visible.
+2. Expected: all 17 seed people are visible (test ID `dev-login-person-<schluessel>`, e.g. `dev-login-person-petra`), with name. Banner `test-mode-notice` visible.
 3. Click «Anna Muster».
 4. Expected: URL `/`, greeting with «Anna». Still signed in after reload.
 5. Edge case: `POST /api/test/login {loginKey: "gibtsnicht"}` → 400 or 404 (Problem Details), no session. Empty body → 400.
@@ -30,7 +30,7 @@ Starting point: reset, not signed in.
 Starting point: reset, signed in as `anna`.
 
 1. Open `/`.
-2. Expected: heading with «Anna». Tiles match `GET /api/tiles`; tile `kachel-anwesenheit` visible.
+2. Expected: heading with «Anna». Tiles match `GET /api/tiles`; tile `tile-anwesenheit` visible.
 3. Tap the tile «Anwesenheit».
 4. Expected: URL `/termine`, empty state with text (no blank screen).
 5. Role: as `alex` (admin), compare `GET /api/tiles` and the start page.
@@ -45,7 +45,7 @@ Starting point: reset, signed in as `anna`.
 
 ## K6 · Design tokens and theme
 
-1. As `anna` open `/profil`, switcher `theme-umschalter` with «Hell»/«Düne»/«GitHub Dark»/«System» (since E-67, before «Hell»/«Dunkel»/«System»).
+1. As `anna` open `/profil`, switcher `theme-switch` with «Hell»/«Düne»/«GitHub Dark»/«System» (since E-67, before «Hell»/«Dunkel»/«System»).
 2. Choose «GitHub Dark» → `<html data-theme="github-dark">`, screen dark; reload → stays dark.
 3. «Hell» → light, stays after reload. «System» with `prefers-color-scheme: dark` → dark (GitHub Dark).
 4. Every screen (`/dev-login`, `/`, `/termine`, `/teams`, `/profil`, `/verwaltung`, not found) in dark mode: readable, nothing white on white.

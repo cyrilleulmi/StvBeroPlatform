@@ -1,7 +1,7 @@
 # Test plan F-05 · Match days and call-up
 
 Issue #6 · Requirements AUF-01 to AUF-28 (without notifications, which come with F-06), RR-03, TER-06, SUH-06 ·
-Tests: `../tests/f05-spieltage.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/…/MatchDaysTest.java`, `CallUpRulesTest.java`
+Tests: `../tests/f05-match-days.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/…/MatchDaysTest.java`, `CallUpRulesTest.java`
 
 General for every case:
 
@@ -19,7 +19,7 @@ T04 match day Team 1 `…004`, T05 match day Team 2 `…005`. Matches `50000000-
 |---|---|---|---|
 | K1 | Seed | `anna` → `/termine/<T04>`; `eva` and `lea` → `/termine/<T05>`; `petra` → `/termine/<T04>/aufgebot` | T04: matches 09:30 Team 1 – UHC Musterdorf (home), 11:45 Unihockey Beispielstadt – Team 1 (away), Anna «noch kein Aufgebot». T05: Eva «aufgeboten», Lea «nicht aufgeboten». Call-up T04: draft, 5 called up (Anna, Lea, Mia, Sara, Jana) |
 | K2 | Create match day | `petra` → `/termine/neu` → type «Spieltag», date, start, end, Team 1, venue, Google Maps link, notes, meeting point (time, place), two matches (one away) → «Termin speichern» | On to `/termine/<id>`, «Der Termin ist erfasst.», matches by start time, meeting point, map, notes. Required fields of the matches (opponent) are reported at the field |
-| K3 | Event detail | `anna` → `/termine/<T04>` | `spiele` by start time, `treffpunkt` «08:00 · Parkplatz Sporthalle Nord», `spielort-karte` «In Google Maps öffnen» with `target="_blank"` |
+| K3 | Event detail | `anna` → `/termine/<T04>` | `matches` by start time, `meeting-point` «08:00 · Parkplatz Sporthalle Nord», `venue-map` «In Google Maps öffnen» with `target="_blank"` |
 | K4 | Selection | `petra` → `/termine/<T04>/aufgebot`; tick Nina (pending) and Kim (declined), untick Lea; reload | Groups Linie 1, Linie 2, Goalies, «Ohne Linie»; response status and comment (Mia «Muss evtl. arbeiten») next to the name; every change saved immediately («Nina Roth ist aufgeboten.»), stays after reload |
 | K5 | S9 publish | `anna` → T04 (before); `petra` → call-up → «Veröffentlichen» → dialog «Aufgebot veröffentlichen?» → «Abbrechen», then again → «Veröffentlichen»; `anna`, `kim` → T04 | Before: «noch kein Aufgebot». Cancel changes nothing. Afterwards «veröffentlicht am Mo 16.11. 06:00», Anna «aufgeboten», Kim «nicht aufgeboten». Without a selection, «Veröffentlichen» is disabled with an explanation |
 | K6 | S11 coaches only | `anna` → `/termine/<T04>/aufgebot`; API `GET`/`PUT …/call-up`, `POST …/publish` as `anna`; `marc` `GET …/T04/call-up` | «Keine Berechtigung» (`role="alert"`), API 403. Marc (coach Team 2) 403. Anna sees no link «Aufgebot bearbeiten» in the event |

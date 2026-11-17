@@ -2,6 +2,8 @@
 
 Binding vocabulary for the repository (NF-40, decision E-68). Code, API, database and documents use the English terms in this table. The user interface stays German and uses the German terms.
 
+The switch to English is complete since F-11 (E-68, E-75): code, tests, test IDs, scripts and configuration all use these terms. Only the exceptions listed in NF-40 stay German.
+
 If a term is missing, add it here in the same style before using it.
 
 ## Domain terms

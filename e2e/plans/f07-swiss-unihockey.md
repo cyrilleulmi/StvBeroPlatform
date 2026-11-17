@@ -26,7 +26,7 @@ match 02 the same with `5000002`, `11:45`, home «Unihockey Beispielstadt», awa
 
 | No. | Case | Starting point | Steps | Expected |
 |---|---|---|---|---|
-| K1 | Link and sync (SUH-02) | Reset, simulator `900002` with one match on 05.12. 13:00, `alex` | `/verwaltung/teams` → team 2 → team ID `900002` → «Verknüpfen» → «Jetzt abgleichen» | The list shows the chip «swiss unihockey» for team 1 (`su-verknuepft-<Team>`). After linking «Verknüpft mit Team-ID 900002.», sync «Abgleich fertig: 1 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 0 unverändert.» Match day Sat 05.12. appears for `eva` |
+| K1 | Link and sync (SUH-02) | Reset, simulator `900002` with one match on 05.12. 13:00, `alex` | `/verwaltung/teams` → team 2 → team ID `900002` → «Verknüpfen» → «Jetzt abgleichen» | The list shows the chip «swiss unihockey» for team 1 (`su-linked-<Team>`). After linking «Verknüpft mit Team-ID 900002.», sync «Abgleich fertig: 1 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 0 unverändert.» Match day Sat 05.12. appears for `eva` |
 | K1b | Input validation | as K1 | «abc» or empty → «Verknüpfen» | «Bitte eine Team-ID eingeben (nur Ziffern).», field `aria-invalid`. API: `0` → 400, ID already in use (`900001` for team 2) → 409 rule SUH-02 |
 | K1c | Unlink | Reset, `alex` | Team 1 → «Verknüpfung lösen» | «Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.», «Nicht verknüpft.», sync button gone; API sync 409 |
 | K1d | Admins only (RR-07) | Reset, `petra` | `/verwaltung/teams/<Team 1>`; API PUT/POST | «Keine Berechtigung», API 403; without login 401 |

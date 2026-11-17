@@ -1,0 +1,95 @@
+/* Responses (F-04): response buttons, overview, dialogs. Colors only through tokens (O-16). */
+
+.response {
+  display: grid;
+  gap: 6px;
+}
+
+.response p {
+  margin: 0;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 420px;
+}
+
+.response-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--touch);
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font: 700 13px/1.15 var(--font);
+  text-align: center;
+  cursor: pointer;
+}
+
+.response-button app-icon {
+  flex: none;
+}
+
+.response-button[aria-pressed='true'][data-kind='attending'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.response-button[aria-pressed='true'][data-kind='declined'] {
+  background: var(--coral-soft);
+  border-color: var(--coral);
+}
+
+.response-button[aria-pressed='true'][data-kind='maybe'] {
+  background: var(--mustard-soft);
+  border-color: var(--mustard);
+}
+
+.response-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.feedback {
+  font-weight: 600;
+}
+
+.comment {
+  overflow-wrap: anywhere;
+}
+
+.chip[data-kind='late-cancellation'] {
+  background: var(--coral-soft);
+}
+
+.dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  color: var(--text);
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog h2,
+.dialog p {
+  margin: 0;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

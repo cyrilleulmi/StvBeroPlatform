@@ -1,10 +1,10 @@
-.rahmen {
+.frame {
   min-height: 100dvh;
 }
 
-/* Mobil: feste Kopfzeile mit Hintergrund hinter der Glocke. Der Inhalt scrollt darunter durch,
-   damit die Glocke auch beim Scrollen nie über Bedienelementen liegt (O-51). Höhe: 10px + 48px + 10px. */
-.kopfzeile {
+/* Mobile: fixed header bar with a background behind the bell. The content scrolls underneath,
+   so that the bell never lies over controls while scrolling (O-51). Height: 10px + 48px + 10px. */
+.header-bar {
   position: fixed;
   top: 0;
   left: 0;
@@ -15,9 +15,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.inhalt {
-  /* Oben Platz für die Kopfzeile mit der Glocke (Benachrichtigungen), damit sie keinen Inhalt verdeckt. */
-  padding: calc(84px + env(safe-area-inset-top)) var(--seitenrand) calc(96px + env(safe-area-inset-bottom));
+.content {
+  /* Space at the top for the header bar with the bell (notifications), so that it covers no content. */
+  padding: calc(84px + env(safe-area-inset-top)) var(--page-margin) calc(96px + env(safe-area-inset-bottom));
   max-width: 880px;
 }
 
@@ -29,11 +29,11 @@
   z-index: 10;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  /* Wenig Rand seitlich: Mit fünf Einträgen (Admins) muss «Verwaltung» bei 375px ganz Platz haben (Nachbesserung #15). */
+  /* Little side padding: with five entries (admins) «Verwaltung» must fit completely at 375px (follow-up fix #15). */
   padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
 }
 
-.marke {
+.brand {
   display: none;
 }
 
@@ -66,16 +66,16 @@ a {
   font-weight: 600;
 }
 
-/* Beschriftungen werden nie abgeschnitten (Nachbesserung #15). Mobil 11px, damit fünf Einträge
-   bei 375px nebeneinander passen; der Desktop setzt unten wieder 15px. */
+/* Labels are never cut off (follow-up fix #15). Mobile 11px, so that five entries fit
+   side by side at 375px; the desktop sets 15px again below. */
 a span {
   font-size: 11px;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
-/* Sehr schmale Handys (z.B. 320px): Mit fünf Einträgen wäre «Verwaltung» breiter als die Inhaltsfläche
-   des Eintrags und stiesse an den Rand der Markierung. Zwischenräume weg, Schrift etwas enger (Nachbesserung #23). */
+/* Very narrow phones (e.g. 320px): with five entries «Verwaltung» would be wider than the content area
+   of the entry and touch the edge of the highlight. No gaps, slightly narrower font (follow-up fix #23). */
 @media (max-width: 359px) {
   .navigation {
     padding-left: 2px;
@@ -96,8 +96,8 @@ a span {
   }
 }
 
-/* Mobil: Glocke als runder Knopf oben rechts, Beschriftung nur für Screenreader (F-06). */
-a.glocke {
+/* Mobile: bell as a round button at the top right, label only for screen readers (F-06). */
+a.bell {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top));
   right: 12px;
@@ -112,7 +112,7 @@ a.glocke {
   color: var(--text);
 }
 
-.glocke-text {
+.bell-text {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -122,7 +122,7 @@ a.glocke {
   white-space: nowrap;
 }
 
-a.glocke .zaehler {
+a.bell .counter {
   position: absolute;
   top: -4px;
   right: -4px;
@@ -139,19 +139,19 @@ a.glocke .zaehler {
   letter-spacing: normal;
 }
 
-a.aktiv {
+a.active {
   background: var(--primary-soft);
   color: var(--primary);
   font-weight: 700;
 }
 
-/* Text in `text` statt `primary`: primary auf primary-soft erreicht im Lightmode nur 3.97:1 (WCAG AA 4.5:1). */
-a.aktiv span {
+/* Text in `text` instead of `primary`: primary on primary-soft only reaches 3.97:1 in light mode (WCAG AA 4.5:1). */
+a.active span {
   color: var(--text);
 }
 
 @media (min-width: 1024px) {
-  .rahmen {
+  .frame {
     display: grid;
     grid-template-columns: 240px 1fr;
   }
@@ -165,11 +165,11 @@ a.aktiv span {
     padding: 24px 16px;
   }
 
-  .kopfzeile {
+  .header-bar {
     display: none;
   }
 
-  .marke {
+  .brand {
     display: block;
     margin: 0 0 24px 12px;
     font-size: 18px;
@@ -200,11 +200,11 @@ a.aktiv span {
     letter-spacing: normal;
   }
 
-  .inhalt {
+  .content {
     padding: 40px 48px;
   }
 
-  a.glocke {
+  a.bell {
     position: relative;
     top: auto;
     right: auto;
@@ -220,12 +220,12 @@ a.aktiv span {
     color: var(--muted);
   }
 
-  a.glocke.aktiv {
+  a.bell.active {
     background: var(--primary-soft);
     color: var(--primary);
   }
 
-  .glocke-text {
+  .bell-text {
     position: static;
     width: auto;
     height: auto;
@@ -234,7 +234,7 @@ a.aktiv span {
     clip: auto;
   }
 
-  a.glocke .zaehler {
+  a.bell .counter {
     position: static;
     margin-left: auto;
   }

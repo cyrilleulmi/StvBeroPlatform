@@ -1,0 +1,52 @@
+<h1>{{ texts.profile.title }}</h1>
+
+@if (auth.me(); as me) {
+  <section class="card person" aria-labelledby="profile-name">
+    <h2 id="profile-name">{{ me.firstName }} {{ me.lastName }}</h2>
+    @if (me.email) {
+      <p class="secondary-text">{{ me.email }}</p>
+    }
+  </section>
+}
+
+<section class="card">
+  <fieldset class="switch" data-testid="theme-switch">
+    <legend>{{ texts.profile.theme }}</legend>
+    <div class="options">
+      @for (o of options; track o.value) {
+        <!-- Each choice shows itself in its own colors: data-theme also works on a single element. -->
+        <label class="option" [attr.data-theme]="o.preview">
+          <input
+            type="radio"
+            name="theme"
+            [value]="o.value"
+            [checked]="theme.mode() === o.value"
+            (change)="theme.set(o.value)"
+          />
+          <span class="name">{{ o.text }}</span>
+          <span class="colors" aria-hidden="true">
+            <span class="color color-primary"></span>
+            <span class="color color-coral"></span>
+            <span class="color color-mustard"></span>
+            <span class="color color-blue"></span>
+          </span>
+        </label>
+      }
+    </div>
+  </fieldset>
+</section>
+
+@if (error(); as message) {
+  <p class="message-error" role="alert">{{ message }}</p>
+}
+
+<button
+  type="button"
+  class="button button-secondary"
+  [disabled]="loggingOut()"
+  [attr.aria-busy]="loggingOut() ? 'true' : null"
+  (click)="logout()"
+>
+  <app-icon name="log-out" [size]="20" />
+  {{ texts.profile.logout }}
+</button>

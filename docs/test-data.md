@@ -291,4 +291,4 @@ Every scenario starts with `POST /api/test/reset`.
 | S34 | Match missing at swiss unihockey | Simulator for `900001` only match 01. Trigger sync | Match 02 stays, marked «swiss unihockey liefert dieses Spiel nicht mehr.», coach can delete it | SUH-06 |
 | S35 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. Trigger sync | Message «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nothing changed | SUH-09 |
 | S19 | Theme | As `anna` at `/profil` choose «GitHub Dark», reload | Stays dark. «System» follows the system setting: light «Hell», dark «GitHub Dark» | NF-06, NF-08 |
-| S36 | Theme Düne | As `anna` at `/profil` choose «Düne», go to `/`, reload | `data-theme` on the document is `duene`, the colors also apply when the system is dark, and stay after reload. No contrast finding | NF-08 |
+| S36 | Theme Düne | As `anna` at `/profil` choose «Düne», go to `/`, reload | `data-theme` on the document is `dune`, the colors also apply when the system is dark, and stay after reload. No contrast finding | NF-08 |

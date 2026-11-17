@@ -20,7 +20,7 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 | As `alex` open `/verwaltung/personen` | 17 people, sorted by last name, Alex with the marker «Admin» |
 | `/verwaltung/teams` | Season «2026/27 (aktuell)» selected, Team 1, Team 2, Team 3 |
 | `/verwaltung/teams/<Team 1>` | Coaches: Petra Keller. Players (7): Kim Baumann, Sara Brun, Mia Frei, Lea Graf, Anna Muster, Nina Roth, Jana Wyss |
-| `/verwaltung/teams?saison=<2025/26>` | Notice `archiv-hinweis`, only Team 1 |
+| `/verwaltung/teams?saison=<2025/26>` | Notice `archive-notice`, only Team 1 |
 
 ## K2 · Create and edit a person (PTF-11)
 
@@ -49,8 +49,8 @@ People `20000000-0000-4000-8000-0000000000NN` according to test-data.md.
 
 | Steps | Expected |
 |---|---|
-| `petra` → `/teams` | «Team 1 Coach», «Team 2 Spielerin» (`team-karte-<id>`) |
-| `petra` → `/teams/<Team 2>` | Petra under `team-spielerinnen` |
+| `petra` → `/teams` | «Team 1 Coach», «Team 2 Spielerin» (`team-card-<id>`) |
+| `petra` → `/teams/<Team 2>` | Petra under `team-players` |
 | `petra` → `/teams/<Team 3>` | «Keine Berechtigung», API 403 |
 
 ## K5 · Coaches and players separate (PTF-07)

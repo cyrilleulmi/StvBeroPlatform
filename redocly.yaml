@@ -1,10 +1,10 @@
-# Prüfregeln für den API-Vertrag: npx @redocly/cli lint docs/api/openapi.yaml
-# Ziel: 0 Fehler, 0 Warnungen.
+# Lint rules for the API contract: npx @redocly/cli lint docs/api/openapi.yaml
+# Goal: 0 errors, 0 warnings.
 extends:
   - recommended
 rules:
-  # Lokaler Server ist gewollt, ein produktiver Host ist noch offen (O-02).
+  # A local server is intended; a production host is still open (O-02).
   no-server-example.com: off
-  # Die Test-Endpunkte (Tag «Test») haben bewusst keine Fehlerantworten.
-  # Alle fachlichen Endpunkte haben 4xx-Antworten; der Review-Agent prüft das.
+  # The test endpoints (tag «Test») deliberately have no error responses.
+  # All domain endpoints have 4xx responses; the review agent checks this.
   operation-4xx-response: off

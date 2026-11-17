@@ -12,12 +12,13 @@
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script>
-      // Gewählten Modus vor dem ersten Zeichnen anwenden (kein Aufblitzen). Siehe ThemeService.
+      // Apply the chosen theme before the first paint (no flash). See ThemeService.
+      // Unknown values (e.g. the former German «hell» or «duene») fall back to «System».
       try {
-        var m = { hell: 'light', duene: 'duene', 'github-dark': 'github-dark' }[
-          localStorage.getItem('stv-theme')
-        ];
-        if (m) document.documentElement.setAttribute('data-theme', m);
+        var t = localStorage.getItem('stv-theme');
+        if (t === 'light' || t === 'dune' || t === 'github-dark') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
       } catch (e) {}
     </script>
   </head>

@@ -1,0 +1,102 @@
+:host {
+  display: contents;
+}
+
+.call-up,
+.matches {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.call-up p,
+.matches p {
+  margin: 0;
+}
+
+.call-up .button {
+  justify-self: start;
+}
+
+.chip[data-kind='called_up'] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.chip[data-kind='not_called_up'] {
+  background: var(--coral-soft);
+  color: var(--text);
+}
+
+.chip[data-kind='no_call_up_yet'] {
+  background: var(--border);
+  color: var(--text);
+}
+
+.state {
+  font-weight: 600;
+}
+
+.match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 0;
+  min-width: 0;
+}
+
+.start-time {
+  flex: none;
+  min-width: 52px;
+  padding: 6px 8px;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+  color: var(--text);
+  font-weight: 800;
+  text-align: center;
+}
+
+.match-text {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.pairing {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.result {
+  font-weight: 800;
+}
+
+.secondary-text {
+  margin: 0;
+}
+
+.dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  color: var(--text);
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog h2,
+.dialog p {
+  margin: 0;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

@@ -1,0 +1,73 @@
+:host,
+.sections {
+  display: grid;
+  gap: var(--section-gap);
+}
+
+.status {
+  display: grid;
+  gap: 4px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px 16px;
+  margin: 0 0 12px;
+}
+
+.facts dt {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.facts dt:first-child {
+  margin-top: 0;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-weight: 700;
+}
+
+.notes {
+  white-space: pre-line;
+}
+
+@media (min-width: 640px) {
+  .facts {
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: baseline;
+    row-gap: 10px;
+  }
+
+  .facts dt {
+    margin-top: 0;
+  }
+}
+
+.edit {
+  justify-self: start;
+}
+
+/* Long words without spaces (e.g. pasted links) must not widen the page on mobile. */
+:host,
+.sections {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+h1,
+.header .secondary-text,
+.status,
+.notes {
+  overflow-wrap: anywhere;
+}

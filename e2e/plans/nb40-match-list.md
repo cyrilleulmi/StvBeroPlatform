@@ -1,6 +1,6 @@
 # Test plan follow-up fix #40 · Match list in F-05 tests waits for loaded matches
 
-Issue #40 · PR #41 · File `e2e/tests/f05-spieltage.spec.ts` · Requirements AUF-10, AUF-12, AUF-14, AUF-16, AUF-24 (tests only)
+Issue #40 · PR #41 · File `e2e/tests/f05-match-days.spec.ts` · Requirements AUF-10, AUF-12, AUF-14, AUF-16, AUF-24 (tests only)
 
 General:
 
@@ -12,17 +12,17 @@ General:
 
 | Case | Starting point · steps | Expected |
 |---|---|---|
-| K1.1 Static | `grep -n "spiele(page)" e2e/tests/f05-spieltage.spec.ts` | Every call is inside `await expect.poll(() => spiele(page))`, no `expect(await spiele(page))` anymore |
-| K1.2 No fixed-time waits | `grep -n waitForTimeout e2e/tests/f05-spieltage.spec.ts` | No match |
-| K1.3 Counter-check delayed response | Locally (do not commit) in the test «F-05 K2», before saving, insert `page.route('**/api/events/*', …)` with a 2 s delay for GET, run the test | Test green in `mobil` and `desktop` (the check waits until both matches are there) |
-| K1.4 Counter-check old state | As K1.3, but line 109 back to `expect(await spiele(page)).toEqual(…)` | Test red with `Received []` – proves that K1.3 triggers the original failure |
+| K1.1 Static | `grep -n "matches(page)" e2e/tests/f05-match-days.spec.ts` | Every call is inside `await expect.poll(() => matches(page))`, no `expect(await matches(page))` anymore |
+| K1.2 No fixed-time waits | `grep -n waitForTimeout e2e/tests/f05-match-days.spec.ts` | No match |
+| K1.3 Counter-check delayed response | Locally (do not commit) in the test «F-05 K2», before saving, insert `page.route('**/api/events/*', …)` with a 2 s delay for GET, run the test | Test green in `mobile` and `desktop` (the check waits until both matches are there) |
+| K1.4 Counter-check old state | As K1.3, but line 109 back to `expect(await matches(page)).toEqual(…)` | Test red with `Received []` – proves that K1.3 triggers the original failure |
 | K1.5 Clean up | Discard the changes from K1.3/K1.4 | `git status` clean |
 
 ## K2 · Repeated run passes (criterion 2)
 
 | Case | Starting point · steps | Expected |
 |---|---|---|
-| K2.1 Repetition | `cd e2e && npx playwright test tests/f05-spieltage.spec.ts --repeat-each 20 --trace off` | 560 passed (14 tests × 20 × 2 projects), 0 failed |
+| K2.1 Repetition | `cd e2e && npx playwright test tests/f05-match-days.spec.ts --repeat-each 20 --trace off` | 560 passed (14 tests × 20 × 2 projects), 0 failed |
 
 ## Regression
 

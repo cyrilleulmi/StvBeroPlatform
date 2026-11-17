@@ -1,6 +1,6 @@
 # Test plan follow-up fix #23 · «Verwaltung» complete in the mobile navigation
 
-Issue #23 · PR #34 · Main navigation (`data-testid="hauptnavigation"`, `docs/ui/navigation.md`)
+Issue #23 · PR #34 · Main navigation (`data-testid="main-navigation"`, `docs/ui/navigation.md`)
 
 General, for every case:
 
@@ -35,7 +35,7 @@ General, for every case:
 
 | Case | Steps | Expected |
 |---|---|---|
-| K3.1 | Run `e2e/tests/nb23-navigation-schmal.spec.ts` in project `mobil` | 4 tests green (375/320, light/dark); skipped in project `desktop` |
+| K3.1 | Run `e2e/tests/nb23-navigation-narrow.spec.ts` in project `mobile` | 4 tests green (375/320, light/dark); skipped in project `desktop` |
 
 ## Robustness and roles
 

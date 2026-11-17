@@ -1,39 +1,39 @@
-<div class="rahmen">
-  <!-- Mobil: feste Kopfzeile hinter der Glocke, der Inhalt scrollt darunter durch (O-51) -->
-  <div class="kopfzeile" aria-hidden="true"></div>
-  <nav class="navigation" [attr.aria-label]="texte.navigation.name" data-testid="hauptnavigation">
-    <p class="marke" aria-hidden="true">{{ texte.appName }}</p>
-    <!-- Benachrichtigungen: mobil als Glocke oben rechts, ab 1024px als Eintrag über der Liste (F-06) -->
+<div class="frame">
+  <!-- Mobile: fixed header bar behind the bell, the content scrolls underneath (O-51) -->
+  <div class="header-bar" aria-hidden="true"></div>
+  <nav class="navigation" [attr.aria-label]="texts.navigation.name" data-testid="main-navigation">
+    <p class="brand" aria-hidden="true">{{ texts.appName }}</p>
+    <!-- Notifications: mobile as a bell at the top right, from 1024px as an entry above the list (F-06) -->
     <a
-      class="glocke"
+      class="bell"
       routerLink="/benachrichtigungen"
-      routerLinkActive="aktiv"
+      routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
       <app-icon name="bell" />
-      <span class="glocke-text">{{ texte.navigation.benachrichtigungen }}</span>
-      @if (ungelesen() > 0) {
-        <span class="zaehler" data-testid="benachrichtigungen-zaehler">{{ ungelesen() }}</span>
-        <span class="visuell-versteckt">{{ texte.navigation.ungelesen }}</span>
+      <span class="bell-text">{{ texts.navigation.notifications }}</span>
+      @if (unread() > 0) {
+        <span class="counter" data-testid="notifications-counter">{{ unread() }}</span>
+        <span class="visually-hidden">{{ texts.navigation.unread }}</span>
       }
     </a>
     <ul>
-      @for (eintrag of eintraege(); track eintrag.route) {
+      @for (entry of entries(); track entry.route) {
         <li>
           <a
-            [routerLink]="eintrag.route"
-            routerLinkActive="aktiv"
+            [routerLink]="entry.route"
+            routerLinkActive="active"
             ariaCurrentWhenActive="page"
-            [routerLinkActiveOptions]="{ exact: eintrag.exakt }"
+            [routerLinkActiveOptions]="{ exact: entry.exact }"
           >
-            <app-icon [name]="eintrag.icon" />
-            <span>{{ eintrag.text }}</span>
+            <app-icon [name]="entry.icon" />
+            <span>{{ entry.text }}</span>
           </a>
         </li>
       }
     </ul>
   </nav>
-  <main class="inhalt">
+  <main class="content">
     <router-outlet />
   </main>
 </div>

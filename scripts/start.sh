@@ -20,15 +20,15 @@ if [ ! -d "$ROOT/frontend/node_modules" ]; then
 fi
 
 PIDS=()
-aufraeumen() {
+cleanup() {
   for pid in "${PIDS[@]}"; do
     kill "$pid" 2>/dev/null || true
   done
   wait 2>/dev/null || true
 }
-trap aufraeumen EXIT INT TERM
+trap cleanup EXIT INT TERM
 
-warten() { # url name seconds
+wait_for() { # url name seconds
   local url="$1" name="$2" max="$3" i=0
   until curl -fsS -o /dev/null "$url" 2>/dev/null; do
     i=$((i + 1))
@@ -56,8 +56,8 @@ else
   PIDS+=($!)
 fi
 
-warten http://localhost:8080/api/session Backend 300
-warten http://localhost:4200 Frontend 300
+wait_for http://localhost:8080/api/session Backend 300
+wait_for http://localhost:4200 Frontend 300
 
 cat <<TEXT
 

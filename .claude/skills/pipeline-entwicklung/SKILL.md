@@ -27,13 +27,13 @@ Nothing found: note it and stop.
 1. The lock is already set by `beanspruchen`.
 2. **Understand.** The issue, the requirements it names in `docs/requirements/`, [domain-model.md](../../../docs/domain-model.md), [testability.md](../../../docs/testability.md), [navigation.md](../../../docs/ui/navigation.md), [test-data.md](../../../docs/test-data.md), [states.md](../../../docs/states.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-principles.md](../../../docs/design-principles.md).
 3. **Unclear points:** make a sensible assumption and list it in the PR under «Assumptions». Do not ask. Only if it contradicts a requirement with status «Decided»: set `pipeline:blockiert` on the issue, ask the question, stop.
-4. **Branch** from current `main`: `claude/f<nr>-<shortname>`, e.g. `claude/f04-anmeldung`. If a `claude/f<nr>-…` branch already exists from an aborted run, continue there instead of starting over.
+4. **Branch** from current `main`: `claude/f<nr>-<shortname>`, e.g. `claude/f04-responses`. If a `claude/f<nr>-…` branch already exists from an aborted run, continue there instead of starting over.
    **Push intermediate states:** commit and push to the branch at least every 30 minutes. The [watchdog](../pipeline-waechter/SKILL.md) uses this to see that the run is still alive. A run without a push for an hour counts as aborted once the lock is 3 hours old, and is restarted.
 5. **Order of implementation:**
    1. API contract: update `openapi.yaml` if needed. `npx -y @redocly/cli lint docs/api/openapi.yaml` without errors and warnings.
    2. Backend: migration, domain with rules and unit tests, REST resources, permission checks with 403 tests, seed data according to test-data.md.
    3. Frontend: screens according to navigation.md, rules from testability.md, design tokens.
-   4. E2E tests in `e2e/`: at least one test per acceptance criterion, test name with requirement ID, projects `mobil` and `desktop`, axe check per new screen.
+   4. E2E tests in `e2e/`: at least one test per acceptance criterion, test name with requirement ID, projects `mobile` and `desktop`, axe check per new screen.
    5. Update the docs: navigation.md (routes, test IDs), test-data.md (seed, scenarios), states.md (behavior), open-points.md (new questions).
 6. **Check it yourself** before you hand over. Everything must be green:
    - Backend build with all tests
@@ -65,7 +65,7 @@ Nothing found: note it and stop.
 Issues with `typ:nachbesserung` come from the review or test of an earlier PR. They run through section 2 like a feature, with these differences:
 
 - **Scope:** only what the issue asks for. Problem, location and acceptance criteria are in the issue, the origin under «Found in #…». No restructuring beyond that.
-- **Branch:** `claude/nb<issue>-<shortname>`, e.g. `claude/nb13-ich-409`.
+- **Branch:** `claude/nb<issue>-<shortname>`, e.g. `claude/nb13-me-409`.
 - **Tests:** at least one automated test per acceptance criterion (unit, API or E2E, depending on where the problem is). The test must fail without the fix.
 - **Commit:** `Follow-up fix #<issue>: <what>`, requirement IDs where there are any.
 - **PR:** title `Follow-up fix · <issue title>`, with `Closes #<issue>`. The Definition of Done applies; mark items that do not apply (e.g. new screen) with «n/a».

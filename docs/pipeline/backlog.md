@@ -52,7 +52,7 @@ flowchart LR
 ```
 backend/     Quarkus, one package per tile under ch.stvbero.platform.<kachel>, shared core under …kern
 frontend/    Angular (standalone, signals), one feature per tile, lazy loaded
-e2e/         Playwright Test: tests/, plans/, playwright.config.ts (projects mobil + desktop, channel chrome)
+e2e/         Playwright Test: tests/, plans/, playwright.config.ts (projects mobile + desktop, channel chrome)
 scripts/     db-start.sh (exists), start.sh (start everything), test.sh (test everything)
 .github/workflows/ci.yml   Build + tests on every PR
 ```
@@ -99,7 +99,7 @@ scripts/     db-start.sh (exists), start.sh (start everything), test.sh (test ev
 
 1. Seed: groups and assignments per test-data.md.
 2. As `petra` under `/teams/<Team 1>/linien`: add, rename, reorder and delete a line. Players of a deleted line are «ohne Linie» afterwards.
-3. Assignment by drag and drop **and** by select field (`zuweisung-<personId>`). Both save immediately.
+3. Assignment by drag and drop **and** by select field (`assignment-<personId>`). Both save immediately.
 4. Scenario S15: at most one group per player and team (LIN-02).
 5. Lea has different lines in Team 1 and Team 2 (LIN-03).
 6. Goalies exist exactly once per team and cannot be deleted.
@@ -167,7 +167,7 @@ scripts/     db-start.sh (exists), start.sh (start everything), test.sh (test ev
 
 **Acceptance criteria:**
 
-1. `/benachrichtigungen` shows the person's own notifications, newest first. Unread ones are marked, and the count is in the navigation (`benachrichtigungen-zaehler`).
+1. `/benachrichtigungen` shows the person's own notifications, newest first. Unread ones are marked, and the count is in the navigation (`notifications-counter`).
 2. A click leads to the event and marks it as read (BEN-12).
 3. Scenario S5: a late cancellation notifies Petra, not Marc.
 4. Scenario S6: reminder to people without a response, exactly once (BEN-01, BEN-13).
@@ -350,7 +350,7 @@ F-08 (hardening) follows after F-11.
 2. The contract test (generated OpenAPI against `docs/api/openapi.yaml`) is green.
 3. No German identifier is left in `backend/src` (packages, classes, methods, fields, SQL). German remains only in user-facing messages and seed names. The PR lists the search used to check this.
 4. A fresh database (`scripts/db-start.sh reset`, then start) migrates without errors and contains the same seed as before, per `docs/test-data.md`.
-5. Behaviour is unchanged: all backend tests and all E2E tests are green in both projects (`mobil`, `desktop`). No test was deleted or weakened; renamed tests keep their requirement ID.
+5. Behaviour is unchanged: all backend tests and all E2E tests are green in both projects (`mobile`, `desktop`). No test was deleted or weakened; renamed tests keep their requirement ID.
 6. The app starts with `scripts/start.sh` and every screen works as before (exploratory round by the test agent, mobile and desktop).
 7. Messages shown to users are still German (spot check: validation error, 403, 404, 409 with a rule).
 

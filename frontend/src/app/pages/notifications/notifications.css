@@ -1,0 +1,29 @@
+.entry {
+  align-items: flex-start;
+}
+
+.entry app-icon {
+  margin-top: 2px;
+}
+
+.text {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-items: start;
+}
+
+/* Read ones step back; unread ones are also marked with «Neu» (not only through the font). */
+li[data-read='true'] .row-title {
+  font-weight: 500;
+}
+
+.time {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chip[data-kind='new'] {
+  background: var(--coral-soft);
+}

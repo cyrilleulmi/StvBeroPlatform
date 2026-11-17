@@ -58,7 +58,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | O-31 | ~~Java and migration tool for F-00~~ | Decided: Java 21 and Flyway (E-57). |
 | O-32 | Contrast of the active navigation entry | `primary` on `primary-soft` only reaches 3.97:1 in light mode (WCAG AA requires 4.5:1 for small text). Assumption F-00: icon in `primary`, text in `text`. Alternative: make `primary` slightly darker in light mode. |
 | O-33 | How long does a session last? | Assumption F-00: until logout, without expiry. Depends on the login method (O-01). |
-| O-54 | The status page (`status/index.html`) detects agent comments and follow-up titles partly by German words: «gemergt» (merge icon), «startet»/«gestartet»/«beansprucht» (start comments), the title prefix «Nachbesserung · ». | Agent comments and follow-up titles are English since F-09 (`✅ merged`, `Follow-up fix · …`). Emoji markers ⛔ and 🔁 still work. Until F-11 adapts the regexes, the merge icon is missing, English start comments show as important and new follow-up titles keep their prefix. |
+| O-54 | ~~The status page (`status/index.html`) detects agent comments and follow-up titles partly by German words: «gemergt» (merge icon), «startet»/«gestartet»/«beansprucht» (start comments), the title prefix «Nachbesserung · ».~~ | Resolved in F-11 (E-68): the status page also detects `✅ merged`, «started»/«claimed» and the prefix `Follow-up fix · `. The German words still match older comments and titles. |
 
 ## swiss unihockey
 

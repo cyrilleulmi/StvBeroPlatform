@@ -1,0 +1,21 @@
+.login {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 48px var(--page-margin);
+}
+
+.card {
+  display: grid;
+  gap: 12px;
+}
+
+.login p {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}

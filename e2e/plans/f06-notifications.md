@@ -1,7 +1,7 @@
 # Test plan F-06 · Notifications
 
 Issue #7 · Requirements BEN-01, BEN-02, BEN-03, BEN-04, BEN-05, BEN-07, BEN-11, BEN-12, BEN-13, RR-07 ·
-Tests: `../tests/f06-benachrichtigungen.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/core/notification/NotificationsTest.java`, `…/core/event/NotificationRulesTest.java`
+Tests: `../tests/f06-notifications.spec.ts`, backend `backend/src/test/java/ch/stvbero/platform/core/notification/NotificationsTest.java`, `…/core/event/NotificationRulesTest.java`
 
 General, for every case:
 
@@ -19,10 +19,10 @@ Notifications `90000000-0000-4000-8000-0000000000NN` (Anna cancellation T03: 02,
 
 | No. | Case | Starting point | Steps | Expected |
 |---|---|---|---|---|
-| K1 | List and counter | Reset, `lea` | Open `/`; tap the bell | Bell «Benachrichtigungen 2 ungelesen», `benachrichtigungen-zaehler` = 2. `/benachrichtigungen`, title «Benachrichtigungen · STV Bero», list «Benachrichtigungen»: first call-up T05 (15.11. 21:00), then cancellation T03 (14.11. 10:00); both «Neu», `data-gelesen="false"` |
+| K1 | List and counter | Reset, `lea` | Open `/`; tap the bell | Bell «Benachrichtigungen 2 ungelesen», `notifications-counter` = 2. `/benachrichtigungen`, title «Benachrichtigungen · STV Bero», list «Benachrichtigungen»: first call-up T05 (15.11. 21:00), then cancellation T03 (14.11. 10:00); both «Neu», `data-read="false"` |
 | K1b | No unread | Reset, `petra`, `mia`; `alex` | `/` and `/benachrichtigungen` | Petra/Mia: no counter, entries without «Neu», no button «Alle als gelesen markieren». Alex: «Keine Benachrichtigungen.» |
 | K1c | Mark all as read | Reset, `lea` | `/benachrichtigungen` → «Alle als gelesen markieren»; reload | «Alle sind als gelesen markiert.», counter gone, stays after reload |
-| K2 | S32 click opens event (BEN-12) | Reset, `anna` | `/benachrichtigungen` → tap the entry for T03; back | `/termine/<T03>` (cancelled with «Halle besetzt»), counter gone; back in the list the entry is read, `data-gelesen="true"`, stays after reload |
+| K2 | S32 click opens event (BEN-12) | Reset, `anna` | `/benachrichtigungen` → tap the entry for T03; back | `/termine/<T03>` (cancelled with «Halle besetzt»), counter gone; back in the list the entry is read, `data-read="true"`, stays after reload |
 | K2b | Other people's (RR-07) | Reset, `anna` | API `POST /api/notifications/<Lea 03>/read`; own one twice | 403, and 204, 204. Without login 401. `GET /api/notifications` returns only own ones |
 | K3 | S5 late cancellation (BEN-02) | Reset, clock 16.11.2026 19:00, `anna` | `/termine/<T01>` → «nicht dabei»; then «vielleicht» with comment | Exactly one new `LATE_CANCELLATION` to Petra «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», none to Marc or Anna. Further change: no second one. Petra sees it in `/benachrichtigungen`, counter 1 |
 | K4 | S6 reminder (BEN-01, BEN-13) | Reset | Clock 16.11.2026 06:31; then 07:00 | Exactly two `REMINDER` for T01 to Nina and Ella; none more after 07:00. Nina sees counter 1 and the reminder. None before 06:30 (clock 06:29) |

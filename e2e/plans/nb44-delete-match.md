@@ -1,6 +1,6 @@
 # Test plan follow-up fix #44 · Delete matches no longer delivered by swiss unihockey
 
-Issue #44 · File `e2e/tests/nb44-spiel-loeschen.spec.ts` · Requirement SUH-06, docs/states.md "Match from swiss unihockey"
+Issue #44 · File `e2e/tests/nb44-delete-match.spec.ts` · Requirement SUH-06, docs/states.md "Match from swiss unihockey"
 
 Starting point: database running (`scripts/db-start.sh`), backend profile `test`/`dev`, frontend on port 4200, `POST /api/test/reset`.
 

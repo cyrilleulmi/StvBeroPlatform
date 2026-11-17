@@ -1,0 +1,58 @@
+<h1>{{ texts.start.greeting(auth.me()?.firstName ?? '') }}</h1>
+
+<section
+  class="card next"
+  data-testid="next-event"
+  aria-labelledby="next-event-title"
+  [attr.aria-busy]="eventLoading() ? 'true' : null"
+>
+  <h2 id="next-event-title" class="eyebrow">{{ texts.start.nextEvent }}</h2>
+  @if (eventError(); as message) {
+    <p class="message-error" role="alert">{{ message }}</p>
+  } @else if (eventLoading()) {
+    <p class="empty">{{ texts.common.loading }}</p>
+  } @else if (next(); as t) {
+    <a class="event-link" [routerLink]="['/termine', t.id]">
+      <span class="event-title">{{ t.title }}</span>
+      <span class="secondary-text">{{ description(t) }}</span>
+      @if (t.location) {
+        <span class="secondary-text">{{ t.location.name }}</span>
+      }
+    </a>
+    <app-my-response
+      [eventId]="t.id"
+      [response]="t.myResponse"
+      [name]="texts.response.myResponseFor(cardName(t))"
+      (changed)="reload(t.id)"
+    />
+  } @else {
+    <p class="empty">{{ texts.start.noEvent }}</p>
+  }
+</section>
+
+<section class="tiles" aria-labelledby="tiles-title" [attr.aria-busy]="loading() ? 'true' : null">
+  <h2 id="tiles-title">{{ texts.start.tilesTitle }}</h2>
+  @if (error(); as message) {
+    <p class="message-error" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <p class="empty">{{ texts.common.loading }}</p>
+  } @else if (tiles().length === 0) {
+    <p class="empty">{{ texts.start.noTiles }}</p>
+  } @else {
+    <ul class="grid">
+      @for (tile of tiles(); track tile.id) {
+        <li>
+          <a class="tile" [routerLink]="tile.route" [attr.data-testid]="'tile-' + tile.id">
+            <span class="icon-field" [attr.data-color]="tile.color">
+              <app-icon [name]="tile.icon" />
+            </span>
+            <span class="tile-title">{{ tile.title }}</span>
+            @if (tile.hint) {
+              <span class="secondary-text">{{ tile.hint }}</span>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

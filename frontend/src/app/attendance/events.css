@@ -1,0 +1,150 @@
+:host {
+  display: grid;
+  gap: var(--section-gap);
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.title-row h1 {
+  margin: 0;
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.filter .field {
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 320px;
+}
+
+.switch {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.switch a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.switch a[aria-current='page'] {
+  background: var(--primary-soft);
+}
+
+.month {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.month:first-of-type {
+  margin-top: 0;
+}
+
+.event {
+  align-items: center;
+}
+
+.date {
+  display: grid;
+  justify-items: center;
+  flex: none;
+  width: 56px;
+  padding: 6px 0;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+  line-height: 1.2;
+}
+
+li[data-status='CANCELLED'] .date {
+  background: var(--coral-soft);
+}
+
+.weekday {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.day {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.content {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content .secondary-text {
+  overflow-wrap: anywhere;
+}
+
+.struck-through {
+  text-decoration: line-through;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+}
+
+.chip[data-kind='cancelled'] {
+  background: var(--coral-soft);
+}
+
+.chip[data-kind='rescheduled'] {
+  background: var(--mustard-soft);
+}
+
+/* F-04: own response directly in the card (ANM-08) */
+.event-entry {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.card-response {
+  display: block;
+  padding-left: 68px;
+}
+
+@media (max-width: 479px) {
+  .card-response {
+    padding-left: 0;
+  }
+}
+
+.counter span {
+  white-space: nowrap;
+}
