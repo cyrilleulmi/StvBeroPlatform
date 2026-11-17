@@ -44,14 +44,14 @@ public class TeamMembership extends PanacheEntityBase {
     @Column(name = "team_role")
     public TeamRole teamRole;
 
-    /**
-     * Line or goalies, only for the team role PLAYER (LIN-01, LIN-10). A set, so that "several lines per
-     * player" can be added later without rework (LIN-04); today at most one (LIN-02).
-     */
     /** Day the person joined the team in this season; statistics count only events from this day on (STA-07). */
     @Column(name = "joined_on")
     public LocalDate joinedOn;
 
+    /**
+     * Line or goalies, only for the team role PLAYER (LIN-01, LIN-10). A set, so that "several lines per
+     * player" can be added later without rework (LIN-04); today at most one (LIN-02).
+     */
     @ManyToMany
     @JoinTable(name = "group_assignment",
             joinColumns = @JoinColumn(name = "team_membership_id"),
