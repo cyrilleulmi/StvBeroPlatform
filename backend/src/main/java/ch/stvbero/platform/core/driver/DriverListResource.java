@@ -24,7 +24,7 @@ import java.util.UUID;
 
 /** Driver list of a match day (DRV). Every change answers with the whole list. */
 @Path("/api/events/{eventId}/driver-list")
-@Tag(name = "Driver list")
+@Tag(name = "DriverList")
 public class DriverListResource {
 
     @Inject

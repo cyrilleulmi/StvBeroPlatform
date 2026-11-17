@@ -1,0 +1,28 @@
+{
+  "geocoding": {
+    "version": "0.2",
+    "attribution": "https://openrouteservice.org/terms-of-service/#attribution-geocode",
+    "query": {"text": "Sporthalle Seefeld Musterdorf", "size": 1, "parser": "pelias"},
+    "engine": {"name": "Pelias", "author": "Mapzen", "version": "1.0"}
+  },
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [8.354127, 47.193521]},
+      "properties": {
+        "id": "node/123456789",
+        "layer": "venue",
+        "source": "openstreetmap",
+        "name": "Sporthalle Seefeld",
+        "confidence": 0.8,
+        "country": "Switzerland",
+        "country_a": "CHE",
+        "region": "Luzern",
+        "locality": "Musterdorf",
+        "label": "Sporthalle Seefeld, Musterdorf, LU, Switzerland"
+      }
+    }
+  ],
+  "bbox": [8.354127, 47.193521, 8.354127, 47.193521]
+}

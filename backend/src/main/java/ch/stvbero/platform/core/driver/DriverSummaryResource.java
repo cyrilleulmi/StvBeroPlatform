@@ -18,7 +18,7 @@ import java.util.UUID;
 
 /** Trips and kilometres per person in a season (DRV-09). */
 @Path("/api/driver-summary")
-@Tag(name = "Driver list")
+@Tag(name = "DriverList")
 public class DriverSummaryResource {
 
     @Inject

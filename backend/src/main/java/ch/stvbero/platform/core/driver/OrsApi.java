@@ -77,7 +77,7 @@ public class OrsApi {
         if (place.hasCoordinates()) {
             return Optional.of(new double[] {place.latitude(), place.longitude()});
         }
-        JsonNode answer = get("/geocode/search?text=" + URLEncoder.encode(place.search(), StandardCharsets.UTF_8)
+        JsonNode answer = get("/geocode/search?text=" + URLEncoder.encode(place.search(), StandardCharsets.UTF_8).replace("+", "%20")
                 + "&size=1&boundary.country=CH", false).orElseThrow();
         JsonNode features = answer.path("features");
         if (!features.isArray()) {

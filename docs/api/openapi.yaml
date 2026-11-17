@@ -39,6 +39,8 @@ tags:
     description: Matches and call-up (AUF)
   - name: Attendance
     description: Attendance check (PRS)
+  - name: DriverList
+    description: Driver list for match days (DRV)
   - name: Statistics
     description: Attendance statistics (STA)
   - name: SwissUnihockey
@@ -1041,6 +1043,210 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/RuleViolation' }
 
+  # ---------------------------------------------------------------- Driver list
+  /api/events/{eventId}/driver-list:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [DriverList]
+      operationId: getDriverList
+      summary: Driver list of a match day with cars, passengers, route and who has no seat (DRV-01 to DRV-10)
+      description: |
+        Members of the teams of the match day (any team role), coaches (of any team, E-69) and admins; otherwise 403.
+        Not a match day: 409 (rule DRV-01). Without meeting point or venue `ready` is false, `missing` names what is
+        missing and there is no `route` (DRV-01). Otherwise the route from the meeting point to the venue is
+        calculated on the first view and stored; it is calculated again when meeting point or venue changed, or
+        when the service was unavailable more than 10 minutes ago (DRV-05, DRV-07, DRV-08). A cancelled match day
+        keeps its list and route, but `creditKm` is missing (DRV-10). `withoutSeat`: with a published call-up the
+        called-up players, otherwise the players who responded «dabei», without drivers and passengers (DRV-04).
+        `members` only for coaches and admins.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/cars:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [DriverList]
+      operationId: addCar
+      summary: 'Enter a car: oneself, or someone else as coach or admin (DRV-02)'
+      description: |
+        Without `driverId` the caller drives. Someone else: only coaches and admins (otherwise 403). The driver must be
+        a member of a team of the match day (422, rule DRV-02) and drives at most one car (409, rule DRV-02). If she
+        sat in another car, she leaves that seat. Not usable (meeting point or venue missing, DRV-01), cancelled
+        (DRV-10), archived season: 409. After the end of the match day only coaches and admins (409, rule DRV-02).
+        Seats 1 to 8 (400). Notifies the driver if someone else entered her (DRV-11). Answers with the whole list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CarInput' }
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/events/{eventId}/driver-list/cars/{carId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/carId'
+    put:
+      tags: [DriverList]
+      operationId: changeCarSeats
+      summary: Change the number of seats of a car (DRV-02, DRV-03)
+      description: |
+        The driver herself, coaches and admins. Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
+        `addCar`. Notifies the driver if someone else changed it (DRV-11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeatsInput' }
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [DriverList]
+      operationId: removeCar
+      summary: Remove a car; its passengers lose their seat (DRV-02, DRV-11)
+      description: |
+        The driver herself, coaches and admins. The passengers are notified, and the driver if someone else removed
+        the car (DRV-11). Same 409 cases as `addCar`.
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/cars/{carId}/passengers/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/carId'
+      - $ref: '#/components/parameters/personId'
+    put:
+      tags: [DriverList]
+      operationId: addPassenger
+      summary: Put a person into a car, or move her from another car (DRV-03)
+      description: |
+        Oneself: every member of a team of the match day. Someone else: coaches and admins (otherwise 403). A person
+        sits in at most one car: from another car she moves. Already in this car: no change. Car full: 409 (rule
+        DRV-03). A driver cannot ride along (422, rule DRV-03); not a member: 422 (rule DRV-02). Notifies the driver
+        (and the previous driver when moving) and, if someone else made the change, the passenger (DRV-11).
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [DriverList]
+      operationId: removePassenger
+      summary: Take a person out of a car (DRV-03)
+      description: |
+        Oneself, or someone else as coach or admin. Not in this car: 404. Notifies the driver and, if someone else
+        made the change, the passenger (DRV-11).
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/route:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    put:
+      tags: [DriverList]
+      operationId: setRouteDistance
+      summary: Enter the kilometres of the route by hand (DRV-07, coach)
+      description: |
+        Only coaches and admins (otherwise 403). One-way kilometres 0.1 to 1000 (400). The route gets the status
+        MANUAL for the current meeting point and venue, without driving time; it stays until meeting point or venue
+        change or the route is calculated again. Same 409 cases as `addCar`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RouteInput' }
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/route/recalculate:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [DriverList]
+      operationId: recalculateRoute
+      summary: Calculate the route again with the routing service (DRV-07, coach)
+      description: |
+        Only coaches and admins (otherwise 403). Replaces kilometres entered by hand. If the service is unavailable
+        or finds nothing, the route has the status UNAVAILABLE or NOT_FOUND (still 200). Same 409 cases as `addCar`.
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/driver-summary:
+    get:
+      tags: [DriverList]
+      operationId: getDriverSummary
+      summary: Trips and credited kilometres per person in a season (DRV-09)
+      description: |
+        Coaches (of any team, E-69) and admins see every person who drove in the season (`everyone: true`), all
+        other people only themselves (one row, also with 0 trips). A trip is a car on a match day of the season that
+        is not cancelled (DRV-10), upcoming ones included; the credit is twice the distance of the route. Trips
+        without known distance count as trips without kilometres (`tripsWithoutDistance`). Routes not yet
+        calculated are calculated first. Sorted by name.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverSummary' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   # ---------------------------------------------------------------- Statistics
   /api/statistics:
     get:
@@ -1536,6 +1742,27 @@ paths:
         '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
 
+  /api/test/routing:
+    put:
+      tags: [Test]
+      operationId: testSetRouting
+      summary: Set the routes the routing simulator delivers per pair of places, or an outage (DRV-06)
+      description: |
+        Pairs are matched by the label of the places: the text of the meeting point and the name of the venue,
+        ignoring case. Without `distanceKm` there is no route for the pair (DRV-07). `unavailable` makes every
+        calculation fail until the next call or reset. After `POST /api/test/reset` the simulator knows
+        «Parkplatz Sporthalle Nord» → «Sporthalle Seefeld» (23.4 km, 26 min, match day 04) and «Sporthalle Nord» →
+        «Turnhalle Weid» (12.6 km, 16 min, match day 05); every other pair has no route (docs/test-data.md).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoutingPreset' }
+      responses:
+        '204': { description: Set }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
 components:
   securitySchemes:
     session:
@@ -1582,6 +1809,11 @@ components:
       schema: { type: string, format: uuid }
     matchId:
       name: matchId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    carId:
+      name: carId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -2553,6 +2785,158 @@ components:
           format: uuid
           description: The match day in the app the match belongs to (criterion 3)
 
+    DriverList:
+      type: object
+      description: Driver list of a match day (DRV-01 to DRV-10)
+      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat]
+      properties:
+        eventId: { type: string, format: uuid }
+        ready:
+          type: boolean
+          description: Meeting point and venue are set, so the list can be used (DRV-01)
+        missing:
+          type: array
+          description: What is missing before the list can be used (DRV-01)
+          items:
+            type: string
+            enum: [MEETING_POINT, VENUE]
+        route: { $ref: '#/components/schemas/Route' }
+        cancelled:
+          type: boolean
+          description: 'Match day cancelled: list kept, no credits (DRV-10)'
+        canJoin:
+          type: boolean
+          description: The caller can enter herself as driver or passenger right now
+        canManage:
+          type: boolean
+          description: 'Coach or admin: enters and changes drivers and passengers for others, route by hand'
+        callUpPublished:
+          type: boolean
+          description: 'The call-up is published: «without seat» counts the called-up players (DRV-04)'
+        cars:
+          type: array
+          description: By name of the driver
+          items: { $ref: '#/components/schemas/Car' }
+        withoutSeat:
+          type: array
+          description: Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04)
+          items: { $ref: '#/components/schemas/PersonSummary' }
+        members:
+          type: array
+          description: Members of the teams of the match day, by name; only for coaches and admins
+          items: { $ref: '#/components/schemas/PersonSummary' }
+
+    Car:
+      type: object
+      description: A car with its driver and passengers (DRV-02, DRV-03)
+      required: [id, driver, seats, freeSeats, passengers]
+      properties:
+        id: { type: string, format: uuid }
+        driver: { $ref: '#/components/schemas/PersonSummary' }
+        seats: { type: integer, format: int32, minimum: 1, maximum: 8 }
+        freeSeats: { type: integer, format: int32 }
+        passengers:
+          type: array
+          description: By name
+          items: { $ref: '#/components/schemas/PersonSummary' }
+        creditKm:
+          type: [number, 'null']
+          format: double
+          description: Credited kilometres for the return trip; missing without distance or if cancelled (DRV-05, DRV-10)
+
+    Route:
+      type: object
+      description: Route from the meeting point to the venue (DRV-05, DRV-07)
+      required: [status, from, to]
+      properties:
+        status:
+          type: string
+          enum: [CALCULATED, NOT_FOUND, UNAVAILABLE, MANUAL]
+        from: { type: string, examples: [Parkplatz Sporthalle Nord] }
+        to: { type: string, examples: [Sporthalle Seefeld] }
+        distanceKm: { type: number, format: double, examples: [23.4] }
+        durationMinutes: { type: integer, format: int32, examples: [26] }
+        creditKm:
+          type: number
+          format: double
+          description: 'Credit per driver: twice the distance; missing without distance'
+          examples: [46.8]
+
+    CarInput:
+      type: object
+      description: 'Enter a car (DRV-02): for oneself without `driverId`, for someone else only as coach or admin'
+      required: [seats]
+      properties:
+        driverId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Driver; missing: the caller herself'
+        seats: { type: integer, format: int32, minimum: 1, maximum: 8 }
+
+    SeatsInput:
+      type: object
+      required: [seats]
+      properties:
+        seats: { type: integer, format: int32, minimum: 1, maximum: 8 }
+
+    RouteInput:
+      type: object
+      description: Kilometres of the one-way route entered by hand (DRV-07)
+      required: [distanceKm]
+      properties:
+        distanceKm: { type: number, format: double, minimum: 0.1, maximum: 1000 }
+
+    DriverSummary:
+      type: object
+      description: Trips and credited kilometres per person in a season (DRV-09)
+      required: [seasonId, seasonName, everyone, rows]
+      properties:
+        seasonId: { type: string, format: uuid }
+        seasonName: { type: string, examples: [2026/27] }
+        everyone:
+          type: boolean
+          description: 'Coach or admin: all drivers; otherwise only the caller'
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/DriverSummaryRow' }
+
+    DriverSummaryRow:
+      type: object
+      required: [person, trips, kilometres, tripsWithoutDistance]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        trips: { type: integer, format: int32 }
+        kilometres: { type: number, format: double }
+        tripsWithoutDistance:
+          type: integer
+          format: int32
+          description: Trips without known distance (no kilometres credited)
+
+    RoutingPreset:
+      type: object
+      properties:
+        routes:
+          type: [array, 'null']
+          description: Routes per pair of places (meeting point text, venue name; case is ignored)
+          items: { $ref: '#/components/schemas/RoutingPair' }
+        unavailable:
+          type: [boolean, 'null']
+          default: false
+          description: Simulates an outage of the routing service (DRV-07)
+
+    RoutingPair:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, examples: [Parkplatz Sporthalle Nord] }
+        to: { type: string, examples: [Sporthalle Seefeld] }
+        distanceKm:
+          type: [number, 'null']
+          format: double
+          minimum: 0
+          description: 'One-way distance; omitted: there is no route for this pair'
+        durationMinutes: { type: [integer, 'null'], format: int32, minimum: 0 }
+
     Notification:
       type: object
       required: [id, type, recipient, text, createdAt, read]
@@ -2569,7 +2953,8 @@ components:
             - MATCH_CHANGED
             - EVENT_CANCELLED
             - EVENT_RESCHEDULED
-          description: Corresponds to BEN-01 to BEN-07
+            - DRIVER_LIST_CHANGED
+          description: Corresponds to BEN-01 to BEN-07 and DRV-11
         recipient: { $ref: '#/components/schemas/PersonSummary' }
         text: { type: string, examples: ['Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.'] }
         eventId: { type: [string, 'null'], format: uuid }
@@ -2655,6 +3040,7 @@ components:
             - MATCH_CHANGED
             - EVENT_CANCELLED
             - EVENT_RESCHEDULED
+            - DRIVER_LIST_CHANGED
         recipient: { $ref: '#/components/schemas/PersonSummary' }
         text: { type: string }
         eventId: { type: [string, 'null'], format: uuid }

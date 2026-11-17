@@ -1,0 +1,8 @@
+{
+  "geocoding": {
+    "version": "0.2",
+    "query": {"text": "Gibt es nicht 12345", "size": 1, "parser": "pelias"}
+  },
+  "type": "FeatureCollection",
+  "features": []
+}
