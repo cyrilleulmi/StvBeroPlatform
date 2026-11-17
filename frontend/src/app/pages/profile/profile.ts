@@ -6,6 +6,7 @@ import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { CalendarSubscriptionSection } from './calendar-subscription';
+import { NotificationSettingsSection } from './notification-settings';
 
 /** One choice in the switch. `preview` is the value of `data-theme` in which the choice shows itself. */
 interface Option {
@@ -14,11 +15,14 @@ interface Option {
   preview: string | null;
 }
 
-/** Profile: name, own statistics (STA-08), calendar subscription (CAL-01), theme (NF-06, NF-08), log out. */
+/**
+ * Profile: name, own statistics (STA-08), notification channels (F-19), calendar subscription (CAL-01), theme
+ * (NF-06, NF-08), log out.
+ */
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, RouterLink, CalendarSubscriptionSection],
+  imports: [Icon, RouterLink, CalendarSubscriptionSection, NotificationSettingsSection],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })

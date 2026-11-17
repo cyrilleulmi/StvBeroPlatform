@@ -30,7 +30,7 @@ public class NotificationSettingsService {
 
     public NotificationSettingsDto mine(UUID personId) {
         Person person = Person.findById(personId);
-        List<PushDeviceDto> devices = PushSubscription.<PushSubscription>list("person.id = ?1 order by createdAt, id",
+        List<PushDeviceDto> devices = PushSubscription.<PushSubscription>list("person.id = ?1 order by createdAt, sequenceNumber",
                 personId).stream().map(PushDeviceDto::of).toList();
         String address = DeliveryRules.hasAddress(person.email) ? person.email.trim() : null;
         return new NotificationSettingsDto(emailOn(person), address, email.available(), push.available(),

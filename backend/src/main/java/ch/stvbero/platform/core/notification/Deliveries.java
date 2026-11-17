@@ -143,6 +143,11 @@ public class Deliveries {
         if (delivery == null || delivery.status != DeliveryStatus.PENDING || delivery.nextAttemptAt.isAfter(now)) {
             return false;
         }
+        if (delivery.channel == NotificationChannel.PUSH && delivery.pushSubscription == null) {
+            // Push switched off for the device in the meantime: nothing to send, no attempt
+            discard(delivery, "Gerät entfernt");
+            return true;
+        }
         delivery.attempts++;
         try {
             switch (delivery.channel) {
@@ -177,10 +182,6 @@ public class Deliveries {
 
     private void sendPush(Delivery delivery) {
         PushSubscription device = delivery.pushSubscription;
-        if (device == null) {
-            discard(delivery, "Gerät entfernt");
-            return;
-        }
         PushTransport.Result result = push.send(new PushTransport.Target(device.endpoint, device.p256dh, device.auth),
                 DeliveryRules.pushPayload(delivery.notification.id, delivery.subject, delivery.text, delivery.path));
         if (result == PushTransport.Result.EXPIRED) {

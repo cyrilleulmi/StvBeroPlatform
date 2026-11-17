@@ -44,7 +44,7 @@ tags:
   - name: SwissUnihockey
     description: swiss unihockey integration (SUH)
   - name: Notifications
-    description: In-app notifications (BEN)
+    description: Notifications in the app, by e-mail and push (BEN)
   - name: Calendar
     description: Calendar subscription with an iCalendar feed (CAL)
   - name: Test
@@ -1274,6 +1274,83 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /api/me/notification-settings:
+    get:
+      tags: [Notifications]
+      operationId: getMyNotificationSettings
+      summary: 'Own channels: e-mail on or off, devices with push (F-19)'
+      description: |
+        The list in the app always exists. E-mail is on by default if the person has an e-mail address, and can be
+        switched off. Push is switched on per device (`/api/me/push-subscriptions`). `emailAvailable` and
+        `pushAvailable` are false while the channel is not configured on the server (F-19, criterion 9).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    put:
+      tags: [Notifications]
+      operationId: updateMyNotificationSettings
+      summary: Switch e-mails on or off (F-19)
+      description: Switching on without an e-mail address of the person is refused with 422, rule BEN-10, field `email`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationSettingsInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/me/push-subscriptions:
+    post:
+      tags: [Notifications]
+      operationId: registerMyPushSubscription
+      summary: Push on for this device; the same endpoint again updates it (F-19)
+      description: |
+        Body: what the browser returns from `PushSubscription.toJSON()` after the person allowed notifications.
+        A person can have several devices. If the endpoint was registered by another person before (other person
+        signed in on the same device), the device now belongs to the person signed in. `endpoint` must be an
+        `https` address, `keys.p256dh` a P-256 public key and `keys.auth` 16 bytes, both base64url. The label
+        («Chrome auf Android») comes from the `User-Agent` header. Without VAPID configuration: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PushSubscriptionInput' }
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PushDevice' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/me/push-subscriptions/{subscriptionId}:
+    parameters:
+      - name: subscriptionId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [Notifications]
+      operationId: removeMyPushSubscription
+      summary: Push off for a device (F-19)
+      description: Only the own devices; another person's device is 403 (RR-07).
+      responses:
+        '204': { description: Removed }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   # ---------------------------------------------------------------- Test
   /api/test/reset:
     post:
@@ -1288,7 +1365,7 @@ paths:
     put:
       tags: [Test]
       operationId: testSetClock
-      summary: Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately.
+      summary: Set the backend clock to a fixed point in time. Runs due jobs (reminders, retries of e-mails and pushes) immediately.
       security: []
       requestBody:
         required: true
@@ -1380,7 +1457,11 @@ paths:
     get:
       tags: [Test]
       operationId: testListNotifications
-      summary: All notifications of all persons since the last reset, including the seed
+      summary: All notifications of all persons since the last reset, including the seed, each with its e-mails and pushes (F-19). Delivers what is due first.
+      description: |
+        In dev and test nothing is sent to the outside (F-19, criterion 8): every e-mail and push is recorded as a
+        delivery with its channel. Before the list is returned, everything due is delivered, so the result does not
+        depend on the background thread.
       security: []
       responses:
         '200':
@@ -1389,7 +1470,35 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Notification' }
+                items: { $ref: '#/components/schemas/TestNotification' }
+  /api/test/delivery:
+    put:
+      tags: [Test]
+      operationId: testSetDelivery
+      summary: Let e-mail or push fail, or report push endpoints as expired (simulated, F-19)
+      description: |
+        Applies until the next call or reset. `failing`: deliveries of these channels fail and are retried
+        (1, 5, 30, 120 minutes; setting the clock runs due retries). `expiredEndpoints`: the simulated push service
+        answers 410 for these endpoints; the device is removed.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                failing:
+                  type: [array, 'null']
+                  items: { $ref: '#/components/schemas/NotificationChannel' }
+                  description: Channels whose delivery fails until the next change or reset (F-19, criterion 7)
+                expiredEndpoints:
+                  type: [array, 'null']
+                  items: { type: string }
+                  description: Push endpoints the simulated push service reports as expired (F-19, criterion 7)
+      responses:
+        '204': { description: Set }
+        '400': { $ref: '#/components/responses/BadRequest' }
   /api/test/swiss-unihockey/matches:
     put:
       tags: [Test]
@@ -2466,3 +2575,109 @@ components:
         eventId: { type: [string, 'null'], format: uuid }
         createdAt: { type: string, format: date-time }
         read: { type: boolean }
+
+    NotificationChannel:
+      type: string
+      enum: [EMAIL, PUSH]
+      description: Channel outside the app (F-19, BEN-10). The list in the app always exists.
+
+    NotificationSettings:
+      type: object
+      description: The person's channels (F-19). The list in the app always exists.
+      required: [email, emailAvailable, pushAvailable, devices]
+      properties:
+        email:
+          type: boolean
+          description: E-mails are on. Default on if the person has an e-mail address; always false without one.
+        emailAddress:
+          type: [string, 'null']
+          description: Address the e-mails go to; null if the person has none
+          examples: ['anna@example.ch']
+        emailAvailable:
+          type: boolean
+          description: The server can send e-mails (configured, criterion 9)
+        pushAvailable:
+          type: boolean
+          description: The server can send pushes (VAPID configured, criterion 9)
+        pushPublicKey:
+          type: [string, 'null']
+          description: Public VAPID key (base64url) for `PushManager.subscribe`; null without push
+        devices:
+          type: array
+          description: Devices with push, oldest first
+          items: { $ref: '#/components/schemas/PushDevice' }
+
+    NotificationSettingsInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: boolean }
+
+    PushDevice:
+      type: object
+      description: A device with push (F-19). The browser compares `endpoint` with its own subscription.
+      required: [id, endpoint, label, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        endpoint: { type: string, description: Address at the push service of the browser }
+        label: { type: string, examples: ['Chrome auf Android'] }
+        createdAt: { type: string, format: date-time }
+
+    PushSubscriptionInput:
+      type: object
+      description: '`PushSubscription.toJSON()` of the browser'
+      required: [endpoint, keys]
+      properties:
+        endpoint: { type: string, maxLength: 1000 }
+        keys: { $ref: '#/components/schemas/PushSubscriptionKeys' }
+
+    PushSubscriptionKeys:
+      type: object
+      required: [p256dh, auth]
+      properties:
+        p256dh: { type: string, maxLength: 200, description: 'P-256 public key of the browser, base64url' }
+        auth: { type: string, maxLength: 100, description: 'Authentication secret of the browser, base64url' }
+
+    TestNotification:
+      type: object
+      description: A notification with its e-mails and pushes (test support, F-19). Fields of `Notification` plus `deliveries`.
+      required: [id, type, recipient, text, createdAt, read, deliveries]
+      properties:
+        id: { type: string, format: uuid }
+        type:
+          type: string
+          enum:
+            - REMINDER
+            - LATE_CANCELLATION
+            - CALL_UP_PUBLISHED
+            - CALL_UP_CHANGED
+            - CALLED_UP_PLAYER_DECLINED
+            - MATCH_CHANGED
+            - EVENT_CANCELLED
+            - EVENT_RESCHEDULED
+        recipient: { $ref: '#/components/schemas/PersonSummary' }
+        text: { type: string }
+        eventId: { type: [string, 'null'], format: uuid }
+        createdAt: { type: string, format: date-time }
+        read: { type: boolean }
+        deliveries:
+          type: array
+          items: { $ref: '#/components/schemas/TestDelivery' }
+
+    TestDelivery:
+      type: object
+      description: One e-mail or push as it went out, or would have gone out in production
+      required: [channel, address, subject, text, path, status, attempts]
+      properties:
+        channel: { $ref: '#/components/schemas/NotificationChannel' }
+        address: { type: string, description: E-mail address or push endpoint }
+        subject: { type: string, examples: ['Abgesagt: Training Di 24.11.'] }
+        text: { type: string }
+        path: { type: string, description: 'Where the button or the tap leads, e.g. /termine/<id>' }
+        status:
+          type: string
+          enum: [PENDING, SENT, FAILED, DISCARDED]
+        attempts: { type: integer, format: int32 }
+        nextAttemptAt: { type: [string, 'null'], format: date-time }
+        lastError: { type: [string, 'null'] }
+        sentAt: { type: [string, 'null'], format: date-time }

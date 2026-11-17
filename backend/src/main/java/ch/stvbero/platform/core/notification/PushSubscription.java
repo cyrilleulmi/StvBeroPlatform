@@ -20,6 +20,10 @@ public class PushSubscription extends PanacheEntityBase {
     @Id
     public UUID id;
 
+    /** Order of registration; assigned by the database. */
+    @Column(name = "sequence_number", insertable = false, updatable = false)
+    public Long sequenceNumber;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "person_id")
     public Person person;

@@ -979,6 +979,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/notification-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Own channels: e-mail on or off, devices with push (F-19)
+         * @description The list in the app always exists. E-mail is on by default if the person has an e-mail address, and can be
+         *     switched off. Push is switched on per device (`/api/me/push-subscriptions`). `emailAvailable` and
+         *     `pushAvailable` are false while the channel is not configured on the server (F-19, criterion 9).
+         */
+        get: operations["getMyNotificationSettings"];
+        /**
+         * Switch e-mails on or off (F-19)
+         * @description Switching on without an e-mail address of the person is refused with 422, rule BEN-10, field `email`.
+         */
+        put: operations["updateMyNotificationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push on for this device; the same endpoint again updates it (F-19)
+         * @description Body: what the browser returns from `PushSubscription.toJSON()` after the person allowed notifications.
+         *     A person can have several devices. If the endpoint was registered by another person before (other person
+         *     signed in on the same device), the device now belongs to the person signed in. `endpoint` must be an
+         *     `https` address, `keys.p256dh` a P-256 public key and `keys.auth` 16 bytes, both base64url. The label
+         *     («Chrome auf Android») comes from the `User-Agent` header. Without VAPID configuration: 409.
+         */
+        post: operations["registerMyPushSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/push-subscriptions/{subscriptionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscriptionId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Push off for a device (F-19)
+         * @description Only the own devices; another person's device is 403 (RR-07).
+         */
+        delete: operations["removeMyPushSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/test/reset": {
         parameters: {
             query?: never;
@@ -1008,7 +1080,7 @@ export interface paths {
         };
         /** Current backend time */
         get: operations["testGetClock"];
-        /** Set the backend clock to a fixed point in time. Runs due jobs (reminders) immediately. */
+        /** Set the backend clock to a fixed point in time. Runs due jobs (reminders, retries of e-mails and pushes) immediately. */
         put: operations["testSetClock"];
         post?: never;
         /** Use the real time again */
@@ -1076,9 +1148,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** All notifications of all persons since the last reset, including the seed */
+        /**
+         * All notifications of all persons since the last reset, including the seed, each with its e-mails and pushes (F-19). Delivers what is due first.
+         * @description In dev and test nothing is sent to the outside (F-19, criterion 8): every e-mail and push is recorded as a
+         *     delivery with its channel. Before the list is returned, everything due is delivered, so the result does not
+         *     depend on the background thread.
+         */
         get: operations["testListNotifications"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Let e-mail or push fail, or report push endpoints as expired (simulated, F-19)
+         * @description Applies until the next call or reset. `failing`: deliveries of these channels fail and are retried
+         *     (1, 5, 30, 120 minutes; setting the clock runs due retries). `expiredEndpoints`: the simulated push service
+         *     answers 410 for these endpoints; the device is removed.
+         */
+        put: operations["testSetDelivery"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1899,6 +1998,89 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             read: boolean;
+        };
+        /**
+         * @description Channel outside the app (F-19, BEN-10). The list in the app always exists.
+         * @enum {string}
+         */
+        NotificationChannel: "EMAIL" | "PUSH";
+        /** @description The person's channels (F-19). The list in the app always exists. */
+        NotificationSettings: {
+            /** @description E-mails are on. Default on if the person has an e-mail address; always false without one. */
+            email: boolean;
+            /**
+             * @description Address the e-mails go to; null if the person has none
+             * @example anna@example.ch
+             */
+            emailAddress?: string | null;
+            /** @description The server can send e-mails (configured, criterion 9) */
+            emailAvailable: boolean;
+            /** @description The server can send pushes (VAPID configured, criterion 9) */
+            pushAvailable: boolean;
+            /** @description Public VAPID key (base64url) for `PushManager.subscribe`; null without push */
+            pushPublicKey?: string | null;
+            /** @description Devices with push, oldest first */
+            devices: components["schemas"]["PushDevice"][];
+        };
+        NotificationSettingsInput: {
+            email: boolean;
+        };
+        /** @description A device with push (F-19). The browser compares `endpoint` with its own subscription. */
+        PushDevice: {
+            /** Format: uuid */
+            id: string;
+            /** @description Address at the push service of the browser */
+            endpoint: string;
+            /** @example Chrome auf Android */
+            label: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description `PushSubscription.toJSON()` of the browser */
+        PushSubscriptionInput: {
+            endpoint: string;
+            keys: components["schemas"]["PushSubscriptionKeys"];
+        };
+        PushSubscriptionKeys: {
+            /** @description P-256 public key of the browser, base64url */
+            p256dh: string;
+            /** @description Authentication secret of the browser, base64url */
+            auth: string;
+        };
+        /** @description A notification with its e-mails and pushes (test support, F-19). Fields of `Notification` plus `deliveries`. */
+        TestNotification: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED";
+            recipient: components["schemas"]["PersonSummary"];
+            text: string;
+            /** Format: uuid */
+            eventId?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            read: boolean;
+            deliveries: components["schemas"]["TestDelivery"][];
+        };
+        /** @description One e-mail or push as it went out, or would have gone out in production */
+        TestDelivery: {
+            channel: components["schemas"]["NotificationChannel"];
+            /** @description E-mail address or push endpoint */
+            address: string;
+            /** @example Abgesagt: Training Di 24.11. */
+            subject: string;
+            text: string;
+            /** @description Where the button or the tap leads, e.g. /termine/<id> */
+            path: string;
+            /** @enum {string} */
+            status: "PENDING" | "SENT" | "FAILED" | "DISCARDED";
+            /** Format: int32 */
+            attempts: number;
+            /** Format: date-time */
+            nextAttemptAt?: string | null;
+            lastError?: string | null;
+            /** Format: date-time */
+            sentAt?: string | null;
         };
     };
     responses: {
@@ -3483,6 +3665,104 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getMyNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    updateMyNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    registerMyPushSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionInput"];
+            };
+        };
+        responses: {
+            /** @description Registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushDevice"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    removeMyPushSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscriptionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     testReset: {
         parameters: {
             query?: never;
@@ -3656,9 +3936,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Notification"][];
+                    "application/json": components["schemas"]["TestNotification"][];
                 };
             };
+        };
+    };
+    testSetDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Channels whose delivery fails until the next change or reset (F-19, criterion 7) */
+                    failing?: components["schemas"]["NotificationChannel"][] | null;
+                    /** @description Push endpoints the simulated push service reports as expired (F-19, criterion 7) */
+                    expiredEndpoints?: string[] | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Set */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
         };
     };
     testSetSuMatches: {

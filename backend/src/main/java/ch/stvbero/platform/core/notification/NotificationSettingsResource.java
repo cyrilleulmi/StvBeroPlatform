@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.util.UUID;
 
 /** The own channels for notifications (F-19, BEN-10): e-mail and push per device. */
-@Path("/api/me")
+@Path("/api")
 @Tag(name = "Notifications")
 public class NotificationSettingsResource {
 
@@ -36,7 +36,7 @@ public class NotificationSettingsResource {
     NotificationSettingsService settings;
 
     @GET
-    @Path("/notification-settings")
+    @Path("/me/notification-settings")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getMyNotificationSettings",
             summary = "Own channels: e-mail on or off, devices with push (F-19)")
@@ -50,7 +50,7 @@ public class NotificationSettingsResource {
     }
 
     @PUT
-    @Path("/notification-settings")
+    @Path("/me/notification-settings")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateMyNotificationSettings", summary = "Switch e-mails on or off (F-19)")
@@ -68,7 +68,7 @@ public class NotificationSettingsResource {
     }
 
     @POST
-    @Path("/push-subscriptions")
+    @Path("/me/push-subscriptions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "registerMyPushSubscription",
@@ -88,7 +88,7 @@ public class NotificationSettingsResource {
     }
 
     @DELETE
-    @Path("/push-subscriptions/{subscriptionId}")
+    @Path("/me/push-subscriptions/{subscriptionId}")
     @Operation(operationId = "removeMyPushSubscription", summary = "Push off for a device (F-19)")
     @APIResponse(responseCode = "204", description = "Removed")
     @APIResponse(responseCode = "401", description = "Not logged in",

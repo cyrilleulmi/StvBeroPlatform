@@ -10,6 +10,8 @@ create table notification_preference (
 -- if another person signs in on the same device, the device moves to her.
 create table push_subscription (
     id         uuid primary key,
+    -- Stable order for devices registered at the same instant (fixed clock in tests)
+    sequence_number bigint generated always as identity,
     person_id  uuid          not null references person (id) on delete cascade,
     endpoint   varchar(1000) not null unique,
     p256dh     varchar(200)  not null,

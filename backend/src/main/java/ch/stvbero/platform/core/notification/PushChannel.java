@@ -28,7 +28,7 @@ public class PushChannel implements Channel {
         if (!transport.available()) {
             return;
         }
-        List<PushSubscription> devices = PushSubscription.list("person.id = ?1 order by createdAt, id",
+        List<PushSubscription> devices = PushSubscription.list("person.id = ?1 order by createdAt, sequenceNumber",
                 message.recipientId());
         if (devices.isEmpty()) {
             return;

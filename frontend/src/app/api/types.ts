@@ -56,3 +56,5 @@ export type League = components['schemas']['League'];
 export type LeagueRow = components['schemas']['LeagueRow'];
 export type LeagueMatch = components['schemas']['LeagueMatch'];
 export type CalendarSubscription = components['schemas']['CalendarSubscription'];
+export type NotificationSettings = components['schemas']['NotificationSettings'];
+export type PushDevice = components['schemas']['PushDevice'];
