@@ -21,3 +21,20 @@ Test IDs: `event-attendance-check`, `attendance-section`, `attendance-recorded`,
 | 8 PRS-08 | Switch off keeps data | Event with switch, clock into the event, record Anna «entschuldigt», untick in «Termin bearbeiten» | Dialog «Präsenz ausschalten?»: «Abbrechen» saves nothing, «Ausschalten und speichern» saves; data still there after switching on again |
 | 9 PRS-09 | Cancelled | Event with switch cancelled, clock after start | No section «Präsenz», API 409 PRS-09 |
 | 10 | Seed | As `alex` event 10 → `/praesenz` | «Zuletzt gespeichert von Petra Keller am Do 05.11. 21:00.», «4 anwesend · 2 abwesend · 1 entschuldigt», Sara «abwesend» with response «dabei» |
+
+## Additional cases (test agent, round 0)
+
+| Criterion | Case | Steps | Expected |
+|---|---|---|---|
+| 1 PRS-01 | Single event deviates from the series | Create a Friday series 20.11.–04.12. with the switch via UI; untick it on the 27.11. event; in «Serie bearbeiten» switch off, then on again | Series off: all 3 events off. Series on again: 20.11. and 04.12. on, 27.11. stays off |
+| 1 PRS-01 | Default via API | `POST /api/events` without `attendanceCheck` | `attendanceCheck: false` |
+| 2 PRS-02 | Exact start | Clock 1 s before start → `PUT …/attendance`; clock at start | 409 PRS-02, then 200 |
+| 3 | Shared event of two teams | Clock 17.11. 19:00, switch on for event 01 (Team 1 + Team 2), open `/praesenz` as `petra` | Groups are recognizable per team (team heading as in the overview); Lea (in both teams) has one value in both places; Petra listed as player of Team 2 only |
+| 3 | Double click on «Präsenz speichern» | Change Mia, double click | Exactly one `PUT`, «Die Präsenz ist gespeichert.» |
+| 4 PRS-04 | Correction by a coach of another team | Reset, clock 16.11. 08:00, `marc` sets Sara «anwesend» on event 10 | «Noch nicht gespeichert.» after the change, disappears when changed back; after saving «Zuletzt gespeichert von Marc Huber am Mo 16.11. 08:00.», «5 anwesend · 1 abwesend · 1 entschuldigt» |
+| 5 PRS-05 | Invalid entries | `PUT` with Petra (coach), unknown person, duplicate person, unknown status, empty body | 422 PRS-05, 422 PRS-05, 400, 400, 400 |
+| 6 PRS-06 | Players without permission | `mia`, `anna`: `GET`/`PUT …/attendance` and `/praesenz` | 403, «Keine Berechtigung», no 403 requests from the UI itself; overview contains no attendance |
+| 8 PRS-08 | Hidden for the player while off | After «Ausschalten und speichern», as `anna` | `myAttendance` absent; after switching on again «entschuldigt» is back |
+| 9 PRS-09 | Cancelled in the UI | Cancel a series event with the switch, clock after start | No section «Präsenz», `/praesenz` «Für diesen Termin lässt sich keine Präsenz erfassen.» |
+| – | Anonymous | `GET …/attendance` without session | 401 |
+| – | Dark mode | `/praesenz` on mobile in dark mode | Readable, selected states distinguishable |
