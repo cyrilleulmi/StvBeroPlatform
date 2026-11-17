@@ -186,38 +186,43 @@ test('DRV-03: coaches assign and move passengers; a person sits in at most one c
   await expect(list.getByRole('list', { name: 'Ohne Platz' }).getByRole('listitem')).toHaveText(['Anna Muster', 'Jana Wyss']);
 });
 
-test('DRV-03: the seat select offers no fewer seats than passengers and keeps the saved value after a rejection', async ({
-  page,
-  request,
-}) => {
-  // Petra's car is full with 3 passengers: fewer than 3 seats are not offered
-  await login(page, 'petra');
-  await page.goto(`/termine/${T04}`);
-  const petraSeats = car(page, 'Petra Keller').getByLabel('Plätze im Auto von Petra Keller');
-  await expect(petraSeats).toHaveValue('3');
-  await expect(petraSeats.getByRole('option')).toHaveText(['3', '4', '5', '6', '7', '8']);
+test.describe('Seat change rejected by the API', () => {
+  // The rejection is an expected 422 (rule DRV-03)
+  test.use({ expectedConsoleErrors: [/status of 422/] });
 
-  // Sara's empty car offers 1 to 8; meanwhile Jana and Kim get in (another session), the page is stale
-  await login(page, 'sara');
-  await page.goto(`/termine/${T04}`);
-  const saraSeats = car(page, 'Sara Brun').getByLabel('Plätze im Auto von Sara Brun');
-  await expect(saraSeats).toHaveValue('3');
-  await expect(saraSeats.getByRole('option')).toHaveCount(8);
-  for (const key of ['jana', 'kim']) {
-    expect((await request.post('/api/test/login', { data: { loginKey: key } })).status()).toBe(204);
-    const me = (await (await request.get('/api/me')).json()) as { id: string };
-    const url = `/api/events/${T04}/driver-list/cars/${CAR_SARA}/passengers/${me.id}`;
-    expect((await request.put(url, { data: {} })).status()).toBe(200);
-  }
+  test('DRV-03: the seat select offers no fewer seats than passengers and keeps the saved value after a rejection', async ({
+    page,
+    request,
+  }) => {
+    // Petra's car is full with 3 passengers: fewer than 3 seats are not offered
+    await login(page, 'petra');
+    await page.goto(`/termine/${T04}`);
+    const petraSeats = car(page, 'Petra Keller').getByLabel('Plätze im Auto von Petra Keller');
+    await expect(petraSeats).toHaveValue('3');
+    await expect(petraSeats.getByRole('option')).toHaveText(['3', '4', '5', '6', '7', '8']);
 
-  // The rejected change resets the select to the saved value
-  await saraSeats.selectOption('1');
-  await expect(driverList(page).getByRole('alert')).toHaveText(
-    'Im Auto sitzen schon 2 Personen. Weniger Plätze gehen nicht.',
-  );
-  await expect(saraSeats).toHaveValue('3');
-  await expect(saraSeats.getByRole('option')).toHaveText(['2', '3', '4', '5', '6', '7', '8']);
-  await expect(car(page, 'Sara Brun').getByTestId('car-seats')).toHaveText('1 von 3 Plätzen frei');
+    // Sara's empty car offers 1 to 8; meanwhile Jana and Kim get in (another session), the page is stale
+    await login(page, 'sara');
+    await page.goto(`/termine/${T04}`);
+    const saraSeats = car(page, 'Sara Brun').getByLabel('Plätze im Auto von Sara Brun');
+    await expect(saraSeats).toHaveValue('3');
+    await expect(saraSeats.getByRole('option')).toHaveCount(8);
+    for (const key of ['jana', 'kim']) {
+      expect((await request.post('/api/test/login', { data: { loginKey: key } })).status()).toBe(204);
+      const me = (await (await request.get('/api/me')).json()) as { id: string };
+      const url = `/api/events/${T04}/driver-list/cars/${CAR_SARA}/passengers/${me.id}`;
+      expect((await request.put(url, { data: {} })).status()).toBe(200);
+    }
+
+    // The rejected change resets the select to the saved value
+    await saraSeats.selectOption('1');
+    await expect(driverList(page).getByRole('alert')).toHaveText(
+      'Im Auto sitzen schon 2 Personen. Weniger Plätze gehen nicht.',
+    );
+    await expect(saraSeats).toHaveValue('3');
+    await expect(saraSeats.getByRole('option')).toHaveText(['2', '3', '4', '5', '6', '7', '8']);
+    await expect(car(page, 'Sara Brun').getByTestId('car-seats')).toHaveText('1 von 3 Plätzen frei');
+  });
 });
 
 test('DRV-04: with a published call-up the called-up players without a seat are listed', async ({ page }) => {
