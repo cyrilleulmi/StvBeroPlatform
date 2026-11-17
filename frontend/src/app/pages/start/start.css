@@ -114,11 +114,5 @@
 }
 
 .all-events {
-  display: inline-flex;
-  align-items: center;
   justify-self: start;
-  gap: 4px;
-  min-height: var(--touch);
-  font-weight: 700;
-  color: var(--primary);
 }
