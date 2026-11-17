@@ -6,29 +6,38 @@ Status legend: see [README](../../README.md#requirement-status).
 
 | ID | Requirement | Status |
 |---|---|---|
-| RR-01 | A person's permissions follow from their team role in the respective team. Someone who is coach in Team 1 and player in Team 2 has coach permissions in Team 1 and player permissions in Team 2. | Accepted |
-| RR-02 | A player sees her teams and their events and responds for herself. | Accepted |
-| RR-03 | A coach edits events and lines of her team, responds on behalf, sees comments and creates the call-up. | Accepted |
-| RR-04 | Admins may do everything, across all teams. Admin is not a team role but a property of the person. | Accepted |
+| RR-01 | A person's permissions follow from her team role in the respective team. Someone who is coach in Team 1 and player in Team 2 has player permissions in Team 2 for herself (she responds for herself there). Coach rights apply in every team as soon as she is coach in one team (RR-03). | Accepted |
+| RR-02 | A player sees her teams and their events and responds for herself. A person who is only a player in every team has exactly these rights, also after F-12. | Accepted |
+| RR-03 | A person who is coach of at least one team in the current season («coach») may, for **every** team: see teams, players and team memberships; create and edit people; add people to teams and change their team role; create, rename and reorder lines and assign players; create, edit, move and cancel events and series and add series exceptions; respond on behalf of anyone; see comments and reasons; create and publish the call-up; enter results. Not: deleting (RR-08), seasons, swiss unihockey and the admin flag (RR-04). | Decided (E-69) |
+| RR-04 | Admins may do everything, across all teams. Admin is not a team role but a property of the person. Only admins manage seasons (create, make current), link a team to swiss unihockey and trigger the sync, and grant or remove the admin flag. | Decided (E-69) |
 | RR-05 | Tiles and actions are only visible to the roles allowed to use them. | Decided |
-| RR-06 | For an event with several teams, the coach of a participating team may edit the event. She may respond on behalf and see comments only for her own team. | Assumption |
+| RR-06 | For an event with several teams, every coach (RR-03) may edit the event, respond on behalf of every person in it and see all comments. Notifications that go to «the coaches of the team» (late cancellation, withdrawal of a called-up player) still go only to the coaches of that team, not to all coaches. | Decided (E-69) |
 | RR-07 | Permissions are enforced in the backend, not just hidden in the user interface. | Assumption |
+| RR-08 | Deleting is for admins. Deleting means: delete a person, a team, a line, an event, a series or a series exception, and remove a person from a team. These actions are hidden for coaches and answer 403 in the API. Cancelling an event is not deleting. Removing a match from a match day counts as editing the match day, not as deleting (assumption, O-55). | Decided (E-69), Accepted (scope) |
 
 ## Overview
 
-| Action | Player | Coach (own team) | Admin |
+| Action | Player | Coach (any team) | Admin |
 |---|---|---|---|
 | See own events | ✓ | ✓ | ✓ |
 | Respond for oneself | ✓ | ✓ | ✓ |
 | See the status of others in the event | ✓ | ✓ | ✓ |
+| See events of other teams (team filter, detail) | – | ✓ | ✓ |
 | See comments and reasons of others | – | ✓ | ✓ |
 | Respond on behalf | – | ✓ | ✓ |
-| Create, edit, cancel events and series | – | ✓ | ✓ |
-| Manage lines | – | ✓ | ✓ |
-| Create and publish the call-up | – | ✓ | ✓ |
-| Manage people, teams, team memberships | – | – | ✓ |
-| Link a team to swiss unihockey | – | – | ✓ |
+| Create, edit, move, cancel events and series, add series exceptions | – | ✓ | ✓ |
+| Manage lines (create, rename, reorder, assign) | – | ✓ | ✓ |
+| Create and publish the call-up, enter results, add and remove matches | – | ✓ | ✓ |
+| See teams, players and team memberships of all teams | – | ✓ | ✓ |
+| Create and edit people (without the admin flag) | – | ✓ | ✓ |
+| Create and rename teams, add people to teams, change their team role | – | ✓ | ✓ |
+| Delete a line, remove a person from a team (RR-08) | – | – | ✓ |
+| Delete a person, team, event, series or series exception (RR-08; no such function exists yet) | – | – | ✓ |
+| Grant or remove the admin flag | – | – | ✓ |
+| Link a team to swiss unihockey, trigger the sync | – | – | ✓ |
 | Manage seasons | – | – | ✓ |
+
+«Coach» means coach of at least one team in the current season. In the API the flag `coach` of `GET /api/me` shows it.
 
 ## Note on the roles of the platform
 

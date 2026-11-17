@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -193,32 +194,43 @@ class EventsTest {
         given().cookie("stv_session", login("marc")).get("/api/events/" + id).then().body("canEdit", equalTo(true));
     }
 
+    /** F-12: coaches create and edit events and series of every team (RR-03, E-69); players never (RR-02). */
     @Test
-    void k3OnlyCoachesOfAnInvolvedTeamCanCreate() {
+    void k3CoachesOfAnyTeamAndAdminsCanCreate() {
         String body = eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_1);
+        // Marc is coach of Team 2 only, but may create an event for Team 1 (F-12)
         given().cookie("stv_session", login("marc")).contentType(ContentType.JSON).body(body)
-                .post("/api/events").then().statusCode(403).body("rule", equalTo("RR-07"));
+                .post("/api/events").then().statusCode(201);
         given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body(body)
-                .post("/api/events").then().statusCode(403);
-        // Petra is only a player in Team 2
-        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .post("/api/events").then().statusCode(403).body("rule", equalTo("RR-07"));
+        // Lea is a player in two teams, but coach in none
+        given().cookie("stv_session", login("lea")).contentType(ContentType.JSON)
                 .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_2))
                 .post("/api/events").then().statusCode(403);
+        // Petra is coach in Team 1 and only a player in Team 2: coach rights everywhere (criterion 7)
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body(eventBody("2026-11-20T18:00:00+01:00", "2026-11-20T19:30:00+01:00", TEAM_2))
+                .post("/api/events").then().statusCode(201);
         given().cookie("stv_session", login("alex")).contentType(ContentType.JSON).body(body)
                 .post("/api/events").then().statusCode(201);
         given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body(body)
                 .put("/api/events/" + T01).then().statusCode(403);
         given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body("{\"reason\":\"x\"}")
                 .post("/api/events/" + T01 + "/cancel").then().statusCode(403);
-        given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
+        given().cookie("stv_session", login("lea")).contentType(ContentType.JSON)
                 .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2026-12-21", TEAM_1))
                 .post("/api/series").then().statusCode(403);
-        given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
-                .body(seriesBody("TUESDAY", "18:30", "2026-08-18", "2027-04-27", TEAM_3))
-                .put("/api/series/" + SERIES_1).then().statusCode(403);
-        given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
+        given().cookie("stv_session", login("lea")).contentType(ContentType.JSON)
                 .body("{\"startDate\":\"2026-12-01\",\"endDate\":\"2026-12-02\",\"reason\":\"x\"}")
                 .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(403);
+        // Ruth (coach of Team 3 only) edits series 01 of Team 1 + 2 and adds an exception (F-12)
+        given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
+                .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2026-12-21", TEAM_1))
+                .post("/api/series").then().statusCode(201);
+        given().cookie("stv_session", login("ruth")).contentType(ContentType.JSON)
+                .body("{\"startDate\":\"2026-12-01\",\"endDate\":\"2026-12-02\",\"reason\":\"x\"}")
+                .post("/api/series/" + SERIES_1 + "/exceptions").then().statusCode(201);
+        given().cookie("stv_session", login("ruth")).get("/api/series/" + SERIES_1).then().statusCode(200);
     }
 
     @Test
@@ -449,8 +461,16 @@ class EventsTest {
 
     @Test
     void k9FilterByTeamTypeAndPast() {
-        // Event 06 also belongs to Team 3; Petra is not a member there but sees it through Team 1 and 2
-        assertThat(eventIds(petra, "?team=" + TEAM_3), contains(T06));
+        // Event 06 also belongs to Team 3; Anna is not a member there but sees it through Team 1
+        assertThat(eventIds(login("anna"), "?team=" + TEAM_3), contains(T06));
+        // Coaches see all events of a team with the team filter, even without membership (F-12)
+        assertThat(eventIds(petra, "?team=" + TEAM_3), hasItem(T06));
+        assertThat(eventIds(petra, "?team=" + TEAM_3).size(), greaterThan(1));
+        // Without the filter only the own teams (TER-13): no event of series 03 (Team 3 only)
+        String series3 = java.util.UUID.nameUUIDFromBytes("termin-3-2026-11-18".getBytes(
+                java.nio.charset.StandardCharsets.UTF_8)).toString();
+        assertThat(eventIds(petra, "?team=" + TEAM_3), hasItem(series3));
+        assertThat(eventIds(petra, ""), not(hasItem(series3)));
         assertThat(eventIds(petra, "?type=MATCH_DAY"), contains(T04, T05));
         assertThat(eventIds(petra, "?type=OTHER&team=" + TEAM_1), contains(T06));
         List<String> past = eventIds(login("anna"), "?view=past");

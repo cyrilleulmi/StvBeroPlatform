@@ -43,9 +43,13 @@ class TeamsTest {
     @Test
     void ptf12PetraSeesBothTeamsWithHerTeamRole() {
         String petra = login("petra");
+        // As a coach Petra gets all teams (F-12), with her own team role where she has one
         given().cookie("stv_session", petra).get("/api/teams").then().statusCode(200)
+                .body("name", contains("Team 1", "Team 2", "Team 3"))
+                .body("myTeamRole", contains("COACH", "PLAYER", null));
+        given().cookie("stv_session", login("lea")).get("/api/teams").then().statusCode(200)
                 .body("name", contains("Team 1", "Team 2"))
-                .body("myTeamRole", contains("COACH", "PLAYER"));
+                .body("myTeamRole", contains("PLAYER", "PLAYER"));
         given().cookie("stv_session", petra).get("/api/me").then().statusCode(200)
                 .body("memberships.team.name", contains("Team 1", "Team 2"))
                 .body("memberships.teamRole", contains("COACH", "PLAYER"));
@@ -115,9 +119,10 @@ class TeamsTest {
         given().cookie("stv_session", alex).contentType(ContentType.JSON)
                 .body("{\"personId\":\"" + ANNA + "\",\"teamRole\":\"COACH\"}")
                 .post("/api/teams/" + TEAM_3 + "/members").then().statusCode(201);
-        given().cookie("stv_session", login("anna")).get("/api/teams").then().statusCode(200)
-                .body("name", contains("Team 1", "Team 3"))
-                .body("myTeamRole", contains("PLAYER", "COACH"));
+        given().cookie("stv_session", login("anna")).get("/api/me").then().statusCode(200)
+                .body("memberships.team.name", contains("Team 1", "Team 3"))
+                .body("memberships.teamRole", contains("PLAYER", "COACH"))
+                .body("coach", equalTo(true));
     }
 
     @Test
@@ -209,19 +214,33 @@ class TeamsTest {
         given().cookie("stv_session", alex).get("/api/teams/10000000-0000-4000-8000-000000000099").then().statusCode(404);
     }
 
+    /** F-12: coaches manage teams and members, removing a member is deleting (RR-08); players may not. */
     @Test
-    void rr07OnlyAdminsManageTeams() {
-        String petra = login("petra");
-        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"name\":\"Team 9\"}")
+    void rr07OnlyAdminsAndCoachesManageTeams() {
+        String anna = login("anna");
+        given().cookie("stv_session", anna).contentType(ContentType.JSON).body("{\"name\":\"Team 9\"}")
                 .post("/api/teams").then().statusCode(403);
-        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"name\":\"Team 9\"}")
+        given().cookie("stv_session", anna).contentType(ContentType.JSON).body("{\"name\":\"Team 9\"}")
                 .put("/api/teams/" + TEAM_1).then().statusCode(403);
-        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+        given().cookie("stv_session", anna).contentType(ContentType.JSON)
                 .body("{\"personId\":\"" + TINA + "\",\"teamRole\":\"PLAYER\"}")
                 .post("/api/teams/" + TEAM_1 + "/members").then().statusCode(403);
-        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
+        given().cookie("stv_session", anna).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
                 .put("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(403);
-        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(403);
-        given().cookie("stv_session", petra).get("/api/teams/" + TEAM_3).then().statusCode(403);
+        given().cookie("stv_session", anna).delete("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(403);
+        given().cookie("stv_session", anna).get("/api/teams/" + TEAM_3).then().statusCode(403);
+
+        String petra = login("petra");
+        given().cookie("stv_session", petra).get("/api/teams/" + TEAM_3).then().statusCode(200);
+        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"name\":\"Team 9\"}")
+                .post("/api/teams").then().statusCode(201);
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"personId\":\"" + TINA + "\",\"teamRole\":\"PLAYER\"}")
+                .post("/api/teams/" + TEAM_2 + "/members").then().statusCode(201);
+        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
+                .put("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(200);
+        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(403)
+                .body("title", equalTo("Keine Berechtigung"));
+        given().cookie("stv_session", alex).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(204);
     }
 }

@@ -158,9 +158,9 @@ export class Team {
     ].filter((g) => g.players.length > 0);
   });
 
-  /** Coaches of the team and admins assign the lines (LIN-07), only in the current season. */
+  /** Coaches (of any team, E-69) and admins assign the lines (LIN-07), only in the current season. */
   protected readonly canEditLines = computed(
-    () => !this.season() && (this.auth.isAdmin() || this.team()?.myTeamRole === 'COACH'),
+    () => !this.season() && (this.auth.canManage() || this.team()?.myTeamRole === 'COACH'),
   );
 
   /** All players: by groups, then without a line. Coaches are never included (PTF-07). */
@@ -184,7 +184,7 @@ export class Team {
     this.team.set(null);
     const me = this.auth.me();
     const member = me?.memberships.some((m) => m.team.id === teamId) ?? false;
-    if (!seasonId && me && !me.admin && !member) {
+    if (!seasonId && me && !this.auth.canManage() && !member) {
       // Without membership in the current season do not even ask; the backend refuses (403).
       this.error.set(TEXTS.common.noPermission);
       this.loading.set(false);

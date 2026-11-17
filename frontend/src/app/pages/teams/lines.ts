@@ -53,7 +53,7 @@ export class Lines {
   private readonly http = inject(HttpClient);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
   protected readonly name = name;
   protected readonly noLineValue = NO_LINE;
@@ -86,8 +86,9 @@ export class Lines {
   protected readonly dragged = signal<PersonSummary | null>(null);
   protected readonly dropTarget = signal<string | null>(null);
 
+  /** Coaches of any team and admins (LIN-07, RR-03, E-69). */
   protected readonly canEdit = computed(
-    () => this.auth.isAdmin() || this.team()?.myTeamRole === 'COACH',
+    () => this.auth.canManage() || this.team()?.myTeamRole === 'COACH',
   );
 
   /** Lines in order, then goalies, then «Ohne Linie» (LIN-06, LIN-09). */
@@ -138,7 +139,7 @@ export class Lines {
     this.loading.set(true);
     this.loadError.set(null);
     const me = this.auth.me();
-    if (me && !me.admin && !me.memberships.some((z) => z.team.id === teamId)) {
+    if (me && !this.auth.canManage() && !me.memberships.some((z) => z.team.id === teamId)) {
       // Without membership do not even ask; the backend refuses (403, RR-07).
       this.team.set(null);
       this.loadError.set(TEXTS.common.noPermission);

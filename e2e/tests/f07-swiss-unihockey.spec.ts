@@ -131,10 +131,12 @@ test('F-07 K1 SUH-02: Unlink', async ({ page }) => {
 });
 
 test('F-07 K1 RR-07: Only admins link and sync', async ({ page }) => {
+  // Since F-12 Petra (coach) manages the team, but the section «swiss unihockey» stays with admins (RR-04)
   await login(page, 'petra');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
-  await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   await expect(section(page)).toHaveCount(0);
+  expect((await page.request.put(`/api/teams/${TEAM_1}/swiss-unihockey`, { data: { suTeamId: null } })).status()).toBe(403);
   const response = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`);
   expect(response.status()).toBe(403);
 });

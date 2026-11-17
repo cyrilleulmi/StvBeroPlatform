@@ -66,7 +66,7 @@ public class MatchService {
     }
 
     private static void checkCanEdit(CurrentUser user, Event event) {
-        EventRules.checkCanCreate(user.admin(), EventService.teamRoles(user, event.teams, event.season));
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, event.teams, event.season));
     }
 
     private static Match find(Event event, UUID matchId) {

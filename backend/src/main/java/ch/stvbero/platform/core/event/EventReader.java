@@ -111,7 +111,7 @@ final class EventReader {
             Set<TeamRole> mine = myTeamRoles(event);
             CallUpStatus status = callUp == null ? CallUpStatus.NONE : callUp.status();
             callUpStatus = CallUpRules.visibleStatus(status,
-                    CallUpRules.canEdit(user.admin(), mine));
+                    CallUpRules.canEdit(user.allTeams(), mine));
             if (mine.contains(TeamRole.PLAYER)) {
                 myCallUp = CallUpRules.myCallUp(status,
                         callUp != null && callUp.personIds.contains(user.personId()));

@@ -219,7 +219,7 @@ test('F-05 K5 AUF-23: Nothing can be published without a selection', async ({ pa
   await expect(page.getByText('Wähle zuerst mindestens eine Spielerin aus.')).toBeVisible();
 });
 
-test('F-05 K6 S11 RR-03: Call-up screen only for coaches', async ({ page }) => {
+test('F-05 K6 S11 RR-03 F-12: Call-up screen only for coaches and admins', async ({ page }) => {
   await login(page, 'anna');
   await page.goto(`/termine/${T04}/aufgebot`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
@@ -232,9 +232,11 @@ test('F-05 K6 S11 RR-03: Call-up screen only for coaches', async ({ page }) => {
     expect((await request).status()).toBe(403);
   }
 
-  // Marc is coach of Team 2, not of Team 1
-  await login(page, 'marc');
+  // Lea is a player only (Team 1 and 2); Marc is coach of Team 2 and since F-12 manages Team 1's call-up too
+  await login(page, 'lea');
   expect((await page.request.get(`/api/events/${T04}/call-up`)).status()).toBe(403);
+  await login(page, 'marc');
+  expect((await page.request.get(`/api/events/${T04}/call-up`)).status()).toBe(200);
 });
 
 test('F-05 AUF-02: A practice has no call-up', async ({ page }) => {

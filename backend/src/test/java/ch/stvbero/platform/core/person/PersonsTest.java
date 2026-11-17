@@ -92,20 +92,51 @@ class PersonsTest {
     }
 
     @Test
-    void rr07NonAdminsGet403() {
-        String petra = login("petra");
-        given().cookie("stv_session", petra).get("/api/persons").then().statusCode(403)
+    void rr07PlayersGet403() {
+        String anna = login("anna");
+        given().cookie("stv_session", anna).get("/api/persons").then().statusCode(403)
                 .contentType("application/problem+json")
                 .body("title", equalTo("Keine Berechtigung"));
-        given().cookie("stv_session", petra).get("/api/persons/" + PETRA).then().statusCode(403);
-        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+        given().cookie("stv_session", anna).get("/api/persons/" + PETRA).then().statusCode(403);
+        given().cookie("stv_session", anna).contentType(ContentType.JSON)
                 .body("{\"firstName\":\"X\",\"lastName\":\"Y\"}")
                 .post("/api/persons").then().statusCode(403);
-        given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body("{\"firstName\":\"Petra\",\"lastName\":\"Keller\",\"admin\":true}")
+        given().cookie("stv_session", anna).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Petra\",\"lastName\":\"Keller\"}")
                 .put("/api/persons/" + PETRA).then().statusCode(403);
         given().cookie("stv_session", alex).get("/api/persons").then().statusCode(200)
                 .body("findAll { it.admin }.firstName", hasItem("Alex"))
+                .body("findAll { it.admin }", hasSize(1));
+    }
+
+    /** F-12: coaches manage persons, but only admins grant or remove the admin flag (RR-04, E-69). */
+    @Test
+    void coachesManagePersonsButNotTheAdminFlag() {
+        String petra = login("petra");
+        given().cookie("stv_session", petra).get("/api/persons").then().statusCode(200);
+        given().cookie("stv_session", petra).get("/api/persons/" + ALEX).then().statusCode(200);
+        String id = given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nora\",\"lastName\":\"Neu\"}")
+                .post("/api/persons").then().statusCode(201).body("admin", equalTo(false))
+                .extract().path("id");
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nora\",\"lastName\":\"Neu\",\"admin\":false}")
+                .put("/api/persons/" + id).then().statusCode(200);
+        // Granting the admin flag: 403, on create and on update (criterion 4)
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"X\",\"lastName\":\"Y\",\"admin\":true}")
+                .post("/api/persons").then().statusCode(403).body("title", equalTo("Keine Berechtigung"));
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Petra\",\"lastName\":\"Keller\",\"admin\":true}")
+                .put("/api/persons/" + PETRA).then().statusCode(403);
+        // Removing it: 403. Editing an admin without the flag keeps it.
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Alex\",\"lastName\":\"Admin\",\"admin\":false}")
+                .put("/api/persons/" + ALEX).then().statusCode(403);
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Alexandra\",\"lastName\":\"Admin\",\"email\":\"alex@example.ch\"}")
+                .put("/api/persons/" + ALEX).then().statusCode(200).body("admin", equalTo(true));
+        given().cookie("stv_session", alex).get("/api/persons").then()
                 .body("findAll { it.admin }", hasSize(1));
     }
 }

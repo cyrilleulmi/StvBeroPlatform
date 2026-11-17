@@ -23,6 +23,25 @@ public final class PersonRules {
         }
     }
 
+    /**
+     * The admin flag after a change. Only admins grant or remove it (RR-04, E-69). Coaches may create and edit
+     * persons, but the flag stays as it is: without a value it is kept, a different value is 403.
+     * For admins, a missing value means «no admin», as before.
+     *
+     * @param callerAdmin whether the person making the change is an admin
+     * @param wasAdmin    the flag so far ({@code false} for a new person)
+     * @param requested   the value in the input, may be {@code null}
+     */
+    public static boolean adminFlag(boolean callerAdmin, boolean wasAdmin, Boolean requested) {
+        if (callerAdmin) {
+            return Boolean.TRUE.equals(requested);
+        }
+        if (requested != null && requested != wasAdmin) {
+            throw DomainError.forbidden();
+        }
+        return wasAdmin;
+    }
+
     /** Strips surrounding whitespace; an empty text (e.g. an empty email) becomes {@code null}. */
     public static String clean(String text) {
         if (text == null) {

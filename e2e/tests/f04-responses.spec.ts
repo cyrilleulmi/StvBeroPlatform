@@ -229,7 +229,7 @@ test('F-04 K4 S3 ANM-04: API rejects «vielleicht» without comment with 422', a
   expect(error.fields[0].field).toBe('comment');
 });
 
-test('F-04 K6 S4 ANM-07: Comments only for coaches of the team and the person themselves', async ({
+test('F-04 K6 S4 ANM-07 F-12: Comments only for coaches and the person themselves', async ({
   page,
   browser,
 }) => {
@@ -248,9 +248,9 @@ test('F-04 K6 S4 ANM-07: Comments only for coaches of the team and the person th
   await login(petra, 'petra');
   await petra.goto(`/termine/${T01}`);
   await expect(petra.getByTestId(`overview-person-${MIA}`)).toContainText('«Krank»');
-  // RR-06: in Team 2 Petra is a player, she does not see the comments of Eva and Marc
-  await expect(petra.getByTestId(`overview-person-${EVA}`)).not.toContainText('Komme evtl. später');
-  await expect(petra.getByTestId('coach-block')).not.toContainText('Ferien');
+  // F-12: Petra is coach (of Team 1) and sees the comments of all teams, also Eva's and Marc's
+  await expect(petra.getByTestId(`overview-person-${EVA}`)).toContainText('«Komme evtl. später»');
+  await expect(petra.getByTestId('coach-block')).toContainText('Ferien');
   await petraContext.close();
 
   const marcContext = await browser.newContext();
@@ -258,7 +258,7 @@ test('F-04 K6 S4 ANM-07: Comments only for coaches of the team and the person th
   await login(marc, 'marc');
   await marc.goto(`/termine/${T01}`);
   await expect(marc.getByTestId(`overview-person-${EVA}`)).toContainText('«Komme evtl. später»');
-  await expect(marc.getByTestId(`overview-person-${MIA}`)).not.toContainText('Krank');
+  await expect(marc.getByTestId(`overview-person-${MIA}`)).toContainText('«Krank»');
   await marcContext.close();
 });
 
@@ -300,14 +300,16 @@ test('F-04 K8 S7 ANM-11 ANM-12: Petra enters «nicht dabei» for Nina', async ({
   await expect(nina).toContainText('eingetragen von Petra Keller');
   await expect(nina).toContainText('«Hat angerufen»');
   await expect(page.getByTestId(`overview-team-${TEAM_1}-counter`)).toContainText(counterText(5, 2, 0, 0));
-  // Coaches do not respond on behalf of other coaches or themselves
+  // Coaches do not respond on behalf of themselves, but for other coaches and in all teams (F-12)
   await expect(
     page.getByTestId('coach-block').getByRole('button', { name: /Antwort für .* eintragen/ }),
-  ).toHaveCount(0);
-  // RR-06: in Team 2 Petra is a player
+  ).toHaveCount(1);
   await expect(
-    page.getByTestId(`overview-team-${TEAM_2}`).getByRole('button', { name: /Antwort für .* eintragen/ }),
-  ).toHaveCount(0);
+    page.getByTestId('coach-block').getByRole('button', { name: 'Antwort für Marc Huber eintragen' }),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId(`overview-team-${TEAM_2}`).getByRole('button', { name: 'Antwort für Eva Steiner eintragen' }),
+  ).toBeVisible();
 
   // Nina sees who entered it
   const ninaContext = await browser.newContext();
@@ -369,12 +371,10 @@ test.describe('Response on behalf with a field error from the API', () => {
   });
 });
 
-test('F-04 K8 S8 RR-06: Marc cannot respond for Anna', async ({ page }) => {
+test('F-04 K8 S8 RR-06 F-12: Marc (coach of Team 2) can respond for Anna (Team 1)', async ({ page }) => {
   await login(page, 'marc');
   await page.goto(`/termine/${T01}`);
-  await expect(page.getByTestId(`overview-person-${ANNA}`)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Antwort für Anna Muster eintragen' })).toHaveCount(0);
-  // For Lea (also a player in Team 2) he can
+  await expect(page.getByRole('button', { name: 'Antwort für Anna Muster eintragen' })).toBeVisible();
   await expect(
     page
       .getByTestId(`overview-team-${TEAM_2}`)
@@ -384,7 +384,7 @@ test('F-04 K8 S8 RR-06: Marc cannot respond for Anna', async ({ page }) => {
   const response = await page.request.put(`/api/events/${T01}/responses/${ANNA}`, {
     data: { status: 'DECLINED' },
   });
-  expect(response.status()).toBe(403);
+  expect(response.status()).toBe(200);
 });
 
 test('F-04 K8 RR-02: Players respond on behalf of nobody', async ({ page }) => {

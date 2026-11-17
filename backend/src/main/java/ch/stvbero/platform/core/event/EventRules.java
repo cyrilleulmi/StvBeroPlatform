@@ -73,23 +73,23 @@ public final class EventRules {
     // ------------------------------------------------------------------ Permissions
 
     /**
-     * Create events and series: admins, or coach in at least one of the teams (TER-11, RR-03, RR-06).
-     * This way the coach of team 1 can create a joint practice with team 2 (TER-01).
+     * Create events and series: admins and coaches, for every team (TER-11, RR-03, RR-06, E-69).
+     * {@code allTeams}: the person is admin or coach in any team ({@code CurrentUser.allTeams()}).
      */
-    public static void checkCanCreate(boolean admin, Collection<TeamRole> teamRolesInTeams) {
-        if (!canEdit(admin, teamRolesInTeams)) {
+    public static void checkCanCreate(boolean allTeams, Collection<TeamRole> teamRolesInTeams) {
+        if (!canEdit(allTeams, teamRolesInTeams)) {
             throw DomainError.forbidden();
         }
     }
 
-    /** Edit and cancel: admins, or coach of a participating team (TER-11, RR-06). */
-    public static boolean canEdit(boolean admin, Collection<TeamRole> teamRolesInTeams) {
-        return admin || teamRolesInTeams.contains(TeamRole.COACH);
+    /** Edit and cancel: admins and coaches (TER-11, RR-03, RR-06). */
+    public static boolean canEdit(boolean allTeams, Collection<TeamRole> teamRolesInTeams) {
+        return allTeams || teamRolesInTeams.contains(TeamRole.COACH);
     }
 
-    /** View: members of a participating team (any team role) and admins (RR-02, RR-07). */
-    public static void checkCanView(boolean admin, Collection<TeamRole> teamRolesInTeams) {
-        if (!admin && teamRolesInTeams.isEmpty()) {
+    /** View: members of a participating team (any team role), coaches and admins (RR-02, RR-03, RR-07). */
+    public static void checkCanView(boolean allTeams, Collection<TeamRole> teamRolesInTeams) {
+        if (!allTeams && teamRolesInTeams.isEmpty()) {
             throw DomainError.forbidden();
         }
     }

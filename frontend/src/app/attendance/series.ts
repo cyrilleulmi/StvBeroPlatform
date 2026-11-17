@@ -201,13 +201,13 @@ export class SeriesPage {
     return TEXTS.events.joinTeams(s.teams.map((t) => t.name));
   });
 
-  /** Admins and coaches of a team of the series (TER-11, RR-06). */
+  /** Admins and coaches (of any team, E-69) (TER-11, RR-03). */
   protected readonly canEdit = computed(() => {
     const s = this.series();
     const me = this.auth.me();
     if (!s || !me) return false;
     return (
-      me.admin ||
+      this.auth.canManage() ||
       me.memberships.some((z) => z.teamRole === 'COACH' && s.teamIds.includes(z.team.id))
     );
   });

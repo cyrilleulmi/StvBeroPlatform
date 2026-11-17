@@ -125,18 +125,22 @@ class ResponsesTest {
         assertThat(json.getList("coaches.response"), everyItem(not(hasKey("comment"))));
     }
 
+    /** F-12: coaches see the comments of every team (RR-03, E-69), also where they are only a player. */
     @Test
-    void s4CoachSeesCommentsOnlyInOwnTeam() {
+    void s4CoachSeesCommentsOfAllTeams() {
         JsonPath json = overview(login("petra"), T01).statusCode(200).extract().jsonPath();
         assertThat(json.getString("teams[0].groups[0].entries[0].response.comment"), equalTo("Krank"));
-        // RR-06: Petra is a player in Team 2, does not see Eva's comment there, nor Marc's
-        assertThat(json.getMap("teams[1].groups[0].entries[1].response"), not(hasKey("comment")));
-        assertThat(json.getMap("coaches[1].response"), not(hasKey("comment")));
+        // Petra is only a player in Team 2, but coach in Team 1: coach rights everywhere (criterion 7)
+        assertThat(json.getString("teams[1].groups[0].entries[1].response.comment"), equalTo("Komme evtl. später"));
+        assertThat(json.getString("coaches[1].response.comment"), equalTo("Ferien"));
 
         JsonPath marc = overview(login("marc"), T01).statusCode(200).extract().jsonPath();
         assertThat(marc.getString("teams[1].groups[0].entries[1].response.comment"), equalTo("Komme evtl. später"));
-        assertThat(marc.getString("coaches[1].response.comment"), equalTo("Ferien"));
-        assertThat(marc.getMap("teams[0].groups[0].entries[0].response"), not(hasKey("comment")));
+        assertThat(marc.getString("teams[0].groups[0].entries[0].response.comment"), equalTo("Krank"));
+
+        // Ruth is coach of Team 3 only and still sees the overview with comments (F-12, criterion 1)
+        JsonPath ruth = overview(login("ruth"), T01).statusCode(200).extract().jsonPath();
+        assertThat(ruth.getString("teams[0].groups[0].entries[0].response.comment"), equalTo("Krank"));
     }
 
     @Test
@@ -152,8 +156,10 @@ class ResponsesTest {
     }
 
     @Test
-    void rr02OverviewOnlyForMembersOfTheTeams() {
-        overview(login("ruth"), T01).statusCode(403);
+    void rr02OverviewOnlyForMembersOfTheTeamsAndCoaches() {
+        // Tina is a player in Team 3 only
+        overview(login("tina"), T01).statusCode(403);
+        overview(login("ruth"), T01).statusCode(200);
         overview(login("anna"), "40000000-0000-4000-8000-000000000099").statusCode(404);
     }
 
@@ -291,25 +297,26 @@ class ResponsesTest {
         respond(petra, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200).body("lateCancellation", equalTo(true));
     }
 
+    /** F-12: coaches respond on behalf of anyone in the event, players for nobody (RR-03, E-69). */
     @Test
-    void s8NoRespondingOnBehalfForOtherTeams() {
+    void s8CoachesRespondOnBehalfInAllTeams() {
         String marc = login("marc");
-        respond(marc, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(403)
-                .contentType("application/problem+json").body("rule", equalTo("RR-07"));
-        // Lea is also a player in Team 2: Marc may
-        respond(marc, T01, LEA, "{\"status\":\"DECLINED\"}").statusCode(200);
-        // Not for coaches (Petra is a player in Team 2: that works)
+        // Marc is coach of Team 2 only and responds for Anna of Team 1 (criterion 1)
+        respond(marc, T01, ANNA, "{\"status\":\"DECLINED\"}").statusCode(200)
+                .body("enteredBy.lastName", equalTo("Huber"));
         respond(marc, T01, PETRA, "{\"status\":\"DECLINED\"}").statusCode(200);
-        respond(login("petra"), T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // RR-06: Petra is only a player in Team 2
-        respond(login("petra"), T01, EVA, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Petra is only a player in Team 2 but coach in Team 1: she may for Eva and Marc (criterion 7)
+        respond(login("petra"), T01, EVA, "{\"status\":\"ATTENDING\"}").statusCode(200);
+        respond(login("petra"), T01, MARC, "{\"status\":\"ATTENDING\"}").statusCode(200);
+        // Ruth is coach of Team 3 only, which is not part of event 01
+        respond(login("ruth"), T01, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(200);
         // Players respond for nobody
-        respond(login("anna"), T01, MIA, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Not a member of an involved team
-        respond(login("ruth"), T01, ANNA, "{\"status\":\"ATTENDING\"}").statusCode(403);
-        // Anna's response is unchanged
-        given().cookie("stv_session", login("anna")).get("/api/events/" + T01).then()
-                .body("myResponse.status", equalTo("ATTENDING"));
+        respond(login("anna"), T01, MIA, "{\"status\":\"ATTENDING\"}").statusCode(403)
+                .contentType("application/problem+json").body("rule", equalTo("RR-07"));
+        respond(login("lea"), T01, MIA, "{\"status\":\"ATTENDING\"}").statusCode(403);
+        // Mia's response is unchanged
+        given().cookie("stv_session", login("mia")).get("/api/events/" + T01).then()
+                .body("myResponse.status", equalTo("DECLINED"));
     }
 
     @Test

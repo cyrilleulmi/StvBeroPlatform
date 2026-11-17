@@ -302,7 +302,7 @@ export const TEXTS = {
   lines: {
     title: 'Linien',
     backTo: (team: string) => `Zurück zu ${team}`,
-    readOnly: 'Nur Coaches des Teams können die Einteilung ändern.',
+    readOnly: 'Nur Coaches können die Einteilung ändern.',
     noLine: 'Ohne Linie',
     goalies: 'Goalies',
     empty: 'Noch niemand eingeteilt.',
@@ -410,6 +410,7 @@ export const TEXTS = {
     remove: (name: string) => `${name} entfernen`,
     removed: (name: string) => `${name} ist nicht mehr im Team.`,
     allTeams: 'Alle Teams',
+    viewTeam: 'Team ansehen',
     personRequired: 'Bitte eine Person wählen.',
     nameRequired: 'Bitte einen Namen eingeben.',
   },

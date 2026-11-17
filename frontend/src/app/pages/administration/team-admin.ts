@@ -43,6 +43,7 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
   templateUrl: './team-admin.html',
   styleUrl: '../page.css',
   styles: `
+    .team-link,
     form .button {
       justify-self: start;
     }
@@ -123,7 +124,7 @@ export class TeamAdmin {
     effect(() => {
       const teamId = this.teamId();
       const seasonId = this.season();
-      if (this.auth.isAdmin()) {
+      if (this.auth.canManage()) {
         untracked(() => void this.load(teamId, seasonId));
       }
     });

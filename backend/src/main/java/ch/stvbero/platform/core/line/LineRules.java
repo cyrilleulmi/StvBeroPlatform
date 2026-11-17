@@ -39,16 +39,19 @@ public final class LineRules {
     private LineRules() {
     }
 
-    /** Managing lines and assigning players: coach of the team or admin (LIN-07, RR-03, RR-07). */
-    public static void checkCanEdit(boolean admin, TeamRole teamRoleInTeam) {
-        if (!admin && teamRoleInTeam != TeamRole.COACH) {
+    /**
+     * Managing lines and assigning players: coaches and admins, in every team (LIN-07, RR-03, RR-07).
+     * {@code allTeams}: the person is admin or coach in any team ({@code CurrentUser.allTeams()}).
+     */
+    public static void checkCanEdit(boolean allTeams, TeamRole teamRoleInTeam) {
+        if (!allTeams && teamRoleInTeam != TeamRole.COACH) {
             throw DomainError.forbidden();
         }
     }
 
-    /** Viewing the lineup: members of the team (any team role) and admins. */
-    public static void checkCanView(boolean admin, TeamRole teamRoleInTeam) {
-        if (!admin && teamRoleInTeam == null) {
+    /** Viewing the lineup: members of the team (any team role), coaches and admins. */
+    public static void checkCanView(boolean allTeams, TeamRole teamRoleInTeam) {
+        if (!allTeams && teamRoleInTeam == null) {
             throw DomainError.forbidden();
         }
     }

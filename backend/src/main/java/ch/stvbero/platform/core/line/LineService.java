@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Lines and goalies of a team in the current season (LIN). The coaches of the team and admins may manage
+ * Lines and goalies of a team in the current season (LIN). Coaches (of any team, E-69) and admins may manage
  * them (LIN-07, RR-03); all members of the team may view them.
  */
 @ApplicationScoped
@@ -49,7 +49,7 @@ public class LineService {
 
     public TeamDetailDto.Lineup get(CurrentUser user, UUID teamId) {
         Context ctx = context(user, teamId);
-        LineRules.checkCanView(user.admin(), ctx.myTeamRole());
+        LineRules.checkCanView(user.allTeams(), ctx.myTeamRole());
         return lineup(ctx.team(), ctx.season(), ctx.memberships());
     }
 
@@ -100,9 +100,10 @@ public class LineService {
         return GroupDto.of(group);
     }
 
-    /** Deletes a line. Its players then have no line (LIN-06). The goalies stay (LIN-05). */
+    /** Deletes a line. Its players then have no line (LIN-06). The goalies stay (LIN-05). Admins only (RR-08). */
     @Transactional
     public void delete(CurrentUser user, UUID teamId, UUID groupId) {
+        user.checkAdmin();
         Context ctx = editable(user, teamId);
         List<Group> groups = Group.of(ctx.team(), ctx.season());
         Group group = find(groups, groupId);
@@ -184,7 +185,7 @@ public class LineService {
         TeamRole mine = memberships.stream().filter(m -> m.person.id.equals(user.personId()))
                 .map(m -> m.teamRole).findFirst().orElse(null);
         if (!team.belongsTo(season)) {
-            LineRules.checkCanView(user.admin(), mine);
+            LineRules.checkCanView(user.allTeams(), mine);
             throw DomainError.notFound("Dieses Team gibt es in der Saison " + season.name + " nicht.");
         }
         return new Context(team, season, memberships, mine);
@@ -192,7 +193,7 @@ public class LineService {
 
     private Context editable(CurrentUser user, UUID teamId) {
         Context ctx = context(user, teamId);
-        LineRules.checkCanEdit(user.admin(), ctx.myTeamRole());
+        LineRules.checkCanEdit(user.allTeams(), ctx.myTeamRole());
         ctx.season().checkWritable();
         return ctx;
     }

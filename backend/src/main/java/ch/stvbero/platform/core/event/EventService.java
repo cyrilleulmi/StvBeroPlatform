@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Create, change, reschedule and cancel events (TER). Coaches of a participating team and admins may create
- * and edit (TER-11, RR-06); all members of the participating teams may view.
+ * Create, change, reschedule and cancel events (TER). Coaches (of any team, E-69) and admins may create and edit
+ * (TER-11, RR-03, RR-06); all members of the participating teams may view.
  */
 @ApplicationScoped
 public class EventService {
@@ -45,7 +45,8 @@ public class EventService {
 
     /**
      * Events of the caller's own teams (TER-13). Upcoming ones ascending from "now", past ones descending.
-     * Own teams means: member of a participating team in the season of the event.
+     * Own teams means: member of a participating team in the season of the event. With a team filter, admins
+     * and coaches see the events of that team even without being a member (RR-03, E-69).
      */
     public List<EventSummaryDto> list(CurrentUser user, LocalDate from, LocalDate to, UUID teamId, EventType type,
                                      String view) {
@@ -56,11 +57,16 @@ public class EventService {
         Instant now = clock.now();
         StringBuilder jpql = new StringBuilder("""
                 select distinct t from Event t left join fetch t.teams join fetch t.season
-                where exists (select z.id from TeamMembership z
-                              where z.person.id = :person and z.season = t.season and z.team member of t.teams)
+                where 1 = 1
                 """);
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("person", user.personId());
+        if (teamId == null || !user.allTeams()) {
+            jpql.append("""
+                     and exists (select z.id from TeamMembership z
+                                 where z.person.id = :person and z.season = t.season and z.team member of t.teams)
+                    """);
+            parameters.put("person", user.personId());
+        }
         parameters.put("now", now);
         jpql.append(past ? " and t.end <= :now" : " and t.end > :now");
         if (from != null) {
@@ -91,7 +97,7 @@ public class EventService {
         Event event = find(eventId);
         EventReader reader = new EventReader(em, user, List.of(event));
         Set<TeamRole> mine = reader.myTeamRoles(event);
-        EventRules.checkCanView(user.admin(), mine);
+        EventRules.checkCanView(user.allTeams(), mine);
         return reader.full(event, canEdit(user, event, mine));
     }
 
@@ -102,7 +108,7 @@ public class EventService {
         Instant end = input.end().toInstant();
         Set<Team> teams = teams(input.teamIds());
         Season season = seasonOn(EventRules.date(start), null);
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, teams, season));
+        EventRules.checkCanCreate(user.allTeams(), teamRoles(user, teams, season));
         checkInput(input.type(), start, end, teams, season);
         Event event = Event.create();
         event.season = season;
@@ -118,14 +124,14 @@ public class EventService {
     @Transactional
     public EventDto update(CurrentUser user, UUID eventId, EventInput input) {
         Event event = find(eventId);
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, event.teams, event.season));
+        EventRules.checkCanCreate(user.allTeams(), teamRoles(user, event.teams, event.season));
         EventRules.checkChangeable(event.status, event.end, clock.now());
         Instant start = input.start().toInstant();
         Instant end = input.end().toInstant();
         Set<Team> teams = teams(input.teamIds());
         Season season = seasonOn(EventRules.date(start), event.season);
         // After the change, the person must still be coach of a participating team.
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, teams, season));
+        EventRules.checkCanCreate(user.allTeams(), teamRoles(user, teams, season));
         checkInput(input.type(), start, end, teams, season);
         List<Match> matches = event.type == EventType.MATCH_DAY ? Match.of(event.id) : List.of();
         EventRules.checkTypeChange(event.type, input.type(), !matches.isEmpty() || CallUp.findById(event.id) != null);
@@ -159,7 +165,7 @@ public class EventService {
     @Transactional
     public EventDto cancel(CurrentUser user, UUID eventId, String reason) {
         Event event = find(eventId);
-        EventRules.checkCanCreate(user.admin(), teamRoles(user, event.teams, event.season));
+        EventRules.checkCanCreate(user.allTeams(), teamRoles(user, event.teams, event.season));
         EventRules.checkChangeable(event.status, event.end, clock.now());
         event.season.checkWritable();
         event.status = EventStatus.CANCELLED;
@@ -214,7 +220,7 @@ public class EventService {
     }
 
     private boolean canEdit(CurrentUser user, Event event, Set<TeamRole> mine) {
-        return EventRules.canEdit(user.admin(), mine) && event.status == EventStatus.PLANNED
+        return EventRules.canEdit(user.allTeams(), mine) && event.status == EventStatus.PLANNED
                 && !event.isOver(clock.now()) && !event.season.isArchived();
     }
 

@@ -49,6 +49,7 @@ The seed grows with the features. What is in the seed today:
 | F-05 | Matches 01–03 and the call-ups of events 04 (draft) and 05 (published on 15.11.2026 21:00) as in the tables below. Matches 01 and 02 come from swiss unihockey (SU match ID `5000001` and `5000002`), match 03 was entered manually. No results yet |
 | F-06 | Notifications 01–18 as in the table "Notifications" below. No reminders yet |
 | F-07 | No new records. Team 1 is linked with team ID `900001`; after reset the simulator delivers exactly matches 01 and 02 (see [Simulated swiss unihockey data](#simulated-swiss-unihockey-data)) |
+| F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
 
@@ -263,7 +264,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S5 | Late cancellation | Clock to 16.11.2026 19:00. As `anna` change to «nicht dabei» for event 01 | Response with `lateCancellation: true`, Petra sees «kurzfristig abgemeldet» for Anna (F-04). Petra (coach Team 1) receives «Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.», Marc does not (assumption O-17) | ANM-10, BEN-02 |
 | S6 | Reminder | Clock to 16.11.2026 06:31 | Nina and Ella receive a reminder for event 01, nobody else. Set the clock again (e.g. 07:00): no further one | BEN-01, BEN-13 |
 | S7 | Respond on behalf | As `petra` enter «nicht dabei» for Nina for event 01 | Saved, «eingetragen von Petra Keller» is visible for Nina | ANM-11, ANM-12 |
-| S8 | No responding on behalf for other teams | As `marc` try to respond for Anna for event 01 | Action not offered, API answers 403 | RR-06 |
+| S8 | Responding on behalf for other teams | As `marc` respond for Anna for event 01; as `anna` try to respond for Mia | Marc: saved, «eingetragen von Marc Huber» (F-12). Anna: action not offered, API 403 | RR-03, RR-06 |
 | S9 | Publish call-up | As `petra` event 04 → call-up → publish | Anna sees «aufgeboten», Kim «nicht aufgeboten». All 7 players of Team 1 are notified, Kim with «nicht aufgeboten» | AUF-23, AUF-24 |
 | S10 | Called-up player withdraws | As `eva` change to «nicht dabei» for event 05 | Marc receives «Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.» | AUF-26, BEN-04 |
 | S32 | Open a notification | As `anna` open `/benachrichtigungen`, tap the entry for event 03 | Event 03 opens, the counter in the navigation disappears, the entry is read | BEN-12 |
@@ -272,17 +273,17 @@ Every scenario starts with `POST /api/test/reset`.
 | S13 | Cancelled event | As `anna` open event 03 | Recognizable as cancelled, with reason. Responding not possible | TER-06 |
 | S14 | Change line | As `petra` assign Kim to Linie 2 in Team 1 | Kim appears in event 01 under Linie 2 of Team 1, «Ohne Linie» is empty and not shown | LIN-07, LIN-06 |
 | S15 | One line per team | As `petra` additionally assign Anna to Linie 2 in Team 1 | Anna moves to Linie 2 and is no longer in Linie 1 | LIN-02 |
-| S24 | Delete line | As `petra` at `/teams/<Team 1>/linien` confirm «Linie 2 löschen» | Sara and Nina are listed under «Ohne Linie», Linie 1 and Goalies unchanged | LIN-06, LIN-07 |
-| S25 | Goalies stay | As `petra` try to delete the goalies of Team 1 (`DELETE /api/teams/<Team 1>/groups/<Gruppe 03>`) | UI does not offer it, API 409 with rule LIN-05 | LIN-05 |
-| S26 | Lines read-only | As `anna` open `/teams/<Team 1>/linien`; as `marc` the same | Anna sees the assignment without controls. Marc: «Keine Berechtigung», API 403 | LIN-07, RR-07 |
+| S24 | Delete line | As `alex` at `/teams/<Team 1>/linien` confirm «Linie 2 löschen» (Petra does not see the button, F-12) | Sara and Nina are listed under «Ohne Linie», Linie 1 and Goalies unchanged | LIN-06, LIN-07 |
+| S25 | Goalies stay | As `alex` try to delete the goalies of Team 1 (`DELETE /api/teams/<Team 1>/groups/<Gruppe 03>`) | UI does not offer it, API 409 with rule LIN-05 | LIN-05 |
+| S26 | Lines read-only | As `anna` open `/teams/<Team 1>/linien`; as `marc` the same | Anna sees the assignment without controls. Marc (coach of Team 2) assigns and renames, but sees no «löschen» (F-12) | LIN-07, RR-03, RR-08 |
 | S16 | Archive | As `alex` at `/verwaltung/saisons` click «Teams ansehen» for 2025/26, open Team 1 | Notice «Archiv: nur lesend», Vera visible as player, no editing possible (API 409). Vera sees event 08 under `/termine?ansicht=vergangen` | SAI-02 |
 | S17 | Login in test mode | Open `/profil` without login, choose «Petra Keller» on `/dev-login` | Redirect to `/dev-login?ziel=%2Fprofil`, afterwards back to `/profil` | F-00 |
-| S18 | Tiles by role | As `anna` and as `alex` open `/` | Both see the tile «Anwesenheit». Only `alex` has «Verwaltung» in the navigation | NF-12, RR-05 |
+| S18 | Tiles by role | As `anna` and as `alex` open `/` | Both see the tile «Anwesenheit». Only `alex` has «Verwaltung» in the navigation (coaches such as `petra` too, F-12) | NF-12, RR-05 |
 | S20 | Dual role | As `petra` open `/teams` | Team 1 «Coach», Team 2 «Spielerin». In Team 2 Petra is listed among the players, in Team 1 among the coaches | PTF-04, PTF-07, PTF-12 |
 | S21 | New season | As `alex` at `/verwaltung/saisons` create 2027/28 with carry-over from 2026/27, make it current | Teams and memberships taken over, 2026/27 becomes archive | SAI-04, SAI-06 |
 | S22 | One team role per team | As `alex` try to add Petra to Team 1 again | UI: «(schon im Team)», not selectable. API: 409 with rule PTF-04 | PTF-04 |
 | S23 | No current season | `DELETE /api/test/current-season`, as `anna` open `/teams` | Redirect to `/keine-saison?ziel=%2Fteams` with notice «Noch keine aktuelle Saison», `GET /api/me` answers 409 with rule SAI-03 | SAI-03 |
-| S27 | Event for two teams | As `petra` at `/termine/neu` create an event for Team 1 + Team 2 | Appears for `anna` and `eva`. As `marc` only for Team 1: API 403 | TER-01, TER-11 |
+| S27 | Event for two teams | As `petra` at `/termine/neu` create an event for Team 1 + Team 2 | Appears for `anna` and `eva`. As `anna` (player): API 403 | TER-01, TER-11 |
 | S28 | Exclude holidays | As `petra` add exception 30.11.–06.12.2026 to series 01 | Practice Tue 01.12. disappears (no responses). With a response: cancelled with the reason of the exception | TER-07 |
 | S29 | Reschedule series event | As `petra` move event 02 to Fri 20.11. 19:00 | «verschoben», series 02 unchanged, Thu 26.11. stays | TER-06 |
 | S30 | Create match day | As `petra` at `/termine/neu` kind «Spieltag», Team 1, venue with Google Maps link, meeting point, notes, two matches | Event shows matches by start time, meeting point and «In Google Maps öffnen» (new tab) | AUF-10–AUF-16 |
@@ -292,3 +293,5 @@ Every scenario starts with `POST /api/test/reset`.
 | S35 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. Trigger sync | Message «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nothing changed | SUH-09 |
 | S19 | Theme | As `anna` at `/profil` choose «GitHub Dark», reload | Stays dark. «System» follows the system setting: light «Hell», dark «GitHub Dark» | NF-06, NF-08 |
 | S36 | Theme Düne | As `anna` at `/profil` choose «Düne», go to `/`, reload | `data-theme` on the document is `dune`, the colors also apply when the system is dark, and stay after reload. No contrast finding | NF-08 |
+| S37 | Coach manages another team | As `marc` (coach of Team 2): `/termine?team=<Team 1>`, open event 02, «Termin bearbeiten», save; `/verwaltung/teams/<Team 1>` → «Team ansehen» → «Linien einteilen», assign Anna to Linie 2; event 01: «Antwort für Nina Roth eintragen» | All saved, Mia's comment «Krank» visible in event 01 | RR-03, E-69 |
+| S38 | Coach does not delete | As `petra`: `/teams/<Team 1>/linien`, `/verwaltung/teams/<Team 1>`, `/verwaltung/personen/<Anna>` | No «löschen», no «<Name> entfernen», no section «swiss unihockey», no admin checkbox; `/verwaltung` without «Saisons». API: delete line and remove member 403 | RR-04, RR-08 |

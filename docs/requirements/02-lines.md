@@ -14,7 +14,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | LIN-04 | The limit of one line is implemented as a rule, not as a fixed structure. «Several lines per player» should be possible later without rebuilding the model. | Accepted |
 | LIN-05 | Per team, goalies form their own group next to the lines. A player is either in a line or with the goalies. | Accepted |
 | LIN-06 | Players without an assignment appear under «Ohne Linie» (no line). | Accepted |
-| LIN-07 | A team's coach manages its lines: create, rename and delete lines and assign players by drag and drop. On the phone this must also work without drag and drop (touch). | Accepted |
+| LIN-07 | Coaches (of any team, RR-03) manage the lines: create, rename and reorder lines and assign players by drag and drop. Deleting a line is for admins only (RR-08). On the phone this must also work without drag and drop (touch). | Accepted |
 | LIN-08 | There are only standard lines. Different lines for a single event are not needed. | Decided |
 | LIN-09 | Lines have a name and an order (Linie 1, Linie 2, …). The order determines the display. | Assumption |
 | LIN-10 | Only people with the team role «Spielerin» (player) in the respective team can be assigned to a line or to the goalies. | Assumption |

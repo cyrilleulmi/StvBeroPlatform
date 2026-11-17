@@ -18,7 +18,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | TER-08 | Changes to a series apply to future events. Responses already given are kept. | Assumption |
 | TER-09 | Events have a response deadline: X hours before the start. It controls reminders and what counts as late (see [04](04-responses.md) and [08](08-notifications.md)). | Accepted |
 | TER-10 | The response deadline can be set per event or series, with a sensible default. | Assumption |
-| TER-11 | The coach of a participating team can create, edit and cancel events. | Accepted |
+| TER-11 | Coaches (of any team, RR-03) can create, edit and cancel events. | Accepted |
 | TER-12 | If an event is cancelled or moved, everyone affected is notified. | Assumption |
 | TER-13 | Each person sees the upcoming events of all their teams in one list, with their own response. | Assumption |
 

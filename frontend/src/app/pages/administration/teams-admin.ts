@@ -28,7 +28,7 @@ import { TEXTS } from '../../core/texts';
       <a class="back" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
       <h1>{{ texts.teamAdmin.title }}</h1>
     </div>
-    @if (!auth.isAdmin()) {
+    @if (!auth.canManage()) {
       <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       <div class="field">
@@ -165,7 +165,7 @@ export class TeamsAdmin {
   constructor() {
     effect(() => {
       const id = this.season();
-      if (this.auth.isAdmin()) {
+      if (this.auth.canManage()) {
         untracked(() => void this.load(id));
       }
     });

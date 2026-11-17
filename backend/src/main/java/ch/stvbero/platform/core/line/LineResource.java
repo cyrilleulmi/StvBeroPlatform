@@ -90,7 +90,7 @@ public class LineResource {
 
     @DELETE
     @Path("/groups/{groupId}")
-    @Operation(operationId = "deleteLine", summary = "Delete a line (coach). Its players then have no line. Goalies cannot be deleted (409).")
+    @Operation(operationId = "deleteLine", summary = "Delete a line (admin only, RR-08). Its players then have no line. Goalies cannot be deleted (409).")
     @APIResponse(responseCode = "204", description = "Deleted")
     @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))

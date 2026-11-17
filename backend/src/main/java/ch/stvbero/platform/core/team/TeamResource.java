@@ -38,7 +38,7 @@ public class TeamResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "listTeams", summary = "Teams of a season. Without admin permission only the person's own teams.")
+    @Operation(operationId = "listTeams", summary = "Teams of a season. Admins and coaches get all teams, players only their own.")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = TeamDto.class)))
     @APIResponse(responseCode = "401", description = "Not logged in",
@@ -50,7 +50,7 @@ public class TeamResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "createTeam", summary = "Create a team (admin)")
+    @Operation(operationId = "createTeam", summary = "Create a team (admin, coach)")
     @APIResponse(responseCode = "201", description = "Created",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -83,7 +83,7 @@ public class TeamResource {
     @Path("/{teamId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "renameTeam", summary = "Rename a team (admin)")
+    @Operation(operationId = "renameTeam", summary = "Rename a team (admin, coach)")
     @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -103,7 +103,7 @@ public class TeamResource {
     @Path("/{teamId}/members")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "addMember", summary = "Add a person with a team role to the team (PTF-03, PTF-04, admin)")
+    @Operation(operationId = "addMember", summary = "Add a person with a team role to the team (PTF-03, PTF-04, admin, coach)")
     @APIResponse(responseCode = "201", description = "Aufgenommen",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamMembershipDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -123,7 +123,7 @@ public class TeamResource {
     @Path("/{teamId}/members/{personId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "changeTeamRole", summary = "Change the team role (admin)")
+    @Operation(operationId = "changeTeamRole", summary = "Change the team role (admin, coach)")
     @APIResponse(responseCode = "200", description = "Updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TeamMembershipDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -142,7 +142,7 @@ public class TeamResource {
 
     @DELETE
     @Path("/{teamId}/members/{personId}")
-    @Operation(operationId = "removeMember", summary = "Remove a person from the team (admin). Existing responses are kept.")
+    @Operation(operationId = "removeMember", summary = "Remove a person from the team (admin only, RR-08). Existing responses are kept.")
     @APIResponse(responseCode = "204", description = "Removed")
     @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))

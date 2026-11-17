@@ -17,7 +17,7 @@ import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** People (admin, PTF-11): list with search (`?suche=`), entry point to create and edit. */
+/** People (admins and coaches, PTF-11, E-69): list with search (`?suche=`), entry point to create and edit. */
 @Component({
   selector: 'app-people',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,7 +27,7 @@ import { TEXTS } from '../../core/texts';
       <a class="back" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
       <h1>{{ texts.people.title }}</h1>
     </div>
-    @if (!auth.isAdmin()) {
+    @if (!auth.canManage()) {
       <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       <a class="button button-primary create" routerLink="/verwaltung/personen/neu">{{
@@ -100,7 +100,7 @@ export class People {
   constructor() {
     effect(() => {
       const searchQuery = this.searchQuery();
-      if (this.auth.isAdmin()) {
+      if (this.auth.canManage()) {
         untracked(() => void this.load(searchQuery));
       }
     });

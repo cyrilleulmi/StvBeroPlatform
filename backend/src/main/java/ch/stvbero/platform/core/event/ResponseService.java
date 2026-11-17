@@ -70,14 +70,14 @@ public class ResponseService {
             respondent = user.personId();
             enteredBy = null;
         } else {
-            EventRules.checkCanView(user.admin(), mine.values());
+            EventRules.checkCanView(user.allTeams(), mine.values());
             Person.<Person>findByIdOptional(personId)
                     .orElseThrow(() -> DomainError.notFound("Diese Person gibt es nicht."));
             Map<UUID, TeamRole> theirs = teamRoles(members, personId);
-            if (theirs.isEmpty() && (user.admin() || mine.containsValue(TeamRole.COACH))) {
+            if (theirs.isEmpty() && (user.allTeams() || mine.containsValue(TeamRole.COACH))) {
                 throw DomainError.notFound("Diese Person gehört zu keinem Team dieses Termins.");
             }
-            ResponseRules.checkCanRespondOnBehalf(user.admin(), mine, theirs);
+            ResponseRules.checkCanRespondOnBehalf(user.allTeams(), mine, theirs);
             respondent = personId;
             enteredBy = user.personId();
         }
@@ -115,7 +115,7 @@ public class ResponseService {
         Event event = EventService.find(eventId);
         List<TeamMembership> members = members(event);
         Map<UUID, TeamRole> mine = teamRoles(members, user.personId());
-        EventRules.checkCanView(user.admin(), mine.values());
+        EventRules.checkCanView(user.allTeams(), mine.values());
 
         Map<UUID, Stored> responses = responses(event.id);
         Map<UUID, PersonSummary> persons = new HashMap<>();
@@ -126,7 +126,7 @@ public class ResponseService {
         List<OverviewDto.CoachEntry> coaches = new ArrayList<>();
         Set<UUID> allPlayers = new LinkedHashSet<>();
         for (OverviewDto.TeamName team : teams) {
-            boolean commentsVisible = ResponseRules.commentVisible(user.admin(), false, mine.get(team.id()));
+            boolean commentsVisible = ResponseRules.commentVisible(user.allTeams(), false, mine.get(team.id()));
             List<TeamMembership> inTeam = members.stream().filter(m -> m.team.id.equals(team.id())).toList();
             List<TeamMembership> players = inTeam.stream().filter(m -> m.teamRole == TeamRole.PLAYER).toList();
             players.forEach(m -> allPlayers.add(m.person.id));

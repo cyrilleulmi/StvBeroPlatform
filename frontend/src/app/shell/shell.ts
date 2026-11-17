@@ -49,7 +49,8 @@ export class Shell {
       { route: '/teams', text: n.teams, icon: 'users', exact: false },
       { route: '/profil', text: n.profile, icon: 'user', exact: false },
     ];
-    if (this.auth.isAdmin()) {
+    // Admins and coaches (RR-03, RR-05, E-69)
+    if (this.auth.canManage()) {
       list.push({ route: '/verwaltung', text: n.administration, icon: 'shield', exact: false });
     }
     return list;
