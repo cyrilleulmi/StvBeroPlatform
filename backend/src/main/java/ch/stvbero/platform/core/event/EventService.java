@@ -98,7 +98,7 @@ public class EventService {
         EventReader reader = new EventReader(em, user, List.of(event));
         Set<TeamRole> mine = reader.myTeamRoles(event);
         EventRules.checkCanView(user.allTeams(), mine);
-        return reader.full(event, canEdit(user, event, mine));
+        return reader.full(event, canEdit(user, event, mine), clock.now());
     }
 
     /** Create a single event, also for several teams (TER-01, TER-04, TER-11). */
@@ -241,6 +241,9 @@ public class EventService {
         event.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
         event.meetingPointTime = input.meetingPoint() == null ? null : input.meetingPoint().time().toInstant();
         event.meetingPointLocation = input.meetingPoint() == null ? null : input.meetingPoint().location().strip();
+        if (input.attendanceCheck() != null) {
+            event.attendanceCheck = input.attendanceCheck();
+        }
         event.teams.clear();
         event.teams.addAll(teams);
     }

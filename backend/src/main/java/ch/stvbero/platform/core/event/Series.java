@@ -63,6 +63,10 @@ public class Series extends PanacheEntityBase {
     @Column(name = "response_deadline_hours")
     public int responseDeadlineHours = EventRules.DEFAULT_RESPONSE_DEADLINE;
 
+    /** Switch «Präsenz erfassen» for all events of the series (PRS-01). */
+    @Column(name = "attendance_check")
+    public boolean attendanceCheck;
+
     @ManyToMany
     @JoinTable(name = "series_team",
             joinColumns = @JoinColumn(name = "series_id"),

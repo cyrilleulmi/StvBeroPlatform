@@ -25,6 +25,11 @@ export const ATTENDANCE_ROUTES: Routes = [
     loadComponent: () => import('./call-up').then((m) => m.CallUpPage),
   },
   {
+    path: ':eventId/praesenz',
+    title: title('Präsenz erfassen'),
+    loadComponent: () => import('./attendance-check').then((m) => m.AttendanceCheckPage),
+  },
+  {
     path: ':eventId/bearbeiten',
     title: title('Termin bearbeiten'),
     loadComponent: () => import('./event-form').then((m) => m.EventForm),

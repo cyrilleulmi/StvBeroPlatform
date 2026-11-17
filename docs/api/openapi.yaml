@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: StvBeroPlatform API
   version: 0.1.0
-  summary: REST API of the core (persons, teams, lines, events, responses, match days, call-up).
+  summary: REST API of the core (persons, teams, lines, events, responses, match days, call-up, attendance check).
   description: |
     Contract between frontend, backend and test agents. **Contract first:** changes to the API
     are made here first, then implemented. Conventions: [README.md](README.md).
@@ -37,6 +37,8 @@ tags:
     description: Responses, overview (ANM)
   - name: MatchDays
     description: Matches and call-up (AUF)
+  - name: Attendance
+    description: Attendance check (PRS)
   - name: SwissUnihockey
     description: swiss unihockey integration (SUH)
   - name: Notifications
@@ -911,6 +913,53 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  # ---------------------------------------------------------------- Attendance check
+  /api/events/{eventId}/attendance:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Attendance]
+      operationId: getAttendance
+      summary: Attendance with all players of the involved teams, grouped, with response and attendance (PRS-03, coach)
+      description: |
+        Only coaches (of any team, E-69) and admins (otherwise 403, PRS-10). Check switched off: 409 (rule PRS-07).
+        Cancelled: 409 (rule PRS-09). Before the start: 409 (rule PRS-02). Coaches are not part of the list (PRS-05).
+        Groups as in the overview; empty groups are left out. Without a recorded value the status is the
+        preselection: «dabei» → PRESENT, everything else → ABSENT (`recorded: false`).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attendance' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    put:
+      tags: [Attendance]
+      operationId: recordAttendance
+      summary: Save or correct the attendance (PRS-03, PRS-04, coach)
+      description: |
+        Sets the status of the given players; players not in the list keep their earlier value (PRS-04). Stores who
+        saved and when; the last value counts. Coaches or persons outside the teams: 422 (rule PRS-05). A person twice:
+        400. Same 409 cases as GET, plus an archived season (SAI-02). Responses are not changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AttendanceInput' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attendance' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+
   # ---------------------------------------------------------------- swiss unihockey
   /api/teams/{teamId}/swiss-unihockey:
     parameters:
@@ -1287,6 +1336,10 @@ components:
     MyCallUp:
       type: string
       enum: [NO_CALL_UP_YET, CALLED_UP, NOT_CALLED_UP]
+    AttendanceStatus:
+      type: string
+      description: «anwesend», «abwesend», «entschuldigt» (PRS-03)
+      enum: [PRESENT, ABSENT, EXCUSED]
     MatchSource:
       type: string
       enum: [MANUAL, SWISS_UNIHOCKEY]
@@ -1556,6 +1609,18 @@ components:
                 - type: 'null'
               description: Only for MATCH_DAY and team role PLAYER
             canEdit: { type: boolean, description: For showing coach actions }
+            attendanceCheck: { type: boolean, description: 'Switch «Präsenz erfassen» (PRS-01)' }
+            attendanceRecorded:
+              type: boolean
+              description: Only for coaches and admins. Attendance has been saved (PRS-08), also while the check is off.
+            canRecordAttendance:
+              type: boolean
+              description: Coach or admin, check on, not cancelled, started, season not archived (PRS-02)
+            myAttendance:
+              oneOf:
+                - $ref: '#/components/schemas/AttendanceStatus'
+                - type: 'null'
+              description: Own recorded attendance; only for team role PLAYER, with the check on and a recorded value (PRS-06)
     EventInput:
       type: object
       required: [type, title, start, end, teamIds]
@@ -1579,6 +1644,9 @@ components:
           oneOf:
             - $ref: '#/components/schemas/MeetingPoint'
             - type: 'null'
+        attendanceCheck:
+          type: boolean
+          description: 'Switch «Präsenz erfassen» (PRS-01). Missing: off for a new event, unchanged for an existing one.'
 
     Series:
       allOf:
@@ -1620,6 +1688,9 @@ components:
             - $ref: '#/components/schemas/Location'
             - type: 'null'
         responseDeadlineHours: { type: integer, minimum: 0, maximum: 336, default: 24, description: 'Hours before the start (TER-09, TER-10)' }
+        attendanceCheck:
+          type: boolean
+          description: 'Switch «Präsenz erfassen» for all events of the series (PRS-01). Missing: off for a new series, unchanged for an existing one.'
     SeriesException:
       type: object
       required: [startDate, endDate, reason]
@@ -1774,6 +1845,67 @@ components:
                     person: { $ref: '#/components/schemas/PersonSummary' }
                     response: { $ref: '#/components/schemas/Response' }
                     calledUp: { type: boolean }
+
+    Attendance:
+      type: object
+      required: [eventId, recorded, teams]
+      properties:
+        eventId: { type: string, format: uuid }
+        recorded: { type: boolean, description: Attendance has been saved at least once (PRS-04) }
+        recordedAt: { type: [string, 'null'], format: date-time, description: Last save }
+        recordedBy:
+          oneOf:
+            - $ref: '#/components/schemas/PersonSummary'
+            - type: 'null'
+          description: Who saved last (PRS-04)
+        teams:
+          type: array
+          description: >-
+            All players of the involved teams by team (sorted by name) and line, as in the overview; teams without
+            players are left out. A player in two teams appears in both. Coaches are not part of it (PRS-03, PRS-05)
+          items:
+            type: object
+            required: [team, groups]
+            properties:
+              team:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+              groups:
+                type: array
+                items:
+                  type: object
+                  required: [type, name, entries]
+                  properties:
+                    groupId: { type: [string, 'null'], format: uuid }
+                    type:
+                      type: string
+                      enum: [LINE, GOALIES, NO_LINE]
+                    name: { type: string }
+                    entries:
+                      type: array
+                      items:
+                        type: object
+                        required: [person, response, status, recorded]
+                        properties:
+                          person: { $ref: '#/components/schemas/PersonSummary' }
+                          response: { $ref: '#/components/schemas/Response' }
+                          status: { $ref: '#/components/schemas/AttendanceStatus' }
+                          recorded: { type: boolean, description: 'false: the status is the preselection from the response' }
+    AttendanceInput:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            required: [personId, status]
+            properties:
+              personId: { type: string, format: uuid }
+              status: { $ref: '#/components/schemas/AttendanceStatus' }
 
     SyncResult:
       type: object

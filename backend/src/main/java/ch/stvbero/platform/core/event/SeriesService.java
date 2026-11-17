@@ -163,6 +163,9 @@ public class SeriesService {
         s.validUntil = input.validUntil();
         s.location = Location.of(input.location());
         s.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
+        if (input.attendanceCheck() != null) {
+            s.attendanceCheck = input.attendanceCheck();
+        }
         s.teams.clear();
         s.teams.addAll(teams);
     }
@@ -185,6 +188,7 @@ public class SeriesService {
         event.end = EventRules.instant(day, s.endTime);
         event.location = s.location == null ? null : Location.of(s.location.dto());
         event.responseDeadlineHours = s.responseDeadlineHours;
+        event.attendanceCheck = s.attendanceCheck;
         event.teams.clear();
         event.teams.addAll(s.teams);
     }

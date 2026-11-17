@@ -73,6 +73,30 @@ import { yearOf, eventDate, clockTime } from './time';
             />
           </section>
         }
+        @if (t.myAttendance; as a) {
+          <section class="card my-attendance" aria-labelledby="event-my-attendance" data-testid="my-attendance" [attr.data-attendance]="a">
+            <h2 id="event-my-attendance" class="section-title">{{ texts.attendanceCheck.yourAttendance }}</h2>
+            <p>{{ texts.attendanceCheck.yourAttendanceText(texts.attendanceCheck.status[a]) }}</p>
+          </section>
+        }
+        @if (attendanceSection(); as s) {
+          <section class="card attendance" aria-labelledby="event-attendance" data-testid="attendance-section">
+            <h2 id="event-attendance" class="section-title">{{ texts.attendanceCheck.section }}</h2>
+            @if (s === 'open') {
+              <p data-testid="attendance-recorded" [attr.data-recorded]="t.attendanceRecorded === true">
+                {{ t.attendanceRecorded ? texts.attendanceCheck.recorded : texts.attendanceCheck.notRecorded }}
+              </p>
+              <a
+                class="button button-primary button-small"
+                data-testid="attendance-record"
+                [routerLink]="['/termine', t.id, 'praesenz']"
+                >{{ t.attendanceRecorded ? texts.attendanceCheck.correct : texts.attendanceCheck.record }}</a
+              >
+            } @else {
+              <p class="secondary-text">{{ texts.attendanceCheck.beforeStart }}</p>
+            }
+          </section>
+        }
         @if (t.type === 'MATCH_DAY') {
           <app-match-day
             [event]="t"
@@ -199,6 +223,18 @@ export class EventPage {
   protected readonly coachOrAdmin = computed(
     () => this.coachIn().length > 0 || this.auth.canManage(),
   );
+
+  /**
+   * Section «Präsenz» for coaches and admins (PRS-02): `open` from the start on, `later` with the check on
+   * but before the start, otherwise not shown (check off, cancelled).
+   */
+  protected readonly attendanceSection = computed<'open' | 'later' | null>(() => {
+    const t = this.event();
+    if (!t || !this.coachOrAdmin() || !t.attendanceCheck || t.status === 'CANCELLED') return null;
+    if (t.canRecordAttendance) return 'open';
+    const now = this.auth.me()?.now;
+    return now && Date.parse(now) < Date.parse(t.start) ? 'later' : null;
+  });
 
   /** Explanation why responding is no longer possible (TER-06), otherwise `null`. */
   protected readonly lock = computed(() => {

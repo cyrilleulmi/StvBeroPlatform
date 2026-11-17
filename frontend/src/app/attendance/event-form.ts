@@ -60,6 +60,7 @@ interface FormValues {
   responseDeadline: string;
   meetingPointTime: string;
   meetingPointLocation: string;
+  attendanceCheck: boolean;
 }
 
 /** A match in the form of a match day (AUF-14). Empty `id`: new, created on saving. */
@@ -93,6 +94,7 @@ const EMPTY: FormValues = {
   responseDeadline: '24',
   meetingPointTime: '',
   meetingPointLocation: '',
+  attendanceCheck: false,
 };
 
 /** Field names of the API mapped to the fields of the form. */
@@ -178,6 +180,7 @@ export class EventForm {
   protected readonly matchDay = computed(() => !this.asSeries() && this.values().type === 'MATCH_DAY');
 
   private readonly cancelDialog = viewChild<ElementRef<HTMLDialogElement>>('cancelDialog');
+  private readonly attendanceOffDialog = viewChild<ElementRef<HTMLDialogElement>>('attendanceOffDialog');
   private readonly reasonField = viewChild<ElementRef<HTMLInputElement>>('reasonField');
 
   /** Who may create and edit: coaches (in any team) and admins (TER-11). */
@@ -331,6 +334,31 @@ export class EventForm {
     domEvent.preventDefault();
     if (this.saving()) return;
     if (!this.validate()) return;
+    // Switching off an event with recorded attendance asks first; the data is kept (PRS-08).
+    const before = this.event();
+    if (
+      this.mode() === 'event' &&
+      before?.attendanceCheck &&
+      before.attendanceRecorded &&
+      !this.values().attendanceCheck
+    ) {
+      this.attendanceOffDialog()?.nativeElement.showModal();
+      return;
+    }
+    await this.submit();
+  }
+
+  protected closeAttendanceOff(): void {
+    this.attendanceOffDialog()?.nativeElement.close();
+  }
+
+  protected async confirmAttendanceOff(): Promise<void> {
+    if (this.saving()) return;
+    await this.submit();
+    this.closeAttendanceOff();
+  }
+
+  private async submit(): Promise<void> {
     this.runningAction.set('save');
     this.error.set(null);
     try {
@@ -426,6 +454,7 @@ export class EventForm {
       notes: w.notes.trim() || null,
       responseDeadlineHours: Number(w.responseDeadline),
       meetingPoint: this.matchDay() ? this.meetingPoint() : (before?.meetingPoint ?? null),
+      attendanceCheck: w.attendanceCheck,
     };
   }
 
@@ -493,6 +522,7 @@ export class EventForm {
       validUntil: w.validUntil,
       location: this.location(this.series()?.location ?? null, false),
       responseDeadlineHours: Number(w.responseDeadline),
+      attendanceCheck: w.attendanceCheck,
     };
   }
 
@@ -611,6 +641,7 @@ export class EventForm {
           responseDeadline: String(t.responseDeadlineHours ?? 24),
           meetingPointTime: t.meetingPoint ? inputParts(t.meetingPoint.time).time : '',
           meetingPointLocation: t.meetingPoint?.location ?? '',
+          attendanceCheck: t.attendanceCheck ?? false,
         });
         this.matches.set(
           (t.matches ?? []).map((m) => ({
@@ -639,6 +670,7 @@ export class EventForm {
           teamIds: s.teamIds,
           location: s.location?.name ?? '',
           responseDeadline: String(s.responseDeadlineHours ?? 24),
+          attendanceCheck: s.attendanceCheck ?? false,
         });
       } else {
         // New: the team in which the person is coach is preselected if there is exactly one.

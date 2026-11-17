@@ -70,6 +70,7 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 08 | [Notifications](docs/requirements/08-notifications.md) | BEN |
 | 09 | [Seasons](docs/requirements/09-seasons.md) | SAI |
 | 10 | [Non-functional requirements](docs/requirements/10-non-functional.md) | NF |
+| 11 | [Attendance check](docs/requirements/11-attendance-check.md) | PRS |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 

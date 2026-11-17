@@ -71,3 +71,14 @@ h1,
 .notes {
   overflow-wrap: anywhere;
 }
+
+.attendance {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.attendance p,
+.my-attendance p {
+  margin: 0;
+}

@@ -382,6 +382,23 @@
       }
     </div>
 
+    <div class="field">
+      <label class="checkbox">
+        <input
+          id="event-attendanceCheck"
+          type="checkbox"
+          data-testid="event-attendance-check"
+          [checked]="values().attendanceCheck"
+          (change)="set('attendanceCheck', $any($event.target).checked)"
+          aria-describedby="event-attendanceCheck-hint"
+        />
+        {{ texts.eventForm.attendanceCheck }}
+      </label>
+      <p class="secondary-text" id="event-attendanceCheck-hint">
+        {{ asSeries() ? texts.eventForm.attendanceCheckSeriesHint : texts.eventForm.attendanceCheckHint }}
+      </p>
+    </div>
+
     <div class="buttons">
       <button
         type="submit"
@@ -457,4 +474,36 @@
       </button>
     </div>
   </form>
+</dialog>
+
+<dialog
+  #attendanceOffDialog
+  class="card dialog"
+  aria-modal="true"
+  aria-labelledby="attendance-off-title"
+  aria-describedby="attendance-off-text"
+>
+  <div class="form">
+    <h2 id="attendance-off-title">{{ texts.eventForm.attendanceOffTitle }}</h2>
+    <p id="attendance-off-text">{{ texts.eventForm.attendanceOffText }}</p>
+    <div class="buttons">
+      <button
+        type="button"
+        class="button button-primary button-small"
+        [disabled]="saving()"
+        [attr.aria-busy]="runningAction() === 'save' ? 'true' : null"
+        (click)="confirmAttendanceOff()"
+      >
+        {{ texts.eventForm.attendanceOffConfirm }}
+      </button>
+      <button
+        type="button"
+        class="button button-secondary button-small"
+        [disabled]="saving()"
+        (click)="closeAttendanceOff()"
+      >
+        {{ texts.eventForm.cancel }}
+      </button>
+    </div>
+  </div>
 </dialog>

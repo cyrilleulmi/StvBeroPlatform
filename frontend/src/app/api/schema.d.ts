@@ -661,6 +661,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Attendance with all players of the involved teams, grouped, with response and attendance (PRS-03, coach)
+         * @description Only coaches (of any team, E-69) and admins (otherwise 403, PRS-10). Check switched off: 409 (rule PRS-07).
+         *     Cancelled: 409 (rule PRS-09). Before the start: 409 (rule PRS-02). Coaches are not part of the list (PRS-05).
+         *     Groups as in the overview; empty groups are left out. Without a recorded value the status is the
+         *     preselection: «dabei» → PRESENT, everything else → ABSENT (`recorded: false`).
+         */
+        get: operations["getAttendance"];
+        /**
+         * Save or correct the attendance (PRS-03, PRS-04, coach)
+         * @description Sets the status of the given players; players not in the list keep their earlier value (PRS-04). Stores who
+         *     saved and when; the last value counts. Coaches or persons outside the teams: 422 (rule PRS-05). A person twice:
+         *     400. Same 409 cases as GET, plus an archived season (SAI-02). Responses are not changed.
+         */
+        put: operations["recordAttendance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/swiss-unihockey": {
         parameters: {
             query?: never;
@@ -932,6 +963,11 @@ export interface components {
         CallUpStatus: "NONE" | "DRAFT" | "PUBLISHED";
         /** @enum {string} */
         MyCallUp: "NO_CALL_UP_YET" | "CALLED_UP" | "NOT_CALLED_UP";
+        /**
+         * @description «anwesend», «abwesend», «entschuldigt» (PRS-03)
+         * @enum {string}
+         */
+        AttendanceStatus: "PRESENT" | "ABSENT" | "EXCUSED";
         /** @enum {string} */
         MatchSource: "MANUAL" | "SWISS_UNIHOCKEY";
         PersonSummary: {
@@ -1146,6 +1182,14 @@ export interface components {
             myCallUp?: components["schemas"]["MyCallUp"] | null;
             /** @description For showing coach actions */
             canEdit?: boolean;
+            /** @description Switch «Präsenz erfassen» (PRS-01) */
+            attendanceCheck?: boolean;
+            /** @description Only for coaches and admins. Attendance has been saved (PRS-08), also while the check is off. */
+            attendanceRecorded?: boolean;
+            /** @description Coach or admin, check on, not cancelled, started, season not archived (PRS-02) */
+            canRecordAttendance?: boolean;
+            /** @description Own recorded attendance; only for team role PLAYER, with the check on and a recorded value (PRS-06) */
+            myAttendance?: components["schemas"]["AttendanceStatus"] | null;
         };
         EventInput: {
             type: components["schemas"]["EventType"];
@@ -1163,6 +1207,8 @@ export interface components {
              */
             responseDeadlineHours: number;
             meetingPoint?: components["schemas"]["MeetingPoint"] | null;
+            /** @description Switch «Präsenz erfassen» (PRS-01). Missing: off for a new event, unchanged for an existing one. */
+            attendanceCheck?: boolean;
         };
         Series: components["schemas"]["SeriesInput"] & {
             /** Format: uuid */
@@ -1193,6 +1239,8 @@ export interface components {
              * @default 24
              */
             responseDeadlineHours: number;
+            /** @description Switch «Präsenz erfassen» for all events of the series (PRS-01). Missing: off for a new series, unchanged for an existing one. */
+            attendanceCheck?: boolean;
         };
         SeriesException: {
             /** Format: date */
@@ -1313,6 +1361,48 @@ export interface components {
                     response: components["schemas"]["Response"];
                     calledUp: boolean;
                 }[];
+            }[];
+        };
+        Attendance: {
+            /** Format: uuid */
+            eventId: string;
+            /** @description Attendance has been saved at least once (PRS-04) */
+            recorded: boolean;
+            /**
+             * Format: date-time
+             * @description Last save
+             */
+            recordedAt?: string | null;
+            /** @description Who saved last (PRS-04) */
+            recordedBy?: components["schemas"]["PersonSummary"] | null;
+            /** @description All players of the involved teams by team (sorted by name) and line, as in the overview; teams without players are left out. A player in two teams appears in both. Coaches are not part of it (PRS-03, PRS-05) */
+            teams: {
+                team: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                groups: {
+                    /** Format: uuid */
+                    groupId?: string | null;
+                    /** @enum {string} */
+                    type: "LINE" | "GOALIES" | "NO_LINE";
+                    name: string;
+                    entries: {
+                        person: components["schemas"]["PersonSummary"];
+                        response: components["schemas"]["Response"];
+                        status: components["schemas"]["AttendanceStatus"];
+                        /** @description false: the status is the preselection from the response */
+                        recorded: boolean;
+                    }[];
+                }[];
+            }[];
+        };
+        AttendanceInput: {
+            entries: {
+                /** Format: uuid */
+                personId: string;
+                status: components["schemas"]["AttendanceStatus"];
             }[];
         };
         SyncResult: {
@@ -2551,6 +2641,62 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    getAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attendance"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    recordAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceInput"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attendance"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
     linkSu: {

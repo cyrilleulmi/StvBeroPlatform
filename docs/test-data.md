@@ -49,6 +49,7 @@ The seed grows with the features. What is in the seed today:
 | F-05 | Matches 01–03 and the call-ups of events 04 (draft) and 05 (published on 15.11.2026 21:00) as in the tables below. Matches 01 and 02 come from swiss unihockey (SU match ID `5000001` and `5000002`), match 03 was entered manually. No results yet |
 | F-06 | Notifications 01–18 as in the table "Notifications" below. No reminders yet |
 | F-07 | No new records. Team 1 is linked with team ID `900001`; after reset the simulator delivers exactly matches 01 and 02 (see [Simulated swiss unihockey data](#simulated-swiss-unihockey-data)) |
+| F-14 | Events 09 and 10 get fixed IDs (series 02, Thu 12.11. and Thu 05.11.2026) and have the switch «Präsenz erfassen» on; all other events and all series have it off. Responses to 09 and 10 as in the tables below, given two days before the event. Attendance of event 10 recorded by Petra on Thu 05.11.2026 21:00; event 09 has nothing recorded |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -141,6 +142,8 @@ The series generate further events. These ones have fixed IDs and defined respon
 | 06 | Other event Fri 11.12.2026 19:00–22:00 «Teamessen» | Team 1 + 2 + 3 | Nobody has responded, no location |
 | 07 | Practice Tue 10.11.2026 18:30 (series 01) | Team 1 + Team 2 | Past |
 | 08 | Practice Tue 12.05.2026 18:30–20:00 | Team 1 (season 2025/26) | Archive, with Vera |
+| 09 | Practice Thu 12.11.2026 19:00 (series 02) | Team 1 | Past, **attendance check on**, nothing recorded |
+| 10 | Practice Thu 05.11.2026 19:00 (series 02) | Team 1 | Past, **attendance check on**, recorded by Petra |
 
 The start of a match day is the start time of the first match (assumption F-03).
 
@@ -227,6 +230,29 @@ Responses: Petra «dabei», Lea «dabei», Eva «dabei», Lara «dabei», Zoe «
 
 Call-up published on Sat 15.11.2026 21:00: Petra, Eva, Lara, Ella. Lea is «nicht aufgeboten».
 
+### Event 09: Practice Thu 12.11.2026, Team 1, attendance check without record
+
+Responses (10.11.2026 20:00): Anna «dabei», Lea «dabei», Mia «nicht dabei» («Krank»), Sara «dabei», Nina «vielleicht» («Knie schmerzt»), Jana «dabei», Kim «offen».
+
+**Expected attendance screen** (`/termine/40000000-0000-4000-8000-000000000009/praesenz` as `petra`), preselection from the responses:
+
+```
+Noch keine Präsenz erfasst.
+Linie 1      Mia ✗ «Krank» → abwesend   Lea ✓ → anwesend   Anna ✓ → anwesend
+Linie 2      Sara ✓ → anwesend   Nina ~ «Knie schmerzt» → abwesend
+Goalies      Jana ✓ → anwesend
+Ohne Linie   Kim ? → abwesend
+4 anwesend · 3 abwesend · 0 entschuldigt
+```
+
+Petra (coach) is not in the list (PRS-05).
+
+### Event 10: Practice Thu 05.11.2026, Team 1, attendance recorded
+
+Responses (03.11.2026 20:00): Anna, Lea, Sara, Nina, Jana «dabei», Mia «nicht dabei» («Ferien»), Kim «offen».
+
+Attendance recorded by Petra on Thu 05.11.2026 21:00: Anna, Lea, Nina, Jana «anwesend», Mia «entschuldigt», Sara «abwesend» (responded «dabei»), Kim «abwesend». Summary «4 anwesend · 2 abwesend · 1 entschuldigt». Sara sees «Deine Präsenz: abwesend», Anna «anwesend», nobody sees the values of others.
+
 ## Notifications
 
 Texts as in production. `GET /api/test/notifications` returns them too; newly created ones have IDs that do not start with `90000000`.
@@ -297,3 +323,6 @@ Every scenario starts with `POST /api/test/reset`.
 | S38 | Coach does not delete | As `petra`: `/teams/<Team 1>/linien`, `/verwaltung/teams/<Team 1>`, `/verwaltung/personen/<Anna>` | No «löschen», no «<Name> entfernen», no section «swiss unihockey», no admin checkbox; `/verwaltung` without «Saisons». API: delete line and remove member 403 | RR-04, RR-08 |
 | S39 | Start with the next two practices | As `anna` open `/` | «Nächster Termin»: event 01 (Tue 17.11.). Below «Weitere Trainings»: event 02 (Thu 19.11.). `eva`: event 01, then Tue 01.12. (event 03 cancelled, match day 05 is no practice). `lea`: event 02 with «Team 1» only. `ruth` (coach Team 3): Wed 18.11., then Wed 25.11. | F-13 |
 | S40 | Start with a match day first | Clock to 22.11.2026 06:00. As `anna` open `/` | «Nächster Termin»: event 04 (Sun 22.11.). Below two practices: Thu 26.11. and Tue 01.12. (Tue 24.11. is cancelled and skipped). Clock to 28.04.2027 06:00: only Thu 29.04.2027, no «Weitere Trainings» | F-13 |
+| S41 | Record attendance | As `petra` open event 09 → «Präsenz erfassen», set Mia to «entschuldigt», «Präsenz speichern» | «Die Präsenz ist gespeichert.», «Zuletzt gespeichert von Petra Keller am …». Mia sees «Deine Präsenz» «entschuldigt», her response stays «nicht dabei» | PRS-03, PRS-04, PRS-06 |
+| S42 | No attendance without the switch | Clock to 17.11.2026 19:00. As `petra` open event 01 | No section «Präsenz»; `PUT /api/events/<01>/attendance` 409 rule PRS-07 | PRS-07 |
+| S43 | Attendance not before the start | As `petra` create an event for Fri 20.11. with «Präsenz erfassen» | Event shows «Die Präsenz lässt sich ab Beginn des Termins erfassen.», no link; API 409 rule PRS-02. Clock to 20.11. 18:00: link «Präsenz erfassen» | PRS-02 |

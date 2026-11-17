@@ -81,6 +81,10 @@ public class Event extends PanacheEntityBase {
     @Column(name = "individually_changed")
     public boolean individuallyChanged;
 
+    /** Switch «Präsenz erfassen», off by default (PRS-01, E-70). */
+    @Column(name = "attendance_check")
+    public boolean attendanceCheck;
+
     @ManyToMany
     @JoinTable(name = "event_team",
             joinColumns = @JoinColumn(name = "event_id"),

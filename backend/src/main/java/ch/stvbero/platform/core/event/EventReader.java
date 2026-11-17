@@ -97,7 +97,7 @@ final class EventReader {
      * Event with all details. For match days also the matches by start time, the call-up status (before
      * publication only for coaches and admins, AUF-23) and the player's own call-up status (AUF-24).
      */
-    EventDto full(Event event, boolean canEdit) {
+    EventDto full(Event event, boolean canEdit, Instant now) {
         EventSummaryDto base = summary(event);
         boolean matchDay = event.type == EventType.MATCH_DAY;
         MeetingPointDto meetingPoint = event.meetingPointTime == null ? null
@@ -105,10 +105,10 @@ final class EventReader {
         List<MatchDto> matches = null;
         CallUpStatus callUpStatus = null;
         MyCallUp myCallUp = null;
+        Set<TeamRole> mine = myTeamRoles(event);
         if (matchDay) {
             matches = Match.of(event.id).stream().map(Match::dto).toList();
             CallUp callUp = CallUp.findById(event.id);
-            Set<TeamRole> mine = myTeamRoles(event);
             CallUpStatus status = callUp == null ? CallUpStatus.NONE : callUp.status();
             callUpStatus = CallUpRules.visibleStatus(status,
                     CallUpRules.canEdit(user.allTeams(), mine));
@@ -117,10 +117,20 @@ final class EventReader {
                         callUp != null && callUp.personIds.contains(user.personId()));
             }
         }
+        // Attendance check (PRS): coaches and admins see whether something is recorded and may record from the
+        // start on; players see only their own recorded value (PRS-06).
+        boolean coachOrAdmin = AttendanceRules.canRecord(user.allTeams());
+        AttendanceRecord attendance = event.attendanceCheck || coachOrAdmin ? AttendanceRecord.findById(event.id) : null;
+        Boolean attendanceRecorded = coachOrAdmin ? attendance != null : null;
+        boolean canRecordAttendance = coachOrAdmin && !event.season.isArchived()
+                && AttendanceRules.recordable(event.attendanceCheck, event.status, event.start, now);
+        AttendanceStatus myAttendance = !mine.contains(TeamRole.PLAYER) || attendance == null ? null
+                : AttendanceRules.mine(event.attendanceCheck, attendance.entries.get(user.personId()));
         return new EventDto(base.id(), base.type(), base.title(), base.start(), base.end(), base.status(),
                 base.cancellationReason(), base.rescheduled(), base.teams(), base.location(), base.responseDeadline(),
                 base.myResponse(), base.counts(), base.seriesId(),
-                event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit);
+                event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit,
+                event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance);
     }
 
     /** Teams by name, with the name in the season of the event (SAI-02) and the caller's own team role. */

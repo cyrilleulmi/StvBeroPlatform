@@ -191,6 +191,35 @@ export const TEXTS = {
     notEditable:
       'Der Spieltag ist abgesagt oder vorbei. Das Aufgebot lässt sich nicht mehr ändern.',
   },
+  attendanceCheck: {
+    title: 'Präsenz erfassen',
+    section: 'Präsenz',
+    toEvent: 'Zum Termin',
+    record: 'Präsenz erfassen',
+    correct: 'Präsenz korrigieren',
+    status: {
+      PRESENT: 'anwesend',
+      ABSENT: 'abwesend',
+      EXCUSED: 'entschuldigt',
+    },
+    of: (name: string) => `Präsenz von ${name}`,
+    hint: 'Wer «dabei» geantwortet hat, ist als «anwesend» vorgewählt, alle anderen als «abwesend». Gespeichert wird erst mit «Präsenz speichern».',
+    list: 'Spielerinnen',
+    save: 'Präsenz speichern',
+    saved: 'Die Präsenz ist gespeichert.',
+    unsaved: 'Noch nicht gespeichert.',
+    notRecorded: 'Noch keine Präsenz erfasst.',
+    recordedBy: (name: string, date: string, time: string) =>
+      `Zuletzt gespeichert von ${name} am ${date} ${time}.`,
+    recorded: 'Präsenz ist erfasst.',
+    beforeStart: 'Die Präsenz lässt sich ab Beginn des Termins erfassen.',
+    summary: (present: number, absent: number, excused: number) =>
+      `${present} anwesend · ${absent} abwesend · ${excused} entschuldigt`,
+    noPlayers: 'Diese Teams haben noch keine Spielerinnen.',
+    notAvailable: 'Für diesen Termin lässt sich keine Präsenz erfassen.',
+    yourAttendance: 'Deine Präsenz',
+    yourAttendanceText: (status: string) => `Der Coach hat dich als «${status}» erfasst.`,
+  },
   eventForm: {
     newTitle: 'Termin erfassen',
     editTitle: 'Termin bearbeiten',
@@ -240,6 +269,14 @@ export const TEXTS = {
     responseDeadlineHint: 'Bis dann sollen alle geantwortet haben. Standard: 24 Stunden.',
     responseDeadlineMin: 'Mindestens 0 Stunden.',
     responseDeadlineMax: 'Höchstens 336 Stunden (14 Tage).',
+    attendanceCheck: 'Präsenz erfassen',
+    attendanceCheckHint: 'Nach Beginn des Termins hakst du ab, wer wirklich da war.',
+    attendanceCheckSeriesHint:
+      'Gilt für alle Termine der Serie. Einzelne Termine kannst du abweichend einstellen.',
+    attendanceOffTitle: 'Präsenz ausschalten?',
+    attendanceOffText:
+      'Für diesen Termin ist schon Präsenz erfasst. Sie bleibt gespeichert und ist wieder da, wenn du die Präsenz später einschaltest.',
+    attendanceOffConfirm: 'Ausschalten und speichern',
     saveNew: 'Termin speichern',
     saveSeries: 'Serie anlegen',
     saveChanges: 'Änderungen speichern',
