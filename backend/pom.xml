@@ -85,6 +85,13 @@
       <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- F-18 (CAL-09): parses and validates the calendar feed in the tests. Test scope only. -->
+    <dependency>
+      <groupId>org.mnode.ical4j</groupId>
+      <artifactId>ical4j</artifactId>
+      <version>4.2.5</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

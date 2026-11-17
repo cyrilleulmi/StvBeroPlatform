@@ -39,6 +39,12 @@ public class Seed {
     /** League data of Team 1 was last loaded by the daily sync on the morning of the default "now" (F-17). */
     public static final LocalDateTime LEAGUE_LOADED_AT = LocalDateTime.of(2026, 11, 16, 4, 30);
 
+    /**
+     * Calendar address of Anna (F-18): {@code /api/calendar/<token>.ics}. All other people get theirs on the first
+     * visit of «Profil». Fixed only in the seed; real tokens are random (CAL-06).
+     */
+    public static final String ANNA_CALENDAR_TOKEN = "seed-anna-calendar-000000000000000000000005";
+
     record SeedPerson(int nr, String loginKey, String firstName, String lastName, boolean admin) {
     }
 
@@ -406,6 +412,9 @@ public class Seed {
         // League data of Team 1, loaded by the daily sync at 04:30 (F-17)
         league.store(teamId(1), seasonId(2), SuSimulator.SEED_LEAGUE,
                 LEAGUE_LOADED_AT.atZone(BackendClock.ZONE).toInstant());
+        em.createNativeQuery("insert into calendar_subscription (person_id, token, created_at) values (?, ?, ?)")
+                .setParameter(1, personId(5)).setParameter(2, ANNA_CALENDAR_TOKEN).setParameter(3, zurich(RESPONDED_AT))
+                .executeUpdate();
         em.flush();
         em.clear();
 
