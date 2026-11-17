@@ -11,15 +11,15 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Termin as TerminDaten, Uebersicht as UebersichtDaten } from '../api/types';
-import { AnmeldungService } from '../core/auth.service';
-import { fehlerstatus, fehlertext } from '../core/error-text';
-import { RueckmeldungService } from '../core/feedback.service';
-import { TEXTE } from '../core/texts';
-import { MeineAntwort } from './my-response';
-import { Spieltag } from './match-day';
-import { Uebersicht } from './overview';
-import { jahrVon, terminDatum, uhrzeit } from './time';
+import type { EventDetail as EventData, Overview as OverviewData } from '../api/types';
+import { AuthService } from '../core/auth.service';
+import { errorStatus, errorText } from '../core/error-text';
+import { FeedbackService } from '../core/feedback.service';
+import { TEXTS } from '../core/texts';
+import { MyResponse } from './my-response';
+import { MatchDay } from './match-day';
+import { OverviewSection } from './overview';
+import { yearOf, eventDate, clockTime } from './time';
 
 /**
  * Termin (`/termine/:terminId`): Angaben, Status (abgesagt mit Grund, verschoben), für Coaches der Link
@@ -29,69 +29,69 @@ import { jahrVon, terminDatum, uhrzeit } from './time';
 @Component({
   selector: 'app-termin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MeineAntwort, Spieltag, Uebersicht],
+  imports: [RouterLink, MyResponse, MatchDay, OverviewSection],
   template: `
     <div class="kopf">
-      <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
-      <h1>{{ termin()?.title ?? texte.termine.titel }}</h1>
-      @if (termin(); as t) {
-        <p class="nebentext">{{ datum(t.start) }} · {{ zeitraum() }} · {{ teams() }}</p>
+      <a class="zurueck" routerLink="/termine">{{ texts.termine.allEvents }}</a>
+      <h1>{{ event()?.title ?? texts.termine.title }}</h1>
+      @if (event(); as t) {
+        <p class="nebentext">{{ date(t.start) }} · {{ period() }} · {{ teams() }}</p>
       }
     </div>
-    @if (erfolg(); as meldung) {
-      <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+    @if (success(); as message) {
+      <p class="meldung-erfolg" role="status">{{ message }}</p>
     }
-    @if (fehler(); as meldung) {
-      <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+    @if (error(); as message) {
+      <p class="meldung-fehler" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="laedt() ? 'true' : null">
-      @if (laedt()) {
-        <p class="leer">{{ texte.allgemein.laden }}</p>
-      } @else if (termin(); as t) {
+    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+      @if (loading()) {
+        <p class="leer">{{ texts.common.loading }}</p>
+      } @else if (event(); as t) {
         @if (t.status === 'CANCELLED') {
           <div class="meldung-fehler status" data-testid="termin-status">
-            <strong>{{ texte.termine.abgesagtMitGrund(t.cancellationReason ?? '') }}</strong>
-            <span>{{ texte.termine.abgesagtHinweis }}</span>
+            <strong>{{ texts.termine.cancelledWithReason(t.cancellationReason ?? '') }}</strong>
+            <span>{{ texts.termine.cancelledNotice }}</span>
           </div>
         } @else if (t.rescheduled) {
           <p class="meldung-hinweis" data-testid="termin-status">
-            {{ texte.termine.verschobenHinweis }}
+            {{ texts.termine.rescheduledNotice }}
           </p>
         }
-        @if (binMitglied()) {
+        @if (isMember()) {
           <section class="karte" aria-labelledby="termin-meine-antwort">
             <h2 id="termin-meine-antwort" class="abschnitt-titel">
-              {{ texte.antwort.meineAntwort }}
+              {{ texts.response.myResponse }}
             </h2>
             <app-meine-antwort
-              [terminId]="t.id"
-              [antwort]="t.myResponse"
-              [name]="texte.antwort.meineAntwort"
-              [gesperrt]="sperre()"
+              [eventId]="t.id"
+              [response]="t.myResponse"
+              [name]="texts.response.myResponse"
+              [locked]="lock()"
               [details]="true"
-              (geaendert)="nachladen()"
+              (changed)="reload()"
             />
           </section>
         }
         @if (t.type === 'MATCH_DAY') {
           <app-spieltag
-            [termin]="t"
-            [darfAufgebot]="coachOderAdmin()"
-            [darfResultat]="coachOderAdmin() && t.status !== 'CANCELLED'"
-            (geaendert)="nachladen()"
+            [event]="t"
+            [canCallUp]="coachOrAdmin()"
+            [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
+            (changed)="reload()"
           />
         }
         <section class="karte" aria-labelledby="termin-angaben">
-          <h2 id="termin-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
+          <h2 id="termin-angaben" class="abschnitt-titel">{{ texts.termine.details }}</h2>
           <dl class="angaben">
-            <dt>{{ texte.termine.datum }}</dt>
-            <dd>{{ datum(t.start) }}</dd>
-            <dt>{{ texte.termine.zeit }}</dt>
-            <dd>{{ zeitraum() }}</dd>
-            <dt>{{ texte.termine.teams }}</dt>
+            <dt>{{ texts.termine.date }}</dt>
+            <dd>{{ date(t.start) }}</dd>
+            <dt>{{ texts.termine.time }}</dt>
+            <dd>{{ period() }}</dd>
+            <dt>{{ texts.termine.teams }}</dt>
             <dd>{{ teams() }}</dd>
             @if (t.location) {
-              <dt>{{ texte.termine.ort }}</dt>
+              <dt>{{ texts.termine.location }}</dt>
               <dd>
                 {{ t.location.name }}
                 @if (t.location.address) {
@@ -104,36 +104,36 @@ import { jahrVon, terminDatum, uhrzeit } from './time';
                     target="_blank"
                     rel="noopener"
                     data-testid="spielort-karte"
-                    >{{ texte.termine.karteOeffnen }}</a
+                    >{{ texts.termine.openMap }}</a
                   >
                 }
               </dd>
             }
             @if (t.meetingPoint; as tp) {
-              <dt>{{ texte.termine.treffpunkt }}</dt>
-              <dd data-testid="treffpunkt">{{ uhrzeit(tp.time) }} · {{ tp.location }}</dd>
+              <dt>{{ texts.termine.meetingPoint }}</dt>
+              <dd data-testid="treffpunkt">{{ clockTime(tp.time) }} · {{ tp.location }}</dd>
             }
-            <dt>{{ texte.termine.antwortfrist }}</dt>
+            <dt>{{ texts.termine.responseDeadline }}</dt>
             <dd data-testid="antwortfrist">
               {{
-                texte.termine.antwortfristText(
-                  datum(t.responseDeadline),
-                  uhrzeit(t.responseDeadline),
+                texts.termine.responseDeadlineText(
+                  date(t.responseDeadline),
+                  clockTime(t.responseDeadline),
                   t.responseDeadlineHours ?? 24
                 )
               }}
             </dd>
             @if (t.notes) {
-              <dt>{{ texte.termine.hinweise }}</dt>
+              <dt>{{ texts.termine.notes }}</dt>
               <dd class="hinweise">{{ t.notes }}</dd>
             }
             @if (t.seriesId) {
-              <dt>{{ texte.termine.serie }}</dt>
+              <dt>{{ texts.termine.series }}</dt>
               <dd>
                 @if (t.canEdit) {
-                  <a [routerLink]="['/serien', t.seriesId]">{{ texte.termine.serieAnsehen }}</a>
+                  <a [routerLink]="['/serien', t.seriesId]">{{ texts.termine.viewSeries }}</a>
                 } @else {
-                  {{ texte.termine.teilEinerSerie }}
+                  {{ texts.termine.partOfSeries }}
                 }
               </dd>
             }
@@ -141,20 +141,20 @@ import { jahrVon, terminDatum, uhrzeit } from './time';
           @if (t.canEdit) {
             <a
               class="button button-sekundaer button-klein bearbeiten"
-              [routerLink]="['/termine', t.id, 'bearbeiten']"
-              >{{ texte.termine.bearbeiten }}</a
+              [routerLink]="['/termine', t.id, 'edit']"
+              >{{ texts.termine.edit }}</a
             >
           }
         </section>
-        @if (uebersicht(); as u) {
+        @if (overview(); as u) {
           <app-uebersicht
-            [terminId]="t.id"
-            [daten]="u"
+            [eventId]="t.id"
+            [data]="u"
             [coachIn]="coachIn()"
-            [admin]="anmeldung.ich()?.admin ?? false"
-            [ichId]="anmeldung.ich()?.id ?? null"
-            [offen]="!sperre()"
-            (geaendert)="nachladen()"
+            [admin]="auth.me()?.admin ?? false"
+            [meId]="auth.me()?.id ?? null"
+            [offen]="!lock()"
+            (changed)="reload()"
           />
         }
       }
@@ -162,104 +162,104 @@ import { jahrVon, terminDatum, uhrzeit } from './time';
   `,
   styleUrl: './event.css',
 })
-export class Termin {
+export class EventPage {
   private readonly http = inject(HttpClient);
-  protected readonly anmeldung = inject(AnmeldungService);
-  private readonly rueckmeldung = inject(RueckmeldungService);
-  protected readonly texte = TEXTE;
-  protected readonly uhrzeit = uhrzeit;
+  protected readonly auth = inject(AuthService);
+  private readonly feedback = inject(FeedbackService);
+  protected readonly texts = TEXTS;
+  protected readonly clockTime = clockTime;
 
   /** Route `/termine/:terminId` */
-  readonly terminId = input.required<string>();
+  readonly eventId = input.required<string>();
 
-  protected readonly termin = signal<TerminDaten | null>(null);
-  protected readonly uebersicht = signal<UebersichtDaten | null>(null);
-  protected readonly laedt = signal(true);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly erfolg = signal<string | null>(null);
+  protected readonly event = signal<EventData | null>(null);
+  protected readonly overview = signal<OverviewData | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
 
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
+  private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
-  protected readonly zeitraum = computed(() => {
-    const t = this.termin();
-    return t ? TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end)) : '';
+  protected readonly period = computed(() => {
+    const t = this.event();
+    return t ? TEXTS.termine.period(clockTime(t.start), clockTime(t.end)) : '';
   });
 
   /** Mitglied eines beteiligten Teams: kann für sich antworten (ANM-01). */
-  protected readonly binMitglied = computed(() =>
-    (this.termin()?.teams ?? []).some((t) => !!t.myTeamRole),
+  protected readonly isMember = computed(() =>
+    (this.event()?.teams ?? []).some((t) => !!t.myTeamRole),
   );
 
   /** Teams des Termins, in denen die angemeldete Person Coach ist (RR-06). */
   protected readonly coachIn = computed(() =>
-    (this.termin()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
+    (this.event()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
   );
 
   /** Coach eines beteiligten Teams oder Admin: Aufgebot und Resultate (RR-03). */
-  protected readonly coachOderAdmin = computed(
-    () => this.coachIn().length > 0 || (this.anmeldung.ich()?.admin ?? false),
+  protected readonly coachOrAdmin = computed(
+    () => this.coachIn().length > 0 || (this.auth.me()?.admin ?? false),
   );
 
   /** Erklärung, warum nicht mehr geantwortet werden kann (TER-06), sonst `null`. */
-  protected readonly sperre = computed(() => {
-    const t = this.termin();
+  protected readonly lock = computed(() => {
+    const t = this.event();
     if (!t) return null;
-    if (t.status === 'CANCELLED') return TEXTE.antwort.abgesagt;
-    const jetzt = this.anmeldung.ich()?.now;
-    if (jetzt && Date.parse(t.end) <= Date.parse(jetzt)) return TEXTE.antwort.vorbei;
+    if (t.status === 'CANCELLED') return TEXTS.response.cancelled;
+    const now = this.auth.me()?.now;
+    if (now && Date.parse(t.end) <= Date.parse(now)) return TEXTS.response.past;
     return null;
   });
 
   protected readonly teams = computed(() =>
-    TEXTE.termine.teamsVerbinden((this.termin()?.teams ?? []).map((t) => t.name)),
+    TEXTS.termine.joinTeams((this.event()?.teams ?? []).map((t) => t.name)),
   );
 
   constructor() {
-    this.erfolg.set(this.rueckmeldung.abholen());
+    this.success.set(this.feedback.take());
     effect(() => {
-      const id = this.terminId();
-      untracked(() => void this.laden(id));
+      const id = this.eventId();
+      untracked(() => void this.load(id));
     });
   }
 
-  protected datum(iso: string): string {
-    return terminDatum(iso, this.jahr());
+  protected date(iso: string): string {
+    return eventDate(iso, this.year());
   }
 
   /** Nach einer Antwort: Termin (eigene Antwort, Zähler) und Übersicht ohne Neuladen der Seite. */
-  protected async nachladen(): Promise<void> {
-    const id = this.terminId();
+  protected async reload(): Promise<void> {
+    const id = this.eventId();
     try {
-      const [termin, uebersicht] = await Promise.all([
-        firstValueFrom(this.http.get<TerminDaten>(`/api/events/${id}`)),
-        firstValueFrom(this.http.get<UebersichtDaten>(`/api/events/${id}/overview`)),
+      const [event, overview] = await Promise.all([
+        firstValueFrom(this.http.get<EventData>(`/api/events/${id}`)),
+        firstValueFrom(this.http.get<OverviewData>(`/api/events/${id}/overview`)),
       ]);
-      this.termin.set(termin);
-      this.uebersicht.set(uebersicht);
+      this.event.set(event);
+      this.overview.set(overview);
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     }
   }
 
-  private async laden(id: string): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
-    this.termin.set(null);
-    this.uebersicht.set(null);
+  private async load(id: string): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    this.event.set(null);
+    this.overview.set(null);
     try {
-      const [termin, uebersicht] = await Promise.all([
-        firstValueFrom(this.http.get<TerminDaten>(`/api/events/${id}`)),
-        firstValueFrom(this.http.get<UebersichtDaten>(`/api/events/${id}/overview`)),
+      const [event, overview] = await Promise.all([
+        firstValueFrom(this.http.get<EventData>(`/api/events/${id}`)),
+        firstValueFrom(this.http.get<OverviewData>(`/api/events/${id}/overview`)),
       ]);
-      this.termin.set(termin);
-      this.uebersicht.set(uebersicht);
+      this.event.set(event);
+      this.overview.set(overview);
     } catch (e) {
-      const status = fehlerstatus(e);
-      this.fehler.set(
-        status === 404 || status === 400 ? TEXTE.termine.nichtGefunden : fehlertext(e),
+      const status = errorStatus(e);
+      this.error.set(
+        status === 404 || status === 400 ? TEXTS.termine.notFound : errorText(e),
       );
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 }

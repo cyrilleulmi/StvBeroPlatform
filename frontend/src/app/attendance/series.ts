@@ -11,14 +11,14 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Ausnahme, Serie as SerieDaten } from '../api/types';
-import { AnmeldungService } from '../core/auth.service';
-import { feldfehler, fehlerstatus, fehlertext } from '../core/error-text';
-import { datum } from '../core/format';
-import { RueckmeldungService } from '../core/feedback.service';
-import { TEXTE } from '../core/texts';
+import type { SeriesException, Series as SeriesData } from '../api/types';
+import { AuthService } from '../core/auth.service';
+import { fieldErrorsOf, errorStatus, errorText } from '../core/error-text';
+import { date } from '../core/format';
+import { FeedbackService } from '../core/feedback.service';
+import { TEXTS } from '../core/texts';
 
-type AusnahmeFeld = 'von' | 'bis' | 'grund';
+type ExceptionField = 'from' | 'until' | 'reason';
 
 /**
  * Serie (`/serien/:serieId`): Regel, Teams, Zeitraum und Ausnahmen (TER-05, TER-07). Coaches eines Teams der
@@ -30,118 +30,118 @@ type AusnahmeFeld = 'von' | 'bis' | 'grund';
   imports: [RouterLink],
   template: `
     <div class="kopf">
-      <a class="zurueck" routerLink="/termine">{{ texte.termine.alleTermine }}</a>
-      <h1>{{ serie()?.title ?? texte.termine.serie }}</h1>
-      @if (serie(); as s) {
-        <p class="nebentext">{{ regel() }}</p>
+      <a class="zurueck" routerLink="/termine">{{ texts.termine.allEvents }}</a>
+      <h1>{{ series()?.title ?? texts.termine.series }}</h1>
+      @if (series(); as s) {
+        <p class="nebentext">{{ rule() }}</p>
       }
     </div>
-    @if (erfolg(); as meldung) {
-      <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+    @if (success(); as message) {
+      <p class="meldung-erfolg" role="status">{{ message }}</p>
     }
-    @if (fehler(); as meldung) {
-      <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+    @if (error(); as message) {
+      <p class="meldung-fehler" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="laedt() ? 'true' : null">
-      @if (laedt()) {
-        <p class="leer">{{ texte.allgemein.laden }}</p>
-      } @else if (serie(); as s) {
+    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+      @if (loading()) {
+        <p class="leer">{{ texts.common.loading }}</p>
+      } @else if (series(); as s) {
         <section class="karte" aria-labelledby="serie-angaben">
-          <h2 id="serie-angaben" class="abschnitt-titel">{{ texte.termine.angaben }}</h2>
+          <h2 id="serie-angaben" class="abschnitt-titel">{{ texts.termine.details }}</h2>
           <dl class="angaben">
-            <dt>{{ texte.terminFormular.typ }}</dt>
-            <dd>{{ texte.termine.typ[s.type] }}</dd>
-            <dt>{{ texte.terminFormular.wochentag }}</dt>
-            <dd>{{ texte.terminFormular.wochentage[s.weekday] }}</dd>
-            <dt>{{ texte.termine.zeit }}</dt>
-            <dd>{{ texte.termine.zeitraum(s.startTime, s.endTime) }}</dd>
-            <dt>{{ texte.serie.zeitraum }}</dt>
-            <dd>{{ texte.serie.zeitraumText(datum(s.validFrom), datum(s.validUntil)) }}</dd>
-            <dt>{{ texte.termine.teams }}</dt>
+            <dt>{{ texts.eventForm.type }}</dt>
+            <dd>{{ texts.termine.type[s.type] }}</dd>
+            <dt>{{ texts.eventForm.weekday }}</dt>
+            <dd>{{ texts.eventForm.weekdays[s.weekday] }}</dd>
+            <dt>{{ texts.termine.time }}</dt>
+            <dd>{{ texts.termine.period(s.startTime, s.endTime) }}</dd>
+            <dt>{{ texts.series.period }}</dt>
+            <dd>{{ texts.series.periodText(date(s.validFrom), date(s.validUntil)) }}</dd>
+            <dt>{{ texts.termine.teams }}</dt>
             <dd>{{ teams() }}</dd>
             @if (s.location) {
-              <dt>{{ texte.termine.ort }}</dt>
+              <dt>{{ texts.termine.location }}</dt>
               <dd>{{ s.location.name }}</dd>
             }
-            <dt>{{ texte.termine.antwortfrist }}</dt>
+            <dt>{{ texts.termine.responseDeadline }}</dt>
             <dd>{{ s.responseDeadlineHours ?? 24 }} Stunden vor Beginn</dd>
           </dl>
-          @if (darfBearbeiten()) {
+          @if (canEdit()) {
             <a
               class="button button-sekundaer button-klein"
-              [routerLink]="['/serien', s.id, 'bearbeiten']"
-              >{{ texte.serie.bearbeiten }}</a
+              [routerLink]="['/serien', s.id, 'edit']"
+              >{{ texts.series.edit }}</a
             >
           }
         </section>
 
         <section class="karte" aria-labelledby="serie-ausnahmen" data-testid="ausnahmen">
           <h2 id="serie-ausnahmen" class="abschnitt-titel">
-            {{ texte.serie.ausnahmen }} <span class="anzahl">{{ s.exceptions.length }}</span>
+            {{ texts.series.exceptions }} <span class="anzahl">{{ s.exceptions.length }}</span>
           </h2>
           @if (s.exceptions.length === 0) {
-            <p class="leer">{{ texte.serie.keineAusnahmen }}</p>
+            <p class="leer">{{ texts.series.noExceptions }}</p>
           } @else {
-            <ul class="liste" [attr.aria-label]="texte.serie.ausnahmen">
+            <ul class="liste" [attr.aria-label]="texts.series.exceptions">
               @for (a of s.exceptions; track $index) {
-                <li class="zeile">{{ ausnahmeText(a) }}</li>
+                <li class="zeile">{{ exceptionText(a) }}</li>
               }
             </ul>
           }
-          @if (darfBearbeiten()) {
+          @if (canEdit()) {
             <form
               class="formular ausnahme"
-              (submit)="ausnahmeAnlegen($event)"
+              (submit)="createException($event)"
               novalidate
               aria-labelledby="ausnahme-titel"
             >
-              <h3 id="ausnahme-titel">{{ texte.serie.ausnahmeHinzufuegen }}</h3>
-              <p class="nebentext" id="ausnahme-hinweis">{{ texte.serie.ausnahmeHinweis }}</p>
+              <h3 id="ausnahme-titel">{{ texts.series.addException }}</h3>
+              <p class="nebentext" id="ausnahme-hinweis">{{ texts.series.exceptionHint }}</p>
               <div class="feldreihe">
-                @for (f of datumsfelder; track f.feld) {
+                @for (f of dateFields; track f.field) {
                   <div class="feld">
-                    <label [for]="'ausnahme-' + f.feld">{{ f.label }}</label>
+                    <label [for]="'ausnahme-' + f.field">{{ f.label }}</label>
                     <input
-                      [id]="'ausnahme-' + f.feld"
+                      [id]="'ausnahme-' + f.field"
                       type="date"
-                      [value]="neu()[f.feld]"
-                      (input)="setzen(f.feld, $any($event.target).value)"
-                      [attr.aria-invalid]="feldFehler()[f.feld] ? 'true' : null"
+                      [value]="newException()[f.field]"
+                      (input)="set(f.field, $any($event.target).value)"
+                      [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
                       [attr.aria-describedby]="
-                        feldFehler()[f.feld] ? 'ausnahme-' + f.feld + '-fehler' : null
+                        fieldErrors()[f.field] ? 'ausnahme-' + f.field + '-fehler' : null
                       "
                     />
-                    @if (feldFehler()[f.feld]; as m) {
-                      <p class="feldfehler" [id]="'ausnahme-' + f.feld + '-fehler'">{{ m }}</p>
+                    @if (fieldErrors()[f.field]; as m) {
+                      <p class="feldfehler" [id]="'ausnahme-' + f.field + '-fehler'">{{ m }}</p>
                     }
                   </div>
                 }
               </div>
               <div class="feld">
-                <label for="ausnahme-grund">{{ texte.serie.grund }}</label>
+                <label for="ausnahme-grund">{{ texts.series.reason }}</label>
                 <input
                   id="ausnahme-grund"
                   type="text"
                   maxlength="200"
                   autocomplete="off"
-                  [value]="neu().grund"
-                  (input)="setzen('grund', $any($event.target).value)"
-                  [attr.aria-invalid]="feldFehler().grund ? 'true' : null"
+                  [value]="newException().reason"
+                  (input)="set('reason', $any($event.target).value)"
+                  [attr.aria-invalid]="fieldErrors().reason ? 'true' : null"
                   [attr.aria-describedby]="
-                    feldFehler().grund ? 'ausnahme-grund-fehler' : 'ausnahme-hinweis'
+                    fieldErrors().reason ? 'ausnahme-grund-fehler' : 'ausnahme-hinweis'
                   "
                 />
-                @if (feldFehler().grund; as m) {
+                @if (fieldErrors().reason; as m) {
                   <p class="feldfehler" id="ausnahme-grund-fehler">{{ m }}</p>
                 }
               </div>
               <button
                 type="submit"
                 class="button button-primaer"
-                [disabled]="speichert()"
-                [attr.aria-busy]="speichert() ? 'true' : null"
+                [disabled]="saving()"
+                [attr.aria-busy]="saving() ? 'true' : null"
               >
-                {{ texte.serie.ausnahmeHinzufuegen }}
+                {{ texts.series.addException }}
               </button>
             </form>
           }
@@ -165,124 +165,124 @@ type AusnahmeFeld = 'von' | 'bis' | 'grund';
     }
   `,
 })
-export class Serie {
+export class SeriesPage {
   private readonly http = inject(HttpClient);
-  private readonly anmeldung = inject(AnmeldungService);
-  private readonly rueckmeldung = inject(RueckmeldungService);
-  protected readonly texte = TEXTE;
-  protected readonly datum = datum;
-  protected readonly datumsfelder: { feld: 'von' | 'bis'; label: string }[] = [
-    { feld: 'von', label: TEXTE.serie.von },
-    { feld: 'bis', label: TEXTE.serie.bis },
+  private readonly auth = inject(AuthService);
+  private readonly feedback = inject(FeedbackService);
+  protected readonly texts = TEXTS;
+  protected readonly date = date;
+  protected readonly dateFields: { field: 'from' | 'until'; label: string }[] = [
+    { field: 'from', label: TEXTS.series.from },
+    { field: 'until', label: TEXTS.series.until },
   ];
 
   /** Route `/serien/:serieId` */
-  readonly serieId = input.required<string>();
+  readonly seriesId = input.required<string>();
 
-  protected readonly serie = signal<SerieDaten | null>(null);
-  protected readonly laedt = signal(true);
-  protected readonly speichert = signal(false);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly erfolg = signal<string | null>(null);
-  protected readonly feldFehler = signal<Partial<Record<AusnahmeFeld, string>>>({});
-  protected readonly neu = signal<Record<AusnahmeFeld, string>>({ von: '', bis: '', grund: '' });
+  protected readonly series = signal<SeriesData | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
+  protected readonly fieldErrors = signal<Partial<Record<ExceptionField, string>>>({});
+  protected readonly newException = signal<Record<ExceptionField, string>>({ from: '', until: '', reason: '' });
 
-  protected readonly regel = computed(() => {
-    const s = this.serie();
+  protected readonly rule = computed(() => {
+    const s = this.series();
     return s
-      ? TEXTE.serie.regel(TEXTE.terminFormular.wochentage[s.weekday], s.startTime, s.endTime)
+      ? TEXTS.series.rule(TEXTS.eventForm.weekdays[s.weekday], s.startTime, s.endTime)
       : '';
   });
 
   protected readonly teams = computed(() => {
-    const s = this.serie();
+    const s = this.series();
     if (!s) return '';
     // Alle Teams der Serie mit Namen aus der API, auch die, in denen ich nicht bin (TER-11).
-    return TEXTE.termine.teamsVerbinden(s.teams.map((t) => t.name));
+    return TEXTS.termine.joinTeams(s.teams.map((t) => t.name));
   });
 
   /** Admins und Coaches eines Teams der Serie (TER-11, RR-06). */
-  protected readonly darfBearbeiten = computed(() => {
-    const s = this.serie();
-    const ich = this.anmeldung.ich();
-    if (!s || !ich) return false;
+  protected readonly canEdit = computed(() => {
+    const s = this.series();
+    const me = this.auth.me();
+    if (!s || !me) return false;
     return (
-      ich.admin ||
-      ich.memberships.some((z) => z.teamRole === 'COACH' && s.teamIds.includes(z.team.id))
+      me.admin ||
+      me.memberships.some((z) => z.teamRole === 'COACH' && s.teamIds.includes(z.team.id))
     );
   });
 
   constructor() {
-    this.erfolg.set(this.rueckmeldung.abholen());
+    this.success.set(this.feedback.take());
     effect(() => {
-      const id = this.serieId();
-      untracked(() => void this.laden(id));
+      const id = this.seriesId();
+      untracked(() => void this.load(id));
     });
   }
 
-  protected ausnahmeText(a: Ausnahme): string {
-    return TEXTE.serie.ausnahmeText(a.reason, datum(a.startDate), datum(a.endDate));
+  protected exceptionText(a: SeriesException): string {
+    return TEXTS.series.exceptionText(a.reason, date(a.startDate), date(a.endDate));
   }
 
-  protected setzen(feld: AusnahmeFeld, wert: string): void {
-    this.neu.update((n) => ({ ...n, [feld]: wert }));
-    if (this.feldFehler()[feld]) {
-      this.feldFehler.update((f) => ({ ...f, [feld]: undefined }));
+  protected set(field: ExceptionField, value: string): void {
+    this.newException.update((n) => ({ ...n, [field]: value }));
+    if (this.fieldErrors()[field]) {
+      this.fieldErrors.update((f) => ({ ...f, [field]: undefined }));
     }
   }
 
-  async ausnahmeAnlegen(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    if (this.speichert()) return;
-    const n = this.neu();
-    const f: Partial<Record<AusnahmeFeld, string>> = {};
-    if (!n.von) f.von = TEXTE.terminFormular.pflicht('ein Datum');
-    if (!n.bis) f.bis = TEXTE.terminFormular.pflicht('ein Datum');
-    else if (n.von && n.bis < n.von) f.bis = TEXTE.serie.bisVorVon;
-    if (!n.grund.trim()) f.grund = TEXTE.terminFormular.grundPflicht;
-    this.feldFehler.set(f);
-    const erstes = Object.keys(f)[0];
-    if (erstes) {
-      document.getElementById(`ausnahme-${erstes}`)?.focus();
+  async createException(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    if (this.saving()) return;
+    const n = this.newException();
+    const f: Partial<Record<ExceptionField, string>> = {};
+    if (!n.from) f.from = TEXTS.eventForm.required('ein Datum');
+    if (!n.until) f.until = TEXTS.eventForm.required('ein Datum');
+    else if (n.from && n.until < n.from) f.until = TEXTS.series.untilBeforeFrom;
+    if (!n.reason.trim()) f.reason = TEXTS.eventForm.reasonRequired;
+    this.fieldErrors.set(f);
+    const first = Object.keys(f)[0];
+    if (first) {
+      document.getElementById(`ausnahme-${first}`)?.focus();
       return;
     }
-    this.speichert.set(true);
-    this.fehler.set(null);
-    this.erfolg.set(null);
+    this.saving.set(true);
+    this.error.set(null);
+    this.success.set(null);
     try {
       const s = await firstValueFrom(
-        this.http.post<SerieDaten>(`/api/series/${this.serieId()}/exceptions`, {
-          startDate: n.von,
-          endDate: n.bis,
-          reason: n.grund.trim(),
+        this.http.post<SeriesData>(`/api/series/${this.seriesId()}/exceptions`, {
+          startDate: n.from,
+          endDate: n.until,
+          reason: n.reason.trim(),
         }),
       );
-      this.serie.set(s);
-      this.neu.set({ von: '', bis: '', grund: '' });
-      this.erfolg.set(TEXTE.serie.ausnahmeAngelegt(n.grund.trim()));
+      this.series.set(s);
+      this.newException.set({ from: '', until: '', reason: '' });
+      this.success.set(TEXTS.series.exceptionCreated(n.reason.trim()));
     } catch (e) {
-      const felder = feldfehler(e, { startDate: 'von', endDate: 'bis', reason: 'grund' });
-      if (Object.keys(felder).length > 0) {
-        this.feldFehler.set(felder);
+      const fields = fieldErrorsOf(e, { startDate: 'from', endDate: 'until', reason: 'reason' });
+      if (Object.keys(fields).length > 0) {
+        this.fieldErrors.set(fields);
       } else {
-        this.fehler.set(fehlertext(e));
+        this.error.set(errorText(e));
       }
     } finally {
-      this.speichert.set(false);
+      this.saving.set(false);
     }
   }
 
-  private async laden(id: string): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
-    this.serie.set(null);
+  private async load(id: string): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    this.series.set(null);
     try {
-      this.serie.set(await firstValueFrom(this.http.get<SerieDaten>(`/api/series/${id}`)));
+      this.series.set(await firstValueFrom(this.http.get<SeriesData>(`/api/series/${id}`)));
     } catch (e) {
-      const status = fehlerstatus(e);
-      this.fehler.set(status === 404 || status === 400 ? TEXTE.serie.nichtGefunden : fehlertext(e));
+      const status = errorStatus(e);
+      this.error.set(status === 404 || status === 400 ? TEXTS.series.notFound : errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 }

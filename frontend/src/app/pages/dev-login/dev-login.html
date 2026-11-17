@@ -1,34 +1,34 @@
 <main class="dev-login">
-  <p class="testmodus" data-testid="testmodus-hinweis">{{ texte.devLogin.hinweis }}</p>
-  <h1>{{ texte.devLogin.titel }}</h1>
-  <p class="nebentext">{{ texte.devLogin.erklaerung }}</p>
+  <p class="testmodus" data-testid="testmodus-hinweis">{{ texts.devLogin.notice }}</p>
+  <h1>{{ texts.devLogin.title }}</h1>
+  <p class="nebentext">{{ texts.devLogin.explanation }}</p>
 
-  @if (fehler(); as meldung) {
-    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  @if (error(); as message) {
+    <p class="meldung-fehler" role="alert">{{ message }}</p>
   }
 
-  <div [attr.aria-busy]="laedt() ? 'true' : null">
-    @if (laedt()) {
-      <p class="leer">{{ texte.allgemein.laden }}</p>
+  <div [attr.aria-busy]="loading() ? 'true' : null">
+    @if (loading()) {
+      <p class="leer">{{ texts.common.loading }}</p>
     } @else {
-      <ul class="liste" [attr.aria-label]="texte.devLogin.listeName">
-        @for (person of personen(); track person.id) {
+      <ul class="liste" [attr.aria-label]="texts.devLogin.listName">
+        @for (person of people(); track person.id) {
           <li [attr.data-testid]="'dev-login-person-' + person.loginKey">
             <button
               type="button"
               class="person"
-              [disabled]="anmeldend() !== null"
-              [attr.aria-busy]="anmeldend() === person.loginKey ? 'true' : null"
-              (click)="anmelden(person)"
+              [disabled]="loggingIn() !== null"
+              [attr.aria-busy]="loggingIn() === person.loginKey ? 'true' : null"
+              (click)="login(person)"
             >
               <span class="name">{{ person.firstName }} {{ person.lastName }}</span>
               <span class="details">
                 <span class="schluessel">{{ person.loginKey }}</span>
                 @if (person.admin) {
-                  <span class="chip">{{ texte.devLogin.admin }}</span>
+                  <span class="chip">{{ texts.devLogin.admin }}</span>
                 }
               </span>
-              <app-icon name="chevron-right" [groesse]="20" />
+              <app-icon name="chevron-right" [size]="20" />
             </button>
           </li>
         }

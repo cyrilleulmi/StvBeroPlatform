@@ -8,7 +8,7 @@ Status: target state for the core. The column «Feature» states with which feat
 
 - **Mobile:** bottom navigation with «Start», «Termine», «Teams», «Profil». Admins also see «Verwaltung».
 - **Desktop (from 1024px):** the same entries as a side navigation on the left.
-- **Notifications (F-06):** its own link in the navigation, outside the list of main entries. On mobile a round bell at the top right in a fixed header, the content scrolls underneath (name «Benachrichtigungen», label for screen readers only); from 1024px an entry «Benachrichtigungen» above «Start». With unread notifications it shows the number (`benachrichtigungen-zaehler`), and the name then reads e.g. «Benachrichtigungen 2 ungelesen». The counter is reloaded on every page change.
+- **Notifications (F-06):** its own link in the navigation, outside the list of main entries. On mobile a round bell at the top right in a fixed header, the content scrolls underneath (name «Benachrichtigungen», label for screen readers only); from 1024px an entry «Benachrichtigungen» above «Start». With unread notifications it shows the number (`notifications-counter`), and the name then reads e.g. «Benachrichtigungen 2 ungelesen». The counter is reloaded on every page change.
 - The active entry has `aria-current="page"`.
 - The navigation is a `nav` with `aria-label="Hauptnavigation"`.
 - Order: «Start», «Termine», «Teams», «Profil», («Verwaltung»). Page title in the browser: «<Seite> · STV Bero».
@@ -53,7 +53,7 @@ flowchart LR
 | `/termine/:id` | «Termin» (event) | members of the teams involved, admin | Details (date, time, teams, location, meeting point, response deadline, notes, series), status «Abgesagt: <Grund>» or «verschoben», coaches: «Termin bearbeiten», «Serie ansehen». From F-04: own response, overview by team and line, coach block. For a match day from F-05: matches, own call-up status | F-03, F-04, F-05 |
 | `/termine/neu` | «Termin erfassen» (create event) | coach, admin | Choice «Einzelner Termin» / «Serie (jede Woche)» (`?art=serie`), type (Training, Spieltag, Anlass), title, date or weekday and period, start, end, teams (checkboxes), location, Google Maps link, notes, response deadline. For «Spieltag»: location is called «Spielort», group «Treffpunkt» (time, place), group «Spiele» with one group «Spiel n» each (opponent, start time, «Heim oder auswärts», «Spiel n entfernen») and «Spiel hinzufügen» | F-03, F-05 |
 | `/termine/:id/bearbeiten` | «Termin bearbeiten» (edit event) | coach of a team involved, admin | Change details, postpone (other date or other time), «Termin absagen» (dialog with reason). For series events notice «gilt nur für diesen Termin». Match day: matches as when creating; matches from swiss unihockey read-only; if swiss unihockey no longer delivers a match, it shows «swiss unihockey liefert dieses Spiel nicht mehr.» and the button «Spiel <n> entfernen» (#44) | F-03, F-05 |
-| `/termine/:id/aufgebot` | «Aufgebot» (call-up) | coach of the team, admin (otherwise «Keine Berechtigung»; not a match day: «Nur ein Spieltag hat ein Aufgebot.») | Status (`aufgebot-status`, `aufgebot-anzahl`), selection grouped by lines (one group each with the group name, checkbox with the player's name, response status and comment next to it), saves immediately (feedback «<Name> ist aufgeboten.»), «Veröffentlichen» with confirmation. Coaches are not in the selection (AUF-28). Cancelled or past: read-only | F-05 |
+| `/termine/:id/aufgebot` | «Aufgebot» (call-up) | coach of the team, admin (otherwise «Keine Berechtigung»; not a match day: «Nur ein Spieltag hat ein Aufgebot.») | Status (`call-up-status`, `call-up-count`), selection grouped by lines (one group each with the group name, checkbox with the player's name, response status and comment next to it), saves immediately (feedback «<Name> ist aufgeboten.»), «Veröffentlichen» with confirmation. Coaches are not in the selection (AUF-28). Cancelled or past: read-only | F-05 |
 | `/serien/:id` | «Serie» (series) | members of the teams of the series (coaches and admins with editing) | Rule, period, teams (all teams of the series, including those one is not in), response deadline, exceptions (list and form «Ausnahme hinzufügen»), link «Serie bearbeiten» | F-03 |
 | `/serien/:id/bearbeiten` | «Serie bearbeiten» (edit series) | coach of a team of the series, admin | Like «Termin erfassen» as a series; applies to future events (TER-08) | F-03 |
 | `/teams` | «Meine Teams» (my teams) | logged in | Own teams of the current season with own team role (PTF-12), link to `/teams/:id` | F-01 |
@@ -67,7 +67,7 @@ flowchart LR
 | `/verwaltung/personen` | «Personen» (people) | admin | List by last name, search `?suche=`, link «Person erfassen» | F-01 |
 | `/verwaltung/personen/neu` | «Person erfassen» (create person) | admin | First name, last name, e-mail, admin. After saving on to `/verwaltung/personen/:id` | F-01 |
 | `/verwaltung/personen/:id` | «Person bearbeiten» (edit person) | admin | Change details, team memberships of all seasons | F-01 |
-| `/verwaltung/teams` | «Teams verwalten» (manage teams) | admin | Select «Saison» (`?saison=<id>`), teams of the season, «Team anlegen». Archive read-only. Linked teams with chip «swiss unihockey» (`su-verknuepft-<teamId>`) | F-01, F-07 |
+| `/verwaltung/teams` | «Teams verwalten» (manage teams) | admin | Select «Saison» (`?saison=<id>`), teams of the season, «Team anlegen». Archive read-only. Linked teams with chip «swiss unihockey» (`su-linked-<teamId>`) | F-01, F-07 |
 | `/verwaltung/teams/:id` | «Team verwalten» (manage team) | admin | Rename, section «swiss unihockey» (field «Team-ID bei swiss unihockey», «Verknüpfen», «Verknüpfung lösen», «Jetzt abgleichen» with result as `role="status"`, failure as `role="alert"`; not in the archive), coaches and players with select «Funktion von <Name>» and «<Name> entfernen», «Person aufnehmen». `?saison=<id>`; archive read-only | F-01, F-07 |
 | `/verwaltung/saisons` | «Saisons» (seasons) | admin | Seasons with status (current, archive, planned), «Teams ansehen», «Zur aktuellen Saison machen», form «Neue Saison» with carry-over | F-01 |
 
@@ -93,33 +93,33 @@ Fixed test IDs that tests rely on. Scheme and rules: [testability.md](../testabi
 
 | Test ID | Element |
 |---|---|
-| `hauptnavigation` | Navigation (mobile and desktop) |
-| `theme-umschalter` | Switch «Darstellung» in the profile: choice (radio) «Hell», «Düne», «GitHub Dark», «System» |
-| `testmodus-hinweis` | Banner «Testmodus» (dev/test only) |
-| `kachel-<id>` | Tile on the start screen (link), e.g. `kachel-anwesenheit` |
-| `dev-login-person-<schluessel>` | Entry of a test person on `/dev-login`, e.g. `dev-login-person-petra` |
-| `naechster-termin` | Card «Nächster Termin» on the start screen: next planned event of the own teams (cancelled ones skipped) with link to the event and `meine-antwort`. Without an event: «Keine kommenden Termine» |
-| `benachrichtigungen-zaehler` | Number of unread notifications in the navigation (missing when everything is read) |
-| `benachrichtigung-<id>` | Entry in `/benachrichtigungen` (`li` with `data-gelesen="true\|false"` and `data-art`, e.g. `REMINDER`) |
-| `keine-saison-hinweis` | Notice on `/keine-saison` |
+| `main-navigation` | Navigation (mobile and desktop) |
+| `theme-switch` | Switch «Darstellung» in the profile: choice (radio) «Hell», «Düne», «GitHub Dark», «System» |
+| `test-mode-notice` | Banner «Testmodus» (dev/test only) |
+| `tile-<id>` | Tile on the start screen (link), e.g. `tile-anwesenheit` |
+| `dev-login-person-<key>` | Entry of a test person on `/dev-login`, e.g. `dev-login-person-petra` |
+| `next-event` | Card «Nächster Termin» on the start screen: next planned event of the own teams (cancelled ones skipped) with link to the event and `my-response`. Without an event: «Keine kommenden Termine» |
+| `notifications-counter` | Number of unread notifications in the navigation (missing when everything is read) |
+| `notification-<id>` | Entry in `/benachrichtigungen` (`li` with `data-read="true\|false"` and `data-kind`, e.g. `REMINDER`) |
+| `no-season-notice` | Notice on `/keine-saison` |
 
 ### Teams and administration (F-01)
 
 | Test ID | Element |
 |---|---|
-| `team-karte-<teamId>` | Entry in «Meine Teams» (`/teams`) |
+| `team-card-<teamId>` | Entry in «Meine Teams» (`/teams`) |
 | `team-coaches` | Section «Coaches» (`/teams/:id`, `/verwaltung/teams/:id`) |
-| `team-spielerinnen` | Section «Spielerinnen» (`/teams/:id`, `/verwaltung/teams/:id`) |
+| `team-players` | Section «Spielerinnen» (`/teams/:id`, `/verwaltung/teams/:id`) |
 | `team-person-<personId>` | Person in `/teams/:id` |
-| `mitglied-<personId>` | Person in `/verwaltung/teams/:id` (`li` with the name as `aria-label`) |
-| `archiv-hinweis` | Notice «Saison … im Archiv: nur lesend.» |
+| `member-<personId>` | Person in `/verwaltung/teams/:id` (`li` with the name as `aria-label`) |
+| `archive-notice` | Notice «Saison … im Archiv: nur lesend.» |
 | `person-<personId>` | Entry in `/verwaltung/personen` |
 | `team-<teamId>` | Entry in `/verwaltung/teams` |
-| `saison-<saisonId>` | Entry in `/verwaltung/saisons` (`li` with the season name as `aria-label`) |
-| `saison-status` | Status of a season: «aktuell», «Archiv», «geplant» |
+| `season-<seasonId>` | Entry in `/verwaltung/saisons` (`li` with the season name as `aria-label`) |
+| `season-status` | Status of a season: «aktuell», «Archiv», «geplant» |
 | `swiss-unihockey` | Section «swiss unihockey» in `/verwaltung/teams/:id` (`section`, name «swiss unihockey») |
 | `su-status` | «Verknüpft mit Team-ID <ID>.» or «Nicht verknüpft.» |
-| `su-verknuepft-<teamId>` | Chip «swiss unihockey» next to a linked team in `/verwaltung/teams` |
+| `su-linked-<teamId>` | Chip «swiss unihockey» next to a linked team in `/verwaltung/teams` |
 
 Success messages have `role="status"`, errors `role="alert"`. In «Person aufnehmen», people already in the team are marked with «(schon im Team)» and cannot be selected (PTF-04).
 
@@ -127,49 +127,49 @@ Success messages have `role="status"`, errors `role="alert"`. In «Person aufneh
 
 | Test ID | Element |
 |---|---|
-| `termin-karte-<terminId>` | Entry in the event list (`li` with `aria-label` «<Titel> <Datum> <Beginn>», e.g. «Training Di 17.11. 18:30», and `data-status`) |
-| `meine-antwort` | Response buttons of the logged-in person (in card, detail and start), `role="group"` with the name «Meine Antwort» or «Meine Antwort für <Titel> <Datum> <Beginn>» and `data-antwort`. Feedback «Gespeichert: dabei.» (`role="status"`). Cancelled: buttons `disabled`, explanation via `aria-describedby` |
-| `antwort-dabei`, `antwort-nicht-dabei`, `antwort-vielleicht` | The three response buttons inside `meine-antwort` (names «Dabei», «Nicht dabei», «Vielleicht», selected: `aria-pressed="true"`) |
-| `termin-zaehler` | Total counter in the card of the event list (not for cancelled events) |
-| `termin-status` | Notice «abgesagt» or «verschoben» (as a chip in the card, as a notice with reason in the detail) |
-| `antwortfrist` | Response deadline in the detail of an event, e.g. «Mo 16.11. 18:30 (24 Stunden vor Beginn)» |
-| `ausnahmen` | Section «Ausnahmen» on `/serien/:id` |
-| `uebersicht` | Entire overview of an event |
-| `uebersicht-total` | Total counter |
-| `uebersicht-team-<teamId>` | Section of a team |
-| `uebersicht-team-<teamId>-zaehler` | Counter of a team |
-| `uebersicht-gruppe-<gruppeId>` | Line or goalies within a team |
-| `uebersicht-ohne-linie-<teamId>` | Group «Ohne Linie» of a team (only if not empty) |
-| `uebersicht-person-<personId>` | Entry of a person (`li`), with `data-antwort`, status as text, comment «…» only for those permitted, «eingetragen von …», «kurzfristig abgemeldet». Coaches (or admins) see the button «Antwort für <Name> eintragen». The same person can appear in several teams and in the coach block: narrow down via the section |
+| `event-card-<eventId>` | Entry in the event list (`li` with `aria-label` «<Titel> <Datum> <Beginn>», e.g. «Training Di 17.11. 18:30», and `data-status`) |
+| `my-response` | Response buttons of the logged-in person (in card, detail and start), `role="group"` with the name «Meine Antwort» or «Meine Antwort für <Titel> <Datum> <Beginn>» and `data-response`. Feedback «Gespeichert: dabei.» (`role="status"`). Cancelled: buttons `disabled`, explanation via `aria-describedby` |
+| `response-attending`, `response-declined`, `response-maybe` | The three response buttons inside `my-response` (names «Dabei», «Nicht dabei», «Vielleicht», selected: `aria-pressed="true"`) |
+| `event-counter` | Total counter in the card of the event list (not for cancelled events) |
+| `event-status` | Notice «abgesagt» or «verschoben» (as a chip in the card, as a notice with reason in the detail) |
+| `response-deadline` | Response deadline in the detail of an event, e.g. «Mo 16.11. 18:30 (24 Stunden vor Beginn)» |
+| `exceptions` | Section «Ausnahmen» on `/serien/:id` |
+| `overview` | Entire overview of an event |
+| `overview-total` | Total counter |
+| `overview-team-<teamId>` | Section of a team |
+| `overview-team-<teamId>-counter` | Counter of a team |
+| `overview-group-<groupId>` | Line or goalies within a team |
+| `overview-no-line-<teamId>` | Group «Ohne Linie» of a team (only if not empty) |
+| `overview-person-<personId>` | Entry of a person (`li`), with `data-response`, status as text, comment «…» only for those permitted, «eingetragen von …», «kurzfristig abgemeldet». Coaches (or admins) see the button «Antwort für <Name> eintragen». The same person can appear in several teams and in the coach block: narrow down via the section |
 | `coach-block` | Block of the coaches |
 
-Counter elements carry `data-zaehler="dabei|nicht-dabei|vielleicht|offen"`.
+Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 
 ### Match day and call-up
 
 | Test ID | Element |
 |---|---|
-| `spiele` | List of the matches of a match day (`ol`, by start time). Without matches: text «Für diesen Spieltag sind noch keine Spiele erfasst.» |
-| `spiel-<spielId>` | One match (`li` with `aria-label` «<Anspielzeit> <Heim> – <Gast>», e.g. «09:30 Team 1 – UHC Musterdorf»), plus «Heim»/«Auswärts» and «Resultat 5:3» |
-| `treffpunkt` | Meeting point (time and place), e.g. «08:00 · Parkplatz Sporthalle Nord» |
-| `spielort-karte` | Link «In Google Maps öffnen» (`target="_blank"`) |
-| `mein-aufgebot` | Own status in the event, only for players of the team: «aufgeboten», «nicht aufgeboten», «noch kein Aufgebot». Coaches and admins see the status and the link «Aufgebot bearbeiten» instead |
-| `aufgebot-auswahl` | Selection list in the call-up screen |
-| `aufgebot-person-<personId>` | Entry in the selection (`li` with `data-antwort` and `data-aufgeboten`, checkbox with the name, response status as text next to it) |
-| `aufgebot-veroeffentlichen` | Button «Veröffentlichen» (only in draft; without selection `disabled` with explanation) |
-| `aufgebot-status` | «Entwurf», «Entwurf: noch niemand ausgewählt» or «veröffentlicht am Mo 16.11. 06:00» |
-| `aufgebot-anzahl` | Number of called-up players, e.g. «5 aufgeboten» |
+| `matches` | List of the matches of a match day (`ol`, by start time). Without matches: text «Für diesen Spieltag sind noch keine Spiele erfasst.» |
+| `match-<matchId>` | One match (`li` with `aria-label` «<Anspielzeit> <Heim> – <Gast>», e.g. «09:30 Team 1 – UHC Musterdorf»), plus «Heim»/«Auswärts» and «Resultat 5:3» |
+| `meeting-point` | Meeting point (time and place), e.g. «08:00 · Parkplatz Sporthalle Nord» |
+| `venue-map` | Link «In Google Maps öffnen» (`target="_blank"`) |
+| `my-call-up` | Own status in the event, only for players of the team: «aufgeboten», «nicht aufgeboten», «noch kein Aufgebot». Coaches and admins see the status and the link «Aufgebot bearbeiten» instead |
+| `call-up-selection` | Selection list in the call-up screen |
+| `call-up-person-<personId>` | Entry in the selection (`li` with `data-response` and `data-called-up="true\|false"`, checkbox with the name, response status as text next to it) |
+| `call-up-publish` | Button «Veröffentlichen» (only in draft; without selection `disabled` with explanation) |
+| `call-up-status` | «Entwurf», «Entwurf: noch niemand ausgewählt» or «veröffentlicht am Mo 16.11. 06:00» |
+| `call-up-count` | Number of called-up players, e.g. «5 aufgeboten» |
 
 ### Lines
 
 | Test ID | Element |
 |---|---|
-| `linien-verwaltung` | Lines screen of a team |
-| `gruppe-<gruppeId>` | A line or goalies (`section`, named after the heading) |
-| `gruppe-ohne-linie` | Group «Ohne Linie» in the lines screen (always visible, when empty with the text «Alle Spielerinnen sind eingeteilt.») |
-| `spielerin-<personId>` | Player in the lines screen (`li` with the name as `aria-label`, draggable for coaches) |
-| `linie-hinzufuegen` | Button «Linie hinzufügen» |
-| `zuweisung-<personId>` | Select field «Linie von <Name>» of a player (alternative to drag and drop). Values: group IDs, empty = «Ohne Linie» |
+| `lines-management` | Lines screen of a team |
+| `group-<groupId>` | A line or goalies (`section`, named after the heading) |
+| `group-no-line` | Group «Ohne Linie» in the lines screen (always visible, when empty with the text «Alle Spielerinnen sind eingeteilt.») |
+| `player-<personId>` | Player in the lines screen (`li` with the name as `aria-label`, draggable for coaches) |
+| `add-line` | Button «Linie hinzufügen» |
+| `assignment-<personId>` | Select field «Linie von <Name>» of a player (alternative to drag and drop). Values: group IDs, empty = «Ohne Linie» |
 
 ## Display rules that affect tests
 

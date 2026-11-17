@@ -2,18 +2,18 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * F-07 · Anbindung swiss unihockey (SUH). Akzeptanzkriterien aus Issue #8 bzw. docs/pipeline/backlog.md,
- * Szenario S12 aus docs/testdaten.md. Im Profil dev/test spricht die App mit dem Simulator; nach dem Reset
- * liefert er für Team-ID 900001 (Team 1) Spiel 01 und 02 von Termin 04.
+ * F-07 · swiss unihockey connection (SUH). Acceptance criteria from issue #8 and docs/pipeline/backlog.md,
+ * scenario S12 from docs/test-data.md. In profile dev/test the app talks to the simulator; after the reset
+ * it delivers match 01 and 02 of event 04 for team ID 900001 (Team 1).
  */
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
 const TEAM_2 = '10000000-0000-4000-8000-000000000002';
 const T04 = '40000000-0000-4000-8000-000000000004';
-const SPIEL_01 = '50000000-0000-4000-8000-000000000001';
-const SPIEL_02 = '50000000-0000-4000-8000-000000000002';
+const MATCH_01 = '50000000-0000-4000-8000-000000000001';
+const MATCH_02 = '50000000-0000-4000-8000-000000000002';
 
-interface SuSpiel {
+interface SuMatch {
   suMatchId: number;
   startTime: string;
   homeTeam: string;
@@ -23,7 +23,7 @@ interface SuSpiel {
   result?: string | null;
 }
 
-const SPIEL_01_SU: SuSpiel = {
+const MATCH_01_SU: SuMatch = {
   suMatchId: 5000001,
   startTime: '2026-11-22T09:30:00+01:00',
   homeTeam: 'Team 1',
@@ -32,10 +32,10 @@ const SPIEL_01_SU: SuSpiel = {
   location: 'Musterdorf',
 };
 
-function spiel02(zeit: string): SuSpiel {
+function match02(time: string): SuMatch {
   return {
     suMatchId: 5000002,
-    startTime: `2026-11-22T${zeit}:00+01:00`,
+    startTime: `2026-11-22T${time}:00+01:00`,
     homeTeam: 'Unihockey Beispielstadt',
     awayTeam: 'Team 1',
     hall: 'Sporthalle Seefeld',
@@ -43,36 +43,36 @@ function spiel02(zeit: string): SuSpiel {
   };
 }
 
-/** Test-Hilfe: Daten vorgeben, die der Simulator für eine Team-ID liefert. */
+/** Test helper: set the data the simulator delivers for a team ID. */
 async function simulator(
   request: APIRequestContext,
   suTeamId: number,
-  spiele: SuSpiel[],
-  nichtErreichbar = false,
+  matches: SuMatch[],
+  unavailable = false,
 ): Promise<void> {
-  const antwort = await request.put('/api/test/swiss-unihockey/matches', {
-    data: { suTeamId, matches: spiele, unavailable: nichtErreichbar },
+  const response = await request.put('/api/test/swiss-unihockey/matches', {
+    data: { suTeamId, matches, unavailable },
   });
-  expect(antwort.status()).toBe(204);
+  expect(response.status()).toBe(204);
 }
 
-function abschnitt(page: Page) {
+function section(page: Page) {
   return page.getByRole('region', { name: 'swiss unihockey' });
 }
 
-/** Als `alex` den Abgleich von Team 1 über die Oberfläche auslösen. */
-async function abgleichenAlsAlex(page: Page): Promise<void> {
+/** Trigger the sync of Team 1 via the UI as `alex`. */
+async function syncAsAlex(page: Page): Promise<void> {
   await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
-  await expect(abschnitt(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
-  await abschnitt(page).getByRole('button', { name: 'Jetzt abgleichen' }).click();
+  await expect(section(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
+  await section(page).getByRole('button', { name: 'Jetzt abgleichen' }).click();
 }
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-07 K1 SUH-02: Als alex Team mit swiss unihockey verknüpfen und den Abgleich auslösen', async ({ page }) => {
+test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the sync', async ({ page }) => {
   await simulator(page.request, 900002, [
     {
       suMatchId: 6000001,
@@ -89,12 +89,12 @@ test('F-07 K1 SUH-02: Als alex Team mit swiss unihockey verknüpfen und den Abgl
   await expect(page.getByTestId(`su-linked-${TEAM_2}`)).toHaveCount(0);
 
   await page.goto(`/verwaltung/teams/${TEAM_2}`);
-  const su = abschnitt(page);
+  const su = section(page);
   await expect(su.getByTestId('su-status')).toHaveText('Nicht verknüpft.');
   await expect(su.getByRole('button', { name: 'Jetzt abgleichen' })).toHaveCount(0);
   await checkAccessibility(page);
 
-  // Pflichtfeld: nur Ziffern
+  // Required field: digits only
   await su.getByLabel('Team-ID bei swiss unihockey').fill('abc');
   await su.getByRole('button', { name: 'Verknüpfen' }).click();
   await expect(su.getByText('Bitte eine Team-ID eingeben (nur Ziffern).')).toBeVisible();
@@ -111,7 +111,7 @@ test('F-07 K1 SUH-02: Als alex Team mit swiss unihockey verknüpfen und den Abgl
   );
   await checkAccessibility(page);
 
-  // Der neue Spieltag erscheint bei Team 2
+  // The new match day appears for Team 2
   await login(page, 'eva');
   await page.goto('/termine');
   await expect(page.getByRole('listitem', { name: 'Spieltag Sa 05.12. 13:00' })).toBeVisible();
@@ -121,35 +121,35 @@ test('F-07 K1 SUH-02: Als alex Team mit swiss unihockey verknüpfen und den Abgl
   await expect(page.getByTestId(`su-linked-${TEAM_2}`)).toBeVisible();
 });
 
-test('F-07 K1 SUH-02: Verknüpfung lösen', async ({ page }) => {
+test('F-07 K1 SUH-02: Unlink', async ({ page }) => {
   await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
-  await abschnitt(page).getByRole('button', { name: 'Verknüpfung lösen' }).click();
+  await section(page).getByRole('button', { name: 'Verknüpfung lösen' }).click();
   await expect(page.getByRole('status')).toHaveText('Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.');
-  await expect(abschnitt(page).getByTestId('su-status')).toHaveText('Nicht verknüpft.');
-  await expect(abschnitt(page).getByLabel('Team-ID bei swiss unihockey')).toHaveValue('');
+  await expect(section(page).getByTestId('su-status')).toHaveText('Nicht verknüpft.');
+  await expect(section(page).getByLabel('Team-ID bei swiss unihockey')).toHaveValue('');
 });
 
-test('F-07 K1 RR-07: Nur Admins verknüpfen und gleichen ab', async ({ page }) => {
+test('F-07 K1 RR-07: Only admins link and sync', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
-  await expect(abschnitt(page)).toHaveCount(0);
-  const antwort = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`);
-  expect(antwort.status()).toBe(403);
+  await expect(section(page)).toHaveCount(0);
+  const response = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`);
+  expect(response.status()).toBe(403);
 });
 
-test('F-07 K2: Im Profil dev/test liefert der Simulator die Spiele von Termin 04', async ({ page }) => {
-  await abgleichenAlsAlex(page);
+test('F-07 K2: In profile dev/test the simulator delivers the matches of event 04', async ({ page }) => {
+  await syncAsAlex(page);
   await expect(page.getByRole('status')).toHaveText(
     'Abgleich fertig: 0 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 2 unverändert.',
   );
 });
 
-test('F-07 K3 SUH-04 SUH-07: Spiele am selben Tag in derselben Halle werden ein Spieltag', async ({ page }) => {
+test('F-07 K3 SUH-04 SUH-07: Matches on the same day in the same hall become one match day', async ({ page }) => {
   await simulator(page.request, 900001, [
-    SPIEL_01_SU,
-    spiel02('11:45'),
+    MATCH_01_SU,
+    match02('11:45'),
     {
       suMatchId: 5000020,
       startTime: '2026-12-06T10:00:00+01:00',
@@ -167,23 +167,23 @@ test('F-07 K3 SUH-04 SUH-07: Spiele am selben Tag in derselben Halle werden ein 
       location: 'Beromünster',
     },
   ]);
-  await abgleichenAlsAlex(page);
+  await syncAsAlex(page);
   await expect(page.getByRole('status')).toHaveText(
     'Abgleich fertig: 2 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 2 unverändert.',
   );
 
   await login(page, 'anna');
   await page.goto('/termine');
-  const eintrag = page.getByRole('listitem', {
+  const entry = page.getByRole('listitem', {
     name: 'Spieltag So 06.12. 10:00',
   });
-  await expect(eintrag).toHaveCount(1);
-  await eintrag.getByRole('link').click();
+  await expect(entry).toHaveCount(1);
+  await entry.getByRole('link').click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Spieltag');
-  const spiele = page.getByTestId('matches').getByRole('listitem');
-  await expect(spiele).toHaveCount(2);
-  await expect(spiele.nth(0)).toHaveAccessibleName('10:00 Team 1 – UHC Drei');
-  await expect(spiele.nth(1)).toHaveAccessibleName('12:30 UHC Vier – Team 1');
+  const matches = page.getByTestId('matches').getByRole('listitem');
+  await expect(matches).toHaveCount(2);
+  await expect(matches.nth(0)).toHaveAccessibleName('10:00 Team 1 – UHC Drei');
+  await expect(matches.nth(1)).toHaveAccessibleName('12:30 UHC Vier – Team 1');
   await expect(page.getByTestId('venue-map')).toHaveAttribute(
     'href',
     'https://www.google.com/maps/search/?api=1&query=Sporthalle+Nord+Berom%C3%BCnster',
@@ -191,40 +191,40 @@ test('F-07 K3 SUH-04 SUH-07: Spiele am selben Tag in derselben Halle werden ein 
   await checkAccessibility(page);
 });
 
-test('F-07 K4 S12 SUH-05 SUH-06 BEN-06: Verschiebung wird übernommen, eigene Daten bleiben, Team wird benachrichtigt', async ({
+test('F-07 K4 S12 SUH-05 SUH-06 BEN-06: Rescheduling is taken over, own data stays, team is notified', async ({
   page,
 }) => {
-  await simulator(page.request, 900001, [SPIEL_01_SU, spiel02('12:15')]);
-  await abgleichenAlsAlex(page);
+  await simulator(page.request, 900001, [MATCH_01_SU, match02('12:15')]);
+  await syncAsAlex(page);
   await expect(page.getByRole('status')).toHaveText(
     'Abgleich fertig: 0 neu, 1 geändert, 0 nicht mehr bei swiss unihockey, 1 unverändert.',
   );
 
   await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId(`match-${SPIEL_02}`)).toHaveAccessibleName('12:15 Unihockey Beispielstadt – Team 1');
-  await expect(page.getByTestId(`match-${SPIEL_01}`)).toHaveAccessibleName('09:30 Team 1 – UHC Musterdorf');
+  await expect(page.getByTestId(`match-${MATCH_02}`)).toHaveAccessibleName('12:15 Unihockey Beispielstadt – Team 1');
+  await expect(page.getByTestId(`match-${MATCH_01}`)).toHaveAccessibleName('09:30 Team 1 – UHC Musterdorf');
   await expect(page.getByTestId('meeting-point')).toHaveText('08:00 · Parkplatz Sporthalle Nord');
   await expect(page.getByText('Weisse Trikots mitnehmen')).toBeVisible();
 
-  // Aufgebot (Entwurf) unverändert: Anna, Lea, Mia, Sara, Jana
-  const aufgebot = await page.request.get(`/api/events/${T04}/call-up`);
-  const daten = (await aufgebot.json()) as {
+  // Call-up (draft) unchanged: Anna, Lea, Mia, Sara, Jana
+  const callUp = await page.request.get(`/api/events/${T04}/call-up`);
+  const data = (await callUp.json()) as {
     status: string;
     groups: {
       entries: { person: { firstName: string }; calledUp: boolean }[];
     }[];
   };
-  expect(daten.status).toBe('DRAFT');
+  expect(data.status).toBe('DRAFT');
   expect(
-    daten.groups
+    data.groups
       .flatMap((g) => g.entries)
       .filter((e) => e.calledUp)
       .map((e) => e.person.firstName)
       .sort(),
   ).toEqual(['Anna', 'Jana', 'Lea', 'Mia', 'Sara']);
 
-  // Team 1 wird benachrichtigt, Team 2 nicht
+  // Team 1 is notified, Team 2 is not
   const text = 'Spieltag So 22.11. wurde geändert: Spiel gegen Unihockey Beispielstadt neu um 12:15.';
   await login(page, 'anna');
   await page.goto('/benachrichtigungen');
@@ -235,37 +235,37 @@ test('F-07 K4 S12 SUH-05 SUH-06 BEN-06: Verschiebung wird übernommen, eigene Da
   await expect(page.getByText(text)).toHaveCount(0);
 });
 
-test('F-07 K5: Spiel fehlt bei swiss unihockey, wird markiert, nicht gelöscht', async ({ page }) => {
-  await simulator(page.request, 900001, [SPIEL_01_SU]);
-  await abgleichenAlsAlex(page);
+test('F-07 K5: A match missing at swiss unihockey is marked, not deleted', async ({ page }) => {
+  await simulator(page.request, 900001, [MATCH_01_SU]);
+  await syncAsAlex(page);
   await expect(page.getByRole('status')).toHaveText(
     'Abgleich fertig: 0 neu, 0 geändert, 1 nicht mehr bei swiss unihockey, 1 unverändert.',
   );
 
   await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId(`match-${SPIEL_02}`)).toContainText('swiss unihockey liefert dieses Spiel nicht mehr.');
-  await expect(page.getByTestId(`match-${SPIEL_01}`)).not.toContainText('nicht mehr');
+  await expect(page.getByTestId(`match-${MATCH_02}`)).toContainText('swiss unihockey liefert dieses Spiel nicht mehr.');
+  await expect(page.getByTestId(`match-${MATCH_01}`)).not.toContainText('nicht mehr');
 });
 
 test.describe('F-07 K6 SUH-09', () => {
   test.use({ expectedConsoleErrors: [/status of 502/] });
 
-  test('Simulator nicht erreichbar: Abgleich meldet den Fehler, nichts wird verändert, die App funktioniert', async ({
+  test('Simulator unreachable: the sync reports the error, nothing is changed, the app works', async ({
     page,
   }) => {
     await simulator(page.request, 900001, [], true);
-    await abgleichenAlsAlex(page);
+    await syncAsAlex(page);
     await expect(page.getByRole('alert')).toHaveText(
       'swiss unihockey ist im Moment nicht erreichbar. Es wurde nichts geändert. Der nächste Abgleich versucht es wieder.',
     );
-    await expect(abschnitt(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
+    await expect(section(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
 
     await login(page, 'petra');
     await page.goto(`/termine/${T04}`);
     await expect(page.getByTestId('matches').getByRole('listitem')).toHaveCount(2);
-    await expect(page.getByTestId(`match-${SPIEL_02}`)).toHaveAccessibleName('11:45 Unihockey Beispielstadt – Team 1');
-    await expect(page.getByTestId(`match-${SPIEL_02}`)).not.toContainText('nicht mehr');
+    await expect(page.getByTestId(`match-${MATCH_02}`)).toHaveAccessibleName('11:45 Unihockey Beispielstadt – Team 1');
+    await expect(page.getByTestId(`match-${MATCH_02}`)).not.toContainText('nicht mehr');
     await page.goto('/termine');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });

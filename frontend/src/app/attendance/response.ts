@@ -1,23 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { Antwort, AntwortSetzen, AntwortStatus } from '../api/types';
+import type { EventResponse, ResponseInput, ResponseStatus } from '../api/types';
 
 /** Antworten setzen (ANM): eigene Antwort und stellvertretend (Coach, ANM-11). */
 @Injectable({ providedIn: 'root' })
-export class AntwortService {
+export class ResponseService {
   private readonly http = inject(HttpClient);
 
   /** `personId` leer: eigene Antwort (`/antworten/ich`). */
-  setzen(terminId: string, eingabe: AntwortSetzen, personId?: string): Promise<Antwort> {
+  set(eventId: string, input: ResponseInput, personId?: string): Promise<EventResponse> {
     return firstValueFrom(
-      this.http.put<Antwort>(`/api/events/${terminId}/responses/${personId ?? 'me'}`, eingabe),
+      this.http.put<EventResponse>(`/api/events/${eventId}/responses/${personId ?? 'me'}`, input),
     );
   }
 }
 
 /** Icon pro Antwortstatus (O-16, docs/design-grundlagen.md): Farbe allein trägt keine Information. */
-export const ANTWORT_ICON: Record<AntwortStatus, string> = {
+export const RESPONSE_ICON: Record<ResponseStatus, string> = {
   ATTENDING: 'check',
   DECLINED: 'x',
   MAYBE: 'circle-help',
@@ -28,13 +28,13 @@ export const ANTWORT_ICON: Record<AntwortStatus, string> = {
  * Wert für `data-art`/Test-IDs in kebab-case, z.B. `nicht-dabei`. Die Test-IDs bleiben deutsch
  * (docs/ui/navigation.md), auch wenn die API die Antworten englisch nennt (F-10).
  */
-const ANTWORT_SCHLUESSEL: Record<AntwortStatus, string> = {
-  ATTENDING: 'dabei',
+const RESPONSE_KEY: Record<ResponseStatus, string> = {
+  ATTENDING: 'attending',
   DECLINED: 'nicht-dabei',
   MAYBE: 'vielleicht',
   PENDING: 'offen',
 };
 
-export function antwortSchluessel(status: AntwortStatus): string {
-  return ANTWORT_SCHLUESSEL[status];
+export function responseKey(status: ResponseStatus): string {
+  return RESPONSE_KEY[status];
 }

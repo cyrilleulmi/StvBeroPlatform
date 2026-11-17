@@ -8,7 +8,7 @@ import ch.stvbero.platform.core.auth.CurrentUser;
  */
 public interface TileDefinition {
 
-    /** Domain key, e.g. {@code anwesenheit}. Gives the test ID {@code kachel-<id>}. */
+    /** Domain key, e.g. {@code anwesenheit}. Gives the test ID {@code tile-<id>}. */
     String id();
 
     String title();

@@ -10,6 +10,6 @@ import { ThemeService } from './core/theme.service';
 })
 export class App {
   constructor() {
-    inject(ThemeService).anwenden();
+    inject(ThemeService).apply();
   }
 }

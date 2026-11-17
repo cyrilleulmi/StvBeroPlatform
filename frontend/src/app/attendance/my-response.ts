@@ -10,13 +10,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { Antwort, AntwortSetzen, AntwortStatus } from '../api/types';
-import { feldfehler, fehlertext } from '../core/error-text';
+import type { EventResponse, ResponseInput, ResponseStatus } from '../api/types';
+import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
-import { TEXTE } from '../core/texts';
-import { ANTWORT_ICON, AntwortService, antwortSchluessel } from './response';
+import { TEXTS } from '../core/texts';
+import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 
-type Wahl = AntwortSetzen['status'];
+type Choice = ResponseInput['status'];
 
 /**
  * Antwort-Buttons der angemeldeten Person (`meine-antwort`): «dabei» und «nicht dabei» mit einem Tap
@@ -33,73 +33,73 @@ type Wahl = AntwortSetzen['status'];
       role="group"
       data-testid="meine-antwort"
       [attr.aria-label]="name()"
-      [attr.data-antwort]="aktuell().status"
+      [attr.data-antwort]="current().status"
     >
       <div class="knoepfe">
-        @for (w of wahlen; track w) {
+        @for (w of choices; track w) {
           <button
             type="button"
             class="antwort-knopf"
-            [attr.data-art]="schluessel(w)"
-            [attr.data-testid]="'antwort-' + schluessel(w)"
-            [attr.aria-pressed]="aktuell().status === w ? 'true' : 'false'"
-            [attr.aria-busy]="laeuft() === w ? 'true' : null"
-            [attr.aria-describedby]="gesperrt() ? id('sperre') : null"
-            [disabled]="!!gesperrt() || laeuft() !== null"
-            (click)="waehlen(w)"
+            [attr.data-art]="key(w)"
+            [attr.data-testid]="'antwort-' + key(w)"
+            [attr.aria-pressed]="current().status === w ? 'true' : 'false'"
+            [attr.aria-busy]="running() === w ? 'true' : null"
+            [attr.aria-describedby]="locked() ? id('lock') : null"
+            [disabled]="!!locked() || running() !== null"
+            (click)="choose(w)"
           >
-            <app-icon [name]="icon[w]" [groesse]="18" />
-            {{ texte.knopf[w] }}
+            <app-icon [name]="icon[w]" [size]="18" />
+            {{ texts.button[w] }}
           </button>
         }
       </div>
-      @if (gesperrt(); as text) {
-        <p class="nebentext" [id]="id('sperre')">{{ text }}</p>
+      @if (locked(); as text) {
+        <p class="nebentext" [id]="id('lock')">{{ text }}</p>
       }
       @if (details()) {
-        @if (aktuell().comment; as k) {
-          <p class="nebentext kommentar">{{ texte.dein(k) }}</p>
+        @if (current().comment; as k) {
+          <p class="nebentext kommentar">{{ texts.yourComment(k) }}</p>
         }
-        @if (aktuell().enteredBy; as von) {
-          <p class="nebentext">{{ texte.eingetragenVon(von.firstName + ' ' + von.lastName) }}</p>
+        @if (current().enteredBy; as from) {
+          <p class="nebentext">{{ texts.enteredBy(from.firstName + ' ' + from.lastName) }}</p>
         }
-        @if (aktuell().lateCancellation) {
-          <p><span class="chip" data-art="kurzfristig">{{ texte.kurzfristig }}</span></p>
+        @if (current().lateCancellation) {
+          <p><span class="chip" data-art="kurzfristig">{{ texts.kurzfristig }}</span></p>
         }
       }
-      @if (meldung(); as m) {
+      @if (message(); as m) {
         <p class="nebentext rueckmeldung" role="status">{{ m }}</p>
       }
-      @if (fehler(); as m) {
+      @if (error(); as m) {
         <p class="meldung-fehler" role="alert">{{ m }}</p>
       }
     </div>
 
     <dialog
-      #vielleichtDialog
+      #maybeDialog
       class="karte dialog"
       aria-modal="true"
       [attr.aria-labelledby]="id('vielleicht-titel')"
       [attr.aria-describedby]="id('vielleicht-text')"
-      (close)="dialogZu()"
+      (close)="dialogClosedHandler()"
     >
-      <form class="formular" (submit)="vielleichtSpeichern($event)" novalidate>
-        <h2 [id]="id('vielleicht-titel')">{{ texte.vielleichtTitel }}</h2>
-        <p class="nebentext" [id]="id('vielleicht-text')">{{ texte.vielleichtText }}</p>
+      <form class="formular" (submit)="saveMaybe($event)" novalidate>
+        <h2 [id]="id('vielleicht-titel')">{{ texts.maybeTitle }}</h2>
+        <p class="nebentext" [id]="id('vielleicht-text')">{{ texts.maybeText }}</p>
         <div class="feld">
-          <label [for]="id('kommentar')">{{ texte.kommentar }}</label>
+          <label [for]="id('comment')">{{ texts.comment }}</label>
           <input
-            #kommentarFeld
+            #commentField
             type="text"
             maxlength="200"
             autocomplete="off"
-            [id]="id('kommentar')"
-            [value]="kommentar()"
-            (input)="kommentar.set($any($event.target).value)"
-            [attr.aria-invalid]="kommentarFehler() ? 'true' : null"
-            [attr.aria-describedby]="kommentarFehler() ? id('kommentar-fehler') : null"
+            [id]="id('comment')"
+            [value]="comment()"
+            (input)="comment.set($any($event.target).value)"
+            [attr.aria-invalid]="commentError() ? 'true' : null"
+            [attr.aria-describedby]="commentError() ? id('kommentar-fehler') : null"
           />
-          @if (kommentarFehler(); as m) {
+          @if (commentError(); as m) {
             <p class="feldfehler" [id]="id('kommentar-fehler')">{{ m }}</p>
           }
         </div>
@@ -107,48 +107,48 @@ type Wahl = AntwortSetzen['status'];
           <button
             type="submit"
             class="button button-primaer button-klein"
-            [disabled]="laeuft() !== null"
-            [attr.aria-busy]="laeuft() === 'MAYBE' ? 'true' : null"
+            [disabled]="running() !== null"
+            [attr.aria-busy]="running() === 'MAYBE' ? 'true' : null"
           >
-            {{ texte.speichern }}
+            {{ texts.save }}
           </button>
           <button
             type="button"
             class="button button-sekundaer button-klein"
-            [disabled]="laeuft() !== null"
-            (click)="schliessen(vielleichtDialog)"
+            [disabled]="running() !== null"
+            (click)="close(maybeDialog)"
           >
-            {{ texte.abbrechen }}
+            {{ texts.cancel }}
           </button>
         </div>
       </form>
     </dialog>
 
     <dialog
-      #grundDialog
+      #reasonDialog
       class="karte dialog"
       aria-modal="true"
       [attr.aria-labelledby]="id('grund-titel')"
       [attr.aria-describedby]="id('grund-text')"
-      (close)="dialogZu()"
+      (close)="dialogClosedHandler()"
     >
-      <form class="formular" (submit)="grundSpeichern($event)" novalidate>
-        <h2 [id]="id('grund-titel')">{{ texte.nichtDabeiTitel }}</h2>
-        <p class="nebentext" [id]="id('grund-text')">{{ texte.nichtDabeiText }}</p>
+      <form class="formular" (submit)="saveReason($event)" novalidate>
+        <h2 [id]="id('grund-titel')">{{ texts.declinedTitle }}</h2>
+        <p class="nebentext" [id]="id('grund-text')">{{ texts.declinedText }}</p>
         <div class="feld">
-          <label [for]="id('grund')">{{ texte.grund }}</label>
+          <label [for]="id('reason')">{{ texts.reason }}</label>
           <input
-            #grundFeld
+            #reasonField
             type="text"
             maxlength="200"
             autocomplete="off"
-            [id]="id('grund')"
-            [value]="kommentar()"
-            (input)="kommentar.set($any($event.target).value)"
-            [attr.aria-invalid]="kommentarFehler() ? 'true' : null"
-            [attr.aria-describedby]="kommentarFehler() ? id('grund-fehler') : null"
+            [id]="id('reason')"
+            [value]="comment()"
+            (input)="comment.set($any($event.target).value)"
+            [attr.aria-invalid]="commentError() ? 'true' : null"
+            [attr.aria-describedby]="commentError() ? id('grund-fehler') : null"
           />
-          @if (kommentarFehler(); as m) {
+          @if (commentError(); as m) {
             <p class="feldfehler" [id]="id('grund-fehler')">{{ m }}</p>
           }
         </div>
@@ -156,18 +156,18 @@ type Wahl = AntwortSetzen['status'];
           <button
             type="submit"
             class="button button-primaer button-klein"
-            [disabled]="laeuft() !== null"
-            [attr.aria-busy]="laeuft() === 'DECLINED' ? 'true' : null"
+            [disabled]="running() !== null"
+            [attr.aria-busy]="running() === 'DECLINED' ? 'true' : null"
           >
-            {{ texte.grundSpeichern }}
+            {{ texts.saveReason }}
           </button>
           <button
             type="button"
             class="button button-sekundaer button-klein"
-            [disabled]="laeuft() !== null"
-            (click)="schliessen(grundDialog)"
+            [disabled]="running() !== null"
+            (click)="close(reasonDialog)"
           >
-            {{ texte.ueberspringen }}
+            {{ texts.skip }}
           </button>
         </div>
       </form>
@@ -175,135 +175,135 @@ type Wahl = AntwortSetzen['status'];
   `,
   styleUrl: './response.css',
 })
-export class MeineAntwort {
-  private readonly antworten = inject(AntwortService);
-  protected readonly texte = TEXTE.antwort;
-  protected readonly icon = ANTWORT_ICON;
-  protected readonly schluessel = antwortSchluessel;
-  protected readonly wahlen: Wahl[] = ['ATTENDING', 'DECLINED', 'MAYBE'];
+export class MyResponse {
+  private readonly responses = inject(ResponseService);
+  protected readonly texts = TEXTS.response;
+  protected readonly icon = RESPONSE_ICON;
+  protected readonly key = responseKey;
+  protected readonly choices: Choice[] = ['ATTENDING', 'DECLINED', 'MAYBE'];
 
-  readonly terminId = input.required<string>();
-  readonly antwort = input.required<Antwort>();
+  readonly eventId = input.required<string>();
+  readonly response = input.required<EventResponse>();
   /** Name der Gruppe, z.B. «Meine Antwort für Training Di 17.11. 18:30». */
-  readonly name = input<string>(TEXTE.antwort.meineAntwort);
+  readonly name = input<string>(TEXTS.response.myResponse);
   /** Erklärung, warum nicht geantwortet werden kann (abgesagt, vorbei). Gesetzt: Buttons deaktiviert. */
-  readonly gesperrt = input<string | null>(null);
+  readonly locked = input<string | null>(null);
   /** Eigenen Kommentar, «eingetragen von» und «kurzfristig» anzeigen (Detail eines Termins). */
   readonly details = input(false);
 
   /** Nach jedem Speichern, damit die Seite Zähler und Übersicht nachlädt. */
-  readonly geaendert = output<Antwort>();
+  readonly changed = output<EventResponse>();
 
-  protected readonly aktuell = linkedSignal(() => this.antwort());
-  protected readonly laeuft = signal<Wahl | null>(null);
-  protected readonly meldung = signal<string | null>(null);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly kommentar = signal('');
-  protected readonly kommentarFehler = signal<string | null>(null);
+  protected readonly current = linkedSignal(() => this.response());
+  protected readonly running = signal<Choice | null>(null);
+  protected readonly message = signal<string | null>(null);
+  protected readonly error = signal<string | null>(null);
+  protected readonly comment = signal('');
+  protected readonly commentError = signal<string | null>(null);
 
-  private readonly vielleichtDialog = viewChild<ElementRef<HTMLDialogElement>>('vielleichtDialog');
-  private readonly grundDialog = viewChild<ElementRef<HTMLDialogElement>>('grundDialog');
+  private readonly maybeDialog = viewChild<ElementRef<HTMLDialogElement>>('maybeDialog');
+  private readonly reasonDialog = viewChild<ElementRef<HTMLDialogElement>>('reasonDialog');
 
-  private readonly praefix = computed(() => `antwort-${this.terminId()}`);
+  private readonly prefix = computed(() => `antwort-${this.eventId()}`);
 
-  protected id(teil: string): string {
-    return `${this.praefix()}-${teil}`;
+  protected id(part: string): string {
+    return `${this.prefix()}-${part}`;
   }
 
-  protected async waehlen(w: Wahl): Promise<void> {
-    if (this.gesperrt() || this.laeuft()) return;
-    const bisher = this.aktuell();
-    this.kommentarFehler.set(null);
+  protected async choose(w: Choice): Promise<void> {
+    if (this.locked() || this.running()) return;
+    const previous = this.current();
+    this.commentError.set(null);
     if (w === 'MAYBE') {
-      this.kommentar.set(bisher.status === 'MAYBE' ? (bisher.comment ?? '') : '');
-      this.oeffnen(this.vielleichtDialog());
+      this.comment.set(previous.status === 'MAYBE' ? (previous.comment ?? '') : '');
+      this.open(this.maybeDialog());
       return;
     }
-    if (w === 'DECLINED' && bisher.status === 'DECLINED') {
-      this.kommentar.set(bisher.comment ?? '');
-      this.oeffnen(this.grundDialog());
+    if (w === 'DECLINED' && previous.status === 'DECLINED') {
+      this.comment.set(previous.comment ?? '');
+      this.open(this.reasonDialog());
       return;
     }
     // Ein Tap: sofort speichern (ANM-08). Bei «nicht dabei» danach den freiwilligen Grund anbieten (ANM-05).
-    if (await this.speichern({ status: w })) {
+    if (await this.save({ status: w })) {
       if (w === 'DECLINED') {
-        this.kommentar.set('');
-        this.oeffnen(this.grundDialog());
+        this.comment.set('');
+        this.open(this.reasonDialog());
       }
     }
   }
 
-  protected async vielleichtSpeichern(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    const kommentar = this.kommentar().trim();
-    if (!kommentar) {
-      this.kommentarFehler.set(TEXTE.antwort.kommentarPflicht);
-      this.fokus('kommentar');
+  protected async saveMaybe(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    const comment = this.comment().trim();
+    if (!comment) {
+      this.commentError.set(TEXTS.response.commentRequired);
+      this.focus('comment');
       return;
     }
-    if (await this.speichern({ status: 'MAYBE', comment: kommentar })) {
-      this.vielleichtDialog()?.nativeElement.close();
+    if (await this.save({ status: 'MAYBE', comment: comment })) {
+      this.maybeDialog()?.nativeElement.close();
     } else {
-      this.fokus('kommentar');
+      this.focus('comment');
     }
   }
 
-  protected async grundSpeichern(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    const kommentar = this.kommentar().trim();
-    if (await this.speichern({ status: 'DECLINED', comment: kommentar || null }, true)) {
-      this.grundDialog()?.nativeElement.close();
+  protected async saveReason(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    const comment = this.comment().trim();
+    if (await this.save({ status: 'DECLINED', comment: comment || null }, true)) {
+      this.reasonDialog()?.nativeElement.close();
     } else {
-      this.fokus('grund');
+      this.focus('reason');
     }
   }
 
-  protected schliessen(dialog: HTMLDialogElement): void {
+  protected close(dialog: HTMLDialogElement): void {
     dialog.close();
   }
 
-  protected dialogZu(): void {
-    this.kommentarFehler.set(null);
+  protected dialogClosedHandler(): void {
+    this.commentError.set(null);
   }
 
-  private oeffnen(dialog: ElementRef<HTMLDialogElement> | undefined): void {
+  private open(dialog: ElementRef<HTMLDialogElement> | undefined): void {
     const d = dialog?.nativeElement;
     if (d && !d.open) d.showModal();
   }
 
-  private fokus(teil: string): void {
-    queueMicrotask(() => document.getElementById(this.id(teil))?.focus());
+  private focus(part: string): void {
+    queueMicrotask(() => document.getElementById(this.id(part))?.focus());
   }
 
   /** Speichert und meldet das Ergebnis. Fehler beim Kommentar erscheinen beim Feld (ANM-04). */
-  private async speichern(eingabe: AntwortSetzen, nurGrund = false): Promise<boolean> {
-    this.laeuft.set(eingabe.status);
-    this.meldung.set(null);
-    this.fehler.set(null);
-    this.kommentarFehler.set(null);
+  private async save(input: ResponseInput, reasonOnly = false): Promise<boolean> {
+    this.running.set(input.status);
+    this.message.set(null);
+    this.error.set(null);
+    this.commentError.set(null);
     try {
-      const neu = await this.antworten.setzen(this.terminId(), eingabe);
-      this.aktuell.set(neu);
-      this.meldung.set(
-        nurGrund
-          ? TEXTE.antwort.grundGespeichert
-          : TEXTE.antwort.gespeichert(TEXTE.antwort.status[neu.status as AntwortStatus]),
+      const updated = await this.responses.set(this.eventId(), input);
+      this.current.set(updated);
+      this.message.set(
+        reasonOnly
+          ? TEXTS.response.reasonSaved
+          : TEXTS.response.saved(TEXTS.response.status[updated.status as ResponseStatus]),
       );
-      this.geaendert.emit(neu);
+      this.changed.emit(updated);
       return true;
     } catch (e) {
-      const felder = feldfehler(e);
-      if (felder['comment']) {
-        this.kommentarFehler.set(felder['comment']);
+      const fields = fieldErrorsOf(e);
+      if (fields['comment']) {
+        this.commentError.set(fields['comment']);
       } else {
         // Dialog schliessen, damit die Meldung sichtbar ist (z.B. Termin inzwischen abgesagt, 409).
-        this.fehler.set(fehlertext(e));
-        this.vielleichtDialog()?.nativeElement.close();
-        this.grundDialog()?.nativeElement.close();
+        this.error.set(errorText(e));
+        this.maybeDialog()?.nativeElement.close();
+        this.reasonDialog()?.nativeElement.close();
       }
       return false;
     } finally {
-      this.laeuft.set(null);
+      this.running.set(null);
     }
   }
 }

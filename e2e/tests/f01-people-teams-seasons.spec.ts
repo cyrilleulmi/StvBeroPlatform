@@ -1,8 +1,8 @@
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * F-01 · Personen, Teams, Saisons (PTF, SAI, RR-04). Akzeptanzkriterien aus docs/pipeline/backlog.md.
- * IDs aus docs/testdaten.md.
+ * F-01 · People, teams, seasons (PTF, SAI, RR-04). Acceptance criteria from docs/pipeline/backlog.md.
+ * IDs from docs/test-data.md.
  */
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
@@ -13,14 +13,14 @@ const MARC = '20000000-0000-4000-8000-000000000003';
 const ANNA = '20000000-0000-4000-8000-000000000005';
 const TINA = '20000000-0000-4000-8000-000000000016';
 const VERA = '20000000-0000-4000-8000-000000000017';
-const SAISON_2025 = '60000000-0000-4000-8000-000000000001';
-const SAISON_2026 = '60000000-0000-4000-8000-000000000002';
+const SEASON_2025 = '60000000-0000-4000-8000-000000000001';
+const SEASON_2026 = '60000000-0000-4000-8000-000000000002';
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-01 K1: Seed mit Saisons, Teams, Personen und Teamzugehörigkeiten', async ({ page }) => {
+test('F-01 K1: Seed with seasons, teams, people and team memberships', async ({ page }) => {
   await login(page, 'alex');
 
   await page.goto('/verwaltung/personen');
@@ -30,19 +30,19 @@ test('F-01 K1: Seed mit Saisons, Teams, Personen und Teamzugehörigkeiten', asyn
 
   await page.goto('/verwaltung/teams');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Teams verwalten');
-  await expect(page.getByLabel('Saison')).toHaveValue(SAISON_2026);
+  await expect(page.getByLabel('Saison')).toHaveValue(SEASON_2026);
   const teams = page.getByRole('list', { name: 'Teams' });
   await expect(teams.getByRole('link')).toHaveText(['Team 1', 'Team 2', 'Team 3']);
   await checkAccessibility(page);
 
   await page.goto('/verwaltung/saisons');
-  const saisons = page.getByRole('list', { name: 'Saisons' });
-  await expect(saisons.getByRole('listitem', { name: '2026/27' }).getByTestId('season-status')).toHaveText('aktuell');
-  await expect(saisons.getByRole('listitem', { name: '2025/26' }).getByTestId('season-status')).toHaveText('Archiv');
+  const seasons = page.getByRole('list', { name: 'Saisons' });
+  await expect(seasons.getByRole('listitem', { name: '2026/27' }).getByTestId('season-status')).toHaveText('aktuell');
+  await expect(seasons.getByRole('listitem', { name: '2025/26' }).getByTestId('season-status')).toHaveText('Archiv');
   await checkAccessibility(page);
 });
 
-test('F-01 K2 PTF-11: Admin erfasst und bearbeitet eine Person', async ({ page }) => {
+test('F-01 K2 PTF-11: Admin creates and edits a person', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung');
   await page.getByRole('link', { name: /^Personen/ }).click();
@@ -74,11 +74,11 @@ test('F-01 K2 PTF-11: Admin erfasst und bearbeitet eine Person', async ({ page }
   await expect(page.getByRole('list', { name: 'Personen' }).getByRole('link')).toHaveText(['Nora Lang-Meier']);
 });
 
-test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme abgelehnt', async ({ page }) => {
+test('F-01 K3 PTF-04: Add a person with a team role to the team, second addition rejected', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/teams');
   await page.getByRole('link', { name: 'Team 3' }).click();
-  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_3}?saison=${SAISON_2026}`);
+  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_3}?saison=${SEASON_2026}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 3');
   await checkAccessibility(page);
 
@@ -91,15 +91,15 @@ test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme ab
   await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`member-${ANNA}`)).toBeVisible();
   await expect(page.getByRole('list', { name: 'Spielerinnen' }).getByTestId(`member-${ANNA}`)).toHaveCount(0);
 
-  // Die Oberfläche bietet die zweite Aufnahme nicht an, das Backend lehnt sie ab (PTF-04).
+  // The UI does not offer the second addition, the backend rejects it (PTF-04).
   await expect(page.getByRole('option', { name: 'Anna Muster (schon im Team)' })).toBeDisabled();
-  const zweite = await page.request.post(`/api/teams/${TEAM_3}/members`, {
+  const second = await page.request.post(`/api/teams/${TEAM_3}/members`, {
     data: { personId: ANNA, teamRole: 'PLAYER' },
   });
-  expect(zweite.status()).toBe(409);
-  expect((await zweite.json()).rule).toBe('PTF-04');
+  expect(second.status()).toBe(409);
+  expect((await second.json()).rule).toBe('PTF-04');
 
-  // Funktion ändern und entfernen
+  // Change team role and remove
   await page.getByLabel('Funktion von Tina Bucher').selectOption({ label: 'Coach' });
   await expect(page.getByRole('status')).toHaveText('Tina Bucher ist jetzt Coach.');
   await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`member-${TINA}`)).toBeVisible();
@@ -108,12 +108,12 @@ test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme ab
   await expect(page.getByTestId(`member-${TINA}`)).toHaveCount(0);
 });
 
-test('F-01 K4 PTF-12: Petra sieht beide Teams mit ihrer jeweiligen Funktion', async ({ page }) => {
+test('F-01 K4 PTF-12: Petra sees both teams with her respective team role', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/teams');
 
-  const liste = page.getByRole('list', { name: 'Meine Teams' });
-  await expect(liste.getByRole('listitem')).toHaveCount(2);
+  const list = page.getByRole('list', { name: 'Meine Teams' });
+  await expect(list.getByRole('listitem')).toHaveCount(2);
   await expect(page.getByTestId(`team-card-${TEAM_1}`)).toHaveText(/Team 1\s*Coach/);
   await expect(page.getByTestId(`team-card-${TEAM_2}`)).toHaveText(/Team 2\s*Spielerin/);
   await checkAccessibility(page);
@@ -123,15 +123,15 @@ test('F-01 K4 PTF-12: Petra sieht beide Teams mit ihrer jeweiligen Funktion', as
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 2');
 });
 
-test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async ({ page }) => {
+test('F-01 K5 PTF-07: /teams/:id shows coaches and players separately', async ({ page }) => {
   await login(page, 'petra');
 
   await page.goto(`/teams/${TEAM_1}`);
   const coaches = page.getByTestId('team-coaches');
-  const spielerinnen = page.getByTestId('team-players');
+  const players = page.getByTestId('team-players');
   await expect(coaches.getByRole('listitem')).toHaveText(['Petra Keller']);
-  // Ab F-02 nach Linie: Linie 1, Linie 2, Goalies, Ohne Linie; darin nach Nachname (LIN-09)
-  await expect(spielerinnen.getByRole('listitem')).toHaveText([
+  // Since F-02 by line: Linie 1, Linie 2, Goalies, Ohne Linie; within by last name (LIN-09)
+  await expect(players.getByRole('listitem')).toHaveText([
     'Mia Frei',
     'Lea Graf',
     'Anna Muster',
@@ -140,7 +140,7 @@ test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async
     'Jana Wyss',
     'Kim Baumann',
   ]);
-  await expect(spielerinnen.getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
+  await expect(players.getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
   await checkAccessibility(page);
 
   await page.goto(`/teams/${TEAM_2}`);
@@ -150,25 +150,25 @@ test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async
   await expect(page.getByTestId('team-coaches').getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
 });
 
-test('F-01 K6 SAI-04 SAI-06: neue Saison mit Übernahme anlegen und zur aktuellen machen', async ({ page }) => {
+test('F-01 K6 SAI-04 SAI-06: create a new season with carry-over and make it the current one', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Saisons');
 
-  // Vorschlag: die Saison nach der neuesten, Übernahme aus der aktuellen
+  // Suggestion: the season after the newest one, carry-over from the current one
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
   await expect(page.getByLabel('Beginn')).toHaveValue('2027-07-01');
   await expect(page.getByLabel('Ende')).toHaveValue('2028-06-30');
-  await expect(page.getByLabel('Teams und Zugehörigkeiten übernehmen aus')).toHaveValue(SAISON_2026);
+  await expect(page.getByLabel('Teams und Zugehörigkeiten übernehmen aus')).toHaveValue(SEASON_2026);
   await page.getByRole('button', { name: 'Saison anlegen' }).click();
 
   await expect(page.getByRole('status')).toHaveText('Saison 2027/28 ist angelegt. Du kannst sie jetzt anpassen.');
-  const neu = page.getByRole('listitem', { name: '2027/28' });
-  await expect(neu.getByTestId('season-status')).toHaveText('geplant');
+  const created = page.getByRole('listitem', { name: '2027/28' });
+  await expect(created.getByTestId('season-status')).toHaveText('geplant');
   await checkAccessibility(page);
 
-  // Übernommen: Teams und Zugehörigkeiten
-  await neu.getByRole('link', { name: 'Teams ansehen' }).click();
+  // Carried over: teams and memberships
+  await created.getByRole('link', { name: 'Teams ansehen' }).click();
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveText(['Team 1', 'Team 2', 'Team 3']);
   await page.getByRole('link', { name: 'Team 1' }).click();
   await expect(page.getByTestId('team-coaches').getByRole('listitem')).toHaveCount(1);
@@ -180,37 +180,37 @@ test('F-01 K6 SAI-04 SAI-06: neue Saison mit Übernahme anlegen und zur aktuelle
   await expect(page.getByRole('listitem', { name: '2027/28' }).getByTestId('season-status')).toHaveText('aktuell');
   await expect(page.getByRole('listitem', { name: '2026/27' }).getByTestId('season-status')).toHaveText('Archiv');
 
-  // Petra sieht ihre Teams in der neuen Saison
+  // Petra sees her teams in the new season
   await login(page, 'petra');
   await page.goto('/teams');
   await expect(page.getByTestId(`team-card-${TEAM_1}`)).toHaveText(/Coach/);
   await expect(page.getByTestId(`team-card-${TEAM_2}`)).toHaveText(/Spielerin/);
 });
 
-test('F-01 K7 S16 SAI-02: Archiv ist lesend sichtbar', async ({ page }) => {
+test('F-01 K7 S16 SAI-02: Archive is visible read-only', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await page.getByRole('listitem', { name: '2025/26' }).getByRole('link', { name: 'Teams ansehen' }).click();
 
-  await expect(page).toHaveURL(`/verwaltung/teams?saison=${SAISON_2025}`);
+  await expect(page).toHaveURL(`/verwaltung/teams?saison=${SEASON_2025}`);
   await expect(page.getByTestId('archive-notice')).toHaveText('Saison 2025/26 im Archiv: nur lesend.');
   await expect(page.getByRole('button', { name: 'Team anlegen' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Team 1' }).click();
 
-  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_1}?saison=${SAISON_2025}`);
+  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_1}?saison=${SEASON_2025}`);
   await expect(page.getByTestId('archive-notice')).toBeVisible();
   await expect(page.getByTestId('team-players').getByTestId(`member-${VERA}`)).toHaveText(/Vera Studer\s*Spielerin/);
   await expect(page.getByRole('button')).toHaveCount(0);
   await expect(page.getByRole('combobox')).toHaveCount(0);
   await checkAccessibility(page);
 
-  const aendern = await page.request.post(`/api/teams/${TEAM_1}/members?season=${SAISON_2025}`, {
+  const change = await page.request.post(`/api/teams/${TEAM_1}/members?season=${SEASON_2025}`, {
     data: { personId: ANNA, teamRole: 'PLAYER' },
   });
-  expect(aendern.status()).toBe(409);
+  expect(change.status()).toBe(409);
 });
 
-test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ page }) => {
+test('F-01 K8 RR-04 RR-07: Administration is locked for non-admins', async ({ page }) => {
   await login(page, 'petra');
 
   for (const route of [
@@ -228,38 +228,38 @@ test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ 
   await expect(page.getByRole('navigation', { name: 'Hauptnavigation' }).getByRole('link', { name: 'Verwaltung' })).toHaveCount(0);
   await checkAccessibility(page);
 
-  const anfragen = [
+  const requests = [
     page.request.get('/api/persons'),
     page.request.post('/api/persons', { data: { firstName: 'X', lastName: 'Y' } }),
     page.request.post('/api/teams', { data: { name: 'Team 9' } }),
     page.request.post(`/api/teams/${TEAM_1}/members`, { data: { personId: TINA, teamRole: 'PLAYER' } }),
-    page.request.post(`/api/seasons/${SAISON_2025}/activate`),
+    page.request.post(`/api/seasons/${SEASON_2025}/activate`),
   ];
-  for (const antwort of await Promise.all(anfragen)) {
-    expect(antwort.status()).toBe(403);
+  for (const response of await Promise.all(requests)) {
+    expect(response.status()).toBe(403);
   }
 });
 
-test('F-01 RR-02: Fremdes Team zeigt «Keine Berechtigung»', async ({ page }) => {
+test('F-01 RR-02: Another team shows «Keine Berechtigung»', async ({ page }) => {
   await login(page, 'anna');
   await page.goto(`/teams/${TEAM_2}`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   expect((await page.request.get(`/api/teams/${TEAM_2}`)).status()).toBe(403);
 });
 
-/** Zählt die POST-Anfragen auf einen API-Pfad (Doppelklick darf nur eine auslösen). */
-function postsZaehlen(page: import('@playwright/test').Page, pfad: RegExp): { anzahl: number } {
-  const zaehler = { anzahl: 0 };
+/** Counts the POST requests to an API path (a double click may trigger only one). */
+function countPosts(page: import('@playwright/test').Page, path: RegExp): { count: number } {
+  const counter = { count: 0 };
   page.on('request', (r) => {
-    if (r.method() === 'POST' && pfad.test(new URL(r.url()).pathname)) zaehler.anzahl++;
+    if (r.method() === 'POST' && path.test(new URL(r.url()).pathname)) counter.count++;
   });
-  return zaehler;
+  return counter;
 }
 
-test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', async ({ page }) => {
+test('F-01 K2 PTF-11: Double click on Speichern creates the person only once', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/personen/neu');
-  const posts = postsZaehlen(page, /^\/api\/persons$/);
+  const posts = countPosts(page, /^\/api\/persons$/);
   await page.getByLabel('Vorname').fill('Flurina');
   await page.getByLabel('Nachname').fill('Testerin');
   await page.getByRole('button', { name: 'Speichern' }).dblclick();
@@ -267,14 +267,14 @@ test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', 
   await expect(page.getByRole('status')).toHaveText('Flurina Testerin ist erfasst.');
   await page.goto('/verwaltung/personen?suche=Flurina');
   await expect(page.getByRole('list', { name: 'Personen' }).getByRole('link')).toHaveText(['Flurina Testerin']);
-  expect(posts.anzahl).toBe(1);
+  expect(posts.count).toBe(1);
 });
 
-test('F-01 K3: Doppelklick auf Team anlegen legt das Team nur einmal an', async ({ page }) => {
+test('F-01 K3: Double click on Team anlegen creates the team only once', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/teams');
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveCount(3);
-  const posts = postsZaehlen(page, /^\/api\/teams$/);
+  const posts = countPosts(page, /^\/api\/teams$/);
   await page.getByLabel('Name des neuen Teams').fill('Team 4');
   await page.getByRole('button', { name: 'Team anlegen' }).dblclick();
 
@@ -285,14 +285,14 @@ test('F-01 K3: Doppelklick auf Team anlegen legt das Team nur einmal an', async 
     'Team 3',
     'Team 4',
   ]);
-  expect(posts.anzahl).toBe(1);
+  expect(posts.count).toBe(1);
 });
 
-test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohne Fehler', async ({ page }) => {
+test('F-01 K3 PTF-04: Double click on Aufnehmen adds the person once, without errors', async ({ page }) => {
   await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
-  const posts = postsZaehlen(page, /\/members$/);
+  const posts = countPosts(page, /\/members$/);
   await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Ruth Meier' });
   await page.getByLabel('Funktion', { exact: true }).selectOption({ label: 'Coach' });
   await page.getByRole('button', { name: 'Aufnehmen' }).dblclick();
@@ -300,40 +300,40 @@ test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohn
   await expect(page.getByRole('status')).toHaveText('Ruth Meier ist jetzt Coach in Team 1.');
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Coaches' }).getByRole('listitem', { name: 'Ruth Meier' })).toHaveCount(1);
-  expect(posts.anzahl).toBe(1);
+  expect(posts.count).toBe(1);
 });
 
-test('F-01 K6 SAI-01: Doppelklick auf Saison anlegen legt die Saison einmal an, ohne Fehler', async ({ page }) => {
+test('F-01 K6 SAI-01: Double click on Saison anlegen creates the season once, without errors', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
-  const posts = postsZaehlen(page, /^\/api\/seasons$/);
+  const posts = countPosts(page, /^\/api\/seasons$/);
   await page.getByRole('button', { name: 'Saison anlegen' }).dblclick();
 
   await expect(page.getByRole('status')).toHaveText('Saison 2027/28 ist angelegt. Du kannst sie jetzt anpassen.');
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('listitem', { name: '2027/28' })).toHaveCount(1);
-  expect(posts.anzahl).toBe(1);
+  expect(posts.count).toBe(1);
 });
 
-test('F-01 K7: Team ohne Coach zeigt «noch keinen Coach»', async ({ page }) => {
+test('F-01 K7: Team without coach shows «noch keinen Coach»', async ({ page }) => {
   await login(page, 'alex');
-  await page.goto(`/verwaltung/teams/${TEAM_1}?saison=${SAISON_2025}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?saison=${SEASON_2025}`);
   await expect(page.getByText('Dieses Team hat noch keinen Coach.')).toBeVisible();
 });
 
-test('F-01 K2 PTF-11: Langer Name ohne Leerzeichen bricht in der Liste um', async ({ page }) => {
+test('F-01 K2 PTF-11: Long name without spaces wraps in the list', async ({ page }) => {
   await login(page, 'alex');
-  const lang = ('Maximiliane'.repeat(6)).slice(0, 60); // Maximum, ohne Leerzeichen
-  const antwort = await page.request.post('/api/persons', {
-    data: { firstName: lang, lastName: 'Lang', email: null, admin: false },
+  const longName = ('Maximiliane'.repeat(6)).slice(0, 60); // maximum, without spaces
+  const response = await page.request.post('/api/persons', {
+    data: { firstName: longName, lastName: 'Lang', email: null, admin: false },
   });
-  expect(antwort.status()).toBe(201);
+  expect(response.status()).toBe(201);
   await page.goto('/verwaltung/personen');
   await expect(page.getByRole('list', { name: 'Personen' }).getByText(/^Maximiliane/)).toBeVisible();
-  const breite = await page.evaluate(() => ({
+  const width = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
-    fenster: document.documentElement.clientWidth,
+    window: document.documentElement.clientWidth,
   }));
-  expect(breite.scroll).toBeLessThanOrEqual(breite.fenster);
+  expect(width.scroll).toBeLessThanOrEqual(width.window);
 });

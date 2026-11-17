@@ -11,18 +11,18 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { TerminKurz } from '../api/types';
-import { AnmeldungService } from '../core/auth.service';
-import { fehlertext } from '../core/error-text';
+import type { EventSummary } from '../api/types';
+import { AuthService } from '../core/auth.service';
+import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
-import { TEXTE } from '../core/texts';
-import { MeineAntwort } from './my-response';
-import { jahrVon, monat, monatSchluessel, terminDatum, uhrzeit } from './time';
+import { TEXTS } from '../core/texts';
+import { MyResponse } from './my-response';
+import { yearOf, month, monthKey, eventDate, clockTime } from './time';
 
-interface Monat {
-  schluessel: string;
+interface Month {
+  key: string;
   name: string;
-  termine: TerminKurz[];
+  termine: EventSummary[];
 }
 
 /**
@@ -33,40 +33,40 @@ interface Monat {
 @Component({
   selector: 'app-termine',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MeineAntwort],
+  imports: [RouterLink, Icon, MyResponse],
   template: `
     <div class="titelzeile">
-      <h1>{{ texte.termine.titel }}</h1>
-      @if (darfErfassen()) {
+      <h1>{{ texts.termine.title }}</h1>
+      @if (canCreate()) {
         <a class="button button-primaer button-klein" routerLink="/termine/neu">{{
-          texte.termine.erfassen
+          texts.termine.create
         }}</a>
       }
     </div>
 
     <div class="filter">
-      <nav class="umschalter" [attr.aria-label]="texte.termine.ansicht">
+      <nav class="umschalter" [attr.aria-label]="texts.termine.view">
         <a
           routerLink="/termine"
           [queryParams]="{ ansicht: null }"
           queryParamsHandling="merge"
-          [attr.aria-current]="!vergangen() ? 'page' : null"
-          >{{ texte.termine.kommend }}</a
+          [attr.aria-current]="!past() ? 'page' : null"
+          >{{ texts.termine.upcoming }}</a
         >
         <a
           routerLink="/termine"
           [queryParams]="{ ansicht: 'vergangen' }"
           queryParamsHandling="merge"
-          [attr.aria-current]="vergangen() ? 'page' : null"
-          >{{ texte.termine.vergangen }}</a
+          [attr.aria-current]="past() ? 'page' : null"
+          >{{ texts.termine.past }}</a
         >
       </nav>
-      @if (meineTeams().length > 1 || team()) {
+      @if (myTeams().length > 1 || team()) {
         <div class="feld">
-          <label for="termine-team">{{ texte.termine.team }}</label>
-          <select id="termine-team" (change)="teamWaehlen($any($event.target).value)">
-            <option value="" [selected]="!team()">{{ texte.termine.alleTeams }}</option>
-            @for (t of teamAuswahl(); track t.id) {
+          <label for="termine-team">{{ texts.termine.team }}</label>
+          <select id="termine-team" (change)="selectTeam($any($event.target).value)">
+            <option value="" [selected]="!team()">{{ texts.termine.allTeams }}</option>
+            @for (t of teamSelection(); track t.id) {
               <option [value]="t.id" [selected]="team() === t.id">{{ t.name }}</option>
             }
           </select>
@@ -74,44 +74,44 @@ interface Monat {
       }
     </div>
 
-    @if (fehler(); as meldung) {
-      <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+    @if (error(); as message) {
+      <p class="meldung-fehler" role="alert">{{ message }}</p>
     }
 
     <section
       class="karte"
       aria-labelledby="termine-liste-titel"
-      [attr.aria-busy]="laedt() ? 'true' : null"
+      [attr.aria-busy]="loading() ? 'true' : null"
     >
       <h2 id="termine-liste-titel" class="visuell-versteckt">
-        {{ vergangen() ? texte.termine.vergangeneTermine : texte.termine.kommendeTermine }}
+        {{ past() ? texts.termine.pastEvents : texts.termine.upcomingEvents }}
       </h2>
-      @if (laedt()) {
-        <p class="leer">{{ texte.allgemein.laden }}</p>
+      @if (loading()) {
+        <p class="leer">{{ texts.common.loading }}</p>
       } @else if (termine().length === 0) {
-        <p class="leer">{{ vergangen() ? texte.termine.leerVergangen : texte.termine.leer }}</p>
+        <p class="leer">{{ past() ? texts.termine.emptyPast : texts.termine.empty }}</p>
       } @else {
-        @for (m of monate(); track m.schluessel) {
-          <h3 class="monat" [id]="'monat-' + m.schluessel">{{ m.name }}</h3>
-          <ul class="liste" [attr.aria-labelledby]="'monat-' + m.schluessel">
+        @for (m of months(); track m.key) {
+          <h3 class="monat" [id]="'monat-' + m.key">{{ m.name }}</h3>
+          <ul class="liste" [attr.aria-labelledby]="'monat-' + m.key">
             @for (t of m.termine; track t.id) {
               <li
                 class="termin-eintrag"
                 [attr.data-testid]="'termin-karte-' + t.id"
-                [attr.aria-label]="kartenName(t)"
+                [attr.aria-label]="cardName(t)"
                 [attr.data-status]="t.status"
               >
                 <a class="zeile-link termin" [routerLink]="['/termine', t.id]">
                   <span class="datum" aria-hidden="true">
-                    <span class="wochentag">{{ datum(t.start).slice(0, 2) }}</span>
-                    <span class="tag">{{ datum(t.start).slice(3, 9) }}</span>
+                    <span class="wochentag">{{ date(t.start).slice(0, 2) }}</span>
+                    <span class="tag">{{ date(t.start).slice(3, 9) }}</span>
                   </span>
                   <span class="inhalt">
                     <span class="zeile-titel" [class.durchgestrichen]="t.status === 'CANCELLED'">
                       {{ t.title }}
                     </span>
                     <span class="nebentext">
-                      {{ zeitraum(t) }} · {{ teams(t) }}
+                      {{ period(t) }} · {{ teams(t) }}
                       @if (t.location) {
                         · {{ t.location.name }}
                       }
@@ -119,7 +119,7 @@ interface Monat {
                     @if (t.status === 'CANCELLED') {
                       <span class="status-zeile">
                         <span class="chip" data-art="abgesagt" data-testid="termin-status">{{
-                          texte.termine.abgesagt
+                          texts.termine.cancelled
                         }}</span>
                         @if (t.cancellationReason) {
                           <span class="nebentext">{{ t.cancellationReason }}</span>
@@ -129,42 +129,42 @@ interface Monat {
                       @if (t.rescheduled) {
                         <span class="status-zeile">
                           <span class="chip" data-art="verschoben" data-testid="termin-status">{{
-                            texte.termine.verschoben
+                            texts.termine.rescheduled
                           }}</span>
                         </span>
                       }
                       @if (t.counts; as z) {
                         <span class="nebentext zaehler" data-testid="termin-zaehler">
-                          <span data-zaehler="dabei">{{ texte.uebersicht.dabei(z.attending) }}</span>
+                          <span data-zaehler="dabei">{{ texts.overview.attending(z.attending) }}</span>
                           ·
                           <span data-zaehler="nicht-dabei">{{
-                            texte.uebersicht.nichtDabei(z.declined)
+                            texts.overview.declined(z.declined)
                           }}</span>
                           ·
                           <span data-zaehler="vielleicht">{{
-                            texte.uebersicht.vielleicht(z.maybe)
+                            texts.overview.vielleicht(z.maybe)
                           }}</span>
                           ·
-                          <span data-zaehler="offen">{{ texte.uebersicht.offen(z.pending) }}</span>
+                          <span data-zaehler="offen">{{ texts.overview.offen(z.pending) }}</span>
                         </span>
                       }
                     }
-                    @if (vergangen()) {
+                    @if (past()) {
                       <span class="nebentext" [attr.data-antwort]="t.myResponse.status">{{
-                        texte.antwort.deineAntwort(texte.antwort.status[t.myResponse.status])
+                        texts.response.yourResponse(texts.response.status[t.myResponse.status])
                       }}</span>
                     }
                   </span>
-                  <app-icon name="chevron-right" [groesse]="20" />
+                  <app-icon name="chevron-right" [size]="20" />
                 </a>
-                @if (!vergangen()) {
+                @if (!past()) {
                   <app-meine-antwort
                     class="karten-antwort"
-                    [terminId]="t.id"
-                    [antwort]="t.myResponse"
-                    [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
-                    [gesperrt]="t.status === 'CANCELLED' ? texte.antwort.abgesagt : null"
-                    (geaendert)="nachladen(t.id)"
+                    [eventId]="t.id"
+                    [response]="t.myResponse"
+                    [name]="texts.response.myResponseFor(cardName(t))"
+                    [locked]="t.status === 'CANCELLED' ? texts.response.cancelled : null"
+                    (changed)="reload(t.id)"
                   />
                 }
               </li>
@@ -176,27 +176,27 @@ interface Monat {
   `,
   styleUrl: './events.css',
 })
-export class Termine {
+export class Events {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
+  private readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
 
   /** Query `?team=` */
   readonly team = input<string | undefined>();
   /** Query `?ansicht=vergangen` */
-  readonly ansicht = input<string | undefined>();
+  readonly view = input<string | undefined>(undefined, { alias: 'ansicht' });
 
-  protected readonly termine = signal<TerminKurz[]>([]);
-  protected readonly laedt = signal(true);
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly termine = signal<EventSummary[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
 
-  protected readonly vergangen = computed(() => this.ansicht() === 'vergangen');
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
+  protected readonly past = computed(() => this.view() === 'vergangen');
+  private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
   /** Eigene Teams der aktuellen Saison, nach Name. */
-  protected readonly meineTeams = computed(() =>
-    (this.anmeldung.ich()?.memberships ?? [])
+  protected readonly myTeams = computed(() =>
+    (this.auth.me()?.memberships ?? [])
       .map((z) => z.team)
       .sort((a, b) => a.name.localeCompare(b.name, 'de-CH')),
   );
@@ -205,64 +205,64 @@ export class Termine {
    * Auswahl «Team»: die eigenen Teams. Zeigt `?team=` auf ein anderes Team (z.B. ein geteilter Link),
    * erscheint es zusätzlich, damit Auswahl und Liste übereinstimmen (Test-Befund F-03).
    */
-  protected readonly teamAuswahl = computed(() => {
-    const eigene = this.meineTeams();
+  protected readonly teamSelection = computed(() => {
+    const own = this.myTeams();
     const id = this.team();
-    if (!id || eigene.some((t) => t.id === id)) return eigene;
+    if (!id || own.some((t) => t.id === id)) return own;
     const name =
       this.termine()
         .flatMap((t) => t.teams)
-        .find((t) => t.id === id)?.name ?? TEXTE.termine.anderesTeam;
-    return [...eigene, { id, name }];
+        .find((t) => t.id === id)?.name ?? TEXTS.termine.otherTeam;
+    return [...own, { id, name }];
   });
 
   /** Termine erfassen: Coaches (in irgendeinem Team) und Admins (TER-11, RR-05). */
-  protected readonly darfErfassen = computed(() => {
-    const ich = this.anmeldung.ich();
-    return !!ich && (ich.admin || ich.memberships.some((z) => z.teamRole === 'COACH'));
+  protected readonly canCreate = computed(() => {
+    const me = this.auth.me();
+    return !!me && (me.admin || me.memberships.some((z) => z.teamRole === 'COACH'));
   });
 
   /** Termine nach Monat gruppiert, in der Reihenfolge der API. */
-  protected readonly monate = computed<Monat[]>(() => {
-    const monate: Monat[] = [];
+  protected readonly months = computed<Month[]>(() => {
+    const months: Month[] = [];
     for (const t of this.termine()) {
-      const schluessel = monatSchluessel(t.start);
-      let m = monate.at(-1);
-      if (!m || m.schluessel !== schluessel) {
-        m = { schluessel, name: monat(t.start), termine: [] };
-        monate.push(m);
+      const key = monthKey(t.start);
+      let m = months.at(-1);
+      if (!m || m.key !== key) {
+        m = { key, name: month(t.start), termine: [] };
+        months.push(m);
       }
       m.termine.push(t);
     }
-    return monate;
+    return months;
   });
 
   constructor() {
     effect(() => {
       const team = this.team();
-      const ansicht = this.ansicht();
-      untracked(() => void this.laden(team, ansicht));
+      const view = this.view();
+      untracked(() => void this.load(team, view));
     });
   }
 
-  protected datum(iso: string): string {
-    return terminDatum(iso, this.jahr());
+  protected date(iso: string): string {
+    return eventDate(iso, this.year());
   }
 
-  protected zeitraum(t: TerminKurz): string {
-    return TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end));
+  protected period(t: EventSummary): string {
+    return TEXTS.termine.period(clockTime(t.start), clockTime(t.end));
   }
 
-  protected teams(t: TerminKurz): string {
-    return TEXTE.termine.teamsVerbinden(t.teams.map((x) => x.name));
+  protected teams(t: EventSummary): string {
+    return TEXTS.termine.joinTeams(t.teams.map((x) => x.name));
   }
 
   /** Name des Listeneintrags, z.B. «Training Di 17.11. 18:30». */
-  protected kartenName(t: TerminKurz): string {
-    return TEXTE.termine.karte(t.title, this.datum(t.start), uhrzeit(t.start));
+  protected cardName(t: EventSummary): string {
+    return TEXTS.termine.card(t.title, this.date(t.start), clockTime(t.start));
   }
 
-  protected teamWaehlen(teamId: string): void {
+  protected selectTeam(teamId: string): void {
     void this.router.navigate(['/termine'], {
       queryParams: { team: teamId || null },
       queryParamsHandling: 'merge',
@@ -270,30 +270,30 @@ export class Termine {
   }
 
   /** Nach einer Antwort: eigene Antwort und Zähler dieses Termins neu holen (ohne Neuladen der Seite). */
-  protected async nachladen(id: string): Promise<void> {
+  protected async reload(id: string): Promise<void> {
     try {
-      const neu = await firstValueFrom(this.http.get<TerminKurz>(`/api/events/${id}`));
-      this.termine.update((liste) => liste.map((t) => (t.id === id ? neu : t)));
+      const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
+      this.termine.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     }
   }
 
-  private async laden(team: string | undefined, ansicht: string | undefined): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
+  private async load(team: string | undefined, view: string | undefined): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     try {
       const params: Record<string, string> = {};
       if (team) params['team'] = team;
-      if (ansicht === 'vergangen') params['view'] = 'past';
+      if (view === 'vergangen') params['view'] = 'past';
       this.termine.set(
-        await firstValueFrom(this.http.get<TerminKurz[]>('/api/events', { params })),
+        await firstValueFrom(this.http.get<EventSummary[]>('/api/events', { params })),
       );
     } catch (e) {
       this.termine.set([]);
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 }

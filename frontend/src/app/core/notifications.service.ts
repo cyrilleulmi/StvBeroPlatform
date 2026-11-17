@@ -1,37 +1,37 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { Benachrichtigung } from '../api/types';
+import type { Notification } from '../api/types';
 
 /** Eigene Benachrichtigungen (BEN) und die Anzahl ungelesener für die Navigation. */
 @Injectable({ providedIn: 'root' })
-export class BenachrichtigungenService {
+export class NotificationsService {
   private readonly http = inject(HttpClient);
 
   /** Anzahl ungelesener Benachrichtigungen (`benachrichtigungen-zaehler`). */
-  readonly ungelesen = signal(0);
+  readonly unread = signal(0);
 
   /** Zähler neu laden. Klappt es nicht, bleibt der bisherige Wert stehen. */
-  async zaehlerAktualisieren(): Promise<void> {
+  async refreshCounter(): Promise<void> {
     try {
-      const liste = await firstValueFrom(
-        this.http.get<Benachrichtigung[]>('/api/notifications', { params: { unread: true } }),
+      const list = await firstValueFrom(
+        this.http.get<Notification[]>('/api/notifications', { params: { unread: true } }),
       );
-      this.ungelesen.set(liste.length);
+      this.unread.set(list.length);
     } catch {
       // Der Zähler ist eine Hilfe; die Seite selbst zeigt Fehler an.
     }
   }
 
   /** Alle eigenen, neueste zuerst (Reihenfolge der API). */
-  async alle(): Promise<Benachrichtigung[]> {
-    const liste = await firstValueFrom(this.http.get<Benachrichtigung[]>('/api/notifications'));
-    this.ungelesen.set(liste.filter((b) => !b.read).length);
-    return liste;
+  async all(): Promise<Notification[]> {
+    const list = await firstValueFrom(this.http.get<Notification[]>('/api/notifications'));
+    this.unread.set(list.filter((b) => !b.read).length);
+    return list;
   }
 
-  async gelesen(id: string): Promise<void> {
+  async markRead(id: string): Promise<void> {
     await firstValueFrom(this.http.post<void>(`/api/notifications/${id}/read`, null));
-    this.ungelesen.update((n) => Math.max(0, n - 1));
+    this.unread.update((n) => Math.max(0, n - 1));
   }
 }

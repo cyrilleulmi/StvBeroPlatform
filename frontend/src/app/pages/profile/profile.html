@@ -1,27 +1,27 @@
-<h1>{{ texte.profil.titel }}</h1>
+<h1>{{ texts.profile.title }}</h1>
 
-@if (anmeldung.ich(); as ich) {
+@if (auth.me(); as me) {
   <section class="karte person" aria-labelledby="profil-name">
-    <h2 id="profil-name">{{ ich.firstName }} {{ ich.lastName }}</h2>
-    @if (ich.email) {
-      <p class="nebentext">{{ ich.email }}</p>
+    <h2 id="profil-name">{{ me.firstName }} {{ me.lastName }}</h2>
+    @if (me.email) {
+      <p class="nebentext">{{ me.email }}</p>
     }
   </section>
 }
 
 <section class="karte">
   <fieldset class="umschalter" data-testid="theme-umschalter">
-    <legend>{{ texte.profil.darstellung }}</legend>
+    <legend>{{ texts.profile.theme }}</legend>
     <div class="optionen">
-      @for (o of optionen; track o.wert) {
+      @for (o of options; track o.value) {
         <!-- Jede Wahl zeigt sich in ihren eigenen Farben: data-theme gilt auch für ein einzelnes Element. -->
-        <label class="option" [attr.data-theme]="o.vorschau">
+        <label class="option" [attr.data-theme]="o.preview">
           <input
             type="radio"
             name="darstellung"
-            [value]="o.wert"
-            [checked]="theme.modus() === o.wert"
-            (change)="theme.setzen(o.wert)"
+            [value]="o.value"
+            [checked]="theme.mode() === o.value"
+            (change)="theme.set(o.value)"
           />
           <span class="name">{{ o.text }}</span>
           <span class="farben" aria-hidden="true">
@@ -36,17 +36,17 @@
   </fieldset>
 </section>
 
-@if (fehler(); as meldung) {
-  <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+@if (error(); as message) {
+  <p class="meldung-fehler" role="alert">{{ message }}</p>
 }
 
 <button
   type="button"
   class="button button-sekundaer"
-  [disabled]="abmeldend()"
-  [attr.aria-busy]="abmeldend() ? 'true' : null"
-  (click)="abmelden()"
+  [disabled]="loggingOut()"
+  [attr.aria-busy]="loggingOut() ? 'true' : null"
+  (click)="logout()"
 >
-  <app-icon name="log-out" [groesse]="20" />
-  {{ texte.profil.abmelden }}
+  <app-icon name="log-out" [size]="20" />
+  {{ texts.profile.logout }}
 </button>

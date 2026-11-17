@@ -61,7 +61,7 @@ Every run ends with exactly one comment on the PR (or issue), which starts with 
 
 The comment is written for Cyrille and the next agent: short, concrete, with file paths and requirement IDs. No retelling of how you went about it.
 
-Headings follow the format `## <Role> · Round <n> · <emoji> <status>`, e.g. `## Review · Round 2 · ✅ on to test`, `## Test · Round <n> · ✅ merged` (or `🔁 rework`), `## Development · ⛔ blocked`. Always keep the emoji markers (⛔ blocked, 🔁 rework, ✅ passed or merged): the status page detects them. Note: until F-11 adapts the status page, it still looks for the German word «gemergt» in the heading to show the merge icon; with `✅ merged` the comment is shown without that icon.
+Headings follow the format `## <Role> · Round <n> · <emoji> <status>`, e.g. `## Review · Round 2 · ✅ on to test`, `## Test · Round <n> · ✅ merged` (or `🔁 rework`), `## Development · ⛔ blocked`. Always keep the emoji markers (⛔ blocked, 🔁 rework, ✅ passed or merged): the status page detects them. For the merge icon it looks for `✅ merged` in the heading.
 
 The language of the comment is English, see [section 10](#10-language).
 
@@ -90,4 +90,4 @@ Format: one line under 200 characters, what needs to be done first, e.g. `StvBer
 - Commit messages, PR descriptions, issue texts (including follow-up fix issues) and agent comments are written in English.
 - The app UI stays German (Switzerland). Quoted UI texts stay German in «…».
 - Use the terms from the [glossary](../glossary.md). Background: [NF-40](../requirements/10-non-functional.md) and decision E-68.
-- Comment headings keep the emoji markers (⛔ blocked, 🔁 rework, ✅ …) because the status page detects them. The status page still looks for the German word «gemergt» for the merge icon until F-11 adapts it.
+- Comment headings keep the emoji markers (⛔ blocked, 🔁 rework, ✅ …) because the status page detects them (merge icon: `✅ merged`).

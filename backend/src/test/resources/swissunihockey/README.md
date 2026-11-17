@@ -12,5 +12,5 @@ as the API can be reached, put a real response here and point the test at it (O-
 | File | Content |
 |---|---|
 | `games-team.json` | Normal match list: a tournament with two matches in the same hall, an away match with a result, a row in between without a match |
-| `games-relativ.json` | Relative dates «heute» and «morgen», as swiss unihockey delivers them around the current day |
+| `games-relative.json` | Relative dates «heute» and «morgen», as swiss unihockey delivers them around the current day |
 | `games-unerwartet.json` | An error message instead of the table, as with missing access (SUH-09) |

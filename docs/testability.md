@@ -39,7 +39,7 @@ Color alone carries no information (see also [design-principles.md](design-princ
 | State | Markup |
 |---|---|
 | Selected response | Response buttons as a group with `role="radiogroup"` or `aria-pressed="true"` |
-| A person's response in lists | Visible text or `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **and** `data-antwort="ATTENDING"` |
+| A person's response in lists | Visible text or `aria-label` («dabei», «nicht dabei», «vielleicht», «offen») **and** `data-response="ATTENDING"` (the status from the API) |
 | Active navigation item | `aria-current="page"` |
 | Called up | Checkbox with `aria-checked` or the text «aufgeboten» |
 | Loading | Container with `aria-busy="true"`, removed afterwards |
@@ -47,7 +47,7 @@ Color alone carries no information (see also [design-principles.md](design-princ
 | Disabled | `disabled` or `aria-disabled="true"` with an explanation nearby |
 | Form error | `aria-invalid="true"` and error message via `aria-describedby` |
 
-Counters («dabei»/«nicht dabei»/«vielleicht»/«offen») also have `data-zaehler="dabei"` etc. and a text that contains the number and the word («10 dabei»).
+Counters («dabei»/«nicht dabei»/«vielleicht»/«offen») also have `data-counter="attending"` (`declined`, `maybe`, `pending`) and a text that contains the number and the word («10 dabei»).
 
 ### 4. Test IDs where semantics are not enough
 
@@ -58,13 +58,13 @@ Counters («dabei»/«nicht dabei»/«vielleicht»/«offen») also have `data-za
 - counters and status displays,
 - everything listed as a fixed test ID in [ui/navigation.md](ui/navigation.md#test-ids).
 
-**Naming scheme:** `kebab-case`, German, `<area>-<element>[-<key>]`.
+**Naming scheme:** `kebab-case`, English (glossary terms, NF-40), `<area>-<element>[-<key>]`. Keys that come from the API or the seed keep their value (e.g. `tile-anwesenheit`, `dev-login-person-petra`).
 
 | Pattern | Example |
 |---|---|
-| Entity with ID | `termin-karte-40000000-0000-4000-8000-000000000001` |
-| Entity with a domain key | `uebersicht-team-team-1`, `uebersicht-gruppe-linie-1` |
-| Single element | `meine-antwort`, `coach-block`, `aufgebot-veroeffentlichen` |
+| Entity with ID | `event-card-40000000-0000-4000-8000-000000000001` |
+| Entity with a domain key | `overview-team-team-1`, `overview-group-line-1` |
+| Single element | `my-response`, `coach-block`, `call-up-publish` |
 
 Test IDs are part of the interface: whoever renames one updates the tests and [navigation.md](ui/navigation.md) in the same PR.
 
@@ -124,10 +124,10 @@ The page `/dev-login` lists all seed persons with team role and team. One click 
 Conventions for E2E tests:
 
 - Locators in the order `getByRole` → `getByLabel` → `getByText` → `getByTestId`. No CSS or XPath selectors.
-- **Only exception:** document elements without a role that do not appear in the accessibility tree (`<html>`, e.g. for `data-theme`, and `<link>` in the head, e.g. the manifest). For these, `e2e/tests/hilfen.ts` has the helpers `dokumentWurzel(page)` and `kopfLink(page, rel)`; only there is the CSS selector written. Tests use these helpers and write none themselves. If another such element is needed, a helper is added there.
-- `e2e/tests/nb17-keine-css-selektoren.spec.ts` checks this statically: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` as well as `css=`/`xpath=` outside `hilfen.ts` make the test fail.
+- **Only exception:** document elements without a role that do not appear in the accessibility tree (`<html>`, e.g. for `data-theme`, and `<link>` in the head, e.g. the manifest). For these, `e2e/tests/helpers.ts` has the helpers `documentRoot(page)` and `headLink(page, rel)`; only there is the CSS selector written. Tests use these helpers and write none themselves. If another such element is needed, a helper is added there.
+- `e2e/tests/nb17-css-selectors.spec.ts` checks this statically: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` as well as `css=`/`xpath=` outside `helpers.ts` make the test fail.
 - No `waitForTimeout`. Wait for states (`expect(...).toBeVisible()` etc.).
 - Every test starts with `POST /api/test/reset` and logs in via `POST /api/test/login`.
-- Every test runs in two projects: `mobil` (375×812, touch) and `desktop` (1280×800).
-- The test name states the requirement ID: `test('ANM-04: vielleicht verlangt einen Kommentar', …)`.
+- Every test runs in two projects: `mobile` (375×812, touch) and `desktop` (1280×800).
+- The test name states the requirement ID: `test('ANM-04: «vielleicht» requires a comment', …)`. Titles are English; UI text quoted in them stays German in «…».
 - `e2e/tests/seed.spec.ts` is the entry test (reset, login, dashboard visible). It also serves as the template when tests are generated with the Playwright test agents (planner/generator/healer).

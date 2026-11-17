@@ -11,11 +11,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { PersonKurz, Saison, TeamDetail } from '../../api/types';
-import { AnmeldungService } from '../../core/auth.service';
-import { fehlerstatus, fehlertext } from '../../core/error-text';
-import { funktionText, name } from '../../core/format';
-import { TEXTE } from '../../core/texts';
+import type { PersonSummary, Season, TeamDetail } from '../../api/types';
+import { AuthService } from '../../core/auth.service';
+import { errorStatus, errorText } from '../../core/error-text';
+import { teamRoleText, name } from '../../core/format';
+import { TEXTS } from '../../core/texts';
 
 /**
  * Team: Coaches und Spielerinnen getrennt (PTF-07), die Spielerinnen nach Linie (LIN-12).
@@ -27,34 +27,34 @@ import { TEXTE } from '../../core/texts';
   imports: [RouterLink],
   template: `
     <div class="kopf">
-      <a class="zurueck" routerLink="/teams">{{ texte.teams.alleTeams }}</a>
-      <h1>{{ team()?.name ?? texte.teams.titel }}</h1>
+      <a class="zurueck" routerLink="/teams">{{ texts.teams.allTeams }}</a>
+      <h1>{{ team()?.name ?? texts.teams.title }}</h1>
       @if (team()?.myTeamRole; as f) {
-        <p class="nebentext">{{ funktion(f) }}</p>
+        <p class="nebentext">{{ teamRole(f) }}</p>
       }
     </div>
-    @if (saisonDaten(); as s) {
+    @if (seasonData(); as s) {
       @if (s.archived) {
         <p class="meldung-hinweis" data-testid="archiv-hinweis">
-          {{ texte.saison.archivHinweis(s.name) }}
+          {{ texts.season.archiveNotice(s.name) }}
         </p>
       }
     }
-    @if (fehler(); as meldung) {
-      <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+    @if (error(); as message) {
+      <p class="meldung-fehler" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="laedt() ? 'true' : null">
-      @if (laedt()) {
-        <p class="leer">{{ texte.allgemein.laden }}</p>
+    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+      @if (loading()) {
+        <p class="leer">{{ texts.common.loading }}</p>
       } @else if (team(); as t) {
         <section class="karte" aria-labelledby="team-coaches-titel" data-testid="team-coaches">
           <h2 id="team-coaches-titel" class="abschnitt-titel">
-            {{ texte.teams.coaches }} <span class="anzahl">{{ t.coaches.length }}</span>
+            {{ texts.teams.coaches }} <span class="anzahl">{{ t.coaches.length }}</span>
           </h2>
           @if (t.coaches.length === 0) {
-            <p class="leer">{{ texte.teams.keineCoaches }}</p>
+            <p class="leer">{{ texts.teams.noCoaches }}</p>
           } @else {
-            <ul class="liste" [attr.aria-label]="texte.teams.coaches">
+            <ul class="liste" [attr.aria-label]="texts.teams.coaches">
               @for (p of t.coaches; track p.id) {
                 <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
               }
@@ -68,24 +68,24 @@ import { TEXTE } from '../../core/texts';
         >
           <div class="spielerinnen-kopf">
             <h2 id="team-spielerinnen-titel" class="abschnitt-titel">
-              {{ texte.teams.spielerinnen }} <span class="anzahl">{{ spielerinnen().length }}</span>
+              {{ texts.teams.players }} <span class="anzahl">{{ players().length }}</span>
             </h2>
-            @if (darfLinienBearbeiten()) {
+            @if (canEditLines()) {
               <a
                 class="button button-sekundaer button-klein"
                 [routerLink]="['/teams', t.id, 'linien']"
-                >{{ texte.teams.linienBearbeiten }}</a
+                >{{ texts.teams.editLines }}</a
               >
             }
           </div>
-          @if (spielerinnen().length === 0) {
-            <p class="leer">{{ texte.teams.keineSpielerinnen }}</p>
+          @if (players().length === 0) {
+            <p class="leer">{{ texts.teams.noPlayers }}</p>
           } @else {
             <!-- Nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). Leere Gruppen fehlen. -->
-            @for (g of gruppen(); track g.schluessel) {
-              <h3 class="gruppe-titel" [id]="'team-gruppe-' + g.schluessel">{{ g.name }}</h3>
-              <ul class="liste" [attr.aria-labelledby]="'team-gruppe-' + g.schluessel">
-                @for (p of g.spielerinnen; track p.id) {
+            @for (g of groups(); track g.key) {
+              <h3 class="gruppe-titel" [id]="'team-gruppe-' + g.key">{{ g.name }}</h3>
+              <ul class="liste" [attr.aria-labelledby]="'team-gruppe-' + g.key">
+                @for (p of g.players; track p.id) {
                   <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
                 }
               </ul>
@@ -124,46 +124,46 @@ import { TEXTE } from '../../core/texts';
 })
 export class Team {
   private readonly http = inject(HttpClient);
-  private readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
+  private readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
   protected readonly name = name;
-  protected readonly funktion = funktionText;
+  protected readonly teamRole = teamRoleText;
 
   /** Route `/teams/:teamId` */
   readonly teamId = input.required<string>();
   /** Query `?saison=` */
-  readonly saison = input<string | undefined>();
+  readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
   protected readonly team = signal<TeamDetail | null>(null);
-  protected readonly saisonDaten = signal<Saison | null>(null);
-  protected readonly laedt = signal(true);
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly seasonData = signal<Season | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
 
   /** Nicht leere Gruppen in Anzeigereihenfolge, zuletzt «Ohne Linie». */
-  protected readonly gruppen = computed(() => {
+  protected readonly groups = computed(() => {
     const t = this.team();
     if (!t) return [];
     return [
       ...t.lineup.groups.map((g) => ({
-        schluessel: g.id,
+        key: g.id,
         name: g.name,
-        spielerinnen: g.players,
+        players: g.players,
       })),
       {
-        schluessel: 'ohne-linie',
-        name: TEXTE.linien.ohneLinie,
-        spielerinnen: t.lineup.noLine,
+        key: 'ohne-linie',
+        name: TEXTS.lines.noLine,
+        players: t.lineup.noLine,
       },
-    ].filter((g) => g.spielerinnen.length > 0);
+    ].filter((g) => g.players.length > 0);
   });
 
   /** Coaches des Teams und Admins teilen die Linien ein (LIN-07), nur in der aktuellen Saison. */
-  protected readonly darfLinienBearbeiten = computed(
-    () => !this.saison() && (this.anmeldung.istAdmin() || this.team()?.myTeamRole === 'COACH'),
+  protected readonly canEditLines = computed(
+    () => !this.season() && (this.auth.isAdmin() || this.team()?.myTeamRole === 'COACH'),
   );
 
   /** Alle Spielerinnen: nach Gruppen, dann ohne Linie. Coaches sind nie dabei (PTF-07). */
-  protected readonly spielerinnen = computed<PersonKurz[]>(() => {
+  protected readonly players = computed<PersonSummary[]>(() => {
     const t = this.team();
     if (!t) return [];
     return [...t.lineup.groups.flatMap((g) => g.players), ...t.lineup.noLine];
@@ -172,38 +172,38 @@ export class Team {
   constructor() {
     effect(() => {
       const teamId = this.teamId();
-      const saison = this.saison();
-      untracked(() => void this.laden(teamId, saison));
+      const season = this.season();
+      untracked(() => void this.load(teamId, season));
     });
   }
 
-  private async laden(teamId: string, saisonId: string | undefined): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
+  private async load(teamId: string, seasonId: string | undefined): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     this.team.set(null);
-    const ich = this.anmeldung.ich();
-    const mitglied = ich?.memberships.some((z) => z.team.id === teamId) ?? false;
-    if (!saisonId && ich && !ich.admin && !mitglied) {
+    const me = this.auth.me();
+    const member = me?.memberships.some((z) => z.team.id === teamId) ?? false;
+    if (!seasonId && me && !me.admin && !member) {
       // Ohne Zugehörigkeit in der aktuellen Saison gar nicht erst anfragen; das Backend lehnt ab (403).
-      this.fehler.set(TEXTE.allgemein.keineBerechtigung);
-      this.laedt.set(false);
+      this.error.set(TEXTS.common.noPermission);
+      this.loading.set(false);
       return;
     }
     try {
-      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
+      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
       this.team.set(
         await firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
       );
-      if (saisonId) {
-        const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/seasons'));
-        this.saisonDaten.set(saisons.find((s) => s.id === saisonId) ?? null);
+      if (seasonId) {
+        const seasons = await firstValueFrom(this.http.get<Season[]>('/api/seasons'));
+        this.seasonData.set(seasons.find((s) => s.id === seasonId) ?? null);
       } else {
-        this.saisonDaten.set(null);
+        this.seasonData.set(null);
       }
     } catch (e) {
-      this.fehler.set(fehlerstatus(e) === 404 ? TEXTE.teams.nichtGefunden : fehlertext(e));
+      this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 }

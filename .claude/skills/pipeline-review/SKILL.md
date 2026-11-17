@@ -97,7 +97,7 @@ Final comment with `<!-- pipeline:review -->`:
 **Ran:** API lint ✅ · Backend ✅ (123 tests) · Frontend ✅ · E2E ✅ (18 tests)
 
 ### Must
-1. `backend/src/main/java/.../AntwortService.java:42` – Late cancellation is also set before the deadline. ANM-10. Expected: …
+1. `backend/src/main/java/.../ResponseService.java:42` – Late cancellation is also set before the deadline. ANM-10. Expected: …
 
 ### Should
 - `IchResource.java:49` – 409 is missing in the API contract. Expected: added to openapi.yaml and the annotation

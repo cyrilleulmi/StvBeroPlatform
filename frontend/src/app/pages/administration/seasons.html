@@ -1,49 +1,49 @@
 <div class="kopf">
-  <a class="zurueck" routerLink="/verwaltung">{{ texte.verwaltung.zurVerwaltung }}</a>
-  <h1>{{ texte.saisons.titel }}</h1>
+  <a class="zurueck" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
+  <h1>{{ texts.seasons.title }}</h1>
 </div>
 
-@if (!anmeldung.istAdmin()) {
-  <p class="meldung-fehler" role="alert">{{ texte.allgemein.keineBerechtigung }}</p>
+@if (!auth.isAdmin()) {
+  <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
-  @if (erfolg(); as meldung) {
-    <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+  @if (success(); as message) {
+    <p class="meldung-erfolg" role="status">{{ message }}</p>
   }
-  @if (fehler(); as meldung) {
-    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  @if (error(); as message) {
+    <p class="meldung-fehler" role="alert">{{ message }}</p>
   }
 
-  <section class="karte" aria-labelledby="saisons-liste" [attr.aria-busy]="laedt() ? 'true' : null">
-    <h2 id="saisons-liste" class="visuell-versteckt">{{ texte.saisons.liste }}</h2>
-    @if (laedt() && saisons().length === 0) {
-      <p class="leer">{{ texte.allgemein.laden }}</p>
+  <section class="karte" aria-labelledby="saisons-liste" [attr.aria-busy]="loading() ? 'true' : null">
+    <h2 id="saisons-liste" class="visuell-versteckt">{{ texts.seasons.list }}</h2>
+    @if (loading() && seasons().length === 0) {
+      <p class="leer">{{ texts.common.loading }}</p>
     } @else {
-      <ul class="liste" [attr.aria-label]="texte.saisons.liste">
-        @for (s of saisons(); track s.id) {
+      <ul class="liste" [attr.aria-label]="texts.seasons.list">
+        @for (s of seasons(); track s.id) {
           <li class="saison" [attr.aria-label]="s.name" [attr.data-testid]="'saison-' + s.id">
             <div class="saison-kopf">
               <span class="zeile-titel">{{ s.name }}</span>
               <span
                 class="chip"
                 data-testid="saison-status"
-                [attr.data-art]="s.current ? null : s.archived ? 'archiv' : 'geplant'"
+                [attr.data-art]="s.current ? null : s.archived ? 'archive' : 'planned'"
                 >{{ status(s) }}</span
               >
             </div>
-            <span class="nebentext">{{ texte.saisons.zeitraum(datum(s.startDate), datum(s.endDate)) }}</span>
+            <span class="nebentext">{{ texts.seasons.period(date(s.startDate), date(s.endDate)) }}</span>
             <div class="aktionen">
               <a routerLink="/verwaltung/teams" [queryParams]="{ saison: s.id }">{{
-                texte.saisons.teamsAnsehen
+                texts.seasons.viewTeams
               }}</a>
               @if (!s.current) {
                 <button
                   type="button"
                   class="button button-sekundaer button-klein"
-                  [disabled]="speichert()"
-                  [attr.aria-busy]="laufendeAktion() === 'aktivieren:' + s.id ? 'true' : null"
-                  (click)="aktivieren(s)"
+                  [disabled]="saving()"
+                  [attr.aria-busy]="runningAction() === 'aktivieren:' + s.id ? 'true' : null"
+                  (click)="activate(s)"
                 >
-                  {{ texte.saisons.aktivieren }}
+                  {{ texts.seasons.activate }}
                 </button>
               }
             </div>
@@ -55,50 +55,50 @@
 
   <form
     class="karte formular"
-    (submit)="anlegen($event)"
+    (submit)="create($event)"
     novalidate
     aria-labelledby="saison-neu-titel"
   >
-    <h2 id="saison-neu-titel">{{ texte.saisons.neu }}</h2>
-    @for (f of felder; track f.feld) {
+    <h2 id="saison-neu-titel">{{ texts.seasons.new }}</h2>
+    @for (f of fields; track f.field) {
       <div class="feld">
-        <label [for]="'saison-' + f.feld">{{ f.label }}</label>
+        <label [for]="'saison-' + f.field">{{ f.label }}</label>
         <input
-          [id]="'saison-' + f.feld"
-          [type]="f.typ"
+          [id]="'saison-' + f.field"
+          [type]="f.type"
           autocomplete="off"
-          [attr.maxlength]="f.typ === 'text' ? 20 : null"
-          [value]="neu()[f.feld]"
-          (input)="setzen(f.feld, $any($event.target).value)"
-          [attr.aria-invalid]="feldFehler()[f.feld] ? 'true' : null"
-          [attr.aria-describedby]="feldFehler()[f.feld] ? 'saison-' + f.feld + '-fehler' : null"
+          [attr.maxlength]="f.type === 'text' ? 20 : null"
+          [value]="newSeason()[f.field]"
+          (input)="set(f.field, $any($event.target).value)"
+          [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors()[f.field] ? 'saison-' + f.field + '-fehler' : null"
         />
-        @if (feldFehler()[f.feld]; as m) {
-          <p class="feldfehler" [id]="'saison-' + f.feld + '-fehler'">{{ m }}</p>
+        @if (fieldErrors()[f.field]; as m) {
+          <p class="feldfehler" [id]="'saison-' + f.field + '-fehler'">{{ m }}</p>
         }
       </div>
     }
     <div class="feld">
-      <label for="saison-uebernehmen">{{ texte.saisons.uebernehmen }}</label>
+      <label for="saison-uebernehmen">{{ texts.seasons.carryOver }}</label>
       <select
         id="saison-uebernehmen"
-        (change)="setzen('uebernehmenAus', $any($event.target).value)"
+        (change)="set('carryOverFrom', $any($event.target).value)"
       >
-        <option value="" [selected]="neu().uebernehmenAus === ''">
-          {{ texte.saisons.nichtsUebernehmen }}
+        <option value="" [selected]="newSeason().carryOverFrom === ''">
+          {{ texts.seasons.carryOverNothing }}
         </option>
-        @for (s of saisons(); track s.id) {
-          <option [value]="s.id" [selected]="neu().uebernehmenAus === s.id">{{ s.name }}</option>
+        @for (s of seasons(); track s.id) {
+          <option [value]="s.id" [selected]="newSeason().carryOverFrom === s.id">{{ s.name }}</option>
         }
       </select>
     </div>
     <button
       type="submit"
       class="button button-primaer"
-      [disabled]="speichert()"
-      [attr.aria-busy]="laufendeAktion() === 'anlegen' ? 'true' : null"
+      [disabled]="saving()"
+      [attr.aria-busy]="runningAction() === 'create' ? 'true' : null"
     >
-      {{ texte.saisons.anlegen }}
+      {{ texts.seasons.create }}
     </button>
   </form>
 }

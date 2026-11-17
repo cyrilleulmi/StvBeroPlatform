@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AnmeldungService } from '../../core/auth.service';
-import { fehlertext } from '../../core/error-text';
+import { AuthService } from '../../core/auth.service';
+import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
-import { TEXTE } from '../../core/texts';
-import { Modus, ThemeService } from '../../core/theme.service';
+import { TEXTS } from '../../core/texts';
+import { ThemeMode, ThemeService } from '../../core/theme.service';
 
 /** Eine Wahl im Umschalter. `vorschau` ist der Wert von `data-theme`, in dem sich die Wahl selbst zeigt. */
 interface Option {
-  wert: Modus;
+  value: ThemeMode;
   text: string;
-  vorschau: string | null;
+  preview: string | null;
 }
 
 /** Profil: Name, Darstellung (NF-06, NF-08), Abmelden. */
@@ -21,32 +21,32 @@ interface Option {
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
-export class Profil {
-  protected readonly anmeldung = inject(AnmeldungService);
+export class Profile {
+  protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
-  protected readonly texte = TEXTE;
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly texts = TEXTS;
+  protected readonly error = signal<string | null>(null);
   /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
-  protected readonly abmeldend = signal(false);
+  protected readonly loggingOut = signal(false);
 
-  protected readonly optionen: Option[] = [
-    { wert: 'hell', text: TEXTE.profil.hell, vorschau: 'light' },
-    { wert: 'duene', text: TEXTE.profil.duene, vorschau: 'duene' },
-    { wert: 'github-dark', text: TEXTE.profil.githubDark, vorschau: 'github-dark' },
-    { wert: 'system', text: TEXTE.profil.system, vorschau: null },
+  protected readonly options: Option[] = [
+    { value: 'light', text: TEXTS.profile.light, preview: 'light' },
+    { value: 'dune', text: TEXTS.profile.dune, preview: 'dune' },
+    { value: 'github-dark', text: TEXTS.profile.githubDark, preview: 'github-dark' },
+    { value: 'system', text: TEXTS.profile.system, preview: null },
   ];
 
-  protected async abmelden(): Promise<void> {
-    if (this.abmeldend()) return;
-    this.abmeldend.set(true);
+  protected async logout(): Promise<void> {
+    if (this.loggingOut()) return;
+    this.loggingOut.set(true);
     try {
-      await this.anmeldung.abmelden();
-      await this.router.navigateByUrl(this.anmeldung.anmeldeRoute());
+      await this.auth.logout();
+      await this.router.navigateByUrl(this.auth.loginRoute());
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.abmeldend.set(false);
+      this.loggingOut.set(false);
     }
   }
 }

@@ -1,29 +1,29 @@
 import { Routes } from '@angular/router';
-import { umgebung } from '../environments/environment';
-import { anmeldeGuard } from './core/auth.guard';
-import { keineSaisonGuard } from './core/no-season.guard';
+import { environment } from '../environments/environment';
+import { authGuard } from './core/auth.guard';
+import { noSeasonGuard } from './core/no-season.guard';
 import { Shell } from './shell/shell';
 
-const titel = (seite: string) => `${seite} · STV Bero`;
+const title = (page: string) => `${page} · STV Bero`;
 
 /** Routen nach docs/oberflaeche/navigation.md. */
 export const routes: Routes = [
   {
     path: 'anmelden',
-    title: titel('Anmelden'),
-    loadComponent: () => import('./pages/login/login').then((m) => m.Anmelden),
+    title: title('Anmelden'),
+    loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
   {
     path: 'keine-saison',
-    title: titel('Keine aktuelle Saison'),
-    canActivate: [keineSaisonGuard],
-    loadComponent: () => import('./pages/no-season/no-season').then((m) => m.KeineSaison),
+    title: title('Keine aktuelle Saison'),
+    canActivate: [noSeasonGuard],
+    loadComponent: () => import('./pages/no-season/no-season').then((m) => m.NoSeason),
   },
-  ...(umgebung.testmodus
+  ...(environment.testMode
     ? [
         {
           path: 'dev-login',
-          title: titel('Testmodus'),
+          title: title('Testmodus'),
           loadComponent: () => import('./pages/dev-login/dev-login').then((m) => m.DevLogin),
         },
       ]
@@ -31,59 +31,59 @@ export const routes: Routes = [
   {
     path: '',
     component: Shell,
-    canActivate: [anmeldeGuard],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
         pathMatch: 'full',
-        title: titel('Start'),
+        title: title('Start'),
         loadComponent: () => import('./pages/start/start').then((m) => m.Start),
       },
       {
         path: 'termine',
         loadChildren: () =>
-          import('./attendance/attendance.routes').then((m) => m.ANWESENHEIT_ROUTES),
+          import('./attendance/attendance.routes').then((m) => m.ATTENDANCE_ROUTES),
       },
       {
         path: 'serien',
-        loadChildren: () => import('./attendance/attendance.routes').then((m) => m.SERIEN_ROUTES),
+        loadChildren: () => import('./attendance/attendance.routes').then((m) => m.SERIES_ROUTES),
       },
       {
         path: 'teams',
-        title: titel('Teams'),
+        title: title('Teams'),
         loadComponent: () => import('./pages/teams/teams').then((m) => m.Teams),
       },
       {
         path: 'teams/:teamId',
-        title: titel('Team'),
+        title: title('Team'),
         loadComponent: () => import('./pages/teams/team').then((m) => m.Team),
       },
       {
         path: 'teams/:teamId/linien',
-        title: titel('Linien'),
-        loadComponent: () => import('./pages/teams/lines').then((m) => m.Linien),
+        title: title('Linien'),
+        loadComponent: () => import('./pages/teams/lines').then((m) => m.Lines),
       },
       {
         path: 'benachrichtigungen',
-        title: titel('Benachrichtigungen'),
+        title: title('Benachrichtigungen'),
         loadComponent: () =>
-          import('./pages/notifications/notifications').then((m) => m.Benachrichtigungen),
+          import('./pages/notifications/notifications').then((m) => m.Notifications),
       },
       {
         path: 'profil',
-        title: titel('Profil'),
-        loadComponent: () => import('./pages/profile/profile').then((m) => m.Profil),
+        title: title('Profil'),
+        loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'verwaltung',
         loadChildren: () =>
-          import('./pages/administration/administration.routes').then((m) => m.VERWALTUNG_ROUTES),
+          import('./pages/administration/administration.routes').then((m) => m.ADMINISTRATION_ROUTES),
       },
       {
         path: '**',
-        title: titel('Nicht gefunden'),
+        title: title('Nicht gefunden'),
         loadComponent: () =>
-          import('./pages/not-found/not-found').then((m) => m.NichtGefunden),
+          import('./pages/not-found/not-found').then((m) => m.NotFound),
       },
     ],
   },

@@ -24,6 +24,6 @@ export const noSeasonGuard: CanActivateFn = async (route) => {
     }
     throw error;
   }
-  const targetParams = target ? { ziel: safeTarget(target) } : {};
+  const targetParams = target ? { target: safeTarget(target) } : {};
   return router.createUrlTree([auth.loginRoute()], { queryParams: targetParams });
 };

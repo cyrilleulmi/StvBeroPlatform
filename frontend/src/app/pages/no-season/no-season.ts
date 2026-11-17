@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AnmeldungService, sicheresZiel } from '../../core/auth.service';
-import { fehlertext } from '../../core/error-text';
-import { TEXTE } from '../../core/texts';
+import { AuthService, safeTarget } from '../../core/auth.service';
+import { errorText } from '../../core/error-text';
+import { TEXTS } from '../../core/texts';
 
 /**
  * Hinweis, wenn keine Saison als aktuell festgelegt ist (409 von `GET /api/me`, SAI-03).
@@ -14,25 +14,25 @@ import { TEXTE } from '../../core/texts';
   template: `
     <main class="anmelden">
       <div class="karte">
-        <p class="eyebrow">{{ texte.appName }}</p>
-        <h1>{{ texte.keineSaison.titel }}</h1>
-        <p role="status" data-testid="keine-saison-hinweis">{{ texte.keineSaison.hinweis }}</p>
-        <p>{{ texte.keineSaison.verwaltung }}</p>
-        @if (fehler()) {
-          <p class="meldung-fehler" role="alert">{{ fehler() }}</p>
+        <p class="eyebrow">{{ texts.appName }}</p>
+        <h1>{{ texts.noSeason.title }}</h1>
+        <p role="status" data-testid="keine-saison-hinweis">{{ texts.noSeason.notice }}</p>
+        <p>{{ texts.noSeason.administration }}</p>
+        @if (error()) {
+          <p class="meldung-fehler" role="alert">{{ error() }}</p>
         }
         <div class="aktionen">
-          <button type="button" class="button button-primaer" (click)="nochmals()">
-            {{ texte.keineSaison.nochmals }}
+          <button type="button" class="button button-primaer" (click)="retry()">
+            {{ texts.noSeason.retry }}
           </button>
           <button
             type="button"
             class="button button-sekundaer"
-            [disabled]="abmeldend()"
-            [attr.aria-busy]="abmeldend() ? 'true' : null"
-            (click)="abmelden()"
+            [disabled]="loggingOut()"
+            [attr.aria-busy]="loggingOut() ? 'true' : null"
+            (click)="logout()"
           >
-            {{ texte.keineSaison.abmelden }}
+            {{ texts.noSeason.logout }}
           </button>
         </div>
       </div>
@@ -40,31 +40,31 @@ import { TEXTE } from '../../core/texts';
   `,
   styleUrl: '../login/login.css',
 })
-export class KeineSaison {
-  private readonly anmeldung = inject(AnmeldungService);
+export class NoSeason {
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  protected readonly texte = TEXTE;
-  protected readonly fehler = signal('');
+  protected readonly texts = TEXTS;
+  protected readonly error = signal('');
   /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
-  protected readonly abmeldend = signal(false);
-  readonly ziel = input<string>();
+  protected readonly loggingOut = signal(false);
+  readonly target = input<string>(undefined, { alias: 'ziel' });
 
   /** Zurück zum Ziel. Der Guard prüft erneut und zeigt diesen Hinweis wieder, falls nötig. */
-  protected async nochmals(): Promise<void> {
-    this.fehler.set('');
-    await this.router.navigateByUrl(sicheresZiel(this.ziel()));
+  protected async retry(): Promise<void> {
+    this.error.set('');
+    await this.router.navigateByUrl(safeTarget(this.target()));
   }
 
-  protected async abmelden(): Promise<void> {
-    if (this.abmeldend()) return;
-    this.abmeldend.set(true);
+  protected async logout(): Promise<void> {
+    if (this.loggingOut()) return;
+    this.loggingOut.set(true);
     try {
-      await this.anmeldung.abmelden();
-      await this.router.navigateByUrl(this.anmeldung.anmeldeRoute());
+      await this.auth.logout();
+      await this.router.navigateByUrl(this.auth.loginRoute());
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.abmeldend.set(false);
+      this.loggingOut.set(false);
     }
   }
 }

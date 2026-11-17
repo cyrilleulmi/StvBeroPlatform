@@ -32,7 +32,7 @@ const ICONS: Record<string, string> = {
     '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
 };
 
-const UNBEKANNT = '<rect width="18" height="18" x="3" y="3" rx="2"/>';
+const UNKNOWN = '<rect width="18" height="18" x="3" y="3" rx="2"/>';
 
 @Component({
   selector: 'app-icon',
@@ -47,9 +47,9 @@ const UNBEKANNT = '<rect width="18" height="18" x="3" y="3" rx="2"/>';
     stroke-linejoin="round"
     aria-hidden="true"
     focusable="false"
-    [attr.width]="groesse()"
-    [attr.height]="groesse()"
-    [innerHTML]="inhalt()"
+    [attr.width]="size()"
+    [attr.height]="size()"
+    [innerHTML]="content()"
   ></svg>`,
   styles: `
     :host {
@@ -62,10 +62,10 @@ export class Icon {
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly name = input.required<string>();
-  readonly groesse = input(22);
+  readonly size = input(22);
 
   /** Die Pfade sind Konstanten aus diesem Modul, nie Daten von aussen. */
-  protected readonly inhalt = computed(() =>
-    this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? UNBEKANNT),
+  protected readonly content = computed(() =>
+    this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? UNKNOWN),
   );
 }

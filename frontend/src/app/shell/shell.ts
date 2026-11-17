@@ -2,16 +2,16 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { AnmeldungService } from '../core/auth.service';
-import { BenachrichtigungenService } from '../core/notifications.service';
+import { AuthService } from '../core/auth.service';
+import { NotificationsService } from '../core/notifications.service';
 import { Icon } from '../core/icon';
-import { TEXTE } from '../core/texts';
+import { TEXTS } from '../core/texts';
 
-interface NavEintrag {
+interface NavEntry {
   route: string;
   text: string;
   icon: string;
-  exakt: boolean;
+  exact: boolean;
 }
 
 /**
@@ -26,10 +26,10 @@ interface NavEintrag {
   styleUrl: './shell.css',
 })
 export class Shell {
-  private readonly anmeldung = inject(AnmeldungService);
-  private readonly benachrichtigungen = inject(BenachrichtigungenService);
-  protected readonly texte = TEXTE;
-  protected readonly ungelesen = this.benachrichtigungen.ungelesen;
+  private readonly auth = inject(AuthService);
+  private readonly notifications = inject(NotificationsService);
+  protected readonly texts = TEXTS;
+  protected readonly unread = this.notifications.unread;
 
   constructor() {
     // Der Rahmen entsteht vor dem ersten NavigationEnd, deshalb lädt auch der erste Aufruf den Zähler.
@@ -38,20 +38,20 @@ export class Shell {
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe(() => void this.benachrichtigungen.zaehlerAktualisieren());
+      .subscribe(() => void this.notifications.refreshCounter());
   }
 
-  protected readonly eintraege = computed<NavEintrag[]>(() => {
-    const n = TEXTE.navigation;
-    const liste: NavEintrag[] = [
-      { route: '/', text: n.start, icon: 'house', exakt: true },
-      { route: '/termine', text: n.termine, icon: 'calendar', exakt: false },
-      { route: '/teams', text: n.teams, icon: 'users', exakt: false },
-      { route: '/profil', text: n.profil, icon: 'user', exakt: false },
+  protected readonly entries = computed<NavEntry[]>(() => {
+    const n = TEXTS.navigation;
+    const list: NavEntry[] = [
+      { route: '/', text: n.start, icon: 'house', exact: true },
+      { route: '/termine', text: n.termine, icon: 'calendar', exact: false },
+      { route: '/teams', text: n.teams, icon: 'users', exact: false },
+      { route: '/profil', text: n.profile, icon: 'user', exact: false },
     ];
-    if (this.anmeldung.istAdmin()) {
-      liste.push({ route: '/verwaltung', text: n.verwaltung, icon: 'shield', exakt: false });
+    if (this.auth.isAdmin()) {
+      list.push({ route: '/verwaltung', text: n.administration, icon: 'shield', exact: false });
     }
-    return liste;
+    return list;
   });
 }

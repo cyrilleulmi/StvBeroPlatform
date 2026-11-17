@@ -12,12 +12,12 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Spiel, SpielSchreiben, Termin } from '../api/types';
-import { feldfehler, fehlertext } from '../core/error-text';
-import { TEXTE } from '../core/texts';
-import { uhrzeit } from './time';
+import type { Match, MatchInput, EventDetail } from '../api/types';
+import { fieldErrorsOf, errorText } from '../core/error-text';
+import { TEXTS } from '../core/texts';
+import { clockTime } from './time';
 
-const RESULTAT = /^\d{1,2}:\d{1,2}$/;
+const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 
 /**
  * Teil eines Spieltags im Termin-Detail: eigener Aufgebotsstatus bzw. für Coaches der Stand mit Link zum
@@ -28,60 +28,60 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    @if (termin().myCallUp || darfAufgebot()) {
+    @if (event().myCallUp || canCallUp()) {
       <section class="karte aufgebot" aria-labelledby="spieltag-aufgebot-titel">
-        <h2 id="spieltag-aufgebot-titel" class="abschnitt-titel">{{ s.aufgebot }}</h2>
-        @if (termin().myCallUp; as mein) {
+        <h2 id="spieltag-aufgebot-titel" class="abschnitt-titel">{{ s.callUp }}</h2>
+        @if (event().myCallUp; as mine) {
           <p class="mein">
-            <span class="chip" [attr.data-art]="mein.toLowerCase()" data-testid="mein-aufgebot">{{
-              s.mein[mein]
+            <span class="chip" [attr.data-art]="mine.toLowerCase()" data-testid="mein-aufgebot">{{
+              s.mine[mine]
             }}</span>
           </p>
-          <p class="nebentext">{{ s.meinText[mein] }}</p>
+          <p class="nebentext">{{ s.mineText[mine] }}</p>
         }
-        @if (darfAufgebot()) {
-          <p class="stand">{{ s.stand[termin().callUpStatus ?? 'NONE'] }}</p>
-          <a class="button button-sekundaer button-klein" [routerLink]="['/termine', termin().id, 'aufgebot']">{{
-            s.aufgebotBearbeiten
+        @if (canCallUp()) {
+          <p class="stand">{{ s.state[event().callUpStatus ?? 'NONE'] }}</p>
+          <a class="button button-sekundaer button-klein" [routerLink]="['/termine', event().id, 'aufgebot']">{{
+            s.editCallUp
           }}</a>
         }
       </section>
     }
 
     <section class="karte spiele" aria-labelledby="spieltag-spiele-titel">
-      <h2 id="spieltag-spiele-titel" class="abschnitt-titel">{{ s.spiele }}</h2>
-      @if (meldung(); as m) {
+      <h2 id="spieltag-spiele-titel" class="abschnitt-titel">{{ s.matches }}</h2>
+      @if (message(); as m) {
         <p class="meldung-erfolg" role="status">{{ m }}</p>
       }
-      @if (fehler(); as m) {
+      @if (error(); as m) {
         <p class="meldung-fehler" role="alert">{{ m }}</p>
       }
-      @if ((termin().matches ?? []).length === 0) {
-        <p class="leer">{{ s.keineSpiele }}</p>
+      @if ((event().matches ?? []).length === 0) {
+        <p class="leer">{{ s.noMatches }}</p>
       } @else {
         <ol class="liste" data-testid="spiele" aria-labelledby="spieltag-spiele-titel">
-          @for (sp of termin().matches ?? []; track sp.id) {
-            <li class="spiel" [attr.data-testid]="'spiel-' + sp.id" [attr.aria-label]="beschreibung(sp)">
-              <span class="anspielzeit">{{ zeit(sp.startTime) }}</span>
+          @for (m of event().matches ?? []; track m.id) {
+            <li class="spiel" [attr.data-testid]="'spiel-' + m.id" [attr.aria-label]="description(m)">
+              <span class="anspielzeit">{{ time(m.startTime) }}</span>
               <span class="spiel-text">
-                <span class="paarung">{{ paarung(sp) }}</span>
-                <span class="nebentext">{{ sp.home ? s.heim : s.auswaerts }}</span>
-                @if (sp.result) {
-                  <span class="resultat">{{ s.resultat(sp.result) }}</span>
+                <span class="paarung">{{ pairing(m) }}</span>
+                <span class="nebentext">{{ m.home ? s.home : s.away }}</span>
+                @if (m.result) {
+                  <span class="resultat">{{ s.result(m.result) }}</span>
                 }
-                @if (sp.missingAtSu) {
-                  <span class="nebentext">{{ s.nichtMehrBeiSu }}</span>
+                @if (m.missingAtSu) {
+                  <span class="nebentext">{{ s.missingAtSu }}</span>
                 }
               </span>
-              @if (darfResultat()) {
+              @if (canEnterResult()) {
                 <button
                   type="button"
                   class="button button-sekundaer button-klein"
-                  [attr.aria-label]="s.resultatErfassenFuer(paarung(sp))"
-                  [disabled]="laeuft()"
-                  (click)="oeffnen(sp)"
+                  [attr.aria-label]="s.enterResultFor(pairing(m))"
+                  [disabled]="running()"
+                  (click)="open(m)"
                 >
-                  {{ s.resultatErfassen }}
+                  {{ s.enterResult }}
                 </button>
               }
             </li>
@@ -96,27 +96,27 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
       aria-modal="true"
       aria-labelledby="resultat-titel"
       aria-describedby="resultat-text"
-      (close)="ziel.set(null)"
+      (close)="target.set(null)"
     >
-      @if (ziel(); as sp) {
-        <form class="formular" (submit)="speichern($event)" novalidate>
-          <h2 id="resultat-titel">{{ s.resultatTitel(paarung(sp)) }}</h2>
-          <p class="nebentext" id="resultat-text">{{ s.resultatText }}</p>
+      @if (target(); as m) {
+        <form class="formular" (submit)="save($event)" novalidate>
+          <h2 id="resultat-titel">{{ s.resultTitle(pairing(m)) }}</h2>
+          <p class="nebentext" id="resultat-text">{{ s.resultText }}</p>
           <div class="feld">
-            <label for="resultat-feld">{{ s.resultatFeld }}</label>
+            <label for="resultat-feld">{{ s.resultField }}</label>
             <input
-              #resultatFeld
+              #resultField
               id="resultat-feld"
               type="text"
               inputmode="numeric"
               maxlength="5"
               autocomplete="off"
-              [value]="resultat()"
-              (input)="resultat.set($any($event.target).value)"
-              [attr.aria-invalid]="resultatFehler() ? 'true' : null"
-              [attr.aria-describedby]="resultatFehler() ? 'resultat-fehler' : null"
+              [value]="result()"
+              (input)="result.set($any($event.target).value)"
+              [attr.aria-invalid]="resultError() ? 'true' : null"
+              [attr.aria-describedby]="resultError() ? 'resultat-fehler' : null"
             />
-            @if (resultatFehler(); as m) {
+            @if (resultError(); as m) {
               <p class="feldfehler" id="resultat-fehler">{{ m }}</p>
             }
           </div>
@@ -124,18 +124,18 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
             <button
               type="submit"
               class="button button-primaer button-klein"
-              [disabled]="laeuft()"
-              [attr.aria-busy]="laeuft() ? 'true' : null"
+              [disabled]="running()"
+              [attr.aria-busy]="running() ? 'true' : null"
             >
-              {{ s.resultatSpeichern }}
+              {{ s.saveResult }}
             </button>
             <button
               type="button"
               class="button button-sekundaer button-klein"
-              [disabled]="laeuft()"
-              (click)="schliessen()"
+              [disabled]="running()"
+              (click)="close()"
             >
-              {{ texte.antwort.abbrechen }}
+              {{ texts.response.cancel }}
             </button>
           </div>
         </form>
@@ -144,87 +144,87 @@ const RESULTAT = /^\d{1,2}:\d{1,2}$/;
   `,
   styleUrl: './match-day.css',
 })
-export class Spieltag {
+export class MatchDay {
   private readonly http = inject(HttpClient);
-  protected readonly texte = TEXTE;
-  protected readonly s = TEXTE.spieltag;
-  protected readonly zeit = uhrzeit;
+  protected readonly texts = TEXTS;
+  protected readonly s = TEXTS.matchDay;
+  protected readonly time = clockTime;
 
-  readonly termin = input.required<Termin>();
+  readonly event = input.required<EventDetail>();
   /** Coach des Teams oder Admin: Stand des Aufgebots und Link dorthin (RR-03). */
-  readonly darfAufgebot = input(false);
+  readonly canCallUp = input(false);
   /** Coach des Teams oder Admin, Spieltag nicht abgesagt: Resultat erfassen (AUF-15). */
-  readonly darfResultat = input(false);
+  readonly canEnterResult = input(false);
 
-  readonly geaendert = output<void>();
+  readonly changed = output<void>();
 
-  protected readonly ziel = signal<Spiel | null>(null);
-  protected readonly resultat = signal('');
-  protected readonly resultatFehler = signal<string | null>(null);
-  protected readonly laeuft = signal(false);
-  protected readonly meldung = signal<string | null>(null);
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly target = signal<Match | null>(null);
+  protected readonly result = signal('');
+  protected readonly resultError = signal<string | null>(null);
+  protected readonly running = signal(false);
+  protected readonly message = signal<string | null>(null);
+  protected readonly error = signal<string | null>(null);
 
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly resultatFeld = viewChild<ElementRef<HTMLInputElement>>('resultatFeld');
-  private readonly team = computed(() => this.termin().teams[0]?.name ?? '');
+  private readonly resultField = viewChild<ElementRef<HTMLInputElement>>('resultField');
+  private readonly team = computed(() => this.event().teams[0]?.name ?? '');
 
   /** «Team 1 – UHC Musterdorf» (Heim zuerst). */
-  protected paarung(sp: Spiel): string {
-    return sp.home ? this.s.paarung(this.team(), sp.opponent) : this.s.paarung(sp.opponent, this.team());
+  protected pairing(m: Match): string {
+    return m.home ? this.s.pairing(this.team(), m.opponent) : this.s.pairing(m.opponent, this.team());
   }
 
-  protected beschreibung(sp: Spiel): string {
-    return `${uhrzeit(sp.startTime)} ${this.paarung(sp)}`;
+  protected description(m: Match): string {
+    return `${clockTime(m.startTime)} ${this.pairing(m)}`;
   }
 
-  protected oeffnen(sp: Spiel): void {
-    this.ziel.set(sp);
-    this.resultat.set(sp.result ?? '');
-    this.resultatFehler.set(null);
-    this.meldung.set(null);
-    this.fehler.set(null);
+  protected open(m: Match): void {
+    this.target.set(m);
+    this.result.set(m.result ?? '');
+    this.resultError.set(null);
+    this.message.set(null);
+    this.error.set(null);
     const d = this.dialog()?.nativeElement;
     if (d && !d.open) d.showModal();
   }
 
-  protected schliessen(): void {
+  protected close(): void {
     this.dialog()?.nativeElement.close();
   }
 
-  protected async speichern(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    const sp = this.ziel();
-    if (!sp || this.laeuft()) return;
-    const wert = this.resultat().replace(/\s/g, '');
-    if (wert && !RESULTAT.test(wert)) {
-      this.resultatFehler.set(this.s.resultatFormat);
-      this.resultatFeld()?.nativeElement.focus();
+  protected async save(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    const m = this.target();
+    if (!m || this.running()) return;
+    const value = this.result().replace(/\s/g, '');
+    if (value && !RESULT_PATTERN.test(value)) {
+      this.resultError.set(this.s.resultFormat);
+      this.resultField()?.nativeElement.focus();
       return;
     }
-    this.laeuft.set(true);
-    this.resultatFehler.set(null);
-    const eingabe: SpielSchreiben = {
-      opponent: sp.opponent,
-      startTime: sp.startTime,
-      home: sp.home,
-      result: wert || null,
+    this.running.set(true);
+    this.resultError.set(null);
+    const input: MatchInput = {
+      opponent: m.opponent,
+      startTime: m.startTime,
+      home: m.home,
+      result: value || null,
     };
     try {
-      await firstValueFrom(this.http.put<Spiel>(`/api/events/${this.termin().id}/matches/${sp.id}`, eingabe));
-      this.schliessen();
-      this.meldung.set(this.s.resultatGespeichert(this.paarung(sp)));
-      this.geaendert.emit();
+      await firstValueFrom(this.http.put<Match>(`/api/events/${this.event().id}/matches/${m.id}`, input));
+      this.close();
+      this.message.set(this.s.resultSaved(this.pairing(m)));
+      this.changed.emit();
     } catch (e) {
-      const felder = feldfehler(e);
-      if (felder['result']) {
-        this.resultatFehler.set(felder['result']);
+      const fields = fieldErrorsOf(e);
+      if (fields['result']) {
+        this.resultError.set(fields['result']);
       } else {
-        this.schliessen();
-        this.fehler.set(fehlertext(e));
+        this.close();
+        this.error.set(errorText(e));
       }
     } finally {
-      this.laeuft.set(false);
+      this.running.set(false);
     }
   }
 }

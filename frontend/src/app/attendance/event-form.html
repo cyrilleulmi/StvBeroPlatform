@@ -1,140 +1,140 @@
 <div class="kopf">
-  <a class="zurueck" [routerLink]="zurueck()">{{
-    modus() === 'neu' ? texte.termine.alleTermine : texte.terminFormular.abbrechen
+  <a class="zurueck" [routerLink]="back()">{{
+    mode() === 'neu' ? texts.termine.allEvents : texts.eventForm.cancel
   }}</a>
-  <h1>{{ titel() }}</h1>
+  <h1>{{ title() }}</h1>
 </div>
 
-@if (fehler(); as meldung) {
-  <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+@if (error(); as message) {
+  <p class="meldung-fehler" role="alert">{{ message }}</p>
 }
 
-@if (laedt()) {
-  <p class="leer" aria-busy="true">{{ texte.allgemein.laden }}</p>
-} @else if (hinweis(); as h) {
+@if (loading()) {
+  <p class="leer" aria-busy="true">{{ texts.common.loading }}</p>
+} @else if (notice(); as h) {
   <p class="meldung-fehler" role="alert">{{ h }}</p>
-} @else if (!fehler() || termin() || serie() || modus() === 'neu') {
-  @if (modus() === 'termin' && termin()?.seriesId) {
-    <p class="meldung-hinweis">{{ texte.terminFormular.nurDieserTermin }}</p>
+} @else if (!error() || event() || series() || mode() === 'neu') {
+  @if (mode() === 'termin' && event()?.seriesId) {
+    <p class="meldung-hinweis">{{ texts.eventForm.onlyThisEvent }}</p>
   }
-  @if (modus() === 'serie') {
-    <p class="meldung-hinweis">{{ texte.terminFormular.serieHinweis }}</p>
+  @if (mode() === 'serie') {
+    <p class="meldung-hinweis">{{ texts.eventForm.seriesNotice }}</p>
   }
 
-  <form class="karte formular" (submit)="speichern($event)" novalidate [attr.aria-label]="titel()">
-    @if (modus() === 'neu') {
+  <form class="karte formular" (submit)="save($event)" novalidate [attr.aria-label]="title()">
+    @if (mode() === 'neu') {
       <fieldset class="gruppe">
-        <legend>{{ texte.terminFormular.art }}</legend>
+        <legend>{{ texts.eventForm.kind }}</legend>
         <label class="checkbox">
           <input
             type="radio"
             name="termin-art"
-            [checked]="!alsSerie()"
-            (change)="artWaehlen('einzel')"
+            [checked]="!asSeries()"
+            (change)="selectKind('einzel')"
           />
-          {{ texte.terminFormular.einzeltermin }}
+          {{ texts.eventForm.singleEvent }}
         </label>
         <label class="checkbox">
           <input
             type="radio"
             name="termin-art"
-            [checked]="alsSerie()"
-            (change)="artWaehlen('serie')"
+            [checked]="asSeries()"
+            (change)="selectKind('serie')"
           />
-          {{ texte.terminFormular.serie }}
+          {{ texts.eventForm.series }}
         </label>
       </fieldset>
     }
 
     <div class="feldreihe">
       <div class="feld">
-        <label for="termin-typ">{{ texte.terminFormular.typ }}</label>
-        <select id="termin-typ" (change)="typWaehlen($any($event.target).value)">
-          @for (t of typen(); track t) {
-            <option [value]="t" [selected]="werte().typ === t">{{ texte.termine.typ[t] }}</option>
+        <label for="termin-typ">{{ texts.eventForm.type }}</label>
+        <select id="termin-typ" (change)="selectType($any($event.target).value)">
+          @for (t of types(); track t) {
+            <option [value]="t" [selected]="values().type === t">{{ texts.termine.type[t] }}</option>
           }
         </select>
       </div>
       <div class="feld">
-        <label for="termin-titel">{{ texte.terminFormular.titel }}</label>
+        <label for="termin-titel">{{ texts.eventForm.title }}</label>
         <input
           id="termin-titel"
           type="text"
           maxlength="80"
           autocomplete="off"
-          [value]="werte().titel"
-          (input)="setzen('titel', $any($event.target).value)"
-          [attr.aria-invalid]="feldFehler().titel ? 'true' : null"
-          [attr.aria-describedby]="fehlerId('titel')"
+          [value]="values().title"
+          (input)="set('title', $any($event.target).value)"
+          [attr.aria-invalid]="fieldErrors().title ? 'true' : null"
+          [attr.aria-describedby]="errorId('title')"
         />
-        @if (feldFehler().titel; as m) {
+        @if (fieldErrors().title; as m) {
           <p class="feldfehler" id="termin-titel-fehler">{{ m }}</p>
         }
       </div>
     </div>
 
-    @if (alsSerie()) {
+    @if (asSeries()) {
       <div class="feld">
-        <label for="termin-wochentag">{{ texte.terminFormular.wochentag }}</label>
-        <select id="termin-wochentag" (change)="setzen('wochentag', $any($event.target).value)">
-          @for (w of wochentage; track w) {
-            <option [value]="w" [selected]="werte().wochentag === w">
-              {{ texte.terminFormular.wochentage[w] }}
+        <label for="termin-wochentag">{{ texts.eventForm.weekday }}</label>
+        <select id="termin-wochentag" (change)="set('weekday', $any($event.target).value)">
+          @for (w of weekdays; track w) {
+            <option [value]="w" [selected]="values().weekday === w">
+              {{ texts.eventForm.weekdays[w] }}
             </option>
           }
         </select>
       </div>
     } @else {
       <div class="feld">
-        <label for="termin-datum">{{ texte.terminFormular.datum }}</label>
+        <label for="termin-datum">{{ texts.eventForm.date }}</label>
         <input
           id="termin-datum"
           type="date"
-          [value]="werte().datum"
-          (input)="setzen('datum', $any($event.target).value)"
-          [attr.aria-invalid]="feldFehler().datum ? 'true' : null"
-          [attr.aria-describedby]="fehlerId('datum')"
+          [value]="values().date"
+          (input)="set('date', $any($event.target).value)"
+          [attr.aria-invalid]="fieldErrors().date ? 'true' : null"
+          [attr.aria-describedby]="errorId('date')"
         />
-        @if (feldFehler().datum; as m) {
+        @if (fieldErrors().date; as m) {
           <p class="feldfehler" id="termin-datum-fehler">{{ m }}</p>
         }
       </div>
     }
 
     <div class="feldreihe">
-      @for (f of zeitfelder; track f.feld) {
+      @for (f of timeFields; track f.field) {
         <div class="feld">
-          <label [for]="'termin-' + f.feld">{{ f.label }}</label>
+          <label [for]="'termin-' + f.field">{{ f.label }}</label>
           <input
-            [id]="'termin-' + f.feld"
+            [id]="'termin-' + f.field"
             type="time"
-            [value]="werte()[f.feld]"
-            (input)="setzen(f.feld, $any($event.target).value)"
-            [attr.aria-invalid]="feldFehler()[f.feld] ? 'true' : null"
-            [attr.aria-describedby]="fehlerId(f.feld)"
+            [value]="values()[f.field]"
+            (input)="set(f.field, $any($event.target).value)"
+            [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
+            [attr.aria-describedby]="errorId(f.field)"
           />
-          @if (feldFehler()[f.feld]; as m) {
-            <p class="feldfehler" [id]="'termin-' + f.feld + '-fehler'">{{ m }}</p>
+          @if (fieldErrors()[f.field]; as m) {
+            <p class="feldfehler" [id]="'termin-' + f.field + '-fehler'">{{ m }}</p>
           }
         </div>
       }
     </div>
 
-    @if (alsSerie()) {
+    @if (asSeries()) {
       <div class="feldreihe">
-        @for (f of zeitraumfelder; track f.feld) {
+        @for (f of periodFields; track f.field) {
           <div class="feld">
-            <label [for]="'termin-' + f.feld">{{ f.label }}</label>
+            <label [for]="'termin-' + f.field">{{ f.label }}</label>
             <input
-              [id]="'termin-' + f.feld"
+              [id]="'termin-' + f.field"
               type="date"
-              [value]="werte()[f.feld]"
-              (input)="setzen(f.feld, $any($event.target).value)"
-              [attr.aria-invalid]="feldFehler()[f.feld] ? 'true' : null"
-              [attr.aria-describedby]="fehlerId(f.feld)"
+              [value]="values()[f.field]"
+              (input)="set(f.field, $any($event.target).value)"
+              [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
+              [attr.aria-describedby]="errorId(f.field)"
             />
-            @if (feldFehler()[f.feld]; as m) {
-              <p class="feldfehler" [id]="'termin-' + f.feld + '-fehler'">{{ m }}</p>
+            @if (fieldErrors()[f.field]; as m) {
+              <p class="feldfehler" [id]="'termin-' + f.field + '-fehler'">{{ m }}</p>
             }
           </div>
         }
@@ -143,107 +143,107 @@
 
     <fieldset
       class="gruppe"
-      [attr.aria-invalid]="feldFehler().teamIds ? 'true' : null"
+      [attr.aria-invalid]="fieldErrors().teamIds ? 'true' : null"
       [attr.aria-describedby]="
-        feldFehler().teamIds ? 'termin-teamIds-fehler' : 'termin-teams-hinweis'
+        fieldErrors().teamIds ? 'termin-teamIds-fehler' : 'termin-teams-hinweis'
       "
     >
-      <legend>{{ texte.terminFormular.teams }}</legend>
+      <legend>{{ texts.eventForm.teams }}</legend>
       <p class="nebentext" id="termin-teams-hinweis">
-        {{ spieltag() ? texte.terminFormular.teamsHinweisSpieltag : texte.terminFormular.teamsHinweis }}
+        {{ matchDay() ? texts.eventForm.teamsHintMatchDay : texts.eventForm.teamsHint }}
       </p>
-      @for (t of teams(); track t.id; let erstes = $first) {
+      @for (t of teams(); track t.id; let first = $first) {
         <label class="checkbox">
           <input
             type="checkbox"
-            [id]="erstes ? 'termin-teamIds' : null"
-            [checked]="werte().teamIds.includes(t.id)"
-            (change)="teamUmschalten(t.id, $any($event.target).checked)"
+            [id]="first ? 'termin-teamIds' : null"
+            [checked]="values().teamIds.includes(t.id)"
+            (change)="toggleTeam(t.id, $any($event.target).checked)"
           />
           {{ t.name }}
         </label>
       }
-      @if (weitereTeams() > 0) {
-        <p class="nebentext">{{ texte.terminFormular.weitereTeams(weitereTeams()) }}</p>
+      @if (moreTeams() > 0) {
+        <p class="nebentext">{{ texts.eventForm.moreTeams(moreTeams()) }}</p>
       }
-      @if (feldFehler().teamIds; as m) {
+      @if (fieldErrors().teamIds; as m) {
         <p class="feldfehler" id="termin-teamIds-fehler">{{ m }}</p>
       }
     </fieldset>
 
     <div class="feld">
       <label for="termin-ort">{{
-        spieltag() ? texte.terminFormular.spielort : texte.terminFormular.ort
+        matchDay() ? texts.eventForm.venue : texts.eventForm.location
       }}</label>
       <input
         id="termin-ort"
         type="text"
         maxlength="120"
         autocomplete="off"
-        [value]="werte().ort"
-        (input)="setzen('ort', $any($event.target).value)"
-        [attr.aria-invalid]="feldFehler().ort ? 'true' : null"
-        [attr.aria-describedby]="fehlerId('ort')"
+        [value]="values().location"
+        (input)="set('location', $any($event.target).value)"
+        [attr.aria-invalid]="fieldErrors().location ? 'true' : null"
+        [attr.aria-describedby]="errorId('location')"
       />
-      @if (feldFehler().ort; as m) {
+      @if (fieldErrors().location; as m) {
         <p class="feldfehler" id="termin-ort-fehler">{{ m }}</p>
       }
     </div>
 
-    @if (!alsSerie()) {
+    @if (!asSeries()) {
       <div class="feld">
-        <label for="termin-mapsUrl">{{ texte.terminFormular.mapsUrl }}</label>
+        <label for="termin-mapsUrl">{{ texts.eventForm.mapsUrl }}</label>
         <input
           id="termin-mapsUrl"
           type="url"
           inputmode="url"
           maxlength="500"
           autocomplete="off"
-          [value]="werte().mapsUrl"
-          (input)="setzen('mapsUrl', $any($event.target).value)"
-          [attr.aria-invalid]="feldFehler().mapsUrl ? 'true' : null"
+          [value]="values().mapsUrl"
+          (input)="set('mapsUrl', $any($event.target).value)"
+          [attr.aria-invalid]="fieldErrors().mapsUrl ? 'true' : null"
           [attr.aria-describedby]="
-            feldFehler().mapsUrl ? 'termin-mapsUrl-fehler' : 'termin-mapsUrl-hinweis'
+            fieldErrors().mapsUrl ? 'termin-mapsUrl-fehler' : 'termin-mapsUrl-hinweis'
           "
         />
-        <p class="nebentext" id="termin-mapsUrl-hinweis">{{ texte.terminFormular.mapsUrlHinweis }}</p>
-        @if (feldFehler().mapsUrl; as m) {
+        <p class="nebentext" id="termin-mapsUrl-hinweis">{{ texts.eventForm.mapsUrlHinweis }}</p>
+        @if (fieldErrors().mapsUrl; as m) {
           <p class="feldfehler" id="termin-mapsUrl-fehler">{{ m }}</p>
         }
       </div>
     }
 
-    @if (spieltag()) {
+    @if (matchDay()) {
       <fieldset class="gruppe">
-        <legend>{{ texte.terminFormular.treffpunkt }}</legend>
+        <legend>{{ texts.eventForm.meetingPoint }}</legend>
         <div class="feldreihe">
           <div class="feld">
-            <label for="termin-treffpunktZeit">{{ texte.terminFormular.treffpunktZeit }}</label>
+            <label for="termin-treffpunktZeit">{{ texts.eventForm.meetingPointTime }}</label>
             <input
               id="termin-treffpunktZeit"
               type="time"
-              [value]="werte().treffpunktZeit"
-              (input)="setzen('treffpunktZeit', $any($event.target).value)"
-              [attr.aria-invalid]="feldFehler().treffpunktZeit ? 'true' : null"
-              [attr.aria-describedby]="fehlerId('treffpunktZeit')"
+              [value]="values().meetingPointTime"
+              (input)="set('meetingPointTime', $any($event.target).value)"
+              [attr.aria-invalid]="fieldErrors().meetingPointTime ? 'true' : null"
+              [attr.aria-describedby]="errorId('meetingPointTime')"
             />
-            @if (feldFehler().treffpunktZeit; as m) {
+            @if (fieldErrors().meetingPointTime; as m) {
               <p class="feldfehler" id="termin-treffpunktZeit-fehler">{{ m }}</p>
             }
           </div>
           <div class="feld">
-            <label for="termin-treffpunktOrt">{{ texte.terminFormular.treffpunktOrt }}</label>
+            <label for="termin-treffpunktOrt">{{ texts.eventForm.meetingPointLocation }}</label>
             <input
               id="termin-treffpunktOrt"
               type="text"
               maxlength="120"
               autocomplete="off"
-              [value]="werte().treffpunktOrt"
-              (input)="setzen('treffpunktOrt', $any($event.target).value)"
-              [attr.aria-invalid]="feldFehler().treffpunktOrt ? 'true' : null"
-              [attr.aria-describedby]="fehlerId('treffpunktOrt')"
+              [value]="values().meetingPointLocation"
+              (input)="set('meetingPointLocation', $any($event.target).value)"
+              [attr.aria-invalid]="fieldErrors().meetingPointLocation ? 'true' : null"
+              [attr.aria-describedby]="errorId('meetingPointLocation')"
             />
-            @if (feldFehler().treffpunktOrt; as m) {
+            @if (fieldErrors().meetingPointLocation; as m) {
               <p class="feldfehler" id="termin-treffpunktOrt-fehler">{{ m }}</p>
             }
           </div>
@@ -251,74 +251,74 @@
       </fieldset>
 
       <fieldset class="gruppe spiele" aria-describedby="termin-spiele-hinweis">
-        <legend>{{ texte.terminFormular.spiele }}</legend>
-        <p class="nebentext" id="termin-spiele-hinweis">{{ texte.terminFormular.spieleHinweis }}</p>
-        @for (z of spiele(); track z.schluessel; let i = $index) {
+        <legend>{{ texts.eventForm.matches }}</legend>
+        <p class="nebentext" id="termin-spiele-hinweis">{{ texts.eventForm.matchesHint }}</p>
+        @for (z of matches(); track z.key; let i = $index) {
           <fieldset class="spiel">
-            <legend>{{ texte.terminFormular.spiel(i + 1) }}</legend>
-            @if (z.quelle !== 'MANUAL') {
+            <legend>{{ texts.eventForm.match(i + 1) }}</legend>
+            @if (z.source !== 'MANUAL') {
               <p class="nebentext">
-                {{ z.zeit }} · {{ z.gegner }} ·
-                {{ z.heim ? texte.terminFormular.heim : texte.terminFormular.auswaerts }}
+                {{ z.time }} · {{ z.opponent }} ·
+                {{ z.home ? texts.eventForm.home : texts.eventForm.away }}
               </p>
-              @if (z.nichtMehrBeiSu) {
-                <p class="nebentext">{{ texte.spieltag.nichtMehrBeiSu }}</p>
+              @if (z.missingAtSu) {
+                <p class="nebentext">{{ texts.matchDay.missingAtSu }}</p>
                 <button
                   type="button"
                   class="button button-sekundaer button-klein entfernen"
-                  [disabled]="speichert()"
-                  (click)="spielEntfernen(z.schluessel)"
+                  [disabled]="saving()"
+                  (click)="removeMatch(z.key)"
                 >
-                  {{ texte.terminFormular.spielEntfernen(i + 1) }}
+                  {{ texts.eventForm.removeMatch(i + 1) }}
                 </button>
               } @else {
-                <p class="nebentext">{{ texte.terminFormular.importiert }}</p>
+                <p class="nebentext">{{ texts.eventForm.imported }}</p>
               }
             } @else {
               <div class="feld">
-                <label [for]="'spiel-' + z.schluessel + '-gegner'">{{ texte.terminFormular.gegner }}</label>
+                <label [for]="'spiel-' + z.key + '-gegner'">{{ texts.eventForm.opponent }}</label>
                 <input
-                  [id]="'spiel-' + z.schluessel + '-gegner'"
+                  [id]="'spiel-' + z.key + '-gegner'"
                   type="text"
                   maxlength="80"
                   autocomplete="off"
-                  [value]="z.gegner"
-                  (input)="spielSetzen(z.schluessel, 'gegner', $any($event.target).value)"
-                  [attr.aria-invalid]="spielFehlerId(z.schluessel, 'gegner') ? 'true' : null"
-                  [attr.aria-describedby]="spielFehlerId(z.schluessel, 'gegner')"
+                  [value]="z.opponent"
+                  (input)="setMatch(z.key, 'opponent', $any($event.target).value)"
+                  [attr.aria-invalid]="matchErrorId(z.key, 'opponent') ? 'true' : null"
+                  [attr.aria-describedby]="matchErrorId(z.key, 'opponent')"
                 />
-                @if (spielFehlerId(z.schluessel, 'gegner'); as fid) {
-                  <p class="feldfehler" [id]="fid">{{ spielFehler()[z.schluessel + '-gegner'] }}</p>
+                @if (matchErrorId(z.key, 'opponent'); as fid) {
+                  <p class="feldfehler" [id]="fid">{{ matchErrors()[z.key + '-gegner'] }}</p>
                 }
               </div>
               <div class="feldreihe">
                 <div class="feld">
-                  <label [for]="'spiel-' + z.schluessel + '-zeit'">{{
-                    texte.terminFormular.anspielzeit
+                  <label [for]="'spiel-' + z.key + '-zeit'">{{
+                    texts.eventForm.startTime
                   }}</label>
                   <input
-                    [id]="'spiel-' + z.schluessel + '-zeit'"
+                    [id]="'spiel-' + z.key + '-zeit'"
                     type="time"
-                    [value]="z.zeit"
-                    (input)="spielSetzen(z.schluessel, 'zeit', $any($event.target).value)"
-                    [attr.aria-invalid]="spielFehlerId(z.schluessel, 'zeit') ? 'true' : null"
-                    [attr.aria-describedby]="spielFehlerId(z.schluessel, 'zeit')"
+                    [value]="z.time"
+                    (input)="setMatch(z.key, 'time', $any($event.target).value)"
+                    [attr.aria-invalid]="matchErrorId(z.key, 'time') ? 'true' : null"
+                    [attr.aria-describedby]="matchErrorId(z.key, 'time')"
                   />
-                  @if (spielFehlerId(z.schluessel, 'zeit'); as fid) {
-                    <p class="feldfehler" [id]="fid">{{ spielFehler()[z.schluessel + '-zeit'] }}</p>
+                  @if (matchErrorId(z.key, 'time'); as fid) {
+                    <p class="feldfehler" [id]="fid">{{ matchErrors()[z.key + '-zeit'] }}</p>
                   }
                 </div>
                 <div class="feld">
-                  <label [for]="'spiel-' + z.schluessel + '-heim'">{{
-                    texte.terminFormular.heimAuswaerts
+                  <label [for]="'spiel-' + z.key + '-heim'">{{
+                    texts.eventForm.homeAway
                   }}</label>
                   <select
-                    [id]="'spiel-' + z.schluessel + '-heim'"
-                    (change)="spielSetzen(z.schluessel, 'heim', $any($event.target).value === 'heim')"
+                    [id]="'spiel-' + z.key + '-heim'"
+                    (change)="setMatch(z.key, 'home', $any($event.target).value === 'home')"
                   >
-                    <option value="heim" [selected]="z.heim">{{ texte.terminFormular.heim }}</option>
-                    <option value="auswaerts" [selected]="!z.heim">
-                      {{ texte.terminFormular.auswaerts }}
+                    <option value="heim" [selected]="z.home">{{ texts.eventForm.home }}</option>
+                    <option value="auswaerts" [selected]="!z.home">
+                      {{ texts.eventForm.away }}
                     </option>
                   </select>
                 </div>
@@ -326,10 +326,10 @@
               <button
                 type="button"
                 class="button button-sekundaer button-klein entfernen"
-                [disabled]="speichert()"
-                (click)="spielEntfernen(z.schluessel)"
+                [disabled]="saving()"
+                (click)="removeMatch(z.key)"
               >
-                {{ texte.terminFormular.spielEntfernen(i + 1) }}
+                {{ texts.eventForm.removeMatch(i + 1) }}
               </button>
             }
           </fieldset>
@@ -337,29 +337,29 @@
         <button
           type="button"
           class="button button-sekundaer button-klein hinzufuegen"
-          [disabled]="speichert()"
-          (click)="spielHinzufuegen()"
+          [disabled]="saving()"
+          (click)="addMatch()"
         >
-          {{ texte.terminFormular.spielHinzufuegen }}
+          {{ texts.eventForm.addMatch }}
         </button>
       </fieldset>
     }
 
-    @if (!alsSerie()) {
+    @if (!asSeries()) {
       <div class="feld">
-        <label for="termin-hinweise">{{ texte.terminFormular.hinweise }}</label>
+        <label for="termin-hinweise">{{ texts.eventForm.notes }}</label>
         <textarea
           id="termin-hinweise"
           rows="3"
           maxlength="500"
-          [value]="werte().hinweise"
-          (input)="setzen('hinweise', $any($event.target).value)"
+          [value]="values().notes"
+          (input)="set('notes', $any($event.target).value)"
         ></textarea>
       </div>
     }
 
     <div class="feld">
-      <label for="termin-antwortfrist">{{ texte.terminFormular.antwortfrist }}</label>
+      <label for="termin-antwortfrist">{{ texts.eventForm.responseDeadline }}</label>
       <input
         id="termin-antwortfrist"
         type="number"
@@ -367,17 +367,17 @@
         max="336"
         step="1"
         inputmode="numeric"
-        [value]="werte().antwortfrist"
-        (input)="setzen('antwortfrist', $any($event.target).value)"
-        [attr.aria-invalid]="feldFehler().antwortfrist ? 'true' : null"
+        [value]="values().responseDeadline"
+        (input)="set('responseDeadline', $any($event.target).value)"
+        [attr.aria-invalid]="fieldErrors().responseDeadline ? 'true' : null"
         [attr.aria-describedby]="
-          feldFehler().antwortfrist ? 'termin-antwortfrist-fehler' : 'termin-antwortfrist-hinweis'
+          fieldErrors().responseDeadline ? 'termin-antwortfrist-fehler' : 'termin-antwortfrist-hinweis'
         "
       />
       <p class="nebentext" id="termin-antwortfrist-hinweis">
-        {{ texte.terminFormular.antwortfristHinweis }}
+        {{ texts.eventForm.responseDeadlineHint }}
       </p>
-      @if (feldFehler().antwortfrist; as m) {
+      @if (fieldErrors().responseDeadline; as m) {
         <p class="feldfehler" id="termin-antwortfrist-fehler">{{ m }}</p>
       }
     </div>
@@ -386,25 +386,25 @@
       <button
         type="submit"
         class="button button-primaer"
-        [disabled]="speichert()"
-        [attr.aria-busy]="laufendeAktion() === 'speichern' ? 'true' : null"
+        [disabled]="saving()"
+        [attr.aria-busy]="runningAction() === 'save' ? 'true' : null"
       >
         {{
-          modus() !== 'neu'
-            ? texte.terminFormular.speichernAenderung
-            : alsSerie()
-              ? texte.terminFormular.speichernSerie
-              : texte.terminFormular.speichernNeu
+          mode() !== 'neu'
+            ? texts.eventForm.saveChanges
+            : asSeries()
+              ? texts.eventForm.saveSeries
+              : texts.eventForm.saveNew
         }}
       </button>
-      @if (modus() === 'termin') {
+      @if (mode() === 'termin') {
         <button
           type="button"
           class="button button-sekundaer gefahr"
-          [disabled]="speichert()"
-          (click)="absagenOeffnen()"
+          [disabled]="saving()"
+          (click)="openCancel()"
         >
-          {{ texte.terminFormular.absagen }}
+          {{ texts.eventForm.cancelEvent }}
         </button>
       }
     </div>
@@ -412,29 +412,29 @@
 }
 
 <dialog
-  #absagenDialog
+  #cancelDialog
   class="karte dialog"
   aria-modal="true"
   aria-labelledby="absagen-titel"
   aria-describedby="absagen-text"
 >
-  <form class="formular" (submit)="absagen($event)" novalidate>
-    <h2 id="absagen-titel">{{ texte.terminFormular.absagenTitel }}</h2>
-    <p id="absagen-text">{{ texte.terminFormular.absagenText }}</p>
+  <form class="formular" (submit)="cancelEvent($event)" novalidate>
+    <h2 id="absagen-titel">{{ texts.eventForm.cancelTitle }}</h2>
+    <p id="absagen-text">{{ texts.eventForm.cancelText }}</p>
     <div class="feld">
-      <label for="termin-grund">{{ texte.terminFormular.grund }}</label>
+      <label for="termin-grund">{{ texts.eventForm.reason }}</label>
       <input
-        #grundFeld
+        #reasonField
         id="termin-grund"
         type="text"
         maxlength="200"
         autocomplete="off"
-        [value]="grund()"
-        (input)="grund.set($any($event.target).value)"
-        [attr.aria-invalid]="feldFehler().grund ? 'true' : null"
-        [attr.aria-describedby]="fehlerId('grund')"
+        [value]="reason()"
+        (input)="reason.set($any($event.target).value)"
+        [attr.aria-invalid]="fieldErrors().reason ? 'true' : null"
+        [attr.aria-describedby]="errorId('reason')"
       />
-      @if (feldFehler().grund; as m) {
+      @if (fieldErrors().reason; as m) {
         <p class="feldfehler" id="termin-grund-fehler">{{ m }}</p>
       }
     </div>
@@ -442,18 +442,18 @@
       <button
         type="submit"
         class="button button-primaer button-klein"
-        [disabled]="speichert()"
-        [attr.aria-busy]="laufendeAktion() === 'absagen' ? 'true' : null"
+        [disabled]="saving()"
+        [attr.aria-busy]="runningAction() === 'cancelEvent' ? 'true' : null"
       >
-        {{ texte.terminFormular.absagenBestaetigen }}
+        {{ texts.eventForm.cancelConfirm }}
       </button>
       <button
         type="button"
         class="button button-sekundaer button-klein"
-        [disabled]="speichert()"
-        (click)="absagenSchliessen()"
+        [disabled]="saving()"
+        (click)="closeCancel()"
       >
-        {{ texte.terminFormular.abbrechen }}
+        {{ texts.eventForm.cancel }}
       </button>
     </div>
   </form>

@@ -2,7 +2,7 @@
 
 Central web platform for floorball (unihockey) at STV Beromünster. It brings together the organizational tools that are scattered today (lists, chats, spreadsheets) in one place – simple enough that players, coaches and helpers can use it without instructions.
 
-> **Status 16.11.2026:** Requirements and the [production pipeline](docs/pipeline/README.md) are in place. The foundation (F-00) and the core features are built. More features are created through the pipeline as soon as an issue gets `status:bereit`. Since F-09 the repository is written in English; the user interface stays German (NF-02, NF-40).
+> **Status 16.11.2026:** Requirements and the [production pipeline](docs/pipeline/README.md) are in place. The foundation (F-00) and the core features are built. More features are created through the pipeline as soon as an issue gets `status:bereit`. The repository is written in English, the switch was completed with F-11; the user interface stays German (NF-02, NF-40).
 
 ## Start and test
 
@@ -22,7 +22,7 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 |---|---|
 | `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
-| `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobil` and `desktop` |
+| `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
 | `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py` |
 
 ## Why our own app?

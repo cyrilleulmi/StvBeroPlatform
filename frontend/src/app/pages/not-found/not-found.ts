@@ -1,19 +1,19 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TEXTE } from '../../core/texts';
+import { TEXTS } from '../../core/texts';
 
 @Component({
   selector: 'app-nicht-gefunden',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <h1>{{ texte.allgemein.nichtGefunden }}</h1>
+    <h1>{{ texts.common.notFound }}</h1>
     <p>
-      <a routerLink="/">{{ texte.allgemein.zurStartseite }}</a>
+      <a routerLink="/">{{ texts.common.toStartPage }}</a>
     </p>
   `,
   styleUrl: '../page.css',
 })
-export class NichtGefunden {
-  protected readonly texte = TEXTE;
+export class NotFound {
+  protected readonly texts = TEXTS;
 }

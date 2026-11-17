@@ -1,21 +1,21 @@
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * Nachbesserung #13 · Ohne aktuelle Saison antwortet GET /api/me mit 409 (SAI-03).
- * Die Oberfläche zeigt dann einen verständlichen Hinweis statt eines leeren Bildschirms.
+ * Follow-up #13 · Without a current season GET /api/me answers with 409 (SAI-03).
+ * The UI then shows an understandable notice instead of a blank screen.
  */
 
-test.describe('ohne aktuelle Saison', () => {
-  // Der Browser meldet die erwartete 409-Antwort von /api/me in der Konsole.
+test.describe('without current season', () => {
+  // The browser reports the expected 409 response of /api/me in the console.
   test.use({ expectedConsoleErrors: [/status of 409/] });
 
   test.beforeEach(async ({ request }) => {
     await reset(request);
-    const antwort = await request.delete('/api/test/current-season');
-    expect(antwort.status()).toBe(204);
+    const response = await request.delete('/api/test/current-season');
+    expect(response.status()).toBe(204);
   });
 
-  test('SAI-03: ohne aktuelle Saison zeigt die App einen Hinweis statt eines leeren Bildschirms', async ({ page }) => {
+  test('SAI-03: without a current season the app shows a notice instead of a blank screen', async ({ page }) => {
     await login(page, 'anna');
 
     await page.goto('/teams');
@@ -28,7 +28,7 @@ test.describe('ohne aktuelle Saison', () => {
     await checkAccessibility(page);
   });
 
-  test('SAI-03: nach dem Festlegen einer Saison führt «Nochmals versuchen» zum Ziel zurück', async ({ page, request }) => {
+  test('SAI-03: after setting a season «Nochmals versuchen» leads back to the target', async ({ page, request }) => {
     await login(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
@@ -41,7 +41,7 @@ test.describe('ohne aktuelle Saison', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
   });
 
-  test('SAI-03: Anmeldung im Testmodus ohne aktuelle Saison führt auf den Hinweis', async ({ page }) => {
+  test('SAI-03: sign-in in test mode without a current season leads to the notice', async ({ page }) => {
     await page.goto('/dev-login?ziel=%2Fprofil');
     await page.getByRole('button', { name: /Petra Keller/ }).click();
 
@@ -49,7 +49,7 @@ test.describe('ohne aktuelle Saison', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Noch keine aktuelle Saison');
   });
 
-  test('SAI-03: Abmelden vom Hinweis führt zur Anmeldung', async ({ page }) => {
+  test('SAI-03: signing out from the notice leads to sign-in', async ({ page }) => {
     await login(page, 'alex');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
@@ -60,25 +60,25 @@ test.describe('ohne aktuelle Saison', () => {
   });
 });
 
-test.describe('mit aktueller Saison', () => {
+test.describe('with current season', () => {
   test.beforeEach(async ({ request }) => {
     await reset(request);
   });
 
-  test('SAI-03: /keine-saison ohne Anmeldung führt zur Anmeldung', async ({ page }) => {
+  test('SAI-03: /keine-saison without sign-in leads to sign-in', async ({ page }) => {
     await page.goto('/keine-saison');
 
     await expect(page).toHaveURL('/dev-login');
     await expect(page.getByTestId('no-season-notice')).toHaveCount(0);
   });
 
-  test('SAI-03: /keine-saison ohne Anmeldung behält das Ziel', async ({ page }) => {
+  test('SAI-03: /keine-saison without sign-in keeps the target', async ({ page }) => {
     await page.goto('/keine-saison?ziel=%2Fteams');
 
     await expect(page).toHaveURL('/dev-login?ziel=%2Fteams');
   });
 
-  test('SAI-03: /keine-saison mit aktueller Saison führt direkt zum Ziel', async ({ page }) => {
+  test('SAI-03: /keine-saison with a current season leads directly to the target', async ({ page }) => {
     await login(page, 'anna');
 
     await page.goto('/keine-saison?ziel=%2Fteams');
@@ -87,7 +87,7 @@ test.describe('mit aktueller Saison', () => {
     await expect(page.getByTestId('no-season-notice')).toHaveCount(0);
   });
 
-  test('SAI-03: /keine-saison mit aktueller Saison und fremdem Ziel führt auf die Startseite', async ({ page }) => {
+  test('SAI-03: /keine-saison with a current season and a foreign target leads to the start page', async ({ page }) => {
     await login(page, 'anna');
 
     await page.goto('/keine-saison?ziel=https%3A%2F%2Fexample.com');

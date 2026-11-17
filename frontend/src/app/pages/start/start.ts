@@ -2,13 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Kachel, TerminKurz } from '../../api/types';
-import { MeineAntwort } from '../../attendance/my-response';
-import { jahrVon, terminDatum, uhrzeit } from '../../attendance/time';
-import { AnmeldungService } from '../../core/auth.service';
-import { fehlertext } from '../../core/error-text';
+import type { Tile, EventSummary } from '../../api/types';
+import { MyResponse } from '../../attendance/my-response';
+import { yearOf, eventDate, clockTime } from '../../attendance/time';
+import { AuthService } from '../../core/auth.service';
+import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
-import { TEXTE } from '../../core/texts';
+import { TEXTS } from '../../core/texts';
 
 /**
  * Start: Begrüssung, nächster eigener Termin mit Antwort-Buttons (F-04, ANM-08) und Kacheln aus
@@ -17,63 +17,63 @@ import { TEXTE } from '../../core/texts';
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MeineAntwort],
+  imports: [RouterLink, Icon, MyResponse],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
 export class Start implements OnInit {
   private readonly http = inject(HttpClient);
-  protected readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
+  protected readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
 
-  protected readonly kacheln = signal<Kachel[]>([]);
-  protected readonly laedt = signal(true);
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly tiles = signal<Tile[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
 
   /** Nächster geplanter Termin der eigenen Teams; abgesagte überspringen. */
-  protected readonly naechster = signal<TerminKurz | null>(null);
-  protected readonly terminLaedt = signal(true);
-  protected readonly terminFehler = signal<string | null>(null);
+  protected readonly next = signal<EventSummary | null>(null);
+  protected readonly eventLoading = signal(true);
+  protected readonly eventError = signal<string | null>(null);
 
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
+  private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
   async ngOnInit(): Promise<void> {
-    void this.terminLaden();
+    void this.loadEvent();
     try {
-      this.kacheln.set(await firstValueFrom(this.http.get<Kachel[]>('/api/tiles')));
+      this.tiles.set(await firstValueFrom(this.http.get<Tile[]>('/api/tiles')));
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
   /** «Training Di 17.11. 18:30–20:00 · Team 1 + Team 2» */
-  protected beschreibung(t: TerminKurz): string {
-    return `${terminDatum(t.start, this.jahr())} · ${TEXTE.termine.zeitraum(uhrzeit(t.start), uhrzeit(t.end))} · ${TEXTE.termine.teamsVerbinden(t.teams.map((x) => x.name))}`;
+  protected description(t: EventSummary): string {
+    return `${eventDate(t.start, this.year())} · ${TEXTS.termine.period(clockTime(t.start), clockTime(t.end))} · ${TEXTS.termine.joinTeams(t.teams.map((x) => x.name))}`;
   }
 
-  protected kartenName(t: TerminKurz): string {
-    return TEXTE.termine.karte(t.title, terminDatum(t.start, this.jahr()), uhrzeit(t.start));
+  protected cardName(t: EventSummary): string {
+    return TEXTS.termine.card(t.title, eventDate(t.start, this.year()), clockTime(t.start));
   }
 
   /** Nach einer Antwort: Zähler nachladen, ohne die Seite neu zu laden. */
-  protected async nachladen(id: string): Promise<void> {
+  protected async reload(id: string): Promise<void> {
     try {
-      this.naechster.set(await firstValueFrom(this.http.get<TerminKurz>(`/api/events/${id}`)));
+      this.next.set(await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`)));
     } catch (e) {
-      this.terminFehler.set(fehlertext(e));
+      this.eventError.set(errorText(e));
     }
   }
 
-  private async terminLaden(): Promise<void> {
+  private async loadEvent(): Promise<void> {
     try {
-      const termine = await firstValueFrom(this.http.get<TerminKurz[]>('/api/events'));
-      this.naechster.set(termine.find((t) => t.status !== 'CANCELLED') ?? null);
+      const termine = await firstValueFrom(this.http.get<EventSummary[]>('/api/events'));
+      this.next.set(termine.find((t) => t.status !== 'CANCELLED') ?? null);
     } catch (e) {
-      this.terminFehler.set(fehlertext(e));
+      this.eventError.set(errorText(e));
     } finally {
-      this.terminLaedt.set(false);
+      this.eventLoading.set(false);
     }
   }
 }

@@ -12,25 +12,25 @@ import {
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type {
-  AbgleichErgebnis,
-  Funktion,
+  SyncResult,
+  TeamRole,
   Person,
-  PersonKurz,
-  Saison,
+  PersonSummary,
+  Season,
   TeamDetail,
-  Teamzugehoerigkeit,
+  TeamMembership,
 } from '../../api/types';
-import { AnmeldungService } from '../../core/auth.service';
-import { fehlerstatus, fehlertext } from '../../core/error-text';
-import { funktionText, name } from '../../core/format';
-import { TEXTE } from '../../core/texts';
+import { AuthService } from '../../core/auth.service';
+import { errorStatus, errorText } from '../../core/error-text';
+import { teamRoleText, name } from '../../core/format';
+import { TEXTS } from '../../core/texts';
 
-interface Mitglied {
-  person: PersonKurz;
-  funktion: Funktion;
+interface Member {
+  person: PersonSummary;
+  teamRole: TeamRole;
 }
 
-const FUNKTIONEN: Funktion[] = ['PLAYER', 'COACH'];
+const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 
 /**
  * Team verwalten (Admin, PTF-11): umbenennen, Personen mit Funktion aufnehmen (PTF-03, PTF-04),
@@ -65,234 +65,234 @@ const FUNKTIONEN: Funktion[] = ['PLAYER', 'COACH'];
     }
   `,
 })
-export class TeamVerwaltung {
+export class TeamAdmin {
   private readonly http = inject(HttpClient);
-  protected readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
+  protected readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
   protected readonly name = name;
-  protected readonly funktion = funktionText;
-  protected readonly funktionen = FUNKTIONEN;
+  protected readonly teamRole = teamRoleText;
+  protected readonly teamRoles = TEAM_ROLES;
 
   /** Route `/verwaltung/teams/:teamId` */
   readonly teamId = input.required<string>();
   /** Query `?saison=`; ohne Angabe die aktuelle Saison. */
-  readonly saison = input<string | undefined>();
+  readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
   protected readonly team = signal<TeamDetail | null>(null);
-  protected readonly saisonDaten = signal<Saison | null>(null);
-  protected readonly personen = signal<Person[]>([]);
-  protected readonly laedt = signal(true);
+  protected readonly seasonData = signal<Season | null>(null);
+  protected readonly people = signal<Person[]>([]);
+  protected readonly loading = signal(true);
   /**
    * Welche Aktion gerade läuft: `umbenennen`, `aufnehmen`, `funktion:<personId>`,
    * `entfernen:<personId>`, `verknuepfen`, `loesen` oder `abgleichen`. `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
    */
-  protected readonly laufendeAktion = signal<string | null>(null);
-  protected readonly speichert = computed(() => this.laufendeAktion() !== null);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly erfolg = signal<string | null>(null);
-  protected readonly nurLesen = computed(() => this.saisonDaten()?.archived === true);
+  protected readonly runningAction = signal<string | null>(null);
+  protected readonly saving = computed(() => this.runningAction() !== null);
+  protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
+  protected readonly readOnly = computed(() => this.seasonData()?.archived === true);
 
   protected readonly teamname = signal('');
-  protected readonly teamnameFehler = signal<string | null>(null);
-  protected readonly neuePerson = signal('');
-  protected readonly neueFunktion = signal<Funktion>('PLAYER');
-  protected readonly personFehler = signal<string | null>(null);
+  protected readonly teamnameError = signal<string | null>(null);
+  protected readonly newPerson = signal('');
+  protected readonly newTeamRole = signal<TeamRole>('PLAYER');
+  protected readonly personError = signal<string | null>(null);
   protected readonly suTeamId = signal('');
-  protected readonly suTeamIdFehler = signal<string | null>(null);
+  protected readonly suTeamIdError = signal<string | null>(null);
 
   /** Coaches und Spielerinnen getrennt (PTF-07). */
-  protected readonly coaches = computed<Mitglied[]>(() =>
-    (this.team()?.coaches ?? []).map((person) => ({ person, funktion: 'COACH' })),
+  protected readonly coaches = computed<Member[]>(() =>
+    (this.team()?.coaches ?? []).map((person) => ({ person, teamRole: 'COACH' })),
   );
-  protected readonly spielerinnen = computed<Mitglied[]>(() => {
+  protected readonly players = computed<Member[]>(() => {
     const t = this.team();
     if (!t) return [];
     return [...t.lineup.groups.flatMap((g) => g.players), ...t.lineup.noLine].map(
       (person) => ({
         person,
-        funktion: 'PLAYER',
+        teamRole: 'PLAYER',
       }),
     );
   });
-  private readonly mitgliedIds = computed(
-    () => new Set([...this.coaches(), ...this.spielerinnen()].map((m) => m.person.id)),
+  private readonly memberIds = computed(
+    () => new Set([...this.coaches(), ...this.players()].map((m) => m.person.id)),
   );
 
   constructor() {
     effect(() => {
       const teamId = this.teamId();
-      const saisonId = this.saison();
-      if (this.anmeldung.istAdmin()) {
-        untracked(() => void this.laden(teamId, saisonId));
+      const seasonId = this.season();
+      if (this.auth.isAdmin()) {
+        untracked(() => void this.load(teamId, seasonId));
       }
     });
   }
 
-  protected istMitglied(personId: string): boolean {
-    return this.mitgliedIds().has(personId);
+  protected isMember(personId: string): boolean {
+    return this.memberIds().has(personId);
   }
 
   private params(): Record<string, string> {
-    const id = this.saisonDaten()?.id ?? this.saison();
-    return id ? { season: id } : {};
+    const id = this.seasonData()?.id ?? this.season();
+    return id ? { saison: id } : {};
   }
 
-  private async laden(teamId: string, saisonId: string | undefined): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
+  private async load(teamId: string, seasonId: string | undefined): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     try {
-      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
-      const [saisons, team, personen] = await Promise.all([
-        firstValueFrom(this.http.get<Saison[]>('/api/seasons')),
+      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
+      const [seasons, team, people] = await Promise.all([
+        firstValueFrom(this.http.get<Season[]>('/api/seasons')),
         firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
         firstValueFrom(this.http.get<Person[]>('/api/persons')),
       ]);
-      this.saisonDaten.set(saisons.find((s) => (saisonId ? s.id === saisonId : s.current)) ?? null);
+      this.seasonData.set(seasons.find((s) => (seasonId ? s.id === seasonId : s.current)) ?? null);
       this.team.set(team);
       this.teamname.set(team.name);
       this.suTeamId.set(team.suTeamId != null ? String(team.suTeamId) : '');
-      this.personen.set(personen);
+      this.people.set(people);
     } catch (e) {
       this.team.set(null);
-      this.fehler.set(fehlerstatus(e) === 404 ? TEXTE.teams.nichtGefunden : fehlertext(e));
+      this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
-  private async neuLaden(): Promise<void> {
+  private async reload(): Promise<void> {
     const t = await firstValueFrom(
       this.http.get<TeamDetail>(`/api/teams/${this.teamId()}`, { params: this.params() }),
     );
     this.team.set(t);
   }
 
-  private async ausfuehren(schluessel: string, aktion: () => Promise<string>): Promise<void> {
-    if (this.speichert()) return;
-    this.erfolg.set(null);
-    this.fehler.set(null);
-    this.laufendeAktion.set(schluessel);
+  private async run(key: string, action: () => Promise<string>): Promise<void> {
+    if (this.saving()) return;
+    this.success.set(null);
+    this.error.set(null);
+    this.runningAction.set(key);
     try {
-      const meldung = await aktion();
-      await this.neuLaden();
-      this.erfolg.set(meldung);
+      const message = await action();
+      await this.reload();
+      this.success.set(message);
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laufendeAktion.set(null);
+      this.runningAction.set(null);
     }
   }
 
-  protected umbenennen(ereignis: Event): void {
-    ereignis.preventDefault();
-    const neuerName = this.teamname().trim();
-    if (!neuerName) {
-      this.teamnameFehler.set(TEXTE.teamVerwaltung.namePflicht);
+  protected rename(domEvent: Event): void {
+    domEvent.preventDefault();
+    const newName = this.teamname().trim();
+    if (!newName) {
+      this.teamnameError.set(TEXTS.teamAdmin.nameRequired);
       return;
     }
-    this.teamnameFehler.set(null);
-    void this.ausfuehren('umbenennen', async () => {
+    this.teamnameError.set(null);
+    void this.run('rename', async () => {
       await firstValueFrom(
         this.http.put(
           `/api/teams/${this.teamId()}`,
-          { name: neuerName },
+          { name: newName },
           { params: this.params() },
         ),
       );
-      return TEXTE.teamVerwaltung.umbenannt;
+      return TEXTS.teamAdmin.renamed;
     });
   }
 
-  protected aufnehmen(ereignis: Event): void {
-    ereignis.preventDefault();
-    const personId = this.neuePerson();
+  protected addMember(domEvent: Event): void {
+    domEvent.preventDefault();
+    const personId = this.newPerson();
     if (!personId) {
-      this.personFehler.set(TEXTE.teamVerwaltung.personPflicht);
+      this.personError.set(TEXTS.teamAdmin.personRequired);
       return;
     }
-    this.personFehler.set(null);
-    const funktion = this.neueFunktion();
-    void this.ausfuehren('aufnehmen', async () => {
+    this.personError.set(null);
+    const teamRole = this.newTeamRole();
+    void this.run('addMember', async () => {
       const z = await firstValueFrom(
-        this.http.post<Teamzugehoerigkeit>(
+        this.http.post<TeamMembership>(
           `/api/teams/${this.teamId()}/members`,
-          { personId, teamRole: funktion },
+          { personId, teamRole: teamRole },
           { params: this.params() },
         ),
       );
-      this.neuePerson.set('');
-      this.neueFunktion.set('PLAYER');
-      return TEXTE.teamVerwaltung.aufgenommen(
+      this.newPerson.set('');
+      this.newTeamRole.set('PLAYER');
+      return TEXTS.teamAdmin.added(
         name(z.person),
-        funktionText(z.teamRole),
+        teamRoleText(z.teamRole),
         z.team.name,
       );
     });
   }
 
-  protected funktionAendern(m: Mitglied, funktion: Funktion): void {
-    void this.ausfuehren(`funktion:${m.person.id}`, async () => {
+  protected changeTeamRole(m: Member, teamRole: TeamRole): void {
+    void this.run(`funktion:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.put(
           `/api/teams/${this.teamId()}/members/${m.person.id}`,
-          { teamRole: funktion },
+          { teamRole: teamRole },
           { params: this.params() },
         ),
       );
-      return TEXTE.teamVerwaltung.funktionGeaendert(name(m.person), funktionText(funktion));
+      return TEXTS.teamAdmin.teamRoleChanged(name(m.person), teamRoleText(teamRole));
     });
   }
 
-  protected entfernen(m: Mitglied): void {
-    void this.ausfuehren(`entfernen:${m.person.id}`, async () => {
+  protected remove(m: Member): void {
+    void this.run(`entfernen:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.delete(`/api/teams/${this.teamId()}/members/${m.person.id}`, {
           params: this.params(),
         }),
       );
-      return TEXTE.teamVerwaltung.entfernt(name(m.person));
+      return TEXTS.teamAdmin.removed(name(m.person));
     });
   }
 
   /** Mit swiss unihockey verknüpfen (SUH-02). */
-  protected verknuepfen(ereignis: Event): void {
-    ereignis.preventDefault();
-    const eingabe = this.suTeamId().trim();
-    if (!/^[1-9]\d{0,8}$/.test(eingabe)) {
-      this.suTeamIdFehler.set(TEXTE.swissUnihockey.feldPflicht);
+  protected link(domEvent: Event): void {
+    domEvent.preventDefault();
+    const input = this.suTeamId().trim();
+    if (!/^[1-9]\d{0,8}$/.test(input)) {
+      this.suTeamIdError.set(TEXTS.swissUnihockey.fieldRequired);
       return;
     }
-    this.suTeamIdFehler.set(null);
-    const id = Number(eingabe);
-    void this.ausfuehren('verknuepfen', async () => {
+    this.suTeamIdError.set(null);
+    const id = Number(input);
+    void this.run('link', async () => {
       await firstValueFrom(
         this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: id }),
       );
-      return TEXTE.swissUnihockey.verknuepft(id);
+      return TEXTS.swissUnihockey.linked(id);
     });
   }
 
-  protected verknuepfungLoesen(): void {
-    this.suTeamIdFehler.set(null);
-    void this.ausfuehren('loesen', async () => {
+  protected unlink(): void {
+    this.suTeamIdError.set(null);
+    void this.run('unlink', async () => {
       await firstValueFrom(
         this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: null }),
       );
       this.suTeamId.set('');
-      return TEXTE.swissUnihockey.geloest;
+      return TEXTS.swissUnihockey.unlinked;
     });
   }
 
   /** Abgleich sofort auslösen (SUH-03). Bei einer Störung meldet das Backend den Grund (SUH-09). */
-  protected abgleichen(): void {
-    void this.ausfuehren('abgleichen', async () => {
-      const ergebnis = await firstValueFrom(
-        this.http.post<AbgleichErgebnis>(
+  protected sync(): void {
+    void this.run('sync', async () => {
+      const outcome = await firstValueFrom(
+        this.http.post<SyncResult>(
           `/api/teams/${this.teamId()}/swiss-unihockey/sync`,
           null,
         ),
       );
-      return TEXTE.swissUnihockey.abgeglichen(ergebnis);
+      return TEXTS.swissUnihockey.synced(outcome);
     });
   }
 }

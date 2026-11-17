@@ -30,7 +30,7 @@ A PR is done when all items are met. The development agent ticks them in the PR 
 ## Tests and data
 
 - [ ] Backend tests green.
-- [ ] E2E tests (`e2e/`) green in the projects `mobil` and `desktop`, including an axe check without critical findings.
+- [ ] E2E tests (`e2e/`) green in the projects `mobile` and `desktop`, including an axe check without critical findings.
 - [ ] Seed data covers the feature. Changes to the seed are updated in [test-data.md](../test-data.md), new scenarios added there.
 - [ ] Changed behavior is updated in [states.md](../states.md).
 

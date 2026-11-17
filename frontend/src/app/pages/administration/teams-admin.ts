@@ -11,12 +11,12 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Saison, Team } from '../../api/types';
-import { AnmeldungService } from '../../core/auth.service';
-import { feldfehler, fehlertext } from '../../core/error-text';
-import { saisonStatus } from '../../core/format';
+import type { Season, Team } from '../../api/types';
+import { AuthService } from '../../core/auth.service';
+import { fieldErrorsOf, errorText } from '../../core/error-text';
+import { seasonStatus } from '../../core/format';
 import { Icon } from '../../core/icon';
-import { TEXTE } from '../../core/texts';
+import { TEXTS } from '../../core/texts';
 
 /** Teams verwalten (Admin): Teams einer Saison (`?saison=`), Team anlegen. Archiv nur lesend (SAI-02). */
 @Component({
@@ -25,60 +25,60 @@ import { TEXTE } from '../../core/texts';
   imports: [RouterLink, Icon],
   template: `
     <div class="kopf">
-      <a class="zurueck" routerLink="/verwaltung">{{ texte.verwaltung.zurVerwaltung }}</a>
-      <h1>{{ texte.teamVerwaltung.titel }}</h1>
+      <a class="zurueck" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
+      <h1>{{ texts.teamAdmin.title }}</h1>
     </div>
-    @if (!anmeldung.istAdmin()) {
-      <p class="meldung-fehler" role="alert">{{ texte.allgemein.keineBerechtigung }}</p>
+    @if (!auth.isAdmin()) {
+      <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       <div class="feld">
-        <label for="teams-saison">{{ texte.teamVerwaltung.saison }}</label>
-        <select id="teams-saison" (change)="saisonWaehlen($any($event.target).value)">
-          @for (s of saisons(); track s.id) {
-            <option [value]="s.id" [selected]="s.id === saisonDaten()?.id">
+        <label for="teams-saison">{{ texts.teamAdmin.season }}</label>
+        <select id="teams-saison" (change)="selectSeason($any($event.target).value)">
+          @for (s of seasons(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === seasonData()?.id">
               {{ s.name }} ({{ status(s) }})
             </option>
           }
         </select>
       </div>
-      @if (saisonDaten()?.archived) {
+      @if (seasonData()?.archived) {
         <p class="meldung-hinweis" data-testid="archiv-hinweis">
-          {{ texte.saison.archivHinweis(saisonDaten()!.name) }}
+          {{ texts.season.archiveNotice(seasonData()!.name) }}
         </p>
       }
-      @if (erfolg(); as meldung) {
-        <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+      @if (success(); as message) {
+        <p class="meldung-erfolg" role="status">{{ message }}</p>
       }
-      @if (fehler(); as meldung) {
-        <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+      @if (error(); as message) {
+        <p class="meldung-fehler" role="alert">{{ message }}</p>
       }
       <section
         class="karte"
         aria-labelledby="teams-verwaltung-liste"
-        [attr.aria-busy]="laedt() ? 'true' : null"
+        [attr.aria-busy]="loading() ? 'true' : null"
       >
         <h2 id="teams-verwaltung-liste" class="abschnitt-titel">
-          {{ texte.teamVerwaltung.teamsListe }}
+          {{ texts.teamAdmin.teamsList }}
         </h2>
-        @if (laedt() && teams().length === 0) {
-          <p class="leer">{{ texte.allgemein.laden }}</p>
+        @if (loading() && teams().length === 0) {
+          <p class="leer">{{ texts.common.loading }}</p>
         } @else if (teams().length === 0) {
-          <p class="leer">{{ texte.teamVerwaltung.leer }}</p>
+          <p class="leer">{{ texts.teamAdmin.empty }}</p>
         } @else {
-          <ul class="liste" [attr.aria-label]="texte.teamVerwaltung.teamsListe">
+          <ul class="liste" [attr.aria-label]="texts.teamAdmin.teamsList">
             @for (t of teams(); track t.id) {
               <li class="team-zeile" [attr.data-testid]="'team-' + t.id">
                 <a
                   class="zeile-link"
                   [routerLink]="['/verwaltung/teams', t.id]"
-                  [queryParams]="{ saison: saisonDaten()?.id }"
+                  [queryParams]="{ saison: seasonData()?.id }"
                 >
                   <span class="zeile-titel">{{ t.name }}</span>
-                  <app-icon name="chevron-right" [groesse]="20" />
+                  <app-icon name="chevron-right" [size]="20" />
                 </a>
                 @if (t.suTeamId) {
                   <span class="chip" [attr.data-testid]="'su-verknuepft-' + t.id">{{
-                    texte.swissUnihockey.chip
+                    texts.swissUnihockey.chip
                   }}</span>
                 }
               </li>
@@ -86,37 +86,37 @@ import { TEXTE } from '../../core/texts';
           </ul>
         }
       </section>
-      @if (saisonDaten() && !saisonDaten()!.archived) {
+      @if (seasonData() && !seasonData()!.archived) {
         <form
           class="karte formular"
-          (submit)="anlegen($event)"
+          (submit)="create($event)"
           novalidate
           aria-labelledby="team-neu-titel"
         >
-          <h2 id="team-neu-titel">{{ texte.teamVerwaltung.neuesTeam }}</h2>
+          <h2 id="team-neu-titel">{{ texts.teamAdmin.newTeam }}</h2>
           <div class="feld">
-            <label for="team-neu-name">{{ texte.teamVerwaltung.teamName }}</label>
+            <label for="team-neu-name">{{ texts.teamAdmin.teamName }}</label>
             <input
               id="team-neu-name"
               type="text"
               maxlength="60"
               autocomplete="off"
-              [value]="neuerName()"
-              (input)="neuerName.set($any($event.target).value)"
-              [attr.aria-invalid]="nameFehler() ? 'true' : null"
-              [attr.aria-describedby]="nameFehler() ? 'team-neu-name-fehler' : null"
+              [value]="newName()"
+              (input)="newName.set($any($event.target).value)"
+              [attr.aria-invalid]="nameError() ? 'true' : null"
+              [attr.aria-describedby]="nameError() ? 'team-neu-name-fehler' : null"
             />
-            @if (nameFehler(); as m) {
+            @if (nameError(); as m) {
               <p class="feldfehler" id="team-neu-name-fehler">{{ m }}</p>
             }
           </div>
           <button
             type="submit"
             class="button button-primaer"
-            [disabled]="speichert()"
-            [attr.aria-busy]="speichert() ? 'true' : null"
+            [disabled]="saving()"
+            [attr.aria-busy]="saving() ? 'true' : null"
           >
-            {{ texte.teamVerwaltung.anlegen }}
+            {{ texts.teamAdmin.create }}
           </button>
         </form>
       }
@@ -138,87 +138,87 @@ import { TEXTE } from '../../core/texts';
     }
   `,
 })
-export class TeamsVerwaltung {
+export class TeamsAdmin {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  protected readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
-  protected readonly status = saisonStatus;
+  protected readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
+  protected readonly status = seasonStatus;
 
   /** Query `?saison=`; ohne Angabe die aktuelle Saison. */
-  readonly saison = input<string | undefined>();
+  readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
-  protected readonly saisons = signal<Saison[]>([]);
-  protected readonly saisonDaten = computed(() => {
-    const id = this.saison();
-    return this.saisons().find((s) => (id ? s.id === id : s.current)) ?? null;
+  protected readonly seasons = signal<Season[]>([]);
+  protected readonly seasonData = computed(() => {
+    const id = this.season();
+    return this.seasons().find((s) => (id ? s.id === id : s.current)) ?? null;
   });
   protected readonly teams = signal<Team[]>([]);
-  protected readonly laedt = signal(true);
-  protected readonly speichert = signal(false);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly erfolg = signal<string | null>(null);
-  protected readonly neuerName = signal('');
-  protected readonly nameFehler = signal<string | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
+  protected readonly newName = signal('');
+  protected readonly nameError = signal<string | null>(null);
 
   constructor() {
     effect(() => {
-      const id = this.saison();
-      if (this.anmeldung.istAdmin()) {
-        untracked(() => void this.laden(id));
+      const id = this.season();
+      if (this.auth.isAdmin()) {
+        untracked(() => void this.load(id));
       }
     });
   }
 
-  protected saisonWaehlen(id: string): void {
+  protected selectSeason(id: string): void {
     void this.router.navigate([], { queryParams: { saison: id } });
   }
 
-  private async laden(saisonId: string | undefined): Promise<void> {
-    this.laedt.set(true);
-    this.fehler.set(null);
-    this.erfolg.set(null);
+  private async load(seasonId: string | undefined): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    this.success.set(null);
     try {
-      const params: Record<string, string> = saisonId ? { season: saisonId } : {};
-      const [saisons, teams] = await Promise.all([
-        firstValueFrom(this.http.get<Saison[]>('/api/seasons')),
+      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
+      const [seasons, teams] = await Promise.all([
+        firstValueFrom(this.http.get<Season[]>('/api/seasons')),
         firstValueFrom(this.http.get<Team[]>('/api/teams', { params })),
       ]);
-      this.saisons.set(saisons);
+      this.seasons.set(seasons);
       this.teams.set(teams);
     } catch (e) {
       this.teams.set([]);
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
-  protected async anlegen(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    if (this.speichert()) return;
-    this.erfolg.set(null);
-    this.fehler.set(null);
-    const name = this.neuerName().trim();
+  protected async create(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    if (this.saving()) return;
+    this.success.set(null);
+    this.error.set(null);
+    const name = this.newName().trim();
     if (!name) {
-      this.nameFehler.set(TEXTE.teamVerwaltung.namePflicht);
+      this.nameError.set(TEXTS.teamAdmin.nameRequired);
       return;
     }
-    this.nameFehler.set(null);
-    this.speichert.set(true);
+    this.nameError.set(null);
+    this.saving.set(true);
     try {
-      const params: Record<string, string> = this.saisonDaten()
-        ? { season: this.saisonDaten()!.id }
+      const params: Record<string, string> = this.seasonData()
+        ? { saison: this.seasonData()!.id }
         : {};
       const team = await firstValueFrom(this.http.post<Team>('/api/teams', { name }, { params }));
-      this.neuerName.set('');
-      await this.laden(this.saison());
-      this.erfolg.set(TEXTE.teamVerwaltung.angelegt(team.name));
+      this.newName.set('');
+      await this.load(this.season());
+      this.success.set(TEXTS.teamAdmin.created(team.name));
     } catch (e) {
-      this.nameFehler.set(feldfehler(e)['name'] ?? null);
-      this.fehler.set(fehlertext(e));
+      this.nameError.set(fieldErrorsOf(e)['name'] ?? null);
+      this.error.set(errorText(e));
     } finally {
-      this.speichert.set(false);
+      this.saving.set(false);
     }
   }
 }

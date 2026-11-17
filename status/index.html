@@ -237,11 +237,11 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
     const kind = (b.match(/<!-- pipeline:([a-z-]+)/) || [])[1] || '';
     const blocked = /blockiert|⛔/i.test(heading);
     const back = /🔁|nacharbeit/i.test(heading);
-    // English heading «✅ merged» since F-11; «gemergt» for comments written before.
+    // English comments since F-09 («✅ merged», «started», «claimed»); the German words match comments written before (O-54).
     const merged = /gemergt|✅\s*merged/i.test(heading);
     let important = ['entwicklung', 'review', 'test', 'waechter'].includes(kind) && !!heading;
-    if (/startet|gestartet|beansprucht/i.test(firstLine) && !heading) important = false;
-    if (!kind && !/startet|gestartet/i.test(firstLine)) important = true; // show free comments (e.g. questions, findings)
+    if (/startet|gestartet|beansprucht|started|claimed/i.test(firstLine) && !heading) important = false;
+    if (!kind && !/startet|gestartet|started/i.test(firstLine)) important = true; // show free comments (e.g. questions, findings)
     let tone = 'primary', icon = 'comment';
     if (kind === 'entwicklung') icon = 'code';
     if (kind === 'review') icon = 'review';
@@ -310,7 +310,7 @@ label.toggle { display: inline-flex; gap: 6px; align-items: center; color: var(-
     // History
     const entries = data.comments.map(classify).filter(Boolean).filter(e => new Date(e.time) >= from);
     const newFixes = data.items.filter(i => labels(i).includes('typ:nachbesserung') && new Date(i.created_at) >= from);
-    for (const i of newFixes) entries.push({ time: i.created_at, no: i.number, title: 'Neue Nachbesserung: ' + i.title.replace(/^Nachbesserung · /, ''), status: '', text: '', url: i.html_url, tone: 'blue', icon: 'new', important: true });
+    for (const i of newFixes) entries.push({ time: i.created_at, no: i.number, title: 'Neue Nachbesserung: ' + i.title.replace(/^(Nachbesserung|Follow-up fix) · /, ''), status: '', text: '', url: i.html_url, tone: 'blue', icon: 'new', important: true });
     const mergedEvents = data.events.filter(e => e.event === 'merged' && new Date(e.created_at) >= from);
     const blockedEvents = data.events.filter(e => e.event === 'labeled' && e.label && e.label.name === 'pipeline:blockiert' && new Date(e.created_at) >= from);
     for (const e of blockedEvents) entries.push({ time: e.created_at, no: e.issue.number, title: 'Blockiert', status: '', text: '', url: e.issue.html_url, tone: 'coral', icon: 'warning', important: true, blocked: true });

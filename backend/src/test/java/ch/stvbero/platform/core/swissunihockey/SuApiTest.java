@@ -93,7 +93,7 @@ class SuApiTest {
 
     @Test
     void relativeDatesAreResolved() {
-        file.set("games-relativ.json");
+        file.set("games-relative.json");
         List<SuMatch> matches = api().matches(900001, 2026, TODAY);
 
         assertEquals(LocalDateTime.of(2026, 11, 16, 19, 15).atZone(BackendClock.ZONE).toInstant(), matches.get(0).startTime());

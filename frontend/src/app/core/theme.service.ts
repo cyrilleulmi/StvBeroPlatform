@@ -1,12 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 
-export type Modus = 'hell' | 'duene' | 'github-dark' | 'system';
+export type ThemeMode = 'light' | 'dune' | 'github-dark' | 'system';
 
-const SCHLUESSEL = 'stv-theme';
+const STORAGE_KEY = 'stv-theme';
 /** Wert von `data-theme` je Wahl. «System» setzt keines und folgt `prefers-color-scheme`. */
-const ATTRIBUT: Record<Modus, string | null> = {
-  hell: 'light',
-  duene: 'duene',
+const ATTRIBUTE: Record<ThemeMode, string | null> = {
+  light: 'light',
+  dune: 'dune',
   'github-dark': 'github-dark',
   system: null,
 };
@@ -18,50 +18,50 @@ const ATTRIBUT: Record<Modus, string | null> = {
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  readonly modus = signal<Modus>(this.gespeichert());
+  readonly mode = signal<ThemeMode>(this.saved());
   /** Die Werte aus index.html, damit Hell und System sie zurückbekommen. */
-  private kopfFarben: Map<HTMLMetaElement, string> | null = null;
+  private headColors: Map<HTMLMetaElement, string> | null = null;
 
-  setzen(modus: Modus): void {
-    this.modus.set(modus);
+  set(mode: ThemeMode): void {
+    this.mode.set(mode);
     try {
-      localStorage.setItem(SCHLUESSEL, modus);
+      localStorage.setItem(STORAGE_KEY, mode);
     } catch {
       // Ohne Speicher gilt die Wahl nur bis zum Neuladen.
     }
-    this.anwenden(modus);
+    this.apply(mode);
   }
 
-  anwenden(modus: Modus = this.modus()): void {
+  apply(mode: ThemeMode = this.mode()): void {
     const html = document.documentElement;
-    const attribut = ATTRIBUT[modus];
-    if (attribut) {
-      html.setAttribute('data-theme', attribut);
+    const attribute = ATTRIBUTE[mode];
+    if (attribute) {
+      html.setAttribute('data-theme', attribute);
     } else {
       html.removeAttribute('data-theme');
     }
-    const eigeneFarbe = modus === 'duene' || modus === 'github-dark';
-    this.kopfFarbeSetzen(eigeneFarbe ? getComputedStyle(html).getPropertyValue('--bg') : null);
+    const ownColor = mode === 'dune' || mode === 'github-dark';
+    this.setHeadColor(ownColor ? getComputedStyle(html).getPropertyValue('--bg') : null);
   }
 
   /** Farbe der Browser- bzw. Statusleiste: bei Düne und GitHub Dark deren Hintergrund. */
-  private kopfFarbeSetzen(farbe: string | null): void {
-    this.kopfFarben ??= new Map(
+  private setHeadColor(color: string | null): void {
+    this.headColors ??= new Map(
       Array.from(document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')).map(
         (meta) => [meta, meta.content],
       ),
     );
-    for (const [meta, urspruenglich] of this.kopfFarben) {
-      meta.content = farbe?.trim() || urspruenglich;
+    for (const [meta, original] of this.headColors) {
+      meta.content = color?.trim() || original;
     }
   }
 
-  private gespeichert(): Modus {
+  private saved(): ThemeMode {
     try {
-      const wert = localStorage.getItem(SCHLUESSEL);
+      const value = localStorage.getItem(STORAGE_KEY);
       // Ein Wert, den es nicht mehr gibt (z.B. das frühere «dunkel»), fällt auf «System» zurück.
-      if (wert !== null && wert in ATTRIBUT) {
-        return wert as Modus;
+      if (value !== null && value in ATTRIBUTE) {
+        return value as ThemeMode;
       }
     } catch {
       // nichts gespeichert

@@ -2,18 +2,18 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Saison, SaisonAnlegen } from '../../api/types';
-import { AnmeldungService } from '../../core/auth.service';
-import { feldfehler, fehlertext } from '../../core/error-text';
-import { datum, saisonStatus } from '../../core/format';
-import { TEXTE } from '../../core/texts';
+import type { Season, NewSeason } from '../../api/types';
+import { AuthService } from '../../core/auth.service';
+import { fieldErrorsOf, errorText } from '../../core/error-text';
+import { date, seasonStatus } from '../../core/format';
+import { TEXTS } from '../../core/texts';
 
-type Feld = 'name' | 'von' | 'bis';
+type Field = 'name' | 'from' | 'until';
 
 /** ISO-Datum um Tage bzw. Jahre verschieben, ohne Zeitzonen. */
-function verschieben(iso: string, tage: number, jahre = 0): string {
+function move(iso: string, days: number, years = 0): string {
   const [j, m, t] = iso.split('-').map(Number);
-  const d = new Date(Date.UTC(j + jahre, m - 1, t + tage));
+  const d = new Date(Date.UTC(j + years, m - 1, t + days));
   return d.toISOString().slice(0, 10);
 }
 
@@ -55,132 +55,132 @@ function verschieben(iso: string, tage: number, jahre = 0): string {
     }
   `,
 })
-export class Saisons implements OnInit {
+export class Seasons implements OnInit {
   private readonly http = inject(HttpClient);
-  protected readonly anmeldung = inject(AnmeldungService);
-  protected readonly texte = TEXTE;
-  protected readonly datum = datum;
-  protected readonly status = saisonStatus;
+  protected readonly auth = inject(AuthService);
+  protected readonly texts = TEXTS;
+  protected readonly date = date;
+  protected readonly status = seasonStatus;
 
-  protected readonly saisons = signal<Saison[]>([]);
-  protected readonly laedt = signal(true);
+  protected readonly seasons = signal<Season[]>([]);
+  protected readonly loading = signal(true);
   /**
    * Welche Aktion gerade läuft: `anlegen` oder `aktivieren:<saisonId>`.
    * `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
    */
-  protected readonly laufendeAktion = signal<string | null>(null);
-  protected readonly speichert = computed(() => this.laufendeAktion() !== null);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly erfolg = signal<string | null>(null);
-  protected readonly feldFehler = signal<Record<string, string>>({});
+  protected readonly runningAction = signal<string | null>(null);
+  protected readonly saving = computed(() => this.runningAction() !== null);
+  protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
+  protected readonly fieldErrors = signal<Record<string, string>>({});
 
-  protected readonly neu = signal<{
+  protected readonly newSeason = signal<{
     name: string;
-    von: string;
-    bis: string;
-    uebernehmenAus: string;
+    from: string;
+    until: string;
+    carryOverFrom: string;
   }>({
     name: '',
-    von: '',
-    bis: '',
-    uebernehmenAus: '',
+    from: '',
+    until: '',
+    carryOverFrom: '',
   });
 
-  protected readonly felder: { feld: Feld; label: string; typ: string }[] = [
-    { feld: 'name', label: TEXTE.saisons.name, typ: 'text' },
-    { feld: 'von', label: TEXTE.saisons.von, typ: 'date' },
-    { feld: 'bis', label: TEXTE.saisons.bis, typ: 'date' },
+  protected readonly fields: { field: Field; label: string; type: string }[] = [
+    { field: 'name', label: TEXTS.seasons.name, type: 'text' },
+    { field: 'from', label: TEXTS.seasons.from, type: 'date' },
+    { field: 'until', label: TEXTS.seasons.until, type: 'date' },
   ];
 
   async ngOnInit(): Promise<void> {
-    if (this.anmeldung.istAdmin()) {
-      await this.laden(true);
+    if (this.auth.isAdmin()) {
+      await this.load(true);
     }
   }
 
-  protected setzen(feld: Feld | 'uebernehmenAus', wert: string): void {
-    this.neu.update((n) => ({ ...n, [feld]: wert }));
+  protected set(field: Field | 'carryOverFrom', value: string): void {
+    this.newSeason.update((n) => ({ ...n, [field]: value }));
   }
 
-  private async laden(vorschlag: boolean): Promise<void> {
-    this.laedt.set(true);
+  private async load(suggestion: boolean): Promise<void> {
+    this.loading.set(true);
     try {
-      const saisons = await firstValueFrom(this.http.get<Saison[]>('/api/seasons'));
-      this.saisons.set(saisons);
-      if (vorschlag) {
-        this.vorschlagen(saisons);
+      const seasons = await firstValueFrom(this.http.get<Season[]>('/api/seasons'));
+      this.seasons.set(seasons);
+      if (suggestion) {
+        this.suggest(seasons);
       }
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
   /** Vorschlag für die nächste Saison: ein Jahr nach der neuesten, Übernahme aus der aktuellen. */
-  private vorschlagen(saisons: Saison[]): void {
-    const neueste = saisons[0];
-    const aktuelle = saisons.find((s) => s.current);
-    if (!neueste) {
-      this.neu.set({ name: '', von: '', bis: '', uebernehmenAus: '' });
+  private suggest(seasons: Season[]): void {
+    const newest = seasons[0];
+    const aktuelle = seasons.find((s) => s.current);
+    if (!newest) {
+      this.newSeason.set({ name: '', from: '', until: '', carryOverFrom: '' });
       return;
     }
-    const von = verschieben(neueste.endDate, 1);
-    const bis = verschieben(von, -1, 1);
-    const jahr = Number(von.slice(0, 4));
-    this.neu.set({
-      name: `${jahr}/${String((jahr + 1) % 100).padStart(2, '0')}`,
-      von,
-      bis,
-      uebernehmenAus: aktuelle?.id ?? neueste.id,
+    const from = move(newest.endDate, 1);
+    const until = move(from, -1, 1);
+    const year = Number(from.slice(0, 4));
+    this.newSeason.set({
+      name: `${year}/${String((year + 1) % 100).padStart(2, '0')}`,
+      from,
+      until,
+      carryOverFrom: aktuelle?.id ?? newest.id,
     });
   }
 
-  protected async anlegen(ereignis: Event): Promise<void> {
-    ereignis.preventDefault();
-    if (this.speichert()) return;
-    this.erfolg.set(null);
-    this.fehler.set(null);
-    const n = this.neu();
-    const fehler: Record<string, string> = {};
-    if (!n.name.trim()) fehler['name'] = TEXTE.saisons.namePflicht;
-    if (!n.von) fehler['von'] = TEXTE.saisons.datumPflicht;
-    if (!n.bis) fehler['bis'] = TEXTE.saisons.datumPflicht;
-    this.feldFehler.set(fehler);
-    if (Object.keys(fehler).length > 0) return;
+  protected async create(domEvent: Event): Promise<void> {
+    domEvent.preventDefault();
+    if (this.saving()) return;
+    this.success.set(null);
+    this.error.set(null);
+    const n = this.newSeason();
+    const error: Record<string, string> = {};
+    if (!n.name.trim()) error['name'] = TEXTS.seasons.nameRequired;
+    if (!n.from) error['from'] = TEXTS.seasons.dateRequired;
+    if (!n.until) error['until'] = TEXTS.seasons.dateRequired;
+    this.fieldErrors.set(error);
+    if (Object.keys(error).length > 0) return;
 
-    const eingabe: SaisonAnlegen = {
+    const input: NewSeason = {
       name: n.name.trim(),
-      startDate: n.von,
-      endDate: n.bis,
-      copyFrom: n.uebernehmenAus || null,
+      startDate: n.from,
+      endDate: n.until,
+      copyFrom: n.carryOverFrom || null,
     };
-    this.laufendeAktion.set('anlegen');
+    this.runningAction.set('create');
     try {
-      const saison = await firstValueFrom(this.http.post<Saison>('/api/seasons', eingabe));
-      await this.laden(true);
-      this.erfolg.set(TEXTE.saisons.angelegt(saison.name));
+      const season = await firstValueFrom(this.http.post<Season>('/api/seasons', input));
+      await this.load(true);
+      this.success.set(TEXTS.seasons.created(season.name));
     } catch (e) {
-      this.feldFehler.set(feldfehler(e, { startDate: 'von', endDate: 'bis' }));
-      this.fehler.set(fehlertext(e));
+      this.fieldErrors.set(fieldErrorsOf(e, { startDate: 'from', endDate: 'until' }));
+      this.error.set(errorText(e));
     } finally {
-      this.laufendeAktion.set(null);
+      this.runningAction.set(null);
     }
   }
 
-  protected async aktivieren(s: Saison): Promise<void> {
-    if (this.speichert()) return;
-    this.erfolg.set(null);
-    this.fehler.set(null);
-    this.laufendeAktion.set(`aktivieren:${s.id}`);
+  protected async activate(s: Season): Promise<void> {
+    if (this.saving()) return;
+    this.success.set(null);
+    this.error.set(null);
+    this.runningAction.set(`aktivieren:${s.id}`);
     try {
       await firstValueFrom(this.http.post<void>(`/api/seasons/${s.id}/activate`, null));
-      await Promise.all([this.laden(false), this.anmeldung.laden()]);
-      this.erfolg.set(TEXTE.saisons.aktiviert(s.name));
+      await Promise.all([this.load(false), this.auth.load()]);
+      this.success.set(TEXTS.seasons.activated(s.name));
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laufendeAktion.set(null);
+      this.runningAction.set(null);
     }
   }
 }

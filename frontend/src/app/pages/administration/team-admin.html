@@ -2,42 +2,42 @@
   <a
     class="zurueck"
     routerLink="/verwaltung/teams"
-    [queryParams]="saison() ? { saison: saison() } : {}"
-    >{{ texte.teamVerwaltung.alleTeams }}</a
+    [queryParams]="season() ? { saison: season() } : {}"
+    >{{ texts.teamAdmin.allTeams }}</a
   >
-  <h1>{{ team()?.name ?? texte.teamVerwaltung.titel }}</h1>
-  @if (saisonDaten(); as s) {
-    <p class="nebentext">{{ texte.teamVerwaltung.saison }} {{ s.name }}</p>
+  <h1>{{ team()?.name ?? texts.teamAdmin.title }}</h1>
+  @if (seasonData(); as s) {
+    <p class="nebentext">{{ texts.teamAdmin.season }} {{ s.name }}</p>
   }
 </div>
 
-@if (!anmeldung.istAdmin()) {
-  <p class="meldung-fehler" role="alert">{{ texte.allgemein.keineBerechtigung }}</p>
+@if (!auth.isAdmin()) {
+  <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
-  @if (nurLesen()) {
+  @if (readOnly()) {
     <p class="meldung-hinweis" data-testid="archiv-hinweis">
-      {{ texte.saison.archivHinweis(saisonDaten()!.name) }}
+      {{ texts.season.archiveNotice(seasonData()!.name) }}
     </p>
   }
-  @if (erfolg(); as meldung) {
-    <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+  @if (success(); as message) {
+    <p class="meldung-erfolg" role="status">{{ message }}</p>
   }
-  @if (fehler(); as meldung) {
-    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+  @if (error(); as message) {
+    <p class="meldung-fehler" role="alert">{{ message }}</p>
   }
 
-  @if (laedt()) {
-    <p class="leer" aria-busy="true">{{ texte.allgemein.laden }}</p>
+  @if (loading()) {
+    <p class="leer" aria-busy="true">{{ texts.common.loading }}</p>
   } @else if (team(); as t) {
-    @if (!nurLesen()) {
+    @if (!readOnly()) {
       <form
         class="karte formular"
-        (submit)="umbenennen($event)"
+        (submit)="rename($event)"
         novalidate
         aria-label="Team umbenennen"
       >
         <div class="feld">
-          <label for="team-name">{{ texte.teamVerwaltung.teamnameFeld }}</label>
+          <label for="team-name">{{ texts.teamAdmin.teamnameField }}</label>
           <input
             id="team-name"
             type="text"
@@ -45,38 +45,38 @@
             autocomplete="off"
             [value]="teamname()"
             (input)="teamname.set($any($event.target).value)"
-            [attr.aria-invalid]="teamnameFehler() ? 'true' : null"
-            [attr.aria-describedby]="teamnameFehler() ? 'team-name-fehler' : null"
+            [attr.aria-invalid]="teamnameError() ? 'true' : null"
+            [attr.aria-describedby]="teamnameError() ? 'team-name-fehler' : null"
           />
-          @if (teamnameFehler(); as m) {
+          @if (teamnameError(); as m) {
             <p class="feldfehler" id="team-name-fehler">{{ m }}</p>
           }
         </div>
         <button
           type="submit"
           class="button button-sekundaer button-klein"
-          [disabled]="speichert()"
-          [attr.aria-busy]="laufendeAktion() === 'umbenennen' ? 'true' : null"
+          [disabled]="saving()"
+          [attr.aria-busy]="runningAction() === 'rename' ? 'true' : null"
         >
-          {{ texte.teamVerwaltung.umbenennen }}
+          {{ texts.teamAdmin.rename }}
         </button>
       </form>
     }
 
-    @if (!nurLesen()) {
+    @if (!readOnly()) {
       <section class="karte formular" aria-labelledby="su-titel" data-testid="swiss-unihockey">
-        <h2 id="su-titel">{{ texte.swissUnihockey.titel }}</h2>
-        <p class="nebentext">{{ texte.swissUnihockey.erklaerung }}</p>
+        <h2 id="su-titel">{{ texts.swissUnihockey.title }}</h2>
+        <p class="nebentext">{{ texts.swissUnihockey.explanation }}</p>
         <p data-testid="su-status">
           {{
             t.suTeamId
-              ? texte.swissUnihockey.verknuepftMit(t.suTeamId)
-              : texte.swissUnihockey.nichtVerknuepft
+              ? texts.swissUnihockey.linkedWith(t.suTeamId)
+              : texts.swissUnihockey.notLinked
           }}
         </p>
-        <form class="formular" (submit)="verknuepfen($event)" novalidate>
+        <form class="formular" (submit)="link($event)" novalidate>
           <div class="feld">
-            <label for="su-team-id">{{ texte.swissUnihockey.feld }}</label>
+            <label for="su-team-id">{{ texts.swissUnihockey.field }}</label>
             <input
               id="su-team-id"
               type="text"
@@ -85,13 +85,13 @@
               autocomplete="off"
               [value]="suTeamId()"
               (input)="suTeamId.set($any($event.target).value)"
-              [attr.aria-invalid]="suTeamIdFehler() ? 'true' : null"
+              [attr.aria-invalid]="suTeamIdError() ? 'true' : null"
               [attr.aria-describedby]="
-                suTeamIdFehler() ? 'su-team-id-hilfe su-team-id-fehler' : 'su-team-id-hilfe'
+                suTeamIdError() ? 'su-team-id-hilfe su-team-id-fehler' : 'su-team-id-hilfe'
               "
             />
-            <p class="nebentext" id="su-team-id-hilfe">{{ texte.swissUnihockey.feldHilfe }}</p>
-            @if (suTeamIdFehler(); as m) {
+            <p class="nebentext" id="su-team-id-hilfe">{{ texts.swissUnihockey.fieldHelp }}</p>
+            @if (suTeamIdError(); as m) {
               <p class="feldfehler" id="su-team-id-fehler">{{ m }}</p>
             }
           </div>
@@ -99,29 +99,29 @@
             <button
               type="submit"
               class="button button-sekundaer button-klein"
-              [disabled]="speichert()"
-              [attr.aria-busy]="laufendeAktion() === 'verknuepfen' ? 'true' : null"
+              [disabled]="saving()"
+              [attr.aria-busy]="runningAction() === 'link' ? 'true' : null"
             >
-              {{ texte.swissUnihockey.verknuepfen }}
+              {{ texts.swissUnihockey.link }}
             </button>
             @if (t.suTeamId) {
               <button
                 type="button"
                 class="button button-sekundaer button-klein"
-                [disabled]="speichert()"
-                [attr.aria-busy]="laufendeAktion() === 'loesen' ? 'true' : null"
-                (click)="verknuepfungLoesen()"
+                [disabled]="saving()"
+                [attr.aria-busy]="runningAction() === 'unlink' ? 'true' : null"
+                (click)="unlink()"
               >
-                {{ texte.swissUnihockey.loesen }}
+                {{ texts.swissUnihockey.unlink }}
               </button>
               <button
                 type="button"
                 class="button button-primaer button-klein"
-                [disabled]="speichert()"
-                [attr.aria-busy]="laufendeAktion() === 'abgleichen' ? 'true' : null"
-                (click)="abgleichen()"
+                [disabled]="saving()"
+                [attr.aria-busy]="runningAction() === 'sync' ? 'true' : null"
+                (click)="sync()"
               >
-                {{ texte.swissUnihockey.abgleichen }}
+                {{ texts.swissUnihockey.sync }}
               </button>
             }
           </div>
@@ -132,16 +132,16 @@
     @for (
       block of [
         {
-          titel: texte.teams.coaches,
+          title: texts.teams.coaches,
           id: 'coaches',
-          liste: coaches(),
-          leer: texte.teams.keineCoaches,
+          list: coaches(),
+          empty: texts.teams.noCoaches,
         },
         {
-          titel: texte.teams.spielerinnen,
-          id: 'spielerinnen',
-          liste: spielerinnen(),
-          leer: texte.teams.keineSpielerinnen,
+          title: texts.teams.players,
+          id: 'players',
+          list: players(),
+          empty: texts.teams.noPlayers,
         },
       ];
       track block.id
@@ -152,43 +152,43 @@
         [attr.data-testid]="'team-' + block.id"
       >
         <h2 [id]="'team-' + block.id + '-titel'" class="abschnitt-titel">
-          {{ block.titel }} <span class="anzahl">{{ block.liste.length }}</span>
+          {{ block.title }} <span class="anzahl">{{ block.list.length }}</span>
         </h2>
-        @if (block.liste.length === 0) {
-          <p class="leer">{{ block.leer }}</p>
+        @if (block.list.length === 0) {
+          <p class="leer">{{ block.empty }}</p>
         } @else {
-          <ul class="liste" [attr.aria-label]="block.titel">
-            @for (m of block.liste; track m.person.id) {
+          <ul class="liste" [attr.aria-label]="block.title">
+            @for (m of block.list; track m.person.id) {
               <li
                 class="zeile mitglied"
                 [attr.aria-label]="name(m.person)"
                 [attr.data-testid]="'mitglied-' + m.person.id"
               >
                 <span class="zeile-titel">{{ name(m.person) }}</span>
-                @if (nurLesen()) {
-                  <span class="chip" [attr.data-art]="m.funktion === 'COACH' ? 'coach' : null">{{
-                    funktion(m.funktion)
+                @if (readOnly()) {
+                  <span class="chip" [attr.data-art]="m.teamRole === 'COACH' ? 'coach' : null">{{
+                    teamRole(m.teamRole)
                   }}</span>
                 } @else {
                   <select
-                    [attr.aria-label]="texte.teamVerwaltung.funktionVon(name(m.person))"
-                    [disabled]="speichert()"
-                    (change)="funktionAendern(m, $any($event.target).value)"
+                    [attr.aria-label]="texts.teamAdmin.teamRoleOf(name(m.person))"
+                    [disabled]="saving()"
+                    (change)="changeTeamRole(m, $any($event.target).value)"
                   >
-                    @for (f of funktionen; track f) {
-                      <option [value]="f" [selected]="f === m.funktion">{{ funktion(f) }}</option>
+                    @for (f of teamRoles; track f) {
+                      <option [value]="f" [selected]="f === m.teamRole">{{ teamRole(f) }}</option>
                     }
                   </select>
                   <button
                     type="button"
                     class="button button-sekundaer button-klein"
-                    [disabled]="speichert()"
+                    [disabled]="saving()"
                     [attr.aria-busy]="
-                      laufendeAktion() === 'entfernen:' + m.person.id ? 'true' : null
+                      runningAction() === 'entfernen:' + m.person.id ? 'true' : null
                     "
-                    (click)="entfernen(m)"
+                    (click)="remove(m)"
                   >
-                    {{ texte.teamVerwaltung.entfernen(name(m.person)) }}
+                    {{ texts.teamAdmin.remove(name(m.person)) }}
                   </button>
                 }
               </li>
@@ -198,45 +198,45 @@
       </section>
     }
 
-    @if (!nurLesen()) {
+    @if (!readOnly()) {
       <form
         class="karte formular"
-        (submit)="aufnehmen($event)"
+        (submit)="addMember($event)"
         novalidate
         aria-labelledby="aufnehmen-titel"
       >
-        <h2 id="aufnehmen-titel">{{ texte.teamVerwaltung.aufnehmenTitel }}</h2>
+        <h2 id="aufnehmen-titel">{{ texts.teamAdmin.addMemberTitle }}</h2>
         <div class="feldreihe">
           <div class="feld">
-            <label for="aufnehmen-person">{{ texte.teamVerwaltung.person }}</label>
+            <label for="aufnehmen-person">{{ texts.teamAdmin.person }}</label>
             <select
               id="aufnehmen-person"
-              (change)="neuePerson.set($any($event.target).value)"
-              [attr.aria-invalid]="personFehler() ? 'true' : null"
-              [attr.aria-describedby]="personFehler() ? 'aufnehmen-person-fehler' : null"
+              (change)="newPerson.set($any($event.target).value)"
+              [attr.aria-invalid]="personError() ? 'true' : null"
+              [attr.aria-describedby]="personError() ? 'aufnehmen-person-fehler' : null"
             >
-              <option value="" [selected]="neuePerson() === ''">
-                {{ texte.teamVerwaltung.personWaehlen }}
+              <option value="" [selected]="newPerson() === ''">
+                {{ texts.teamAdmin.selectPerson }}
               </option>
-              @for (p of personen(); track p.id) {
+              @for (p of people(); track p.id) {
                 <option
                   [value]="p.id"
-                  [disabled]="istMitglied(p.id)"
-                  [selected]="neuePerson() === p.id"
+                  [disabled]="isMember(p.id)"
+                  [selected]="newPerson() === p.id"
                 >
-                  {{ name(p) }}{{ istMitglied(p.id) ? ' ' + texte.teamVerwaltung.schonImTeam : '' }}
+                  {{ name(p) }}{{ isMember(p.id) ? ' ' + texts.teamAdmin.alreadyInTeam : '' }}
                 </option>
               }
             </select>
-            @if (personFehler(); as m) {
+            @if (personError(); as m) {
               <p class="feldfehler" id="aufnehmen-person-fehler">{{ m }}</p>
             }
           </div>
           <div class="feld">
-            <label for="aufnehmen-funktion">{{ texte.teamVerwaltung.funktion }}</label>
-            <select id="aufnehmen-funktion" (change)="neueFunktion.set($any($event.target).value)">
-              @for (f of funktionen; track f) {
-                <option [value]="f" [selected]="neueFunktion() === f">{{ funktion(f) }}</option>
+            <label for="aufnehmen-funktion">{{ texts.teamAdmin.teamRole }}</label>
+            <select id="aufnehmen-funktion" (change)="newTeamRole.set($any($event.target).value)">
+              @for (f of teamRoles; track f) {
+                <option [value]="f" [selected]="newTeamRole() === f">{{ teamRole(f) }}</option>
               }
             </select>
           </div>
@@ -244,10 +244,10 @@
         <button
           type="submit"
           class="button button-primaer"
-          [disabled]="speichert()"
-          [attr.aria-busy]="laufendeAktion() === 'aufnehmen' ? 'true' : null"
+          [disabled]="saving()"
+          [attr.aria-busy]="runningAction() === 'addMember' ? 'true' : null"
         >
-          {{ texte.teamVerwaltung.aufnehmen }}
+          {{ texts.teamAdmin.addMember }}
         </button>
       </form>
     }

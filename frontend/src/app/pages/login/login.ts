@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { umgebung } from '../../../environments/environment';
-import { TEXTE } from '../../core/texts';
+import { environment } from '../../../environments/environment';
+import { TEXTS } from '../../core/texts';
 
 /** Anmeldung. Das produktive Verfahren ist offen (O-01). Im Testmodus Verweis auf /dev-login. */
 @Component({
@@ -11,15 +11,15 @@ import { TEXTE } from '../../core/texts';
   template: `
     <main class="anmelden">
       <div class="karte">
-        <p class="eyebrow">{{ texte.appName }}</p>
-        <h1>{{ texte.anmelden.titel }}</h1>
-        <p>{{ texte.anmelden.verfahrenOffen }}</p>
-        @if (testmodus) {
+        <p class="eyebrow">{{ texts.appName }}</p>
+        <h1>{{ texts.login.title }}</h1>
+        <p>{{ texts.login.methodOpen }}</p>
+        @if (testMode) {
           <a
             class="button button-primaer"
             routerLink="/dev-login"
-            [queryParams]="ziel() ? { ziel: ziel() } : {}"
-            >{{ texte.anmelden.zumTestmodus }}</a
+            [queryParams]="target() ? { ziel: target() } : {}"
+            >{{ texts.login.toTestMode }}</a
           >
         }
       </div>
@@ -27,8 +27,8 @@ import { TEXTE } from '../../core/texts';
   `,
   styleUrl: './login.css',
 })
-export class Anmelden {
-  protected readonly texte = TEXTE;
-  protected readonly testmodus = umgebung.testmodus;
-  readonly ziel = input<string>();
+export class Login {
+  protected readonly texts = TEXTS;
+  protected readonly testMode = environment.testMode;
+  readonly target = input<string>(undefined, { alias: 'ziel' });
 }

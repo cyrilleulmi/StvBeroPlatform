@@ -1,54 +1,54 @@
-<h1>{{ texte.start.begruessung(anmeldung.ich()?.firstName ?? '') }}</h1>
+<h1>{{ texts.start.greeting(auth.me()?.firstName ?? '') }}</h1>
 
 <section
   class="karte naechster"
   data-testid="naechster-termin"
   aria-labelledby="naechster-termin-titel"
-  [attr.aria-busy]="terminLaedt() ? 'true' : null"
+  [attr.aria-busy]="eventLoading() ? 'true' : null"
 >
-  <h2 id="naechster-termin-titel" class="eyebrow">{{ texte.start.naechsterTermin }}</h2>
-  @if (terminFehler(); as meldung) {
-    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
-  } @else if (terminLaedt()) {
-    <p class="leer">{{ texte.allgemein.laden }}</p>
-  } @else if (naechster(); as t) {
+  <h2 id="naechster-termin-titel" class="eyebrow">{{ texts.start.nextEvent }}</h2>
+  @if (eventError(); as message) {
+    <p class="meldung-fehler" role="alert">{{ message }}</p>
+  } @else if (eventLoading()) {
+    <p class="leer">{{ texts.common.loading }}</p>
+  } @else if (next(); as t) {
     <a class="termin-link" [routerLink]="['/termine', t.id]">
       <span class="termin-titel">{{ t.title }}</span>
-      <span class="nebentext">{{ beschreibung(t) }}</span>
+      <span class="nebentext">{{ description(t) }}</span>
       @if (t.location) {
         <span class="nebentext">{{ t.location.name }}</span>
       }
     </a>
     <app-meine-antwort
-      [terminId]="t.id"
-      [antwort]="t.myResponse"
-      [name]="texte.antwort.meineAntwortFuer(kartenName(t))"
-      (geaendert)="nachladen(t.id)"
+      [eventId]="t.id"
+      [response]="t.myResponse"
+      [name]="texts.response.myResponseFor(cardName(t))"
+      (changed)="reload(t.id)"
     />
   } @else {
-    <p class="leer">{{ texte.start.keinTermin }}</p>
+    <p class="leer">{{ texts.start.noEvent }}</p>
   }
 </section>
 
-<section class="kacheln" aria-labelledby="kacheln-titel" [attr.aria-busy]="laedt() ? 'true' : null">
-  <h2 id="kacheln-titel">{{ texte.start.kachelnTitel }}</h2>
-  @if (fehler(); as meldung) {
-    <p class="meldung-fehler" role="alert">{{ meldung }}</p>
-  } @else if (laedt()) {
-    <p class="leer">{{ texte.allgemein.laden }}</p>
-  } @else if (kacheln().length === 0) {
-    <p class="leer">{{ texte.start.keineKacheln }}</p>
+<section class="kacheln" aria-labelledby="kacheln-titel" [attr.aria-busy]="loading() ? 'true' : null">
+  <h2 id="kacheln-titel">{{ texts.start.tilesTitle }}</h2>
+  @if (error(); as message) {
+    <p class="meldung-fehler" role="alert">{{ message }}</p>
+  } @else if (loading()) {
+    <p class="leer">{{ texts.common.loading }}</p>
+  } @else if (tiles().length === 0) {
+    <p class="leer">{{ texts.start.noTiles }}</p>
   } @else {
     <ul class="raster">
-      @for (kachel of kacheln(); track kachel.id) {
+      @for (tile of tiles(); track tile.id) {
         <li>
-          <a class="kachel" [routerLink]="kachel.route" [attr.data-testid]="'kachel-' + kachel.id">
-            <span class="icon-feld" [attr.data-farbe]="kachel.color">
-              <app-icon [name]="kachel.icon" />
+          <a class="kachel" [routerLink]="tile.route" [attr.data-testid]="'kachel-' + tile.id">
+            <span class="icon-feld" [attr.data-farbe]="tile.color">
+              <app-icon [name]="tile.icon" />
             </span>
-            <span class="kachel-titel">{{ kachel.title }}</span>
-            @if (kachel.hint) {
-              <span class="nebentext">{{ kachel.hint }}</span>
+            <span class="kachel-titel">{{ tile.title }}</span>
+            @if (tile.hint) {
+              <span class="nebentext">{{ tile.hint }}</span>
             }
           </a>
         </li>

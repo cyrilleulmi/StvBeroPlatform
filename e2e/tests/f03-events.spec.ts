@@ -2,8 +2,8 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * F-03 · Termine und Serien (TER). Akzeptanzkriterien aus docs/pipeline/backlog.md, Szenario S13 aus
- * docs/testdaten.md. IDs aus docs/testdaten.md. Standard-«Jetzt» nach Reset: Mo 16.11.2026, 06:00.
+ * F-03 · Events and series (TER). Acceptance criteria from docs/pipeline/backlog.md, scenario S13 from
+ * docs/test-data.md. IDs from docs/test-data.md. Default "now" after reset: Mon 16.11.2026, 06:00.
  */
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
@@ -15,14 +15,14 @@ const T03 = '40000000-0000-4000-8000-000000000003';
 const T05 = '40000000-0000-4000-8000-000000000005';
 const T06 = '40000000-0000-4000-8000-000000000006';
 const T07 = '40000000-0000-4000-8000-000000000007';
-const SERIE_1 = '70000000-0000-4000-8000-000000000001';
+const SERIES_1 = '70000000-0000-4000-8000-000000000001';
 
-function karte(page: Page, id: string) {
+function card(page: Page, id: string) {
   return page.getByTestId(`event-card-${id}`);
 }
 
-/** Namen der Termin-Einträge in der Liste, in Anzeigereihenfolge. */
-async function eintraege(page: Page): Promise<(string | null)[]> {
+/** Names of the event entries in the list, in display order. */
+async function entries(page: Page): Promise<(string | null)[]> {
   return page
     .getByRole('region', { name: /Termine/ })
     .getByRole('listitem')
@@ -33,39 +33,39 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-03 K1 K2 TER-13: Anna sieht die kommenden Termine ihrer Teams chronologisch', async ({
+test('F-03 K1 K2 TER-13: Anna sees the upcoming events of her teams in chronological order', async ({
   page,
 }) => {
   await login(page, 'anna');
   await page.goto('/termine');
   await expect(page).toHaveTitle('Termine · STV Bero');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Termine');
-  await expect(karte(page, T01)).toBeVisible();
-  await expect.poll(async () => (await eintraege(page)).slice(0, 4)).toEqual([
+  await expect(card(page, T01)).toBeVisible();
+  await expect.poll(async () => (await entries(page)).slice(0, 4)).toEqual([
     'Training Di 17.11. 18:30',
     'Training Do 19.11. 19:00',
     'Spieltag So 22.11. 09:30',
     'Training Di 24.11. 18:30',
   ]);
-  await expect(karte(page, T01)).toContainText('Team 1 + Team 2');
-  await expect(karte(page, T01)).toContainText('Sporthalle Nord');
-  await expect(karte(page, T05)).toHaveCount(0);
-  await expect(karte(page, T07)).toHaveCount(0);
-  // Spielerinnen erfassen keine Termine (RR-05)
+  await expect(card(page, T01)).toContainText('Team 1 + Team 2');
+  await expect(card(page, T01)).toContainText('Sporthalle Nord');
+  await expect(card(page, T05)).toHaveCount(0);
+  await expect(card(page, T07)).toHaveCount(0);
+  // Players do not create events (RR-05)
   await expect(page.getByRole('link', { name: 'Termin erfassen' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'November 2026' })).toBeVisible();
   await checkAccessibility(page);
 });
 
-test('F-03 K2 TER-13: Tina (Team 3) sieht Termin 01 nicht', async ({ page }) => {
+test('F-03 K2 TER-13: Tina (Team 3) does not see event 01', async ({ page }) => {
   await login(page, 'tina');
   await page.goto('/termine');
-  await expect(karte(page, T06)).toBeVisible();
-  await expect(karte(page, T01)).toHaveCount(0);
-  await expect.poll(async () => (await eintraege(page))[0]).toBe('Training Mi 18.11. 18:00');
+  await expect(card(page, T06)).toBeVisible();
+  await expect(card(page, T01)).toHaveCount(0);
+  await expect.poll(async () => (await entries(page))[0]).toBe('Training Mi 18.11. 18:00');
 });
 
-test('F-03 K2: Ohne Team gibt es einen leeren Zustand', async ({ page }) => {
+test('F-03 K2: Without a team there is an empty state', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/termine');
   await expect(page.getByText('Keine kommenden Termine')).toBeVisible();
@@ -73,7 +73,7 @@ test('F-03 K2: Ohne Team gibt es einen leeren Zustand', async ({ page }) => {
   await expect(page.getByText('Keine vergangenen Termine')).toBeVisible();
 });
 
-test('F-03 K3 TER-01 TER-11: Petra erfasst einen Termin für Team 1 + Team 2', async ({
+test('F-03 K3 TER-01 TER-11: Petra creates an event for Team 1 + Team 2', async ({
   page,
   browser,
 }) => {
@@ -101,20 +101,20 @@ test('F-03 K3 TER-01 TER-11: Petra erfasst einen Termin für Team 1 + Team 2', a
   await checkAccessibility(page);
   const id = page.url().split('/').pop()!;
 
-  // Erscheint bei Mitgliedern beider Teams
-  for (const schluessel of ['anna', 'eva']) {
-    const kontext = await browser.newContext();
-    const andere = await kontext.newPage();
-    await login(andere, schluessel);
-    await andere.goto('/termine');
-    await expect(karte(andere, id)).toHaveAttribute('aria-label', 'Zusatztraining Fr 20.11. 18:00');
-    await kontext.close();
+  // Appears for members of both teams
+  for (const key of ['anna', 'eva']) {
+    const context = await browser.newContext();
+    const other = await context.newPage();
+    await login(other, key);
+    await other.goto('/termine');
+    await expect(card(other, id)).toHaveAttribute('aria-label', 'Zusatztraining Fr 20.11. 18:00');
+    await context.close();
   }
 });
 
-test('F-03 K3 RR-07: Marc darf nicht für Team 1 erfassen (403)', async ({ page }) => {
+test('F-03 K3 RR-07: Marc may not create for Team 1 (403)', async ({ page }) => {
   await login(page, 'marc');
-  const antwort = await page.request.post('/api/events', {
+  const response = await page.request.post('/api/events', {
     data: {
       type: 'PRACTICE',
       title: 'Training',
@@ -123,15 +123,15 @@ test('F-03 K3 RR-07: Marc darf nicht für Team 1 erfassen (403)', async ({ page 
       teamIds: [TEAM_1],
     },
   });
-  expect(antwort.status()).toBe(403);
-  // In der Oberfläche bietet das Formular Marc nur seine eigenen Teams an
+  expect(response.status()).toBe(403);
+  // In the UI the form offers Marc only his own teams
   await page.goto('/termine/neu');
   const teams = page.getByRole('group', { name: 'Teams' });
   await expect(teams.getByRole('checkbox', { name: 'Team 2' })).toBeVisible();
   await expect(teams.getByRole('checkbox', { name: 'Team 1' })).toHaveCount(0);
 });
 
-test('F-03 K3 RR-05: Spielerinnen sehen beim Erfassen «Keine Berechtigung»', async ({ page }) => {
+test('F-03 K3 RR-05: Players see «Keine Berechtigung» when creating', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine/neu');
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
@@ -139,7 +139,7 @@ test('F-03 K3 RR-05: Spielerinnen sehen beim Erfassen «Keine Berechtigung»', a
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
 });
 
-test('F-03 K4 TER-05: Petra legt eine wöchentliche Serie an', async ({ page }) => {
+test('F-03 K4 TER-05: Petra creates a weekly series', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByRole('radio', { name: 'Serie (jede Woche)' }).check();
@@ -159,20 +159,20 @@ test('F-03 K4 TER-05: Petra legt eine wöchentliche Serie an', async ({ page }) 
   await checkAccessibility(page);
 
   await page.goto(`/termine?team=${TEAM_1}`);
-  await expect(karte(page, T01)).toBeVisible();
-  const namen = await eintraege(page);
-  for (const tag of ['16.11.', '23.11.', '30.11.', '07.12.', '14.12.']) {
-    expect(namen).toContain(`Konditionstraining Mo ${tag} 19:30`);
+  await expect(card(page, T01)).toBeVisible();
+  const names = await entries(page);
+  for (const day of ['16.11.', '23.11.', '30.11.', '07.12.', '14.12.']) {
+    expect(names).toContain(`Konditionstraining Mo ${day} 19:30`);
   }
-  expect(namen.filter((n) => n?.startsWith('Konditionstraining'))).toHaveLength(5);
+  expect(names.filter((n) => n?.startsWith('Konditionstraining'))).toHaveLength(5);
 });
 
-test('F-03 K5 TER-07: Ausnahme nimmt Termine der Serie aus', async ({ page }) => {
+test('F-03 K5 TER-07: A series exception excludes events of the series', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/serien/${SERIE_1}`);
+  await page.goto(`/serien/${SERIES_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Training');
-  const ausnahmen = page.getByTestId('exceptions');
-  await expect(ausnahmen.getByRole('listitem')).toHaveText(['Weihnachtsferien: 21.12.2026 – 03.01.2027']);
+  const exceptions = page.getByTestId('exceptions');
+  await expect(exceptions.getByRole('listitem')).toHaveText(['Weihnachtsferien: 21.12.2026 – 03.01.2027']);
   await checkAccessibility(page);
 
   await page.getByLabel('Von').fill('2026-11-30');
@@ -180,31 +180,31 @@ test('F-03 K5 TER-07: Ausnahme nimmt Termine der Serie aus', async ({ page }) =>
   await page.getByLabel('Grund, z.B. Herbstferien').fill('Hallenreinigung');
   await page.getByRole('button', { name: 'Ausnahme hinzufügen' }).click();
   await expect(page.getByRole('status')).toHaveText('Ausnahme «Hallenreinigung» hinzugefügt.');
-  await expect(ausnahmen.getByRole('listitem')).toHaveText([
+  await expect(exceptions.getByRole('listitem')).toHaveText([
     'Hallenreinigung: 30.11.2026 – 06.12.2026',
     'Weihnachtsferien: 21.12.2026 – 03.01.2027',
   ]);
 
   await page.goto(`/termine?team=${TEAM_2}`);
-  await expect(karte(page, T01)).toBeVisible();
-  const namen = await eintraege(page);
-  expect(namen).toContain('Training Di 24.11. 18:30');
-  expect(namen).not.toContain('Training Di 01.12. 18:30');
-  expect(namen).toContain('Training Di 08.12. 18:30');
+  await expect(card(page, T01)).toBeVisible();
+  const names = await entries(page);
+  expect(names).toContain('Training Di 24.11. 18:30');
+  expect(names).not.toContain('Training Di 01.12. 18:30');
+  expect(names).toContain('Training Di 08.12. 18:30');
 });
 
-test('F-03 K5 TER-07: Ausnahme ohne Grund wird nicht gespeichert', async ({ page }) => {
+test('F-03 K5 TER-07: A series exception without reason is not saved', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/serien/${SERIE_1}`);
+  await page.goto(`/serien/${SERIES_1}`);
   await page.getByLabel('Von').fill('2026-11-30');
   await page.getByLabel('Bis').fill('2026-12-06');
   await page.getByRole('button', { name: 'Ausnahme hinzufügen' }).click();
-  const grund = page.getByLabel('Grund, z.B. Herbstferien');
-  await expect(grund).toHaveAttribute('aria-invalid', 'true');
-  await expect(grund).toBeFocused();
+  const reason = page.getByLabel('Grund, z.B. Herbstferien');
+  await expect(reason).toHaveAttribute('aria-invalid', 'true');
+  await expect(reason).toBeFocused();
 });
 
-test('F-03 K6 TER-06: Einzelnen Serientermin verschieben, die Serie bleibt', async ({ page }) => {
+test('F-03 K6 TER-06: Reschedule a single series event, the series stays', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T02}`);
   await page.getByRole('link', { name: 'Termin bearbeiten' }).click();
@@ -219,25 +219,25 @@ test('F-03 K6 TER-06: Einzelnen Serientermin verschieben, die Serie bleibt', asy
   await expect(page.getByTestId('event-status')).toHaveText('Dieser Termin wurde verschoben.');
 
   await page.goto(`/termine?team=${TEAM_1}`);
-  await expect(karte(page, T02)).toHaveAttribute('aria-label', 'Training Fr 20.11. 19:00');
-  await expect(karte(page, T02).getByTestId('event-status')).toHaveText('verschoben');
-  await expect(karte(page, T01)).toBeVisible();
-  const namen = await eintraege(page);
-  expect(namen).toContain('Training Do 26.11. 19:00');
-  expect(namen).not.toContain('Training Do 19.11. 19:00');
+  await expect(card(page, T02)).toHaveAttribute('aria-label', 'Training Fr 20.11. 19:00');
+  await expect(card(page, T02).getByTestId('event-status')).toHaveText('verschoben');
+  await expect(card(page, T01)).toBeVisible();
+  const names = await entries(page);
+  expect(names).toContain('Training Do 26.11. 19:00');
+  expect(names).not.toContain('Training Do 19.11. 19:00');
 
-  // Die Serie selbst ist unverändert
+  // The series itself is unchanged
   await page.goto(`/termine/${T02}`);
   await page.getByRole('link', { name: 'Serie ansehen' }).click();
   await expect(page.getByText('Jeden Donnerstag, 19:00–20:30')).toBeVisible();
 });
 
-test('F-03 K7 S13 TER-06: Abgesagter Termin ist erkennbar, mit Grund', async ({ page }) => {
+test('F-03 K7 S13 TER-06: A cancelled event is recognizable, with reason', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine');
-  await expect(karte(page, T03).getByTestId('event-status')).toHaveText('abgesagt');
-  await expect(karte(page, T03)).toContainText('Halle besetzt');
-  await karte(page, T03).getByRole('link').click();
+  await expect(card(page, T03).getByTestId('event-status')).toHaveText('abgesagt');
+  await expect(card(page, T03)).toContainText('Halle besetzt');
+  await card(page, T03).getByRole('link').click();
   await expect(page).toHaveURL(`/termine/${T03}`);
   await expect(page.getByTestId('event-status')).toContainText('Abgesagt: Halle besetzt');
   await expect(page.getByTestId('event-status')).toContainText('Antworten ist nicht mehr möglich.');
@@ -245,27 +245,27 @@ test('F-03 K7 S13 TER-06: Abgesagter Termin ist erkennbar, mit Grund', async ({ 
   await checkAccessibility(page);
 });
 
-test('F-03 K7 TER-06: Abgesagter Termin hat in der Liste ein korallfarbenes Datum', async ({ page }) => {
+test('F-03 K7 TER-06: A cancelled event has a coral date in the list', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine');
-  // Das Datum ist das erste Element im Link der Karte (aria-hidden, darum ohne Rolle).
-  const hintergrund = (id: string) =>
-    karte(page, id)
+  // The date is the first element in the card link (aria-hidden, hence without role).
+  const background = (id: string) =>
+    card(page, id)
       .getByRole('link')
       .evaluate((a) => getComputedStyle(a.firstElementChild as Element).backgroundColor);
-  const koralle = await page.evaluate(() => {
+  const coral = await page.evaluate(() => {
     const probe = document.createElement('span');
     probe.style.background = 'var(--coral-soft)';
     document.body.append(probe);
-    const farbe = getComputedStyle(probe).backgroundColor;
+    const color = getComputedStyle(probe).backgroundColor;
     probe.remove();
-    return farbe;
+    return color;
   });
-  expect(await hintergrund(T03)).toBe(koralle);
-  expect(await hintergrund(T01)).not.toBe(koralle);
+  expect(await background(T03)).toBe(coral);
+  expect(await background(T01)).not.toBe(coral);
 });
 
-test('F-03 K7 TER-06: Coach sagt einen Termin mit Grund ab', async ({ page }) => {
+test('F-03 K7 TER-06: Coach cancels an event with reason', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T01}/bearbeiten`);
   await page.getByRole('button', { name: 'Termin absagen' }).click();
@@ -280,7 +280,7 @@ test('F-03 K7 TER-06: Coach sagt einen Termin mit Grund ab', async ({ page }) =>
   await expect(page.getByTestId('event-status')).toContainText('Abgesagt: Halle gesperrt');
 });
 
-test('F-03 K8 TER-09 TER-10: Antwortfrist pro Termin, Standard 24 Stunden', async ({ page }) => {
+test('F-03 K8 TER-09 TER-10: Response deadline per event, default 24 hours', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   await expect(page.getByTestId('response-deadline')).toHaveText('Mo 16.11. 18:30 (24 Stunden vor Beginn)');
@@ -294,42 +294,42 @@ test('F-03 K8 TER-09 TER-10: Antwortfrist pro Termin, Standard 24 Stunden', asyn
   await page.getByRole('button', { name: 'Termin speichern' }).click();
   await expect(page.getByTestId('response-deadline')).toHaveText('Do 19.11. 10:00 (48 Stunden vor Beginn)');
 
-  // Serie: Antwortfrist für alle ihre Termine
-  await page.goto(`/serien/${SERIE_1}/bearbeiten`);
+  // Series: response deadline for all its events
+  await page.goto(`/serien/${SERIES_1}/bearbeiten`);
   await expect(page.getByText('Änderungen gelten für alle künftigen Termine der Serie.')).toBeVisible();
   await page.getByLabel('Antwortfrist: Stunden vor Beginn').fill('12');
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
-  await expect(page).toHaveURL(`/serien/${SERIE_1}`);
+  await expect(page).toHaveURL(`/serien/${SERIES_1}`);
   await expect(page.getByText('12 Stunden vor Beginn')).toBeVisible();
   await page.goto(`/termine/${T01}`);
   await expect(page.getByTestId('response-deadline')).toHaveText('Di 17.11. 06:30 (12 Stunden vor Beginn)');
 });
 
-test('F-03 K9: Filter ?team= und Ansicht ?ansicht=vergangen stehen in der URL', async ({ page }) => {
+test('F-03 K9: Filter ?team= and view ?ansicht=vergangen are in the URL', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine');
   await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Team 2' });
   await expect(page).toHaveURL(`/termine?team=${TEAM_2}`);
-  await expect(karte(page, T05)).toBeVisible();
-  await expect(karte(page, T02)).toHaveCount(0);
+  await expect(card(page, T05)).toBeVisible();
+  await expect(card(page, T02)).toHaveCount(0);
 
-  const ansicht = page.getByRole('navigation', { name: 'Ansicht' });
-  await expect(ansicht.getByRole('link', { name: 'Kommend' })).toHaveAttribute('aria-current', 'page');
-  await ansicht.getByRole('link', { name: 'Vergangen' }).click();
+  const view = page.getByRole('navigation', { name: 'Ansicht' });
+  await expect(view.getByRole('link', { name: 'Kommend' })).toHaveAttribute('aria-current', 'page');
+  await view.getByRole('link', { name: 'Vergangen' }).click();
   await expect(page).toHaveURL(`/termine?team=${TEAM_2}&ansicht=vergangen`);
-  await expect(ansicht.getByRole('link', { name: 'Vergangen' })).toHaveAttribute('aria-current', 'page');
-  await expect(karte(page, T07)).toBeVisible();
-  await expect(karte(page, T01)).toHaveCount(0);
+  await expect(view.getByRole('link', { name: 'Vergangen' })).toHaveAttribute('aria-current', 'page');
+  await expect(card(page, T07)).toBeVisible();
+  await expect(card(page, T01)).toHaveCount(0);
 
-  // Deep Link nach dem Neuladen
+  // Deep link after reload
   await page.reload();
   await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_2);
-  await expect(karte(page, T07)).toBeVisible();
+  await expect(card(page, T07)).toBeVisible();
   await checkAccessibility(page);
 
   await page.goto(`/termine?team=${TEAM_3}`);
-  await expect.poll(() => eintraege(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
-  // Test-Befund F-03: Auswahl und Liste stimmen überein, auch für ein Team, in dem Petra nicht ist
+  await expect.poll(() => entries(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
+  // Test finding F-03: selection and list match, also for a team Petra is not in
   await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
   await expect
     .poll(() =>
@@ -340,20 +340,20 @@ test('F-03 K9: Filter ?team= und Ansicht ?ansicht=vergangen stehen in der URL', 
     .toBe('Team 3');
 });
 
-// ------------------------------------------------------------------ Befunde aus dem Test (Runde 1)
+// ------------------------------------------------------------------ Findings from testing (round 1)
 
-test('F-03 TER-11: Serie nennt alle ihre Teams, auch für Personen aus nur einem Team', async ({
+test('F-03 TER-11: A series names all its teams, also for people from only one team', async ({
   page,
 }) => {
-  for (const schluessel of ['anna', 'marc']) {
-    await login(page, schluessel);
-    await page.goto(`/serien/${SERIE_1}`);
+  for (const key of ['anna', 'marc']) {
+    await login(page, key);
+    await page.goto(`/serien/${SERIES_1}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Training');
     await expect(page.getByText('Team 1 + Team 2', { exact: true })).toBeVisible();
   }
 });
 
-test('F-03 TER-09 TER-10: Antwortfrist ausserhalb 0 bis 336 Stunden mit deutscher Meldung', async ({
+test('F-03 TER-09 TER-10: Response deadline outside 0 to 336 hours with a German message', async ({
   page,
 }) => {
   await login(page, 'petra');
@@ -361,42 +361,42 @@ test('F-03 TER-09 TER-10: Antwortfrist ausserhalb 0 bis 336 Stunden mit deutsche
   await page.getByLabel('Datum', { exact: true }).fill('2026-11-21');
   await page.getByLabel('Beginn', { exact: true }).fill('10:00');
   await page.getByLabel('Ende', { exact: true }).fill('12:00');
-  const frist = page.getByLabel('Antwortfrist: Stunden vor Beginn');
-  await frist.fill('337');
+  const deadline = page.getByLabel('Antwortfrist: Stunden vor Beginn');
+  await deadline.fill('337');
   await page.getByRole('button', { name: 'Termin speichern' }).click();
   await expect(page.getByText('Höchstens 336 Stunden (14 Tage).')).toBeVisible();
-  await expect(frist).toBeFocused();
-  await expect(frist).toHaveAttribute('aria-invalid', 'true');
-  await frist.fill('-1');
+  await expect(deadline).toBeFocused();
+  await expect(deadline).toHaveAttribute('aria-invalid', 'true');
+  await deadline.fill('-1');
   await page.getByRole('button', { name: 'Termin speichern' }).click();
   await expect(page.getByText('Mindestens 0 Stunden.')).toBeVisible();
   await expect(page).toHaveURL(/\/termine\/neu$/);
 
-  await page.goto(`/serien/${SERIE_1}/bearbeiten`);
+  await page.goto(`/serien/${SERIES_1}/bearbeiten`);
   await page.getByLabel('Antwortfrist: Stunden vor Beginn').fill('400');
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
   await expect(page.getByText('Höchstens 336 Stunden (14 Tage).')).toBeVisible();
-  await expect(page).toHaveURL(`/serien/${SERIE_1}/bearbeiten`);
+  await expect(page).toHaveURL(`/serien/${SERIES_1}/bearbeiten`);
 });
 
-test('F-03: Lange Wörter in Titel, Ort und Hinweisen brechen auf der Termin-Seite um', async ({
+test('F-03: Long words in title, location and notes wrap on the event page', async ({
   page,
 }) => {
-  const lang = 'https://example.ch/' + 'sehr-langer-link-ohne-leerzeichen-'.repeat(5);
+  const longText = 'https://example.ch/' + 'very-long-link-without-any-spaces-'.repeat(5);
   await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByLabel('Titel', { exact: true }).fill('Zusatztraining' + 'X'.repeat(60));
   await page.getByLabel('Datum', { exact: true }).fill('2026-11-20');
   await page.getByLabel('Beginn', { exact: true }).fill('18:00');
   await page.getByLabel('Ende', { exact: true }).fill('19:30');
-  await page.getByLabel('Ort (freiwillig)').fill(lang);
-  await page.getByLabel(/^Hinweise/).fill(lang);
+  await page.getByLabel('Ort (freiwillig)').fill(longText);
+  await page.getByLabel(/^Hinweise/).fill(longText);
   await page.getByRole('button', { name: 'Termin speichern' }).click();
   await expect(page).toHaveURL(/\/termine\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Zusatztraining');
-  const breiten = await page.evaluate(() => ({
-    seite: document.documentElement.scrollWidth,
-    fenster: document.documentElement.clientWidth,
+  const widths = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    window: document.documentElement.clientWidth,
   }));
-  expect(breiten.seite).toBeLessThanOrEqual(breiten.fenster);
+  expect(widths.scroll).toBeLessThanOrEqual(widths.window);
 });

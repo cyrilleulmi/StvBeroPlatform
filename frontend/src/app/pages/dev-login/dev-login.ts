@@ -3,10 +3,10 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } fro
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { TestPerson } from '../../api/types';
-import { AnmeldungService, sicheresZiel } from '../../core/auth.service';
-import { fehlertext } from '../../core/error-text';
+import { AuthService, safeTarget } from '../../core/auth.service';
+import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
-import { TEXTE } from '../../core/texts';
+import { TEXTS } from '../../core/texts';
 
 /** Testmodus-Anmeldung: alle Seed-Personen, ein Klick meldet an (nur dev/test). */
 @Component({
@@ -18,40 +18,40 @@ import { TEXTE } from '../../core/texts';
 })
 export class DevLogin implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly anmeldung = inject(AnmeldungService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  protected readonly texte = TEXTE;
+  protected readonly texts = TEXTS;
 
   /** Wohin nach der Anmeldung (`?ziel=`). */
-  readonly ziel = input<string>();
+  readonly target = input<string>(undefined, { alias: 'ziel' });
 
-  protected readonly personen = signal<TestPerson[]>([]);
-  protected readonly laedt = signal(true);
-  protected readonly fehler = signal<string | null>(null);
+  protected readonly people = signal<TestPerson[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
   /** Schlüssel der Person, deren Anmeldung gerade läuft; sperrt weitere Klicks (Doppelklick). */
-  protected readonly anmeldend = signal<string | null>(null);
+  protected readonly loggingIn = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     try {
-      this.personen.set(await firstValueFrom(this.http.get<TestPerson[]>('/api/test/persons')));
+      this.people.set(await firstValueFrom(this.http.get<TestPerson[]>('/api/test/persons')));
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
-  protected async anmelden(person: TestPerson): Promise<void> {
-    if (this.anmeldend()) return;
-    this.anmeldend.set(person.loginKey);
-    this.fehler.set(null);
+  protected async login(person: TestPerson): Promise<void> {
+    if (this.loggingIn()) return;
+    this.loggingIn.set(person.loginKey);
+    this.error.set(null);
     try {
-      await this.anmeldung.alsTestpersonAnmelden(person.loginKey);
-      await this.router.navigateByUrl(sicheresZiel(this.ziel()));
+      await this.auth.loginAsTestPerson(person.loginKey);
+      await this.router.navigateByUrl(safeTarget(this.target()));
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.anmeldend.set(null);
+      this.loggingIn.set(null);
     }
   }
 }

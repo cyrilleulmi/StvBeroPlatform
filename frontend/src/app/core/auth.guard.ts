@@ -9,7 +9,7 @@ import { AuthService, NoCurrentSeasonError } from './auth.service';
 export const authGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const targetParams = state.url === '/' ? {} : { ziel: state.url };
+  const targetParams = state.url === '/' ? {} : { target: state.url };
   try {
     const me = auth.me() ?? (await auth.load());
     if (me) {

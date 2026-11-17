@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { jahrVon, terminDatum, uhrzeit } from '../../attendance/time';
-import type { Benachrichtigung } from '../../api/types';
-import { AnmeldungService } from '../../core/auth.service';
-import { BenachrichtigungenService } from '../../core/notifications.service';
-import { fehlertext } from '../../core/error-text';
+import { yearOf, eventDate, clockTime } from '../../attendance/time';
+import type { Notification } from '../../api/types';
+import { AuthService } from '../../core/auth.service';
+import { NotificationsService } from '../../core/notifications.service';
+import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
-import { TEXTE } from '../../core/texts';
+import { TEXTS } from '../../core/texts';
 
 /**
  * Eigene Benachrichtigungen, neueste zuerst (BEN). Ungelesene sind mit «Neu» markiert. Ein Klick öffnet den
@@ -17,57 +17,57 @@ import { TEXTE } from '../../core/texts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon],
   template: `
-    <h1>{{ texte.titel }}</h1>
-    @if (fehler(); as meldung) {
-      <p class="meldung-fehler" role="alert">{{ meldung }}</p>
+    <h1>{{ texts.title }}</h1>
+    @if (error(); as message) {
+      <p class="meldung-fehler" role="alert">{{ message }}</p>
     }
-    @if (rueckmeldung(); as meldung) {
-      <p class="meldung-erfolg" role="status">{{ meldung }}</p>
+    @if (feedback(); as message) {
+      <p class="meldung-erfolg" role="status">{{ message }}</p>
     }
-    @if (ungelesene() > 0) {
+    @if (unreadOnes() > 0) {
       <div>
-        <button type="button" class="button button-sekundaer" [disabled]="beschaeftigt()" (click)="alleGelesen()">
-          {{ texte.alleGelesen }}
+        <button type="button" class="button button-sekundaer" [disabled]="busy()" (click)="markAllRead()">
+          {{ texts.markAllRead }}
         </button>
       </div>
     }
-    <section class="karte" aria-labelledby="benachrichtigungen-liste" [attr.aria-busy]="laedt() ? 'true' : null">
-      <h2 id="benachrichtigungen-liste" class="visuell-versteckt">{{ texte.titel }}</h2>
-      @if (laedt()) {
-        <p class="leer">{{ allgemein.laden }}</p>
-      } @else if (liste().length === 0) {
-        <p class="leer">{{ texte.leer }}</p>
+    <section class="karte" aria-labelledby="benachrichtigungen-liste" [attr.aria-busy]="loading() ? 'true' : null">
+      <h2 id="benachrichtigungen-liste" class="visuell-versteckt">{{ texts.title }}</h2>
+      @if (loading()) {
+        <p class="leer">{{ common.loading }}</p>
+      } @else if (list().length === 0) {
+        <p class="leer">{{ texts.empty }}</p>
       } @else {
-        <ul class="liste" [attr.aria-label]="texte.titel">
-          @for (b of liste(); track b.id) {
+        <ul class="liste" [attr.aria-label]="texts.title">
+          @for (b of list(); track b.id) {
             <li
               [attr.data-testid]="'benachrichtigung-' + b.id"
               [attr.data-gelesen]="b.read"
               [attr.data-art]="b.type"
             >
               @if (b.eventId) {
-                <a class="zeile-link eintrag" [href]="'/termine/' + b.eventId" (click)="oeffnen($event, b)">
+                <a class="zeile-link eintrag" [href]="'/termine/' + b.eventId" (click)="open($event, b)">
                   <span class="text">
                     @if (!b.read) {
-                      <span class="chip" data-art="neu">{{ texte.neu }}</span>
+                      <span class="chip" data-art="neu">{{ texts.new }}</span>
                     }
                     <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ zeitpunkt(b.createdAt) }}</span>
+                    <span class="zeit">{{ instant(b.createdAt) }}</span>
                   </span>
-                  <app-icon name="chevron-right" [groesse]="20" />
+                  <app-icon name="chevron-right" [size]="20" />
                 </a>
               } @else {
                 <div class="zeile eintrag">
                   <span class="text">
                     @if (!b.read) {
-                      <span class="chip" data-art="neu">{{ texte.neu }}</span>
+                      <span class="chip" data-art="neu">{{ texts.new }}</span>
                     }
                     <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ zeitpunkt(b.createdAt) }}</span>
+                    <span class="zeit">{{ instant(b.createdAt) }}</span>
                   </span>
                   @if (!b.read) {
-                    <button type="button" class="button button-klein button-sekundaer" (click)="markieren(b)">
-                      {{ texte.alsGelesen }}
+                    <button type="button" class="button button-klein button-sekundaer" (click)="mark(b)">
+                      {{ texts.markRead }}
                     </button>
                   }
                 </div>
@@ -80,90 +80,90 @@ import { TEXTE } from '../../core/texts';
   `,
   styleUrls: ['../page.css', './notifications.css'],
 })
-export class Benachrichtigungen implements OnInit {
-  private readonly service = inject(BenachrichtigungenService);
+export class Notifications implements OnInit {
+  private readonly service = inject(NotificationsService);
   private readonly router = inject(Router);
-  private readonly anmeldung = inject(AnmeldungService);
+  private readonly auth = inject(AuthService);
   /** Jahr der Backend-Uhr, nicht des Browsers (testbarkeit.md). */
-  private readonly jahr = computed(() => jahrVon(this.anmeldung.ich()?.now));
-  protected readonly texte = TEXTE.benachrichtigungen;
-  protected readonly allgemein = TEXTE.allgemein;
-  protected readonly liste = signal<Benachrichtigung[]>([]);
-  protected readonly laedt = signal(true);
-  protected readonly beschaeftigt = signal(false);
-  protected readonly fehler = signal<string | null>(null);
-  protected readonly rueckmeldung = signal('');
-  protected readonly ungelesene = computed(() => this.liste().filter((b) => !b.read).length);
+  private readonly year = computed(() => yearOf(this.auth.me()?.now));
+  protected readonly texts = TEXTS.notifications;
+  protected readonly common = TEXTS.common;
+  protected readonly list = signal<Notification[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly busy = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly feedback = signal('');
+  protected readonly unreadOnes = computed(() => this.list().filter((b) => !b.read).length);
 
   async ngOnInit(): Promise<void> {
     try {
-      this.liste.set(await this.service.alle());
+      this.list.set(await this.service.all());
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.laedt.set(false);
+      this.loading.set(false);
     }
   }
 
   /** «Sa 15.11. 21:00» (mit Jahr, wenn nicht im laufenden Jahr). */
-  protected zeitpunkt(iso: string): string {
-    return `${terminDatum(iso, this.jahr())} ${uhrzeit(iso)}`;
+  protected instant(iso: string): string {
+    return `${eventDate(iso, this.year())} ${clockTime(iso)}`;
   }
 
   /** Klick auf eine Benachrichtigung: als gelesen markieren, dann zum Termin (BEN-12). */
-  protected async oeffnen(ereignis: MouseEvent, b: Benachrichtigung): Promise<void> {
-    if (ereignis.button !== 0 || ereignis.ctrlKey || ereignis.metaKey || ereignis.shiftKey || ereignis.altKey) {
+  protected async open(domEvent: MouseEvent, b: Notification): Promise<void> {
+    if (domEvent.button !== 0 || domEvent.ctrlKey || domEvent.metaKey || domEvent.shiftKey || domEvent.altKey) {
       return; // neuer Tab o.ä.: Browser machen lassen
     }
-    ereignis.preventDefault();
-    if (this.beschaeftigt()) return;
-    this.beschaeftigt.set(true);
+    domEvent.preventDefault();
+    if (this.busy()) return;
+    this.busy.set(true);
     try {
       if (!b.read) {
-        await this.service.gelesen(b.id);
+        await this.service.markRead(b.id);
       }
       await this.router.navigate(['/termine', b.eventId]);
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.beschaeftigt.set(false);
+      this.busy.set(false);
     }
   }
 
-  protected async markieren(b: Benachrichtigung): Promise<void> {
-    await this.ausfuehren(async () => {
-      await this.service.gelesen(b.id);
-      this.alsGelesen([b.id]);
-      this.rueckmeldung.set(this.texte.gelesenErledigt);
+  protected async mark(b: Notification): Promise<void> {
+    await this.run(async () => {
+      await this.service.markRead(b.id);
+      this.markRead([b.id]);
+      this.feedback.set(this.texts.markedRead);
     });
   }
 
-  protected async alleGelesen(): Promise<void> {
-    await this.ausfuehren(async () => {
-      const offen = this.liste().filter((b) => !b.read);
+  protected async markAllRead(): Promise<void> {
+    await this.run(async () => {
+      const offen = this.list().filter((b) => !b.read);
       for (const b of offen) {
-        await this.service.gelesen(b.id);
+        await this.service.markRead(b.id);
       }
-      this.alsGelesen(offen.map((b) => b.id));
-      this.rueckmeldung.set(this.texte.alleGelesenErledigt);
+      this.markRead(offen.map((b) => b.id));
+      this.feedback.set(this.texts.allMarkedRead);
     });
   }
 
-  private alsGelesen(ids: string[]): void {
-    this.liste.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, read: true } : b)));
+  private markRead(ids: string[]): void {
+    this.list.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, read: true } : b)));
   }
 
-  private async ausfuehren(aktion: () => Promise<void>): Promise<void> {
-    if (this.beschaeftigt()) return;
-    this.beschaeftigt.set(true);
-    this.fehler.set(null);
-    this.rueckmeldung.set('');
+  private async run(action: () => Promise<void>): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    this.feedback.set('');
     try {
-      await aktion();
+      await action();
     } catch (e) {
-      this.fehler.set(fehlertext(e));
+      this.error.set(errorText(e));
     } finally {
-      this.beschaeftigt.set(false);
+      this.busy.set(false);
     }
   }
 }
