@@ -13,11 +13,13 @@ import java.util.Map;
 import static ch.stvbero.platform.core.auth.AuthTest.login;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -266,6 +268,18 @@ class NotificationChannelsTest {
             assertThat(codes, everyItem(equalTo(201)));
         }
         assertThat(settings(anna).getList("devices"), hasSize(5));
+    }
+
+    @Test
+    void criterion3SameDeviceRemovedConcurrentlyNeverGives500() {
+        // Lea switches push off on her phone while removing the phone on her laptop (BEN-16)
+        String lea = login("lea");
+        List<Integer> codes = Concurrently.statusCodes(6,
+                () -> given().cookie("stv_session", lea).delete("/api/me/push-subscriptions/" + LEA_PHONE).then()
+                        .extract().statusCode());
+        assertThat(codes, everyItem(anyOf(equalTo(204), equalTo(404))));
+        assertThat(codes, hasItem(204));
+        assertThat(settings(lea).getList("devices"), empty());
     }
 
     @Test

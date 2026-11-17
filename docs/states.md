@@ -271,7 +271,7 @@ stateDiagram-v2
 | Whoever triggers something is not notified about it (e.g. the coach who cancels; assumption F-06, O-50). | BEN |
 | The list in the app always exists. E-mail and push receive the same messages through the `Channel` interface (F-19). | BEN-10, BEN-11, BEN-14, E-56 |
 | E-mail goes to persons with an e-mail address who did not switch it off (default: on). Push goes to every device the person registered. At most one e-mail and one push per device per notification. | BEN-15, BEN-20 |
-| Registering the same device again updates it (one device). Concurrent registrations of the same device, or concurrent changes of the e-mail switch, never give 500. | BEN-15, BEN-16 |
+| Registering the same device again updates it (one device). Concurrent registrations or removals of the same device, or concurrent changes of the e-mail switch, never give 500 (a second removal gives 204 or 404). | BEN-15, BEN-16 |
 
 ### Delivery (e-mail or push, F-19)
 

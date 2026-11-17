@@ -85,7 +85,10 @@ public class NotificationSettingsService {
         return PushDeviceDto.of(subscription);
     }
 
-    /** Push off for a device. Only the own devices (RR-07). */
+    /**
+     * Push off for a device. Only the own devices (RR-07). A bulk delete instead of deleting the loaded entity: two
+     * concurrent removals of the same device both succeed and never give a 500 (BEN-16, states.md).
+     */
     @Transactional
     public void remove(UUID personId, UUID subscriptionId) {
         PushSubscription subscription = PushSubscription.<PushSubscription>findByIdOptional(subscriptionId)
@@ -93,7 +96,7 @@ public class NotificationSettingsService {
         if (!subscription.person.id.equals(personId)) {
             throw DomainError.forbidden();
         }
-        subscription.delete();
+        PushSubscription.delete("id = ?1 and person.id = ?2", subscriptionId, personId);
     }
 
     // ------------------------------------------------------------------ Used by the channels
