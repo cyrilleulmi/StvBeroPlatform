@@ -63,6 +63,11 @@ If a term is missing, add it here in the same style before using it.
 | Präsenzkontrolle, «Präsenz erfassen» | attendance check | switch per event or series, off by default (PRS-01) |
 | Präsenz (erfasst) | attendance record | who recorded and when, plus one status per player (PRS-04) |
 | anwesend / abwesend / entschuldigt | present / absent / excused | values `PRESENT`, `ABSENT`, `EXCUSED` (PRS-03) |
+| Statistik | statistics | per player of a team, per period (STA) |
+| Zusagequote | attending rate | share of «dabei» of the events that count (STA-03) |
+| Präsenzquote | attendance rate | share of «anwesend» of the recorded values (STA-04) |
+| Teamschnitt | team average | mean per player (STA-05) |
+| Im Team seit | joined on | day of joining a team in a season (STA-07) |
 | Fahrerliste | driver list | |
 | Übernahme (neue Saison) | carry-over | copying teams, memberships and lines into a new season |
 | Abmelden (Sitzung) | log out | not to be confused with declining an event |

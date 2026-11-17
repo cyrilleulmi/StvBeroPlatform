@@ -18,7 +18,7 @@ These features are deliberately postponed. They are not implemented now. But the
 
 | Feature | Where |
 |---|---|
-| **Attendance check** | Built with F-14 (E-70, E-77): switch «Präsenz erfassen» per event or series, off by default; the coach records «anwesend», «abwesend», «entschuldigt» from the start on ([PRS](requirements/11-attendance-check.md)). Response (intention) and attendance (fact) stay separate. The season statistic per player follows with F-15. |
+| **Attendance check** | Built with F-14 (E-70, E-77): switch «Präsenz erfassen» per event or series, off by default; the coach records «anwesend», «abwesend», «entschuldigt» from the start on ([PRS](requirements/11-attendance-check.md)). Response (intention) and attendance (fact) stay separate. The statistics per player were built with F-15 ([STA](requirements/12-statistics.md), E-78). |
 
 ## Ideas without a decision
 

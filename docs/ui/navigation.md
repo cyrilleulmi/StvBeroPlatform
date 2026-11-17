@@ -2,7 +2,7 @@
 
 Map of the UI for humans and agents. The test agent uses it to jump straight to the right place by URL. Whoever changes a route or a fixed test ID updates this file in the same PR.
 
-Status: target state for the core. The column «Feature» states with which feature from the [backlog](../pipeline/backlog.md) a screen arrives. Built are F-00 (foundation: `/anmelden`, `/dev-login`, `/`, `/termine` as empty state, `/profil`), F-01 (`/teams`, `/teams/:id`, `/verwaltung` with people, teams and seasons), F-02 (`/teams/:id/linien`, `/teams/:id` by line), F-03 (`/termine` with filters, `/termine/neu`, `/termine/:id` with details, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`), F-04 (responses in `/`, `/termine` and `/termine/:id`, overview by team and line), F-05 (match day in the form with matches, meeting point and Google Maps link; matches, results and call-up status in `/termine/:id`; `/termine/:id/aufgebot`) and F-06 (`/benachrichtigungen`, bell with counter in the navigation). F-14: switch «Präsenz erfassen» in the event and series form, section «Präsenz» in `/termine/:id`, `/termine/:id/praesenz`. F-12: coaches (coach of at least one team in the current season) see «Verwaltung» and manage all teams; delete actions, «Saisons», swiss unihockey and the admin checkbox stay with admins (RR-03, RR-08).
+Status: target state for the core. The column «Feature» states with which feature from the [backlog](../pipeline/backlog.md) a screen arrives. Built are F-00 (foundation: `/anmelden`, `/dev-login`, `/`, `/termine` as empty state, `/profil`), F-01 (`/teams`, `/teams/:id`, `/verwaltung` with people, teams and seasons), F-02 (`/teams/:id/linien`, `/teams/:id` by line), F-03 (`/termine` with filters, `/termine/neu`, `/termine/:id` with details, `/termine/:id/bearbeiten`, `/serien/:id`, `/serien/:id/bearbeiten`), F-04 (responses in `/`, `/termine` and `/termine/:id`, overview by team and line), F-05 (match day in the form with matches, meeting point and Google Maps link; matches, results and call-up status in `/termine/:id`; `/termine/:id/aufgebot`) and F-06 (`/benachrichtigungen`, bell with counter in the navigation). F-14: switch «Präsenz erfassen» in the event and series form, section «Präsenz» in `/termine/:id`, `/termine/:id/praesenz`. F-12: coaches (coach of at least one team in the current season) see «Verwaltung» and manage all teams; delete actions, «Saisons», swiss unihockey and the admin checkbox stay with admins (RR-03, RR-08). F-15: `/statistik`, `/statistik/:personId`, `/profil/statistik`, link «Statistik» in `/termine` and `/teams/:id`, section «Meine Statistik» in `/profil`.
 
 ## Navigation
 
@@ -24,13 +24,17 @@ flowchart LR
     Detail --> CallUp["/termine/:id/aufgebot (coach, match day)"]
     Detail --> AttendanceCheck["/termine/:id/praesenz (coach, check on, from the start)"]
     Detail --> EditEvent["/termine/:id/bearbeiten (coach)"]
+    Events --> Statistics["/statistik (coach)"]
+    Statistics --> PersonStatistics["/statistik/:personId (coach)"]
     Events --> NewEvent["/termine/neu (coach)"]
     EditEvent --> Series["/serien/:id (coach)"]
     Series --> EditSeries["/serien/:id/bearbeiten (coach)"]
     Start --> Teams["/teams"]
     Teams --> Team["/teams/:id"]
     Team --> Lines["/teams/:id/linien (coach)"]
+    Team --> Statistics
     Start --> Profile["/profil"]
+    Profile --> MyStatistics["/profil/statistik (player)"]
     Start --> Notifications["/benachrichtigungen"]
     Notifications -->|click| Detail
     Start --> Admin["/verwaltung (admin, coach)"]
@@ -51,7 +55,7 @@ flowchart LR
 | `/anmelden` | «Anmelden» (login) | everyone | Login (method open, O-01). In test mode link «Zur Anmeldung im Testmodus». `?ziel=` is passed on | F-00 |
 | `/dev-login` | «Testmodus-Anmeldung» (test mode login) | only `dev`/`test` (development build) | List of seed persons (`GET /api/test/persons`); one click logs in and leads to `?ziel=` or `/` | F-00 |
 | `/` | «Start» | logged in | Greeting, own next event with response buttons and counter, then «Weitere Trainings» until at least two upcoming practices are visible (cancelled ones skipped), link «Alle Termine», tiles depending on role | F-00, F-04, F-13 |
-| `/termine` | «Termine» (events) | logged in | Upcoming events of all own teams by month, switch «Kommend»/«Vergangen» (`nav` «Ansicht», `?ansicht=vergangen`), select «Team» (`?team=<id>`; coaches and admins choose from all teams of the season and then see that team's events, F-12), coaches and admins: link «Termin erfassen». From F-04 own response can be changed directly, only on events of own teams (events of other teams show no «Meine Antwort», F-12) | F-03, F-04 |
+| `/termine` | «Termine» (events) | logged in | Coaches and admins: link «Statistik» (F-15). Upcoming events of all own teams by month, switch «Kommend»/«Vergangen» (`nav` «Ansicht», `?ansicht=vergangen`), select «Team» (`?team=<id>`; coaches and admins choose from all teams of the season and then see that team's events, F-12), coaches and admins: link «Termin erfassen». From F-04 own response can be changed directly, only on events of own teams (events of other teams show no «Meine Antwort», F-12) | F-03, F-04 |
 | `/termine/:id` | «Termin» (event) | members of the teams involved, coach, admin | Details (date, time, teams, location, meeting point, response deadline, notes, series), status «Abgesagt: <Grund>» or «verschoben», coaches: «Termin bearbeiten», «Serie ansehen». From F-04: own response, overview by team and line, coach block. For a match day from F-05: matches, own call-up status. From F-14 with the switch «Präsenz erfassen» on: coaches and admins see the section «Präsenz» (before the start only «Die Präsenz lässt sich ab Beginn des Termins erfassen.», from the start «Noch keine Präsenz erfasst.» / «Präsenz ist erfasst.» and the link «Präsenz erfassen» / «Präsenz korrigieren»); players with a recorded value see «Deine Präsenz» | F-03, F-04, F-05, F-14 |
 | `/termine/neu` | «Termin erfassen» (create event) | coach, admin | Choice «Einzelner Termin» / «Serie (jede Woche)» (`?art=serie`), type (Training, Spieltag, Anlass), title, date or weekday and period, start, end, teams (checkboxes), location, Google Maps link, notes, response deadline, checkbox «Präsenz erfassen» (off by default, F-14). For «Spieltag»: location is called «Spielort», group «Treffpunkt» (time, place), group «Spiele» with one group «Spiel n» each (opponent, start time, «Heim oder auswärts», «Spiel n entfernen») and «Spiel hinzufügen» | F-03, F-05 |
 | `/termine/:id/bearbeiten` | «Termin bearbeiten» (edit event) | coach (any team), admin | Change details, postpone (other date or other time), «Termin absagen» (dialog with reason). For series events notice «gilt nur für diesen Termin». Switching «Präsenz erfassen» off while attendance is recorded asks «Präsenz ausschalten?» («Ausschalten und speichern», «Abbrechen»; F-14). Match day: matches as when creating; matches from swiss unihockey read-only; if swiss unihockey no longer delivers a match, it shows «swiss unihockey liefert dieses Spiel nicht mehr.» and the button «Spiel <n> entfernen» (#44) | F-03, F-05 |
@@ -59,11 +63,14 @@ flowchart LR
 | `/termine/:id/praesenz` | «Präsenz erfassen» (attendance check) | coach (any team), admin (otherwise «Keine Berechtigung»; check off, cancelled: «Für diesen Termin lässt sich keine Präsenz erfassen.»; before the start: «Die Präsenz lässt sich ab Beginn des Termins erfassen.») | State (`attendance-state`: «Noch keine Präsenz erfasst.» or «Zuletzt gespeichert von <Name> am <Datum> <Zeit>.»), players of the involved teams by team (`h3` with the team name, teams by name as in the overview) and within the team by line (`h4` with the group name; a player in two teams appears in both, with one status), each with response status, comment and a radio group «Präsenz von <Name>» with «anwesend», «abwesend», «entschuldigt». Preselection: «dabei» → «anwesend», otherwise «abwesend». Summary «4 anwesend · 3 abwesend · 0 entschuldigt», «Noch nicht gespeichert.» after changes, button «Präsenz speichern» (feedback «Die Präsenz ist gespeichert.»). Coaches are not in the list (PRS-05) | F-14 |
 | `/serien/:id` | «Serie» (series) | members of the teams of the series, coaches and admins (coaches and admins with editing) | Rule, period, teams (all teams of the series, including those one is not in), response deadline, exceptions (list and form «Ausnahme hinzufügen»), link «Serie bearbeiten» | F-03 |
 | `/serien/:id/bearbeiten` | «Serie bearbeiten» (edit series) | coach (any team), admin | Like «Termin erfassen» as a series; applies to future events (TER-08), also the switch «Präsenz erfassen» (PRS-01) | F-03, F-14 |
+| `/statistik` | «Statistik» (statistics) | coach (any team), admin (otherwise «Keine Berechtigung») | Subtitle «Team 1 · Saison 2026/27». Filters (`statistics-filter`, all in the URL): select «Team» (`?team=`, all teams of the season), date fields «Von» (`?von=`) and «Bis» (`?bis=`, default the whole season, button «Ganze Saison» when changed), select «Art» («Alle Termine», «Trainings» `?art=training`, «Spieltage» `?art=spieltag`). Card with the period, `statistics-base` («26 Termine im Zeitraum. Die Präsenzquote beruht auf 1 Termin mit erfasster Präsenz.»), hint what counts, select «Sortieren nach» («Name», «Zusagequote» `?sortierung=zusage`, «Präsenzquote» `?sortierung=praesenz`). One card per group (`h2` line, «Goalies», «Ohne Linie») with a table (name «Statistik <Gruppe>», scrolls sideways in a focusable region of the same name, name column stays visible): row header = name (link to `/statistik/:personId` with the same filters), columns «Termine», «dabei», «nicht dabei», «vielleicht», «offen», «Zusagequote», «kurzfristig abgemeldet», «anwesend», «abwesend», «entschuldigt», «Präsenzquote» (rates «8 %», without base «–»). Card «Teamschnitt» with one row (counts «24.1») | F-15 |
+| `/statistik/:personId` | «Statistik» of a player | coach (any team), admin; the person herself (otherwise «Keine Berechtigung») | `h1` name, link «Zur Statistik» (keeps the filters), filters as above («Team»: the teams she plays in), card `statistics-numbers` (list of the same 11 values as the table, `dt`/`dd`), `statistics-base` («Präsenzquote auf Basis von 1 Termin mit erfasster Präsenz.», «Im Team seit 01.10.2026.» if she joined after the season start), list «Termine im Zeitraum» (`statistics-events`), newest first: link «Training Do 12.11. 19:00» to the event, chips «Antwort: dabei», «kurzfristig abgemeldet», «Präsenz: anwesend» (only where recorded) | F-15 |
+| `/profil/statistik` | «Meine Statistik» (own statistics) | logged in | Same content as `/statistik/:personId` for the own person, link «Zum Profil». Without a team as player: «Du spielst in dieser Saison in keinem Team.» | F-15 |
 | `/teams` | «Meine Teams» (my teams) | logged in | Own teams of the current season with own team role (PTF-12), link to `/teams/:id` | F-01 |
-| `/teams/:id` | «Team» | members, coach, admin | Coaches and players separate (PTF-07), players by line (lists with the group name, empty groups are missing). Coaches and admins see the link «Linien einteilen». `?saison=<id>` shows another season (archive with notice). Without team membership (and not coach or admin) «Keine Berechtigung» | F-01, F-02, F-12 |
+| `/teams/:id` | «Team» | members, coach, admin | Coaches and players separate (PTF-07), players by line (lists with the group name, empty groups are missing). Coaches and admins see the link «Linien einteilen» and, in the current season, «Statistik» (to `/statistik?team=<id>`, F-15). `?saison=<id>` shows another season (archive with notice). Without team membership (and not coach or admin) «Keine Berechtigung» | F-01, F-02, F-12 |
 | `/teams/:id/linien` | «Linien» (lines) | coach (any team), admin (other members read-only) | Add, rename, sort («<Linie> nach oben/unten»), delete (dialog, admins only, RR-08) lines, assign players by drag and drop or select field «Linie von <Name>»; saves immediately. Without team membership (and not coach or admin) «Keine Berechtigung». Current season | F-02, F-12 |
 | `/benachrichtigungen` | «Benachrichtigungen» (notifications) | logged in | Own notifications, newest first (list «Benachrichtigungen»): text, time, unread ones with «Neu». A click marks as read and opens `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (only with unread ones, feedback «Alle sind als gelesen markiert.»). Empty: «Keine Benachrichtigungen.» | F-06 |
-| `/profil` | «Profil» (profile) | logged in | Name, theme («Hell», «Düne», «GitHub Dark», «System»; NF-08), log out | F-00 |
+| `/profil` | «Profil» (profile) | logged in | Name, section «Meine Statistik» with the link «Statistik ansehen» (players only, F-15), theme («Hell», «Düne», «GitHub Dark», «System»; NF-08), log out | F-00 |
 | `/verwaltung` | «Verwaltung» (administration) | admin, coach | Entry page: links «Personen», «Teams verwalten», for admins also «Saisons». Others see «Keine Berechtigung» | F-00, F-01, F-12 |
 | `/keine-saison` | «Keine aktuelle Saison» (no current season) | logged in | Notice when `GET /api/me` responds with 409 (no season set as current, SAI-03). Without navigation, buttons «Nochmals versuchen» (back to `?ziel=`) and «Abmelden». In this state every route redirects here with `?ziel=`. Opened directly: without login to the login page, with a current season straight on to the target | Follow-up fix #13 |
 | `/**` | «Nicht gefunden» (not found) | logged in | «Diese Seite gibt es nicht.» with link «Zur Startseite» | F-00 |
@@ -184,6 +191,21 @@ Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 | `attendance-summary` | «4 anwesend · 3 abwesend · 0 entschuldigt» (every player once) |
 | `attendance-unsaved` | «Noch nicht gespeichert.», only with changes that are not saved |
 | `attendance-save` | Button «Präsenz speichern» |
+
+### Statistics (F-15)
+
+| Test ID | Element |
+|---|---|
+| `statistics-link` | Link «Statistik» in `/termine` and `/teams/:id` (coaches and admins) |
+| `my-statistics-link` | Link «Statistik ansehen» in `/profil` (players) |
+| `statistics-filter` | Card with the filters «Team», «Von», «Bis», «Art» |
+| `statistics-base` | Number of events and base of the attendance rate |
+| `statistics-group-<groupId>`, `statistics-no-line` | Card of a group in `/statistik` (`section` named after the group) |
+| `statistics-person-<personId>` | Row of a player (`tr`, row header = name, 11 cells in the order of the columns) |
+| `statistics-average` | Card «Teamschnitt»; its row is `statistics-average-row` |
+| `statistics-numbers` | Numbers of one player (`dl`, `dd` in the order of the columns, `data-column` per entry) |
+| `statistics-events` | List «Termine im Zeitraum» |
+| `statistics-event-<eventId>` | Entry (`li` with `data-response` and, where recorded, `data-attendance`) |
 
 ### Lines
 

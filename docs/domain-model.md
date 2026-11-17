@@ -11,7 +11,7 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Team** | A team of the club. Exists across seasons; the name applies per season, so that the archive keeps the name of the time (SAI-02). |
 | **Season** | Period for which team memberships and lines apply. |
 | **Team role** | What a person is in a team: at least «Spielerin» (player) or «Coach». |
-| **Team membership** | Link between person, team and team role in a season. There is exactly one team role per person and team. |
+| **Team membership** | Link between person, team and team role in a season. There is exactly one team role per person and team. It stores the day of joining; statistics count a player only from that day on (STA-07). |
 | **Line** | Group of players within a team (Linie 1, Linie 2, …). |
 | **Goalies** | A group of its own per team, next to the lines. |
 | **No line** | Display group for players who are assigned neither to a line nor to the goalies («Ohne Linie»). |
@@ -24,6 +24,7 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Attendance check** | Optional for each event or series, off by default: after the start the coach records who was really there (PRS, E-70). |
 | **Attendance** | The fact recorded by the coach per player: present («anwesend»), absent («abwesend») or excused («entschuldigt»). Separate from the response, which is the intention. |
 | **Meeting point** | Time and place where the team meets before a match day. |
+| **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
 | **Tile** | Self-contained feature module of the platform, appears on the dashboard. |
 
 ## Relationships
