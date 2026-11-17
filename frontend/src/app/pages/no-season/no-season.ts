@@ -12,22 +12,22 @@ import { TEXTS } from '../../core/texts';
   selector: 'app-keine-saison',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <main class="anmelden">
-      <div class="karte">
+    <main class="login">
+      <div class="card">
         <p class="eyebrow">{{ texts.appName }}</p>
         <h1>{{ texts.noSeason.title }}</h1>
         <p role="status" data-testid="keine-saison-hinweis">{{ texts.noSeason.notice }}</p>
         <p>{{ texts.noSeason.administration }}</p>
         @if (error()) {
-          <p class="meldung-fehler" role="alert">{{ error() }}</p>
+          <p class="message-error" role="alert">{{ error() }}</p>
         }
-        <div class="aktionen">
-          <button type="button" class="button button-primaer" (click)="retry()">
+        <div class="actions">
+          <button type="button" class="button button-primary" (click)="retry()">
             {{ texts.noSeason.retry }}
           </button>
           <button
             type="button"
-            class="button button-sekundaer"
+            class="button button-secondary"
             [disabled]="loggingOut()"
             [attr.aria-busy]="loggingOut() ? 'true' : null"
             (click)="logout()"

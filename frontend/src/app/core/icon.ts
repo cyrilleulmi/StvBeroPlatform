@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
-/** Icons im Lucide-Stil (Stroke 2px, runde Enden). Neue Kacheln ergänzen ihr Icon hier. */
+/** Icons in Lucide style (stroke 2px, round caps). New tiles add their icon here. */
 const ICONS: Record<string, string> = {
   house:
     '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -64,7 +64,7 @@ export class Icon {
   readonly name = input.required<string>();
   readonly size = input(22);
 
-  /** Die Pfade sind Konstanten aus diesem Modul, nie Daten von aussen. */
+  /** The paths are constants from this module, never data from outside. */
   protected readonly content = computed(() =>
     this.sanitizer.bypassSecurityTrustHtml(ICONS[this.name()] ?? UNKNOWN),
   );

@@ -50,11 +50,11 @@ export class Start implements OnInit {
 
   /** «Training Di 17.11. 18:30–20:00 · Team 1 + Team 2» */
   protected description(t: EventSummary): string {
-    return `${eventDate(t.start, this.year())} · ${TEXTS.termine.period(clockTime(t.start), clockTime(t.end))} · ${TEXTS.termine.joinTeams(t.teams.map((x) => x.name))}`;
+    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))} · ${TEXTS.events.joinTeams(t.teams.map((x) => x.name))}`;
   }
 
   protected cardName(t: EventSummary): string {
-    return TEXTS.termine.card(t.title, eventDate(t.start, this.year()), clockTime(t.start));
+    return TEXTS.events.card(t.title, eventDate(t.start, this.year()), clockTime(t.start));
   }
 
   /** Nach einer Antwort: Zähler nachladen, ohne die Seite neu zu laden. */

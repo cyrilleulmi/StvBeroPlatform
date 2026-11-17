@@ -19,26 +19,26 @@ import { TEXTS } from '../../core/texts';
   template: `
     <h1>{{ texts.title }}</h1>
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
     @if (feedback(); as message) {
-      <p class="meldung-erfolg" role="status">{{ message }}</p>
+      <p class="message-success" role="status">{{ message }}</p>
     }
     @if (unreadOnes() > 0) {
       <div>
-        <button type="button" class="button button-sekundaer" [disabled]="busy()" (click)="markAllRead()">
+        <button type="button" class="button button-secondary" [disabled]="busy()" (click)="markAllRead()">
           {{ texts.markAllRead }}
         </button>
       </div>
     }
-    <section class="karte" aria-labelledby="benachrichtigungen-liste" [attr.aria-busy]="loading() ? 'true' : null">
-      <h2 id="benachrichtigungen-liste" class="visuell-versteckt">{{ texts.title }}</h2>
+    <section class="card" aria-labelledby="benachrichtigungen-liste" [attr.aria-busy]="loading() ? 'true' : null">
+      <h2 id="benachrichtigungen-liste" class="visually-hidden">{{ texts.title }}</h2>
       @if (loading()) {
-        <p class="leer">{{ common.loading }}</p>
+        <p class="empty">{{ common.loading }}</p>
       } @else if (list().length === 0) {
-        <p class="leer">{{ texts.empty }}</p>
+        <p class="empty">{{ texts.empty }}</p>
       } @else {
-        <ul class="liste" [attr.aria-label]="texts.title">
+        <ul class="list" [attr.aria-label]="texts.title">
           @for (b of list(); track b.id) {
             <li
               [attr.data-testid]="'benachrichtigung-' + b.id"
@@ -46,27 +46,27 @@ import { TEXTS } from '../../core/texts';
               [attr.data-art]="b.type"
             >
               @if (b.eventId) {
-                <a class="zeile-link eintrag" [href]="'/termine/' + b.eventId" (click)="open($event, b)">
+                <a class="row-link entry" [href]="'/termine/' + b.eventId" (click)="open($event, b)">
                   <span class="text">
                     @if (!b.read) {
                       <span class="chip" data-art="neu">{{ texts.new }}</span>
                     }
-                    <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ instant(b.createdAt) }}</span>
+                    <span class="row-title">{{ b.text }}</span>
+                    <span class="time">{{ instant(b.createdAt) }}</span>
                   </span>
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
               } @else {
-                <div class="zeile eintrag">
+                <div class="row entry">
                   <span class="text">
                     @if (!b.read) {
                       <span class="chip" data-art="neu">{{ texts.new }}</span>
                     }
-                    <span class="zeile-titel">{{ b.text }}</span>
-                    <span class="zeit">{{ instant(b.createdAt) }}</span>
+                    <span class="row-title">{{ b.text }}</span>
+                    <span class="time">{{ instant(b.createdAt) }}</span>
                   </span>
                   @if (!b.read) {
-                    <button type="button" class="button button-klein button-sekundaer" (click)="mark(b)">
+                    <button type="button" class="button button-small button-secondary" (click)="mark(b)">
                       {{ texts.markRead }}
                     </button>
                   }

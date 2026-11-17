@@ -35,37 +35,37 @@ interface Month {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, MyResponse],
   template: `
-    <div class="titelzeile">
-      <h1>{{ texts.termine.title }}</h1>
+    <div class="title-row">
+      <h1>{{ texts.events.title }}</h1>
       @if (canCreate()) {
-        <a class="button button-primaer button-klein" routerLink="/termine/neu">{{
-          texts.termine.create
+        <a class="button button-primary button-small" routerLink="/termine/neu">{{
+          texts.events.create
         }}</a>
       }
     </div>
 
     <div class="filter">
-      <nav class="umschalter" [attr.aria-label]="texts.termine.view">
+      <nav class="switch" [attr.aria-label]="texts.events.view">
         <a
           routerLink="/termine"
           [queryParams]="{ ansicht: null }"
           queryParamsHandling="merge"
           [attr.aria-current]="!past() ? 'page' : null"
-          >{{ texts.termine.upcoming }}</a
+          >{{ texts.events.upcoming }}</a
         >
         <a
           routerLink="/termine"
           [queryParams]="{ ansicht: 'vergangen' }"
           queryParamsHandling="merge"
           [attr.aria-current]="past() ? 'page' : null"
-          >{{ texts.termine.past }}</a
+          >{{ texts.events.past }}</a
         >
       </nav>
       @if (myTeams().length > 1 || team()) {
-        <div class="feld">
-          <label for="termine-team">{{ texts.termine.team }}</label>
+        <div class="field">
+          <label for="termine-team">{{ texts.events.team }}</label>
           <select id="termine-team" (change)="selectTeam($any($event.target).value)">
-            <option value="" [selected]="!team()">{{ texts.termine.allTeams }}</option>
+            <option value="" [selected]="!team()">{{ texts.events.allTeams }}</option>
             @for (t of teamSelection(); track t.id) {
               <option [value]="t.id" [selected]="team() === t.id">{{ t.name }}</option>
             }
@@ -75,66 +75,66 @@ interface Month {
     </div>
 
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
 
     <section
-      class="karte"
+      class="card"
       aria-labelledby="termine-liste-titel"
       [attr.aria-busy]="loading() ? 'true' : null"
     >
-      <h2 id="termine-liste-titel" class="visuell-versteckt">
-        {{ past() ? texts.termine.pastEvents : texts.termine.upcomingEvents }}
+      <h2 id="termine-liste-titel" class="visually-hidden">
+        {{ past() ? texts.events.pastEvents : texts.events.upcomingEvents }}
       </h2>
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (termine().length === 0) {
-        <p class="leer">{{ past() ? texts.termine.emptyPast : texts.termine.empty }}</p>
+        <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
       } @else {
         @for (m of months(); track m.key) {
-          <h3 class="monat" [id]="'monat-' + m.key">{{ m.name }}</h3>
-          <ul class="liste" [attr.aria-labelledby]="'monat-' + m.key">
+          <h3 class="month" [id]="'monat-' + m.key">{{ m.name }}</h3>
+          <ul class="list" [attr.aria-labelledby]="'monat-' + m.key">
             @for (t of m.termine; track t.id) {
               <li
-                class="termin-eintrag"
+                class="event-entry"
                 [attr.data-testid]="'termin-karte-' + t.id"
                 [attr.aria-label]="cardName(t)"
                 [attr.data-status]="t.status"
               >
-                <a class="zeile-link termin" [routerLink]="['/termine', t.id]">
-                  <span class="datum" aria-hidden="true">
-                    <span class="wochentag">{{ date(t.start).slice(0, 2) }}</span>
-                    <span class="tag">{{ date(t.start).slice(3, 9) }}</span>
+                <a class="row-link event" [routerLink]="['/termine', t.id]">
+                  <span class="date" aria-hidden="true">
+                    <span class="weekday">{{ date(t.start).slice(0, 2) }}</span>
+                    <span class="day">{{ date(t.start).slice(3, 9) }}</span>
                   </span>
-                  <span class="inhalt">
-                    <span class="zeile-titel" [class.durchgestrichen]="t.status === 'CANCELLED'">
+                  <span class="content">
+                    <span class="row-title" [class.struck-through]="t.status === 'CANCELLED'">
                       {{ t.title }}
                     </span>
-                    <span class="nebentext">
+                    <span class="secondary-text">
                       {{ period(t) }} · {{ teams(t) }}
                       @if (t.location) {
                         · {{ t.location.name }}
                       }
                     </span>
                     @if (t.status === 'CANCELLED') {
-                      <span class="status-zeile">
+                      <span class="status-row">
                         <span class="chip" data-art="abgesagt" data-testid="termin-status">{{
-                          texts.termine.cancelled
+                          texts.events.cancelled
                         }}</span>
                         @if (t.cancellationReason) {
-                          <span class="nebentext">{{ t.cancellationReason }}</span>
+                          <span class="secondary-text">{{ t.cancellationReason }}</span>
                         }
                       </span>
                     } @else {
                       @if (t.rescheduled) {
-                        <span class="status-zeile">
+                        <span class="status-row">
                           <span class="chip" data-art="verschoben" data-testid="termin-status">{{
-                            texts.termine.rescheduled
+                            texts.events.rescheduled
                           }}</span>
                         </span>
                       }
                       @if (t.counts; as z) {
-                        <span class="nebentext zaehler" data-testid="termin-zaehler">
+                        <span class="secondary-text counter" data-testid="termin-zaehler">
                           <span data-zaehler="dabei">{{ texts.overview.attending(z.attending) }}</span>
                           ·
                           <span data-zaehler="nicht-dabei">{{
@@ -142,15 +142,15 @@ interface Month {
                           }}</span>
                           ·
                           <span data-zaehler="vielleicht">{{
-                            texts.overview.vielleicht(z.maybe)
+                            texts.overview.maybe(z.maybe)
                           }}</span>
                           ·
-                          <span data-zaehler="offen">{{ texts.overview.offen(z.pending) }}</span>
+                          <span data-zaehler="offen">{{ texts.overview.pending(z.pending) }}</span>
                         </span>
                       }
                     }
                     @if (past()) {
-                      <span class="nebentext" [attr.data-antwort]="t.myResponse.status">{{
+                      <span class="secondary-text" [attr.data-antwort]="t.myResponse.status">{{
                         texts.response.yourResponse(texts.response.status[t.myResponse.status])
                       }}</span>
                     }
@@ -159,7 +159,7 @@ interface Month {
                 </a>
                 @if (!past()) {
                   <app-meine-antwort
-                    class="karten-antwort"
+                    class="card-response"
                     [eventId]="t.id"
                     [response]="t.myResponse"
                     [name]="texts.response.myResponseFor(cardName(t))"
@@ -212,7 +212,7 @@ export class Events {
     const name =
       this.termine()
         .flatMap((t) => t.teams)
-        .find((t) => t.id === id)?.name ?? TEXTS.termine.otherTeam;
+        .find((t) => t.id === id)?.name ?? TEXTS.events.otherTeam;
     return [...own, { id, name }];
   });
 
@@ -250,16 +250,16 @@ export class Events {
   }
 
   protected period(t: EventSummary): string {
-    return TEXTS.termine.period(clockTime(t.start), clockTime(t.end));
+    return TEXTS.events.period(clockTime(t.start), clockTime(t.end));
   }
 
   protected teams(t: EventSummary): string {
-    return TEXTS.termine.joinTeams(t.teams.map((x) => x.name));
+    return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
   }
 
   /** Name des Listeneintrags, z.B. «Training Di 17.11. 18:30». */
   protected cardName(t: EventSummary): string {
-    return TEXTS.termine.card(t.title, this.date(t.start), clockTime(t.start));
+    return TEXTS.events.card(t.title, this.date(t.start), clockTime(t.start));
   }
 
   protected selectTeam(teamId: string): void {

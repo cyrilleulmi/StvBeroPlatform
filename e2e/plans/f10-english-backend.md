@@ -11,7 +11,7 @@ Starting point for every UI case: `scripts/db-start.sh reset`, `scripts/start.sh
 | K2 Contract test (crit. 2) | Backend suite | `OpenApiContractTest` green |
 | K3 No German identifiers (crit. 3) | `find backend/src -type d`; grep Java/SQL/properties for German domain words outside string literals | Packages English; hits only in Javadoc quoting UI text («noch kein Aufgebot», `/termine`, `kachel-<id>`) |
 | K4 Fresh DB and seed (crit. 4) | `scripts/db-start.sh reset`, backend tests, start app; `GET /api/events/40000000-0000-4000-8000-000000000001/overview` as `petra` | Migrates without errors; counters as in test-data.md |
-| K5 Tests (crit. 5) | `mvn test` in `backend`; `npx playwright test` in `e2e` (projects `mobil`, `desktop`, incl. axe) | All green, skips unchanged (6) |
+| K5 Tests (crit. 5) | `mvn test` in `backend`; `npx playwright test` in `e2e` (projects `mobile`, `desktop`, incl. axe) | All green, skips unchanged (6) |
 | K6 German messages (crit. 7) | As `petra`/`anna` via API: invalid event input (400), call-up as `anna` (403), unknown event id (404), respond to cancelled event 03 (409), «MAYBE» without comment (422) | `title`/`detail` German («Ungültige Anfrage», «Dafür hast du keine Berechtigung.», «Diesen Termin gibt es nicht.», «Termin abgesagt», «Kommentar fehlt»); `rule` and `fields[].field` English |
 | K7 Test support endpoints | `GET /api/test/clock`, `POST /api/test/login {loginKey}`, `GET /api/test/notifications` | English paths respond; old `/api/test/uhr` returns 404 |
 
@@ -23,7 +23,7 @@ Every screen on mobile (375×812), central ones also on desktop (1280×800). Aft
 |---|---|---|---|
 | U1 Start | `nina` | `/` | Greeting, next event with response buttons, tiles |
 | U2 Events list | `petra` | `/termine`, switch «Vergangen», filter team | Months, cancelled event 03 with coral date tile and «Abgesagt», counters |
-| U3 Respond | `nina` | `/termine` → «dabei» on event 01; reload | `data-antwort` shows the new response, counter +1, survives reload |
+| U3 Respond | `nina` | `/termine` → «dabei» on event 01; reload | `data-response` shows the new response, counter +1, survives reload |
 | U4 Maybe without comment | `nina` | Event 01 → «vielleicht» without comment | Blocked with «Kommentar fehlt» (ANM-04), nothing saved |
 | U5 Event detail and overview | `petra` | `/termine/40000000-0000-4000-8000-000000000001` | Details, overview by team and line, coach block, comments |
 | U6 On-behalf response | `petra` | Overview → set «vielleicht» for a player without comment, then with comment | Field error at the comment, then saved |

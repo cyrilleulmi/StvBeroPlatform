@@ -1,6 +1,6 @@
 :host {
   display: grid;
-  gap: var(--abschnitt);
+  gap: var(--section-gap);
   justify-items: stretch;
 }
 
@@ -8,7 +8,7 @@
   margin: 4px 0 0;
 }
 
-.umschalter {
+.switch {
   border: 0;
   margin: 0;
   padding: 0;
@@ -21,13 +21,13 @@ legend {
   margin-bottom: 12px;
 }
 
-.optionen {
+.options {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 8px;
 }
 
-/* Die Wahl trägt data-theme und zeigt sich damit in den Farben ihrer Darstellung. */
+/* The choice carries data-theme and so shows itself in the colors of its theme. */
 .option {
   position: relative;
   display: grid;
@@ -47,30 +47,30 @@ legend {
   overflow-wrap: anywhere;
 }
 
-.farben {
+.colors {
   display: flex;
   gap: 5px;
 }
 
-.farbe {
+.color {
   width: 16px;
   height: 16px;
   border-radius: 50%;
 }
 
-.farbe-primary {
+.color-primary {
   background: var(--primary);
 }
 
-.farbe-coral {
+.color-coral {
   background: var(--coral);
 }
 
-.farbe-mustard {
+.color-mustard {
   background: var(--mustard);
 }
 
-.farbe-blue {
+.color-blue {
   background: var(--blue);
 }
 

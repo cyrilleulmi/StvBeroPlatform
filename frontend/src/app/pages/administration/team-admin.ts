@@ -51,7 +51,7 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
       flex-wrap: wrap;
       gap: 10px;
     }
-    .mitglied .zeile-titel {
+    .mitglied .row-title {
       min-width: 10em;
     }
     .mitglied select {

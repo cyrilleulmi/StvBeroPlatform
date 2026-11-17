@@ -1,38 +1,38 @@
 :host,
-.abschnitte {
+.sections {
   display: grid;
-  gap: var(--abschnitt);
+  gap: var(--section-gap);
   grid-template-columns: minmax(0, 1fr);
 }
 
-.stand,
-.auswahl {
+.state,
+.selection {
   display: grid;
   gap: 10px;
 }
 
-.stand p,
-.auswahl > p {
+.state p,
+.selection > p {
   margin: 0;
 }
 
-.status-zeile {
+.status-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
 }
 
-.chip[data-art='published'] {
+.chip[data-kind='published'] {
   background: var(--primary-soft);
   color: var(--primary);
 }
 
-.anzahl-text {
+.count-text {
   font-weight: 700;
 }
 
-.gruppe {
+.group {
   margin: 0;
   padding: 12px 0 0;
   border: 0;
@@ -40,7 +40,7 @@
   min-width: 0;
 }
 
-.gruppe legend {
+.group legend {
   padding: 0 0 4px;
   font-size: 12px;
   font-weight: 700;
@@ -54,7 +54,7 @@
   gap: 2px 10px;
 }
 
-.auswahl-zeile {
+.selection-row {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -63,7 +63,7 @@
   cursor: pointer;
 }
 
-.auswahl-zeile input {
+.selection-row input {
   width: 22px;
   height: 22px;
   margin: 0;
@@ -76,7 +76,7 @@
   overflow-wrap: anywhere;
 }
 
-.antwort {
+.response {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
@@ -85,12 +85,12 @@
   font-size: 13px;
 }
 
-.antwort .symbol {
+.response .symbol {
   width: 22px;
   height: 22px;
 }
 
-.kommentar {
+.comment {
   overflow-wrap: anywhere;
 }
 
@@ -112,7 +112,7 @@
   background: color-mix(in srgb, var(--bg) 80%, transparent);
 }
 
-.dialog-knoepfe {
+.dialog-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;

@@ -3,15 +3,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { Notification } from '../api/types';
 
-/** Eigene Benachrichtigungen (BEN) und die Anzahl ungelesener für die Navigation. */
+/** Own notifications (BEN) and the number of unread ones for the navigation. */
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
   private readonly http = inject(HttpClient);
 
-  /** Anzahl ungelesener Benachrichtigungen (`benachrichtigungen-zaehler`). */
+  /** Number of unread notifications (`notifications-counter`). */
   readonly unread = signal(0);
 
-  /** Zähler neu laden. Klappt es nicht, bleibt der bisherige Wert stehen. */
+  /** Reload the counter. If that fails, the previous value stays. */
   async refreshCounter(): Promise<void> {
     try {
       const list = await firstValueFrom(
@@ -19,14 +19,14 @@ export class NotificationsService {
       );
       this.unread.set(list.length);
     } catch {
-      // Der Zähler ist eine Hilfe; die Seite selbst zeigt Fehler an.
+      // The counter is a help; the page itself shows errors.
     }
   }
 
-  /** Alle eigenen, neueste zuerst (Reihenfolge der API). */
+  /** All own notifications, newest first (order of the API). */
   async all(): Promise<Notification[]> {
     const list = await firstValueFrom(this.http.get<Notification[]>('/api/notifications'));
-    this.unread.set(list.filter((b) => !b.read).length);
+    this.unread.set(list.filter((n) => !n.read).length);
     return list;
   }
 

@@ -29,54 +29,54 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
   imports: [RouterLink],
   template: `
     @if (event().myCallUp || canCallUp()) {
-      <section class="karte aufgebot" aria-labelledby="spieltag-aufgebot-titel">
-        <h2 id="spieltag-aufgebot-titel" class="abschnitt-titel">{{ s.callUp }}</h2>
+      <section class="card call-up" aria-labelledby="spieltag-aufgebot-titel">
+        <h2 id="spieltag-aufgebot-titel" class="section-title">{{ s.callUp }}</h2>
         @if (event().myCallUp; as mine) {
           <p class="mein">
             <span class="chip" [attr.data-art]="mine.toLowerCase()" data-testid="mein-aufgebot">{{
               s.mine[mine]
             }}</span>
           </p>
-          <p class="nebentext">{{ s.mineText[mine] }}</p>
+          <p class="secondary-text">{{ s.mineText[mine] }}</p>
         }
         @if (canCallUp()) {
-          <p class="stand">{{ s.state[event().callUpStatus ?? 'NONE'] }}</p>
-          <a class="button button-sekundaer button-klein" [routerLink]="['/termine', event().id, 'aufgebot']">{{
+          <p class="state">{{ s.state[event().callUpStatus ?? 'NONE'] }}</p>
+          <a class="button button-secondary button-small" [routerLink]="['/termine', event().id, 'aufgebot']">{{
             s.editCallUp
           }}</a>
         }
       </section>
     }
 
-    <section class="karte spiele" aria-labelledby="spieltag-spiele-titel">
-      <h2 id="spieltag-spiele-titel" class="abschnitt-titel">{{ s.matches }}</h2>
+    <section class="card matches" aria-labelledby="spieltag-spiele-titel">
+      <h2 id="spieltag-spiele-titel" class="section-title">{{ s.matches }}</h2>
       @if (message(); as m) {
-        <p class="meldung-erfolg" role="status">{{ m }}</p>
+        <p class="message-success" role="status">{{ m }}</p>
       }
       @if (error(); as m) {
-        <p class="meldung-fehler" role="alert">{{ m }}</p>
+        <p class="message-error" role="alert">{{ m }}</p>
       }
       @if ((event().matches ?? []).length === 0) {
-        <p class="leer">{{ s.noMatches }}</p>
+        <p class="empty">{{ s.noMatches }}</p>
       } @else {
-        <ol class="liste" data-testid="spiele" aria-labelledby="spieltag-spiele-titel">
+        <ol class="list" data-testid="spiele" aria-labelledby="spieltag-spiele-titel">
           @for (m of event().matches ?? []; track m.id) {
-            <li class="spiel" [attr.data-testid]="'spiel-' + m.id" [attr.aria-label]="description(m)">
-              <span class="anspielzeit">{{ time(m.startTime) }}</span>
-              <span class="spiel-text">
-                <span class="paarung">{{ pairing(m) }}</span>
-                <span class="nebentext">{{ m.home ? s.home : s.away }}</span>
+            <li class="match" [attr.data-testid]="'spiel-' + m.id" [attr.aria-label]="description(m)">
+              <span class="start-time">{{ time(m.startTime) }}</span>
+              <span class="match-text">
+                <span class="pairing">{{ pairing(m) }}</span>
+                <span class="secondary-text">{{ m.home ? s.home : s.away }}</span>
                 @if (m.result) {
-                  <span class="resultat">{{ s.result(m.result) }}</span>
+                  <span class="result">{{ s.result(m.result) }}</span>
                 }
                 @if (m.missingAtSu) {
-                  <span class="nebentext">{{ s.missingAtSu }}</span>
+                  <span class="secondary-text">{{ s.missingAtSu }}</span>
                 }
               </span>
               @if (canEnterResult()) {
                 <button
                   type="button"
-                  class="button button-sekundaer button-klein"
+                  class="button button-secondary button-small"
                   [attr.aria-label]="s.enterResultFor(pairing(m))"
                   [disabled]="running()"
                   (click)="open(m)"
@@ -92,17 +92,17 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 
     <dialog
       #dialog
-      class="karte dialog"
+      class="card dialog"
       aria-modal="true"
       aria-labelledby="resultat-titel"
       aria-describedby="resultat-text"
       (close)="target.set(null)"
     >
       @if (target(); as m) {
-        <form class="formular" (submit)="save($event)" novalidate>
+        <form class="form" (submit)="save($event)" novalidate>
           <h2 id="resultat-titel">{{ s.resultTitle(pairing(m)) }}</h2>
-          <p class="nebentext" id="resultat-text">{{ s.resultText }}</p>
-          <div class="feld">
+          <p class="secondary-text" id="resultat-text">{{ s.resultText }}</p>
+          <div class="field">
             <label for="resultat-feld">{{ s.resultField }}</label>
             <input
               #resultField
@@ -117,13 +117,13 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
               [attr.aria-describedby]="resultError() ? 'resultat-fehler' : null"
             />
             @if (resultError(); as m) {
-              <p class="feldfehler" id="resultat-fehler">{{ m }}</p>
+              <p class="field-error" id="resultat-fehler">{{ m }}</p>
             }
           </div>
-          <div class="dialog-knoepfe">
+          <div class="dialog-buttons">
             <button
               type="submit"
-              class="button button-primaer button-klein"
+              class="button button-primary button-small"
               [disabled]="running()"
               [attr.aria-busy]="running() ? 'true' : null"
             >
@@ -131,7 +131,7 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
             </button>
             <button
               type="button"
-              class="button button-sekundaer button-klein"
+              class="button button-secondary button-small"
               [disabled]="running()"
               (click)="close()"
             >

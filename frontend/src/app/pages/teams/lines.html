@@ -1,40 +1,40 @@
-<div class="kopf">
-  <a class="zurueck" [routerLink]="['/teams', teamId()]">{{
+<div class="header">
+  <a class="back" [routerLink]="['/teams', teamId()]">{{
     team() ? texts.lines.backTo(team()!.name) : texts.common.back
   }}</a>
   <h1>{{ texts.lines.title }}</h1>
   @if (team(); as t) {
-    <p class="nebentext">{{ t.name }}</p>
+    <p class="secondary-text">{{ t.name }}</p>
   }
 </div>
 
 @if (loadError(); as message) {
-  <p class="meldung-fehler" role="alert">{{ message }}</p>
+  <p class="message-error" role="alert">{{ message }}</p>
 }
 @if (success(); as message) {
-  <p class="meldung-erfolg" role="status">{{ message }}</p>
+  <p class="message-success" role="status">{{ message }}</p>
 }
 @if (error(); as message) {
-  <p class="meldung-fehler" role="alert">{{ message }}</p>
+  <p class="message-error" role="alert">{{ message }}</p>
 }
 
 @if (loading()) {
-  <p class="leer" aria-busy="true">{{ texts.common.loading }}</p>
+  <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
 } @else if (team()) {
   @if (canEdit()) {
-    <p class="nebentext hinweis">{{ texts.lines.dragHint }}</p>
+    <p class="secondary-text notice">{{ texts.lines.dragHint }}</p>
   } @else {
-    <p class="meldung-hinweis">{{ texts.lines.readOnly }}</p>
+    <p class="message-notice">{{ texts.lines.readOnly }}</p>
   }
 
-  <div class="gruppen" data-testid="linien-verwaltung">
+  <div class="groups" data-testid="linien-verwaltung">
     @for (g of lines(); track g.id) {
       <ng-container *ngTemplateOutlet="groupTemplate; context: { $implicit: g }" />
     }
     @if (canEdit()) {
       <button
         type="button"
-        class="button button-sekundaer hinzufuegen"
+        class="button button-secondary add"
         data-testid="linie-hinzufuegen"
         [disabled]="saving()"
         [attr.aria-busy]="runningAction() === 'add' ? 'true' : null"
@@ -51,8 +51,8 @@
 
 <ng-template #groupTemplate let-g>
   <section
-    class="karte gruppe"
-    [class.ziel]="dropTarget() === (g.id ?? noLineValue)"
+    class="card group"
+    [class.target]="dropTarget() === (g.id ?? noLineValue)"
     [attr.data-art]="g.kind"
     [attr.aria-labelledby]="titleId(g)"
     [attr.data-testid]="testId(g)"
@@ -60,15 +60,15 @@
     (dragleave)="leave($event, g)"
     (drop)="drop($event, g)"
   >
-    <div class="gruppe-kopf">
-      <h2 [id]="titleId(g)" class="abschnitt-titel">
-        {{ g.name }} <span class="anzahl">{{ g.players.length }}</span>
+    <div class="group-header">
+      <h2 [id]="titleId(g)" class="section-title">
+        {{ g.name }} <span class="count">{{ g.players.length }}</span>
       </h2>
       @if (canEdit() && g.kind === 'LINE' && renameId() !== g.id) {
-        <div class="knoepfe reihenfolge">
+        <div class="buttons reihenfolge">
           <button
             type="button"
-            class="icon-knopf"
+            class="icon-button"
             [id]="'oben-' + g.id"
             [attr.aria-label]="texts.lines.moveUp(g.name)"
             [disabled]="saving() || g.index === 0"
@@ -79,7 +79,7 @@
           </button>
           <button
             type="button"
-            class="icon-knopf"
+            class="icon-button"
             [id]="'unten-' + g.id"
             [attr.aria-label]="texts.lines.moveDown(g.name)"
             [disabled]="saving() || g.index === lines().length - 1"
@@ -89,10 +89,10 @@
             <app-icon name="chevron-down" [size]="20" />
           </button>
         </div>
-        <div class="knoepfe aktionen">
+        <div class="buttons actions">
           <button
             type="button"
-            class="button button-sekundaer button-klein"
+            class="button button-secondary button-small"
             [id]="'umbenennen-' + g.id"
             [attr.aria-label]="texts.lines.rename(g.name)"
             [disabled]="saving()"
@@ -102,7 +102,7 @@
           </button>
           <button
             type="button"
-            class="button button-sekundaer button-klein loeschen"
+            class="button button-secondary button-small delete"
             [id]="'loeschen-' + g.id"
             [attr.aria-label]="texts.lines.delete(g.name)"
             [disabled]="saving()"
@@ -115,8 +115,8 @@
       }
     </div>
     @if (renameId() === g.id && g.id) {
-      <form class="umbenennen" (submit)="rename($event, g)" novalidate>
-        <div class="feld">
+      <form class="rename" (submit)="rename($event, g)" novalidate>
+        <div class="field">
           <label [for]="'name-' + g.id">{{ texts.lines.nameOf(g.name) }}</label>
           <input
             [id]="'name-' + g.id"
@@ -130,13 +130,13 @@
             [attr.aria-describedby]="nameError() ? 'name-fehler-' + g.id : null"
           />
           @if (nameError(); as m) {
-            <p class="feldfehler" [id]="'name-fehler-' + g.id">{{ m }}</p>
+            <p class="field-error" [id]="'name-fehler-' + g.id">{{ m }}</p>
           }
         </div>
-        <div class="knoepfe">
+        <div class="buttons">
           <button
             type="submit"
-            class="button button-primaer button-klein"
+            class="button button-primary button-small"
             [disabled]="saving()"
             [attr.aria-busy]="runningAction() === 'umbenennen:' + g.id ? 'true' : null"
           >
@@ -144,7 +144,7 @@
           </button>
           <button
             type="button"
-            class="button button-sekundaer button-klein"
+            class="button button-secondary button-small"
             (click)="cancelRename(g)"
           >
             {{ texts.lines.cancel }}
@@ -154,13 +154,13 @@
     }
 
     @if (g.players.length === 0) {
-      <p class="leer">{{ g.id ? texts.lines.empty : texts.lines.noLineEmpty }}</p>
+      <p class="empty">{{ g.id ? texts.lines.empty : texts.lines.noLineEmpty }}</p>
     } @else {
-      <ul class="liste" [attr.aria-label]="g.name">
+      <ul class="list" [attr.aria-label]="g.name">
         @for (p of g.players; track p.id) {
           <li
-            class="zeile spielerin"
-            [class.gezogen]="dragged()?.id === p.id"
+            class="row player"
+            [class.dragged]="dragged()?.id === p.id"
             [attr.aria-label]="name(p)"
             [attr.data-testid]="'spielerin-' + p.id"
             [attr.draggable]="canEdit() ? 'true' : null"
@@ -168,9 +168,9 @@
             (dragend)="dragEnd()"
           >
             @if (canEdit()) {
-              <app-icon class="griff" name="grip-vertical" [size]="18" />
+              <app-icon class="handle" name="grip-vertical" [size]="18" />
             }
-            <span class="zeile-titel">{{ name(p) }}</span>
+            <span class="row-title">{{ name(p) }}</span>
             @if (canEdit()) {
               <select
                 [id]="'zuweisung-' + p.id"
@@ -196,7 +196,7 @@
 
 <dialog
   #deleteDialog
-  class="karte dialog"
+  class="card dialog"
   aria-modal="true"
   aria-labelledby="loeschen-titel"
   aria-describedby="loeschen-text"
@@ -207,13 +207,13 @@
     <p id="loeschen-text">
       {{ g.players.length > 0 ? texts.lines.deleteConsequence : texts.lines.deleteEmpty }}
     </p>
-    <div class="knoepfe">
-      <button type="button" class="button button-primaer button-klein" (click)="delete()">
+    <div class="buttons">
+      <button type="button" class="button button-primary button-small" (click)="delete()">
         {{ texts.lines.deleteConfirm }}
       </button>
       <button
         type="button"
-        class="button button-sekundaer button-klein"
+        class="button button-secondary button-small"
         (click)="cancelDelete()"
       >
         {{ texts.lines.cancel }}

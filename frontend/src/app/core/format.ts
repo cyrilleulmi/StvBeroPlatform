@@ -6,7 +6,7 @@ export function name(p: Pick<PersonSummary, 'firstName' | 'lastName'>): string {
   return `${p.firstName} ${p.lastName}`;
 }
 
-/** Bezeichnung einer Funktion. Unbekannte Funktionen (PTF-06) als «Mitglied». */
+/** Label of a team role. Unknown team roles (PTF-06) as «Mitglied». */
 export function teamRoleText(f: TeamRole | string | null | undefined): string {
   if (f === 'PLAYER' || f === 'COACH') {
     return TEXTS.teamRole[f];
@@ -14,13 +14,13 @@ export function teamRoleText(f: TeamRole | string | null | undefined): string {
   return TEXTS.teamRole.unknown;
 }
 
-/** ISO-Datum «2026-07-01» als «01.07.2026». */
+/** ISO date «2026-07-01» as «01.07.2026». */
 export function date(iso: string): string {
-  const [j, m, t] = iso.split('-');
-  return `${t}.${m}.${j}`;
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
 }
 
-/** Status einer Saison: «aktuell», «Archiv» oder «geplant». */
+/** Status of a season: «aktuell», «Archiv» or «geplant». */
 export function seasonStatus(s: Season): string {
   if (s.current) return TEXTS.season.current;
   if (s.archived) return TEXTS.season.archive;

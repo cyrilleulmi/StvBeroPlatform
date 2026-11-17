@@ -1,6 +1,6 @@
-/* Design-Tokens (docs/design-grundlagen.md). Farben nur über diese Variablen.
-   Drei Darstellungen (NF-08): Hell («Salbei frisch»), Düne, GitHub Dark. «System» setzt kein
-   data-theme: hell gilt dann Hell, dunkel GitHub Dark. */
+/* Design tokens (docs/design-principles.md). Colors only through these variables.
+   Three themes (NF-08): Hell («Salbei frisch»), Düne, GitHub Dark. «System» sets no
+   data-theme: a light environment then uses Hell, a dark one GitHub Dark. */
 :root,
 [data-theme='light'] {
   --bg: #f0f5f2;
@@ -23,13 +23,13 @@
   --radius-nav: 16px;
   --radius-pill: 999px;
   --font: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --seitenrand: 20px;
-  --abschnitt: 18px;
+  --page-margin: 20px;
+  --section-gap: 18px;
   --touch: 44px;
   color-scheme: light;
 }
 
-[data-theme='duene'] {
+[data-theme='dune'] {
   --bg: #f3ece1;
   --surface: #fffaf3;
   --text: #33291f;
@@ -66,7 +66,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  /* «System» im Dunkeln: gleiche Werte wie [data-theme='github-dark']. */
+  /* «System» in a dark environment: same values as [data-theme='github-dark']. */
   :root:not([data-theme]) {
     --bg: #0d1117;
     --surface: #161b22;
@@ -104,7 +104,7 @@ body {
 }
 
 h1,
-.seitentitel {
+.page-title {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -136,19 +136,19 @@ a {
   margin: 0;
 }
 
-.nebentext {
+.secondary-text {
   font-size: 13px;
   color: var(--muted);
 }
 
-.karte {
+.card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 18px;
 }
 
-.leer {
+.empty {
   color: var(--muted);
   margin: 0;
 }
@@ -166,19 +166,19 @@ a {
   text-decoration: none;
 }
 
-.button-primaer {
+.button-primary {
   background: var(--primary);
   color: var(--on-primary);
   border: 0;
 }
 
-.button-sekundaer {
+.button-secondary {
   background: transparent;
   color: var(--text);
   border: 1.5px solid var(--border);
 }
 
-.meldung-fehler {
+.message-error {
   background: var(--coral-soft);
   color: var(--text);
   border: 1px solid var(--coral);
@@ -187,7 +187,7 @@ a {
   margin: 0;
 }
 
-.visuell-versteckt {
+.visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -209,9 +209,9 @@ a {
   }
 }
 
-/* ---- F-01: Formulare, Listen, Chips, Meldungen (gemeinsam für alle Screens) ---- */
+/* ---- F-01: forms, lists, chips, messages (shared by all screens) ---- */
 
-.meldung-erfolg {
+.message-success {
   background: var(--primary-soft);
   color: var(--text);
   border: 1px solid var(--primary);
@@ -220,7 +220,7 @@ a {
   margin: 0;
 }
 
-.meldung-hinweis {
+.message-notice {
   background: var(--mustard-soft);
   color: var(--text);
   border: 1px solid var(--mustard);
@@ -229,23 +229,23 @@ a {
   margin: 0;
 }
 
-.formular {
+.form {
   display: grid;
   gap: 14px;
 }
 
-.feld {
+.field {
   display: grid;
   gap: 6px;
 }
 
-.feld label,
-.feld .label {
+.field label,
+.field .label {
   font-weight: 700;
 }
 
-.feld input:not([type='checkbox']),
-.feld select {
+.field input:not([type='checkbox']),
+.field select {
   min-height: var(--touch);
   padding: 0 14px;
   border: 1.5px solid var(--border);
@@ -256,12 +256,12 @@ a {
   width: 100%;
 }
 
-.feld input[aria-invalid='true'],
-.feld select[aria-invalid='true'] {
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'] {
   border-color: var(--coral);
 }
 
-.feldfehler {
+.field-error {
   color: var(--coral);
   font-size: 13px;
   font-weight: 600;
@@ -285,18 +285,18 @@ a {
   flex: none;
 }
 
-.feldreihe {
+.field-row {
   display: grid;
   gap: 14px;
 }
 
 @media (min-width: 640px) {
-  .feldreihe {
+  .field-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.button-klein {
+.button-small {
   min-height: var(--touch);
   padding: 0 16px;
   font-size: 14px;
@@ -307,17 +307,17 @@ a {
   cursor: default;
 }
 
-.liste {
+.list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.liste > li + li {
+.list > li + li {
   border-top: 1px solid var(--border);
 }
 
-.zeile {
+.row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -326,7 +326,7 @@ a {
   padding: 8px 0;
 }
 
-.zeile-link {
+.row-link {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -336,8 +336,8 @@ a {
   text-decoration: none;
 }
 
-.zeile-link .zeile-titel,
-.zeile .zeile-titel {
+.row-link .row-title,
+.row .row-title {
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -345,7 +345,7 @@ a {
   font-weight: 700;
 }
 
-.zeile-link app-icon {
+.row-link app-icon {
   color: var(--muted);
 }
 
@@ -361,23 +361,23 @@ a {
   white-space: nowrap;
 }
 
-.chip[data-art='coach'],
-.chip[data-art='admin'] {
+.chip[data-kind='coach'],
+.chip[data-kind='admin'] {
   background: var(--blue-soft);
 }
 
-.chip[data-art='archiv'],
-.chip[data-art='geplant'] {
+.chip[data-kind='archive'],
+.chip[data-kind='planned'] {
   background: var(--mustard-soft);
 }
 
-.kopf {
+.header {
   display: grid;
   gap: 6px;
 }
 
-/* Auf dem Seitenhintergrund in `text`: `primary` auf `bg` erreicht im Lightmode kein 4.5:1. */
-.zurueck {
+/* On the page background in `text`: `primary` on `bg` does not reach 4.5:1 in light mode. */
+.back {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);
@@ -386,25 +386,25 @@ a {
   color: var(--text);
 }
 
-.zurueck::before {
+.back::before {
   content: '‹';
   margin-right: 6px;
   font-size: 18px;
 }
 
-.abschnitt-titel {
+.section-title {
   display: flex;
   align-items: baseline;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.anzahl {
+.count {
   color: var(--muted);
   font-weight: 600;
 }
 
-/* Mobil: Fokus und Sprungziele nicht unter der festen Kopfzeile (Glocke) oder der Navigation unten (O-51). */
+/* Mobile: focus and jump targets not under the fixed header bar (bell) or the navigation at the bottom (O-51). */
 @media (max-width: 1023px) {
   html {
     scroll-padding-top: calc(76px + env(safe-area-inset-top));

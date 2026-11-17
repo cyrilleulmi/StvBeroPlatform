@@ -6,16 +6,16 @@ import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 
-/** Eine Wahl im Umschalter. `vorschau` ist der Wert von `data-theme`, in dem sich die Wahl selbst zeigt. */
+/** One choice in the switch. `preview` is the value of `data-theme` in which the choice shows itself. */
 interface Option {
   value: ThemeMode;
   text: string;
   preview: string | null;
 }
 
-/** Profil: Name, Darstellung (NF-06, NF-08), Abmelden. */
+/** Profile: name, theme (NF-06, NF-08), log out. */
 @Component({
-  selector: 'app-profil',
+  selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon],
   templateUrl: './profile.html',
@@ -27,7 +27,7 @@ export class Profile {
   private readonly router = inject(Router);
   protected readonly texts = TEXTS;
   protected readonly error = signal<string | null>(null);
-  /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
+  /** While logging out, further clicks are blocked (double click). */
   protected readonly loggingOut = signal(false);
 
   protected readonly options: Option[] = [

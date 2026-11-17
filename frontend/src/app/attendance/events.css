@@ -1,9 +1,9 @@
 :host {
   display: grid;
-  gap: var(--abschnitt);
+  gap: var(--section-gap);
 }
 
-.titelzeile {
+.title-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -11,7 +11,7 @@
   gap: 8px 16px;
 }
 
-.titelzeile h1 {
+.title-row h1 {
   margin: 0;
 }
 
@@ -23,13 +23,13 @@
   gap: 12px 16px;
 }
 
-.filter .feld {
+.filter .field {
   min-width: 200px;
   flex: 1 1 200px;
   max-width: 320px;
 }
 
-.umschalter {
+.switch {
   display: inline-flex;
   padding: 4px;
   gap: 4px;
@@ -38,7 +38,7 @@
   border: 1px solid var(--border);
 }
 
-.umschalter a {
+.switch a {
   display: inline-flex;
   align-items: center;
   min-height: 40px;
@@ -49,11 +49,11 @@
   text-decoration: none;
 }
 
-.umschalter a[aria-current='page'] {
+.switch a[aria-current='page'] {
   background: var(--primary-soft);
 }
 
-.monat {
+.month {
   margin: 16px 0 4px;
   font-size: 13px;
   font-weight: 700;
@@ -62,15 +62,15 @@
   color: var(--muted);
 }
 
-.monat:first-of-type {
+.month:first-of-type {
   margin-top: 0;
 }
 
-.termin {
+.event {
   align-items: center;
 }
 
-.datum {
+.date {
   display: grid;
   justify-items: center;
   flex: none;
@@ -81,37 +81,37 @@
   line-height: 1.2;
 }
 
-li[data-status='CANCELLED'] .datum {
+li[data-status='CANCELLED'] .date {
   background: var(--coral-soft);
 }
 
-.wochentag {
+.weekday {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
 }
 
-.tag {
+.day {
   font-size: 15px;
   font-weight: 800;
 }
 
-.inhalt {
+.content {
   display: grid;
   gap: 2px;
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.inhalt .nebentext {
+.content .secondary-text {
   overflow-wrap: anywhere;
 }
 
-.durchgestrichen {
+.struck-through {
   text-decoration: line-through;
 }
 
-.status-zeile {
+.status-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -119,32 +119,32 @@ li[data-status='CANCELLED'] .datum {
   margin-top: 2px;
 }
 
-.chip[data-art='abgesagt'] {
+.chip[data-kind='cancelled'] {
   background: var(--coral-soft);
 }
 
-.chip[data-art='verschoben'] {
+.chip[data-kind='rescheduled'] {
   background: var(--mustard-soft);
 }
 
-/* F-04: eigene Antwort direkt in der Karte (ANM-08) */
-.termin-eintrag {
+/* F-04: own response directly in the card (ANM-08) */
+.event-entry {
   display: grid;
   gap: 4px;
   padding-bottom: 12px;
 }
 
-.karten-antwort {
+.card-response {
   display: block;
   padding-left: 68px;
 }
 
 @media (max-width: 479px) {
-  .karten-antwort {
+  .card-response {
     padding-left: 0;
   }
 }
 
-.zaehler span {
+.counter span {
   white-space: nowrap;
 }

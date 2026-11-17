@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test --trace off",
-    "test:mobil": "playwright test --project=mobil --trace off",
+    "test:mobile": "playwright test --project=mobile --trace off",
     "test:desktop": "playwright test --project=desktop --trace off"
   },
   "devDependencies": {

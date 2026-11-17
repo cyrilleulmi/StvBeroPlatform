@@ -2,42 +2,42 @@
   display: contents;
 }
 
-.aufgebot,
-.spiele {
+.call-up,
+.matches {
   display: grid;
   gap: 10px;
   min-width: 0;
 }
 
-.aufgebot p,
-.spiele p {
+.call-up p,
+.matches p {
   margin: 0;
 }
 
-.aufgebot .button {
+.call-up .button {
   justify-self: start;
 }
 
-.chip[data-art='called_up'] {
+.chip[data-kind='called_up'] {
   background: var(--primary);
   color: var(--on-primary);
 }
 
-.chip[data-art='not_called_up'] {
+.chip[data-kind='not_called_up'] {
   background: var(--coral-soft);
   color: var(--text);
 }
 
-.chip[data-art='no_call_up_yet'] {
+.chip[data-kind='no_call_up_yet'] {
   background: var(--border);
   color: var(--text);
 }
 
-.stand {
+.state {
   font-weight: 600;
 }
 
-.spiel {
+.match {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -46,7 +46,7 @@
   min-width: 0;
 }
 
-.anspielzeit {
+.start-time {
   flex: none;
   min-width: 52px;
   padding: 6px 8px;
@@ -57,23 +57,23 @@
   text-align: center;
 }
 
-.spiel-text {
+.match-text {
   display: grid;
   gap: 2px;
   flex: 1 1 160px;
   min-width: 0;
 }
 
-.paarung {
+.pairing {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
-.resultat {
+.result {
   font-weight: 800;
 }
 
-.nebentext {
+.secondary-text {
   margin: 0;
 }
 
@@ -95,7 +95,7 @@
   background: color-mix(in srgb, var(--bg) 80%, transparent);
 }
 
-.dialog-knoepfe {
+.dialog-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;

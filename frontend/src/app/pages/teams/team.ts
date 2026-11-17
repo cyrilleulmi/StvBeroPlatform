@@ -26,67 +26,67 @@ import { TEXTS } from '../../core/texts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/teams">{{ texts.teams.allTeams }}</a>
+    <div class="header">
+      <a class="back" routerLink="/teams">{{ texts.teams.allTeams }}</a>
       <h1>{{ team()?.name ?? texts.teams.title }}</h1>
       @if (team()?.myTeamRole; as f) {
-        <p class="nebentext">{{ teamRole(f) }}</p>
+        <p class="secondary-text">{{ teamRole(f) }}</p>
       }
     </div>
     @if (seasonData(); as s) {
       @if (s.archived) {
-        <p class="meldung-hinweis" data-testid="archiv-hinweis">
+        <p class="message-notice" data-testid="archiv-hinweis">
           {{ texts.season.archiveNotice(s.name) }}
         </p>
       }
     }
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+    <div class="sections" [attr.aria-busy]="loading() ? 'true' : null">
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (team(); as t) {
-        <section class="karte" aria-labelledby="team-coaches-titel" data-testid="team-coaches">
-          <h2 id="team-coaches-titel" class="abschnitt-titel">
-            {{ texts.teams.coaches }} <span class="anzahl">{{ t.coaches.length }}</span>
+        <section class="card" aria-labelledby="team-coaches-titel" data-testid="team-coaches">
+          <h2 id="team-coaches-titel" class="section-title">
+            {{ texts.teams.coaches }} <span class="count">{{ t.coaches.length }}</span>
           </h2>
           @if (t.coaches.length === 0) {
-            <p class="leer">{{ texts.teams.noCoaches }}</p>
+            <p class="empty">{{ texts.teams.noCoaches }}</p>
           } @else {
-            <ul class="liste" [attr.aria-label]="texts.teams.coaches">
+            <ul class="list" [attr.aria-label]="texts.teams.coaches">
               @for (p of t.coaches; track p.id) {
-                <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
+                <li class="row" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
               }
             </ul>
           }
         </section>
         <section
-          class="karte"
+          class="card"
           aria-labelledby="team-spielerinnen-titel"
           data-testid="team-spielerinnen"
         >
           <div class="spielerinnen-kopf">
-            <h2 id="team-spielerinnen-titel" class="abschnitt-titel">
-              {{ texts.teams.players }} <span class="anzahl">{{ players().length }}</span>
+            <h2 id="team-spielerinnen-titel" class="section-title">
+              {{ texts.teams.players }} <span class="count">{{ players().length }}</span>
             </h2>
             @if (canEditLines()) {
               <a
-                class="button button-sekundaer button-klein"
+                class="button button-secondary button-small"
                 [routerLink]="['/teams', t.id, 'linien']"
                 >{{ texts.teams.editLines }}</a
               >
             }
           </div>
           @if (players().length === 0) {
-            <p class="leer">{{ texts.teams.noPlayers }}</p>
+            <p class="empty">{{ texts.teams.noPlayers }}</p>
           } @else {
             <!-- Nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). Leere Gruppen fehlen. -->
             @for (g of groups(); track g.key) {
               <h3 class="gruppe-titel" [id]="'team-gruppe-' + g.key">{{ g.name }}</h3>
-              <ul class="liste" [attr.aria-labelledby]="'team-gruppe-' + g.key">
+              <ul class="list" [attr.aria-labelledby]="'team-gruppe-' + g.key">
                 @for (p of g.players; track p.id) {
-                  <li class="zeile" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
+                  <li class="row" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
                 }
               </ul>
             }
@@ -97,9 +97,9 @@ import { TEXTS } from '../../core/texts';
   `,
   styles: `
     :host,
-    .abschnitte {
+    .sections {
       display: grid;
-      gap: var(--abschnitt);
+      gap: var(--section-gap);
     }
     .spielerinnen-kopf {
       display: flex;
@@ -109,7 +109,7 @@ import { TEXTS } from '../../core/texts';
       gap: 8px;
       margin-bottom: 8px;
     }
-    .spielerinnen-kopf .abschnitt-titel {
+    .spielerinnen-kopf .section-title {
       margin: 0;
     }
     .gruppe-titel {

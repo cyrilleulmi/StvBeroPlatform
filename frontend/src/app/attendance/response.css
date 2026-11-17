@@ -1,22 +1,22 @@
-/* Antworten (F-04): Antwort-Buttons, Übersicht, Dialoge. Farben nur über Tokens (O-16). */
+/* Responses (F-04): response buttons, overview, dialogs. Colors only through tokens (O-16). */
 
-.antwort {
+.response {
   display: grid;
   gap: 6px;
 }
 
-.antwort p {
+.response p {
   margin: 0;
 }
 
-.knoepfe {
+.buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   max-width: 420px;
 }
 
-.antwort-knopf {
+.response-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -33,40 +33,40 @@
   cursor: pointer;
 }
 
-.antwort-knopf app-icon {
+.response-button app-icon {
   flex: none;
 }
 
-.antwort-knopf[aria-pressed='true'][data-art='dabei'] {
+.response-button[aria-pressed='true'][data-kind='attending'] {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--on-primary);
 }
 
-.antwort-knopf[aria-pressed='true'][data-art='nicht-dabei'] {
+.response-button[aria-pressed='true'][data-kind='declined'] {
   background: var(--coral-soft);
   border-color: var(--coral);
 }
 
-.antwort-knopf[aria-pressed='true'][data-art='vielleicht'] {
+.response-button[aria-pressed='true'][data-kind='maybe'] {
   background: var(--mustard-soft);
   border-color: var(--mustard);
 }
 
-.antwort-knopf:disabled {
+.response-button:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.rueckmeldung {
+.feedback {
   font-weight: 600;
 }
 
-.kommentar {
+.comment {
   overflow-wrap: anywhere;
 }
 
-.chip[data-art='kurzfristig'] {
+.chip[data-kind='late-cancellation'] {
   background: var(--coral-soft);
 }
 
@@ -88,7 +88,7 @@
   background: color-mix(in srgb, var(--bg) 80%, transparent);
 }
 
-.dialog-knoepfe {
+.dialog-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;

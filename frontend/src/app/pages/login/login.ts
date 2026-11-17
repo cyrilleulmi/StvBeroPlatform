@@ -9,14 +9,14 @@ import { TEXTS } from '../../core/texts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <main class="anmelden">
-      <div class="karte">
+    <main class="login">
+      <div class="card">
         <p class="eyebrow">{{ texts.appName }}</p>
         <h1>{{ texts.login.title }}</h1>
         <p>{{ texts.login.methodOpen }}</p>
         @if (testMode) {
           <a
-            class="button button-primaer"
+            class="button button-primary"
             routerLink="/dev-login"
             [queryParams]="target() ? { ziel: target() } : {}"
             >{{ texts.login.toTestMode }}</a

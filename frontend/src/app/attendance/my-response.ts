@@ -29,17 +29,17 @@ type Choice = ResponseInput['status'];
   imports: [Icon],
   template: `
     <div
-      class="antwort"
+      class="response"
       role="group"
       data-testid="meine-antwort"
       [attr.aria-label]="name()"
       [attr.data-antwort]="current().status"
     >
-      <div class="knoepfe">
+      <div class="buttons">
         @for (w of choices; track w) {
           <button
             type="button"
-            class="antwort-knopf"
+            class="response-button"
             [attr.data-art]="key(w)"
             [attr.data-testid]="'antwort-' + key(w)"
             [attr.aria-pressed]="current().status === w ? 'true' : 'false'"
@@ -54,39 +54,39 @@ type Choice = ResponseInput['status'];
         }
       </div>
       @if (locked(); as text) {
-        <p class="nebentext" [id]="id('lock')">{{ text }}</p>
+        <p class="secondary-text" [id]="id('lock')">{{ text }}</p>
       }
       @if (details()) {
         @if (current().comment; as k) {
-          <p class="nebentext kommentar">{{ texts.yourComment(k) }}</p>
+          <p class="secondary-text comment">{{ texts.yourComment(k) }}</p>
         }
         @if (current().enteredBy; as from) {
-          <p class="nebentext">{{ texts.enteredBy(from.firstName + ' ' + from.lastName) }}</p>
+          <p class="secondary-text">{{ texts.enteredBy(from.firstName + ' ' + from.lastName) }}</p>
         }
         @if (current().lateCancellation) {
-          <p><span class="chip" data-art="kurzfristig">{{ texts.kurzfristig }}</span></p>
+          <p><span class="chip" data-art="kurzfristig">{{ texts.lateCancellation }}</span></p>
         }
       }
       @if (message(); as m) {
-        <p class="nebentext rueckmeldung" role="status">{{ m }}</p>
+        <p class="secondary-text feedback" role="status">{{ m }}</p>
       }
       @if (error(); as m) {
-        <p class="meldung-fehler" role="alert">{{ m }}</p>
+        <p class="message-error" role="alert">{{ m }}</p>
       }
     </div>
 
     <dialog
       #maybeDialog
-      class="karte dialog"
+      class="card dialog"
       aria-modal="true"
       [attr.aria-labelledby]="id('vielleicht-titel')"
       [attr.aria-describedby]="id('vielleicht-text')"
       (close)="dialogClosedHandler()"
     >
-      <form class="formular" (submit)="saveMaybe($event)" novalidate>
+      <form class="form" (submit)="saveMaybe($event)" novalidate>
         <h2 [id]="id('vielleicht-titel')">{{ texts.maybeTitle }}</h2>
-        <p class="nebentext" [id]="id('vielleicht-text')">{{ texts.maybeText }}</p>
-        <div class="feld">
+        <p class="secondary-text" [id]="id('vielleicht-text')">{{ texts.maybeText }}</p>
+        <div class="field">
           <label [for]="id('comment')">{{ texts.comment }}</label>
           <input
             #commentField
@@ -100,13 +100,13 @@ type Choice = ResponseInput['status'];
             [attr.aria-describedby]="commentError() ? id('kommentar-fehler') : null"
           />
           @if (commentError(); as m) {
-            <p class="feldfehler" [id]="id('kommentar-fehler')">{{ m }}</p>
+            <p class="field-error" [id]="id('kommentar-fehler')">{{ m }}</p>
           }
         </div>
-        <div class="dialog-knoepfe">
+        <div class="dialog-buttons">
           <button
             type="submit"
-            class="button button-primaer button-klein"
+            class="button button-primary button-small"
             [disabled]="running() !== null"
             [attr.aria-busy]="running() === 'MAYBE' ? 'true' : null"
           >
@@ -114,7 +114,7 @@ type Choice = ResponseInput['status'];
           </button>
           <button
             type="button"
-            class="button button-sekundaer button-klein"
+            class="button button-secondary button-small"
             [disabled]="running() !== null"
             (click)="close(maybeDialog)"
           >
@@ -126,16 +126,16 @@ type Choice = ResponseInput['status'];
 
     <dialog
       #reasonDialog
-      class="karte dialog"
+      class="card dialog"
       aria-modal="true"
       [attr.aria-labelledby]="id('grund-titel')"
       [attr.aria-describedby]="id('grund-text')"
       (close)="dialogClosedHandler()"
     >
-      <form class="formular" (submit)="saveReason($event)" novalidate>
+      <form class="form" (submit)="saveReason($event)" novalidate>
         <h2 [id]="id('grund-titel')">{{ texts.declinedTitle }}</h2>
-        <p class="nebentext" [id]="id('grund-text')">{{ texts.declinedText }}</p>
-        <div class="feld">
+        <p class="secondary-text" [id]="id('grund-text')">{{ texts.declinedText }}</p>
+        <div class="field">
           <label [for]="id('reason')">{{ texts.reason }}</label>
           <input
             #reasonField
@@ -149,13 +149,13 @@ type Choice = ResponseInput['status'];
             [attr.aria-describedby]="commentError() ? id('grund-fehler') : null"
           />
           @if (commentError(); as m) {
-            <p class="feldfehler" [id]="id('grund-fehler')">{{ m }}</p>
+            <p class="field-error" [id]="id('grund-fehler')">{{ m }}</p>
           }
         </div>
-        <div class="dialog-knoepfe">
+        <div class="dialog-buttons">
           <button
             type="submit"
-            class="button button-primaer button-klein"
+            class="button button-primary button-small"
             [disabled]="running() !== null"
             [attr.aria-busy]="running() === 'DECLINED' ? 'true' : null"
           >
@@ -163,7 +163,7 @@ type Choice = ResponseInput['status'];
           </button>
           <button
             type="button"
-            class="button button-sekundaer button-klein"
+            class="button button-secondary button-small"
             [disabled]="running() !== null"
             (click)="close(reasonDialog)"
           >

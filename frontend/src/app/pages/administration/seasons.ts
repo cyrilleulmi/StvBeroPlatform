@@ -38,13 +38,13 @@ function move(iso: string, days: number, years = 0): string {
       align-items: center;
       gap: 10px;
     }
-    .aktionen {
+    .actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 8px 16px;
     }
-    .aktionen a {
+    .actions a {
       display: inline-flex;
       align-items: center;
       min-height: var(--touch);

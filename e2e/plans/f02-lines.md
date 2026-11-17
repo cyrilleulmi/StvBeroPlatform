@@ -1,6 +1,6 @@
 # Test plan F-02 · Lines
 
-Issue #3 · Requirements LIN-01 to LIN-12, RR-03, RR-07 · Tests: `../tests/f02-linien.spec.ts`
+Issue #3 · Requirements LIN-01 to LIN-12, RR-03, RR-07 · Tests: `../tests/f02-lines.spec.ts`
 
 General for every case:
 
@@ -18,7 +18,7 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`. Groups `300
 | K2.2 | Rename | «Linie 3 umbenennen» → «Powerplay» → «Speichern»; empty name | «Neuer Name: Powerplay.»; empty: field error «Bitte einen Namen eingeben.» |
 | K2.3 | Order | «Powerplay nach oben» twice | Powerplay at the top; «Linie 1 nach oben» was disabled |
 | K2.4 | Delete | «Linie 2 löschen» → dialog «Linie 2 löschen?» → «Abbrechen», then «Löschen» | Cancel changes nothing. Delete: Sara and Nina under «Ohne Linie» (S24) |
-| K3.1 | Select | `zuweisung-<Kim>` → «Linie 2» (S14) | Status «Kim Baumann ist jetzt in Linie 2.», saved immediately (same after reload), focus stays in the field |
+| K3.1 | Select | `assignment-<Kim>` → «Linie 2» (S14) | Status «Kim Baumann ist jetzt in Linie 2.», saved immediately (same after reload), focus stays in the field |
 | K3.2 | Drag & drop | Drag Anna by the handle onto «Goalies» | Status «Anna Muster ist jetzt in Goalies.», same after reload |
 | K4 | One group per team | Anna → «Linie 2» (S15) | Anna only in Linie 2 |
 | K5 | Two teams | `alex`: Lea in T1 Linie 1, T2 Linie 2; Lea in T1 → Goalies | T2 unchanged, the select in T2 shows only groups of T2 |

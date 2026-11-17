@@ -1,34 +1,34 @@
 <h1>{{ texts.profile.title }}</h1>
 
 @if (auth.me(); as me) {
-  <section class="karte person" aria-labelledby="profil-name">
-    <h2 id="profil-name">{{ me.firstName }} {{ me.lastName }}</h2>
+  <section class="card person" aria-labelledby="profile-name">
+    <h2 id="profile-name">{{ me.firstName }} {{ me.lastName }}</h2>
     @if (me.email) {
-      <p class="nebentext">{{ me.email }}</p>
+      <p class="secondary-text">{{ me.email }}</p>
     }
   </section>
 }
 
-<section class="karte">
-  <fieldset class="umschalter" data-testid="theme-umschalter">
+<section class="card">
+  <fieldset class="switch" data-testid="theme-switch">
     <legend>{{ texts.profile.theme }}</legend>
-    <div class="optionen">
+    <div class="options">
       @for (o of options; track o.value) {
-        <!-- Jede Wahl zeigt sich in ihren eigenen Farben: data-theme gilt auch für ein einzelnes Element. -->
+        <!-- Each choice shows itself in its own colors: data-theme also works on a single element. -->
         <label class="option" [attr.data-theme]="o.preview">
           <input
             type="radio"
-            name="darstellung"
+            name="theme"
             [value]="o.value"
             [checked]="theme.mode() === o.value"
             (change)="theme.set(o.value)"
           />
           <span class="name">{{ o.text }}</span>
-          <span class="farben" aria-hidden="true">
-            <span class="farbe farbe-primary"></span>
-            <span class="farbe farbe-coral"></span>
-            <span class="farbe farbe-mustard"></span>
-            <span class="farbe farbe-blue"></span>
+          <span class="colors" aria-hidden="true">
+            <span class="color color-primary"></span>
+            <span class="color color-coral"></span>
+            <span class="color color-mustard"></span>
+            <span class="color color-blue"></span>
           </span>
         </label>
       }
@@ -37,12 +37,12 @@
 </section>
 
 @if (error(); as message) {
-  <p class="meldung-fehler" role="alert">{{ message }}</p>
+  <p class="message-error" role="alert">{{ message }}</p>
 }
 
 <button
   type="button"
-  class="button button-sekundaer"
+  class="button button-secondary"
   [disabled]="loggingOut()"
   [attr.aria-busy]="loggingOut() ? 'true' : null"
   (click)="logout()"

@@ -3,41 +3,41 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * Nachbesserung #17 · CSS-Selektoren in E2E-Tests (docs/testbarkeit.md, Konventionen für E2E-Tests).
- * Statische Prüfung der Testdateien, braucht weder Browser noch Datenbank.
- * Ausnahme: hilfen.ts kapselt die Dokument-Elemente ohne Rolle (`html`, `link`).
+ * Follow-up fix #17 · CSS selectors in E2E tests (docs/testability.md, conventions for E2E tests).
+ * Static check of the test files, needs neither browser nor database.
+ * Exception: helpers.ts encapsulates the document elements without role (`html`, `link`).
  */
-const VERBOTEN: { muster: RegExp; grund: string }[] = [
-  { muster: /\.locator\(/, grund: 'locator() mit CSS-Selektor' },
-  { muster: /\.\$\$?\(|\.\$\$?eval\(/, grund: '$()/$$()/$eval() mit CSS-Selektor' },
-  { muster: /waitForSelector\(/, grund: 'waitForSelector() mit CSS-Selektor' },
-  { muster: /['"`](css|xpath)=/, grund: 'CSS- oder XPath-Selektor' },
+const FORBIDDEN: { pattern: RegExp; reason: string }[] = [
+  { pattern: /\.locator\(/, reason: 'locator() with CSS selector' },
+  { pattern: /\.\$\$?\(|\.\$\$?eval\(/, reason: '$()/$$()/$eval() with CSS selector' },
+  { pattern: /waitForSelector\(/, reason: 'waitForSelector() with CSS selector' },
+  { pattern: /['"`](css|xpath)=/, reason: 'CSS or XPath selector' },
 ];
-const DIESE_DATEI = 'nb17-keine-css-selektoren.spec.ts';
-const AUSNAHMEN = new Set(['hilfen.ts', DIESE_DATEI]);
+const THIS_FILE = 'nb17-css-selectors.spec.ts';
+const EXCEPTIONS = new Set(['helpers.ts', THIS_FILE]);
 
-function testdateien(): string[] {
-  return readdirSync(__dirname).filter((d) => d.endsWith('.ts') && !AUSNAHMEN.has(d));
+function testFiles(): string[] {
+  return readdirSync(__dirname).filter((d) => d.endsWith('.ts') && !EXCEPTIONS.has(d));
 }
 
-test('Nachbesserung #17 AK1: Die Ausnahme für Dokument-Elemente ist in hilfen.ts gekapselt', () => {
-  const hilfen = readFileSync(join(__dirname, 'hilfen.ts'), 'utf8');
-  expect(hilfen).toContain('export function documentRoot(');
-  expect(hilfen).toContain('export function headLink(');
+test('Follow-up fix #17 AK1: The exception for document elements is encapsulated in helpers.ts', () => {
+  const helpers = readFileSync(join(__dirname, 'helpers.ts'), 'utf8');
+  expect(helpers).toContain('export function documentRoot(');
+  expect(helpers).toContain('export function headLink(');
 });
 
-test('Nachbesserung #17 AK2: Ausserhalb von hilfen.ts verwenden die E2E-Tests keine CSS-Selektoren', () => {
-  const dateien = testdateien();
-  expect(dateien.length).toBeGreaterThan(0);
-  const funde: string[] = [];
-  for (const datei of dateien) {
-    readFileSync(join(__dirname, datei), 'utf8')
+test('Follow-up fix #17 AK2: Outside helpers.ts the E2E tests use no CSS selectors', () => {
+  const files = testFiles();
+  expect(files.length).toBeGreaterThan(0);
+  const findings: string[] = [];
+  for (const file of files) {
+    readFileSync(join(__dirname, file), 'utf8')
       .split('\n')
-      .forEach((zeile, i) => {
-        for (const { muster, grund } of VERBOTEN) {
-          if (muster.test(zeile)) funde.push(`${datei}:${i + 1}: ${grund}: ${zeile.trim()}`);
+      .forEach((line, i) => {
+        for (const { pattern, reason } of FORBIDDEN) {
+          if (pattern.test(line)) findings.push(`${file}:${i + 1}: ${reason}: ${line.trim()}`);
         }
       });
   }
-  expect(funde, 'Locators über getByRole/getByLabel/getByText/getByTestId oder die Hilfen aus hilfen.ts').toEqual([]);
+  expect(findings, 'Locators via getByRole/getByLabel/getByText/getByTestId or the helpers from helpers.ts').toEqual([]);
 });

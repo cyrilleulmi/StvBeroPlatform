@@ -1,73 +1,73 @@
-.gruppen {
+.groups {
   display: grid;
   gap: 14px;
 }
 
-.hinweis {
+.notice {
   margin: 0;
 }
 
-.gruppe {
+.group {
   display: grid;
   gap: 4px;
   padding-bottom: 8px;
 }
 
-.gruppe[data-art='GOALIES'] {
+.group[data-kind='GOALIES'] {
   border-color: var(--blue);
 }
 
-.gruppe[data-art='NO_LINE'] {
+.group[data-kind='NO_LINE'] {
   background: transparent;
   border-style: dashed;
 }
 
-.gruppe.ziel {
+.group.ziel {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary);
 }
 
-.gruppe-kopf {
+.group-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
 
-.gruppe-kopf .abschnitt-titel {
+.group-header .section-title {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-/* Mobil: Pfeile neben dem Titel, Umbenennen und Löschen darunter */
-.gruppe-kopf .aktionen {
+/* Mobile: arrows next to the title, rename and delete below */
+.group-header .actions {
   grid-column: 1 / -1;
 }
 
 @media (min-width: 640px) {
-  .gruppe-kopf {
+  .group-header {
     grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
-  .gruppe-kopf .aktionen {
+  .group-header .actions {
     grid-column: auto;
   }
 }
 
-.knoepfe {
+.buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
-.umbenennen {
+.rename {
   display: grid;
   gap: 10px;
   width: 100%;
 }
 
-.icon-knopf {
+.icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -81,42 +81,42 @@
   cursor: pointer;
 }
 
-.icon-knopf:disabled {
+.icon-button:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.loeschen {
+.delete {
   color: var(--coral);
 }
 
-.hinzufuegen {
+.add {
   justify-self: start;
 }
 
-.spielerin {
+.player {
   flex-wrap: nowrap;
   min-height: 56px;
 }
 
-.spielerin[draggable='true'] {
+.player[draggable='true'] {
   cursor: grab;
 }
 
-.spielerin.gezogen {
+.player.gezogen {
   opacity: 0.5;
 }
 
-.griff {
+.handle {
   color: var(--muted);
   flex: none;
 }
 
-.spielerin .zeile-titel {
+.player .row-title {
   font-size: 15px;
 }
 
-.spielerin select {
+.player select {
   flex: none;
   max-width: 46%;
   min-height: var(--touch);

@@ -3,7 +3,7 @@ import { Injectable, signal } from '@angular/core';
 export type ThemeMode = 'light' | 'dune' | 'github-dark' | 'system';
 
 const STORAGE_KEY = 'stv-theme';
-/** Wert von `data-theme` je Wahl. «System» setzt keines und folgt `prefers-color-scheme`. */
+/** Value of `data-theme` per choice. «System» sets none and follows `prefers-color-scheme`. */
 const ATTRIBUTE: Record<ThemeMode, string | null> = {
   light: 'light',
   dune: 'dune',
@@ -12,14 +12,14 @@ const ATTRIBUTE: Record<ThemeMode, string | null> = {
 };
 
 /**
- * Darstellung (NF-06, NF-08): Hell, Düne, GitHub Dark oder System. Die Wahl bleibt im Browser
- * gespeichert. «System» zeigt im Hellen Hell und im Dunkeln GitHub Dark.
- * Das Inline-Skript in index.html wendet die Wahl vor dem Start an.
+ * Theme (NF-06, NF-08): Hell, Düne, GitHub Dark or System. The choice stays stored in the browser.
+ * «System» shows Hell in a light environment and GitHub Dark in a dark one.
+ * The inline script in index.html applies the choice before the start.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  readonly mode = signal<ThemeMode>(this.saved());
-  /** Die Werte aus index.html, damit Hell und System sie zurückbekommen. */
+  readonly mode = signal<ThemeMode>(this.stored());
+  /** The values from index.html, so that Hell and System get them back. */
   private headColors: Map<HTMLMetaElement, string> | null = null;
 
   set(mode: ThemeMode): void {
@@ -27,7 +27,7 @@ export class ThemeService {
     try {
       localStorage.setItem(STORAGE_KEY, mode);
     } catch {
-      // Ohne Speicher gilt die Wahl nur bis zum Neuladen.
+      // Without storage the choice only lasts until the next reload.
     }
     this.apply(mode);
   }
@@ -44,7 +44,7 @@ export class ThemeService {
     this.setHeadColor(ownColor ? getComputedStyle(html).getPropertyValue('--bg') : null);
   }
 
-  /** Farbe der Browser- bzw. Statusleiste: bei Düne und GitHub Dark deren Hintergrund. */
+  /** Color of the browser or status bar: for Düne and GitHub Dark their background. */
   private setHeadColor(color: string | null): void {
     this.headColors ??= new Map(
       Array.from(document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')).map(
@@ -56,15 +56,16 @@ export class ThemeService {
     }
   }
 
-  private saved(): ThemeMode {
+  private stored(): ThemeMode {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
-      // Ein Wert, den es nicht mehr gibt (z.B. das frühere «dunkel»), fällt auf «System» zurück.
-      if (value !== null && value in ATTRIBUTE) {
+      // A value that no longer exists (e.g. the former German «hell», «duene» or «dunkel») falls
+      // back to «System».
+      if (value !== null && Object.prototype.hasOwnProperty.call(ATTRIBUTE, value)) {
         return value as ThemeMode;
       }
     } catch {
-      // nichts gespeichert
+      // nothing stored
     }
     return 'system';
   }

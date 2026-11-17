@@ -23,17 +23,17 @@ import { TEXTS } from '../../core/texts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
+    <div class="header">
+      <a class="back" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
       <h1>{{ texts.people.title }}</h1>
     </div>
     @if (!auth.isAdmin()) {
-      <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
+      <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
-      <a class="button button-primaer erfassen" routerLink="/verwaltung/personen/neu">{{
+      <a class="button button-primary erfassen" routerLink="/verwaltung/personen/neu">{{
         texts.people.create
       }}</a>
-      <div class="feld">
+      <div class="field">
         <label for="personen-suche">{{ texts.people.search }}</label>
         <input
           id="personen-suche"
@@ -44,24 +44,24 @@ import { TEXTS } from '../../core/texts';
         />
       </div>
       @if (error(); as message) {
-        <p class="meldung-fehler" role="alert">{{ message }}</p>
+        <p class="message-error" role="alert">{{ message }}</p>
       }
       <section
-        class="karte"
+        class="card"
         aria-labelledby="personen-liste"
         [attr.aria-busy]="loading() ? 'true' : null"
       >
-        <h2 id="personen-liste" class="visuell-versteckt">{{ texts.people.title }}</h2>
+        <h2 id="personen-liste" class="visually-hidden">{{ texts.people.title }}</h2>
         @if (loading() && people().length === 0) {
-          <p class="leer">{{ texts.common.loading }}</p>
+          <p class="empty">{{ texts.common.loading }}</p>
         } @else if (people().length === 0) {
-          <p class="leer">{{ texts.people.empty }}</p>
+          <p class="empty">{{ texts.people.empty }}</p>
         } @else {
-          <ul class="liste" [attr.aria-label]="texts.people.title">
+          <ul class="list" [attr.aria-label]="texts.people.title">
             @for (p of people(); track p.id) {
               <li [attr.data-testid]="'person-' + p.id">
-                <a class="zeile-link" [routerLink]="['/verwaltung/personen', p.id]">
-                  <span class="zeile-titel">{{ name(p) }}</span>
+                <a class="row-link" [routerLink]="['/verwaltung/personen', p.id]">
+                  <span class="row-title">{{ name(p) }}</span>
                   @if (p.admin) {
                     <span class="chip" data-art="admin">{{ texts.people.admin }}</span>
                   }

@@ -1,6 +1,6 @@
 # Test plan F-03 · Events and series
 
-Issue #4 · Requirements TER-01 to TER-11, RR-05, RR-06, RR-07 · Tests: `../tests/f03-termine.spec.ts`,
+Issue #4 · Requirements TER-01 to TER-11, RR-05, RR-06, RR-07 · Tests: `../tests/f03-events.spec.ts`,
 backend `backend/src/test/java/ch/stvbero/platform/core/event/`
 
 General for every case:
@@ -48,7 +48,7 @@ Edge cases from states.md (forbidden transitions) and robustness. Starting point
 
 ## Rework round 1
 
-Automated in `e2e/tests/f03-termine.spec.ts` (section «Befunde aus dem Test») and `backend/.../EventsTest.java`.
+Automated in `e2e/tests/f03-events.spec.ts` (section «Befunde aus dem Test») and `backend/.../EventsTest.java`.
 
 | Finding | Case | Test |
 |---|---|---|

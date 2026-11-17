@@ -31,36 +31,36 @@ import { yearOf, eventDate, clockTime } from './time';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, MyResponse, MatchDay, OverviewSection],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/termine">{{ texts.termine.allEvents }}</a>
-      <h1>{{ event()?.title ?? texts.termine.title }}</h1>
+    <div class="header">
+      <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
+      <h1>{{ event()?.title ?? texts.events.title }}</h1>
       @if (event(); as t) {
-        <p class="nebentext">{{ date(t.start) }} · {{ period() }} · {{ teams() }}</p>
+        <p class="secondary-text">{{ date(t.start) }} · {{ period() }} · {{ teams() }}</p>
       }
     </div>
     @if (success(); as message) {
-      <p class="meldung-erfolg" role="status">{{ message }}</p>
+      <p class="message-success" role="status">{{ message }}</p>
     }
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+    <div class="sections" [attr.aria-busy]="loading() ? 'true' : null">
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (event(); as t) {
         @if (t.status === 'CANCELLED') {
-          <div class="meldung-fehler status" data-testid="termin-status">
-            <strong>{{ texts.termine.cancelledWithReason(t.cancellationReason ?? '') }}</strong>
-            <span>{{ texts.termine.cancelledNotice }}</span>
+          <div class="message-error status" data-testid="termin-status">
+            <strong>{{ texts.events.cancelledWithReason(t.cancellationReason ?? '') }}</strong>
+            <span>{{ texts.events.cancelledNotice }}</span>
           </div>
         } @else if (t.rescheduled) {
-          <p class="meldung-hinweis" data-testid="termin-status">
-            {{ texts.termine.rescheduledNotice }}
+          <p class="message-notice" data-testid="termin-status">
+            {{ texts.events.rescheduledNotice }}
           </p>
         }
         @if (isMember()) {
-          <section class="karte" aria-labelledby="termin-meine-antwort">
-            <h2 id="termin-meine-antwort" class="abschnitt-titel">
+          <section class="card" aria-labelledby="termin-meine-antwort">
+            <h2 id="termin-meine-antwort" class="section-title">
               {{ texts.response.myResponse }}
             </h2>
             <app-meine-antwort
@@ -81,17 +81,17 @@ import { yearOf, eventDate, clockTime } from './time';
             (changed)="reload()"
           />
         }
-        <section class="karte" aria-labelledby="termin-angaben">
-          <h2 id="termin-angaben" class="abschnitt-titel">{{ texts.termine.details }}</h2>
-          <dl class="angaben">
-            <dt>{{ texts.termine.date }}</dt>
+        <section class="card" aria-labelledby="termin-angaben">
+          <h2 id="termin-angaben" class="section-title">{{ texts.events.details }}</h2>
+          <dl class="facts">
+            <dt>{{ texts.events.date }}</dt>
             <dd>{{ date(t.start) }}</dd>
-            <dt>{{ texts.termine.time }}</dt>
+            <dt>{{ texts.events.time }}</dt>
             <dd>{{ period() }}</dd>
-            <dt>{{ texts.termine.teams }}</dt>
+            <dt>{{ texts.events.teams }}</dt>
             <dd>{{ teams() }}</dd>
             @if (t.location) {
-              <dt>{{ texts.termine.location }}</dt>
+              <dt>{{ texts.events.location }}</dt>
               <dd>
                 {{ t.location.name }}
                 @if (t.location.address) {
@@ -104,19 +104,19 @@ import { yearOf, eventDate, clockTime } from './time';
                     target="_blank"
                     rel="noopener"
                     data-testid="spielort-karte"
-                    >{{ texts.termine.openMap }}</a
+                    >{{ texts.events.openMap }}</a
                   >
                 }
               </dd>
             }
             @if (t.meetingPoint; as tp) {
-              <dt>{{ texts.termine.meetingPoint }}</dt>
+              <dt>{{ texts.events.meetingPoint }}</dt>
               <dd data-testid="treffpunkt">{{ clockTime(tp.time) }} · {{ tp.location }}</dd>
             }
-            <dt>{{ texts.termine.responseDeadline }}</dt>
+            <dt>{{ texts.events.responseDeadline }}</dt>
             <dd data-testid="antwortfrist">
               {{
-                texts.termine.responseDeadlineText(
+                texts.events.responseDeadlineText(
                   date(t.responseDeadline),
                   clockTime(t.responseDeadline),
                   t.responseDeadlineHours ?? 24
@@ -124,25 +124,25 @@ import { yearOf, eventDate, clockTime } from './time';
               }}
             </dd>
             @if (t.notes) {
-              <dt>{{ texts.termine.notes }}</dt>
-              <dd class="hinweise">{{ t.notes }}</dd>
+              <dt>{{ texts.events.notes }}</dt>
+              <dd class="notes">{{ t.notes }}</dd>
             }
             @if (t.seriesId) {
-              <dt>{{ texts.termine.series }}</dt>
+              <dt>{{ texts.events.series }}</dt>
               <dd>
                 @if (t.canEdit) {
-                  <a [routerLink]="['/serien', t.seriesId]">{{ texts.termine.viewSeries }}</a>
+                  <a [routerLink]="['/serien', t.seriesId]">{{ texts.events.viewSeries }}</a>
                 } @else {
-                  {{ texts.termine.partOfSeries }}
+                  {{ texts.events.partOfSeries }}
                 }
               </dd>
             }
           </dl>
           @if (t.canEdit) {
             <a
-              class="button button-sekundaer button-klein bearbeiten"
-              [routerLink]="['/termine', t.id, 'edit']"
-              >{{ texts.termine.edit }}</a
+              class="button button-secondary button-small edit"
+              [routerLink]="['/termine', t.id, 'bearbeiten']"
+              >{{ texts.events.edit }}</a
             >
           }
         </section>
@@ -153,7 +153,7 @@ import { yearOf, eventDate, clockTime } from './time';
             [coachIn]="coachIn()"
             [admin]="auth.me()?.admin ?? false"
             [meId]="auth.me()?.id ?? null"
-            [offen]="!lock()"
+            [open]="!lock()"
             (changed)="reload()"
           />
         }
@@ -182,7 +182,7 @@ export class EventPage {
 
   protected readonly period = computed(() => {
     const t = this.event();
-    return t ? TEXTS.termine.period(clockTime(t.start), clockTime(t.end)) : '';
+    return t ? TEXTS.events.period(clockTime(t.start), clockTime(t.end)) : '';
   });
 
   /** Mitglied eines beteiligten Teams: kann für sich antworten (ANM-01). */
@@ -211,7 +211,7 @@ export class EventPage {
   });
 
   protected readonly teams = computed(() =>
-    TEXTS.termine.joinTeams((this.event()?.teams ?? []).map((t) => t.name)),
+    TEXTS.events.joinTeams((this.event()?.teams ?? []).map((t) => t.name)),
   );
 
   constructor() {
@@ -256,7 +256,7 @@ export class EventPage {
     } catch (e) {
       const status = errorStatus(e);
       this.error.set(
-        status === 404 || status === 400 ? TEXTS.termine.notFound : errorText(e),
+        status === 404 || status === 400 ? TEXTS.events.notFound : errorText(e),
       );
     } finally {
       this.loading.set(false);

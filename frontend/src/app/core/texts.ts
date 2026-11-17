@@ -1,6 +1,6 @@
 /**
- * Texte der Oberfläche an einer Stelle, damit Tests und Doku dieselben Wörter verwenden
- * (docs/testbarkeit.md, Regel 2).
+ * Texts of the user interface in one place, so that tests and documentation use the same words
+ * (docs/testability.md, rule 2).
  */
 export const TEXTS = {
   appName: 'STV Bero',
@@ -48,7 +48,7 @@ export const TEXTS = {
     yourResponse: (status: string) => `Deine Antwort: ${status}`,
     yourComment: (comment: string) => `Dein Kommentar: ${comment}`,
     enteredBy: (name: string) => `eingetragen von ${name}`,
-    kurzfristig: 'kurzfristig abgemeldet',
+    lateCancellation: 'kurzfristig abgemeldet',
     maybeTitle: 'Vielleicht – bitte kurz begründen',
     maybeText: 'Die Coaches deines Teams sehen den Kommentar, die anderen nicht.',
     comment: 'Kommentar',
@@ -78,12 +78,12 @@ export const TEXTS = {
     total: 'Alle Teams',
     attending: (n: number) => `${n} dabei`,
     declined: (n: number) => `${n} nicht dabei`,
-    vielleicht: (n: number) => `${n} vielleicht`,
-    offen: (n: number) => `${n} offen`,
+    maybe: (n: number) => `${n} vielleicht`,
+    pending: (n: number) => `${n} offen`,
     coachOf: (team: string) => `(${team})`,
     noMembers: 'In den Teams dieses Termins ist noch niemand.',
   },
-  termine: {
+  events: {
     title: 'Termine',
     empty: 'Keine kommenden Termine',
     emptyPast: 'Keine vergangenen Termine',
@@ -214,7 +214,7 @@ export const TEXTS = {
     location: 'Ort (freiwillig)',
     venue: 'Spielort',
     mapsUrl: 'Google-Maps-Link (freiwillig)',
-    mapsUrlHinweis: 'In Google Maps den Ort suchen, «Teilen» wählen und den Link hier einfügen.',
+    mapsUrlHint: 'In Google Maps den Ort suchen, «Teilen» wählen und den Link hier einfügen.',
     mapsUrlFormat: 'Der Link muss mit https:// beginnen.',
     meetingPoint: 'Treffpunkt',
     meetingPointTime: 'Zeit',
@@ -315,7 +315,7 @@ export const TEXTS = {
     noLineSet: (person: string) => `${person} ist jetzt ohne Linie.`,
     moveUp: (line: string) => `${line} nach oben`,
     moveDown: (line: string) => `${line} nach unten`,
-    rescheduled: (line: string) => `${line} ist verschoben.`,
+    moved: (line: string) => `${line} ist verschoben.`,
     rename: (line: string) => `${line} umbenennen`,
     renameShort: 'Umbenennen',
     deleteShort: 'Löschen',

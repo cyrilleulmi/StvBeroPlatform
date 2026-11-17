@@ -1,19 +1,19 @@
-.anmelden {
+.login {
   max-width: 480px;
   margin: 0 auto;
-  padding: 48px var(--seitenrand);
+  padding: 48px var(--page-margin);
 }
 
-.karte {
+.card {
   display: grid;
   gap: 12px;
 }
 
-.anmelden p {
+.login p {
   margin: 0;
 }
 
-.aktionen {
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;

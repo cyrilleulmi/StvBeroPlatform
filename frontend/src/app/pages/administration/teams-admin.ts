@@ -24,14 +24,14 @@ import { TEXTS } from '../../core/texts';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
+    <div class="header">
+      <a class="back" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
       <h1>{{ texts.teamAdmin.title }}</h1>
     </div>
     @if (!auth.isAdmin()) {
-      <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
+      <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
-      <div class="feld">
+      <div class="field">
         <label for="teams-saison">{{ texts.teamAdmin.season }}</label>
         <select id="teams-saison" (change)="selectSeason($any($event.target).value)">
           @for (s of seasons(); track s.id) {
@@ -42,38 +42,38 @@ import { TEXTS } from '../../core/texts';
         </select>
       </div>
       @if (seasonData()?.archived) {
-        <p class="meldung-hinweis" data-testid="archiv-hinweis">
+        <p class="message-notice" data-testid="archiv-hinweis">
           {{ texts.season.archiveNotice(seasonData()!.name) }}
         </p>
       }
       @if (success(); as message) {
-        <p class="meldung-erfolg" role="status">{{ message }}</p>
+        <p class="message-success" role="status">{{ message }}</p>
       }
       @if (error(); as message) {
-        <p class="meldung-fehler" role="alert">{{ message }}</p>
+        <p class="message-error" role="alert">{{ message }}</p>
       }
       <section
-        class="karte"
+        class="card"
         aria-labelledby="teams-verwaltung-liste"
         [attr.aria-busy]="loading() ? 'true' : null"
       >
-        <h2 id="teams-verwaltung-liste" class="abschnitt-titel">
+        <h2 id="teams-verwaltung-liste" class="section-title">
           {{ texts.teamAdmin.teamsList }}
         </h2>
         @if (loading() && teams().length === 0) {
-          <p class="leer">{{ texts.common.loading }}</p>
+          <p class="empty">{{ texts.common.loading }}</p>
         } @else if (teams().length === 0) {
-          <p class="leer">{{ texts.teamAdmin.empty }}</p>
+          <p class="empty">{{ texts.teamAdmin.empty }}</p>
         } @else {
-          <ul class="liste" [attr.aria-label]="texts.teamAdmin.teamsList">
+          <ul class="list" [attr.aria-label]="texts.teamAdmin.teamsList">
             @for (t of teams(); track t.id) {
               <li class="team-zeile" [attr.data-testid]="'team-' + t.id">
                 <a
-                  class="zeile-link"
+                  class="row-link"
                   [routerLink]="['/verwaltung/teams', t.id]"
                   [queryParams]="{ saison: seasonData()?.id }"
                 >
-                  <span class="zeile-titel">{{ t.name }}</span>
+                  <span class="row-title">{{ t.name }}</span>
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
                 @if (t.suTeamId) {
@@ -88,13 +88,13 @@ import { TEXTS } from '../../core/texts';
       </section>
       @if (seasonData() && !seasonData()!.archived) {
         <form
-          class="karte formular"
+          class="card form"
           (submit)="create($event)"
           novalidate
           aria-labelledby="team-neu-titel"
         >
           <h2 id="team-neu-titel">{{ texts.teamAdmin.newTeam }}</h2>
-          <div class="feld">
+          <div class="field">
             <label for="team-neu-name">{{ texts.teamAdmin.teamName }}</label>
             <input
               id="team-neu-name"
@@ -107,12 +107,12 @@ import { TEXTS } from '../../core/texts';
               [attr.aria-describedby]="nameError() ? 'team-neu-name-fehler' : null"
             />
             @if (nameError(); as m) {
-              <p class="feldfehler" id="team-neu-name-fehler">{{ m }}</p>
+              <p class="field-error" id="team-neu-name-fehler">{{ m }}</p>
             }
           </div>
           <button
             type="submit"
-            class="button button-primaer"
+            class="button button-primary"
             [disabled]="saving()"
             [attr.aria-busy]="saving() ? 'true' : null"
           >
@@ -132,7 +132,7 @@ import { TEXTS } from '../../core/texts';
       align-items: center;
       gap: 8px;
     }
-    .team-zeile .zeile-link {
+    .team-zeile .row-link {
       flex: 1 1 auto;
       min-width: 0;
     }

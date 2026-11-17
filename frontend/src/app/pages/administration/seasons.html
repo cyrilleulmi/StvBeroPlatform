@@ -1,28 +1,28 @@
-<div class="kopf">
-  <a class="zurueck" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
+<div class="header">
+  <a class="back" routerLink="/verwaltung">{{ texts.administration.toAdministration }}</a>
   <h1>{{ texts.seasons.title }}</h1>
 </div>
 
 @if (!auth.isAdmin()) {
-  <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
+  <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
   @if (success(); as message) {
-    <p class="meldung-erfolg" role="status">{{ message }}</p>
+    <p class="message-success" role="status">{{ message }}</p>
   }
   @if (error(); as message) {
-    <p class="meldung-fehler" role="alert">{{ message }}</p>
+    <p class="message-error" role="alert">{{ message }}</p>
   }
 
-  <section class="karte" aria-labelledby="saisons-liste" [attr.aria-busy]="loading() ? 'true' : null">
-    <h2 id="saisons-liste" class="visuell-versteckt">{{ texts.seasons.list }}</h2>
+  <section class="card" aria-labelledby="saisons-liste" [attr.aria-busy]="loading() ? 'true' : null">
+    <h2 id="saisons-liste" class="visually-hidden">{{ texts.seasons.list }}</h2>
     @if (loading() && seasons().length === 0) {
-      <p class="leer">{{ texts.common.loading }}</p>
+      <p class="empty">{{ texts.common.loading }}</p>
     } @else {
-      <ul class="liste" [attr.aria-label]="texts.seasons.list">
+      <ul class="list" [attr.aria-label]="texts.seasons.list">
         @for (s of seasons(); track s.id) {
           <li class="saison" [attr.aria-label]="s.name" [attr.data-testid]="'saison-' + s.id">
             <div class="saison-kopf">
-              <span class="zeile-titel">{{ s.name }}</span>
+              <span class="row-title">{{ s.name }}</span>
               <span
                 class="chip"
                 data-testid="saison-status"
@@ -30,15 +30,15 @@
                 >{{ status(s) }}</span
               >
             </div>
-            <span class="nebentext">{{ texts.seasons.period(date(s.startDate), date(s.endDate)) }}</span>
-            <div class="aktionen">
+            <span class="secondary-text">{{ texts.seasons.period(date(s.startDate), date(s.endDate)) }}</span>
+            <div class="actions">
               <a routerLink="/verwaltung/teams" [queryParams]="{ saison: s.id }">{{
                 texts.seasons.viewTeams
               }}</a>
               @if (!s.current) {
                 <button
                   type="button"
-                  class="button button-sekundaer button-klein"
+                  class="button button-secondary button-small"
                   [disabled]="saving()"
                   [attr.aria-busy]="runningAction() === 'aktivieren:' + s.id ? 'true' : null"
                   (click)="activate(s)"
@@ -54,14 +54,14 @@
   </section>
 
   <form
-    class="karte formular"
+    class="card form"
     (submit)="create($event)"
     novalidate
     aria-labelledby="saison-neu-titel"
   >
     <h2 id="saison-neu-titel">{{ texts.seasons.new }}</h2>
     @for (f of fields; track f.field) {
-      <div class="feld">
+      <div class="field">
         <label [for]="'saison-' + f.field">{{ f.label }}</label>
         <input
           [id]="'saison-' + f.field"
@@ -74,11 +74,11 @@
           [attr.aria-describedby]="fieldErrors()[f.field] ? 'saison-' + f.field + '-fehler' : null"
         />
         @if (fieldErrors()[f.field]; as m) {
-          <p class="feldfehler" [id]="'saison-' + f.field + '-fehler'">{{ m }}</p>
+          <p class="field-error" [id]="'saison-' + f.field + '-fehler'">{{ m }}</p>
         }
       </div>
     }
-    <div class="feld">
+    <div class="field">
       <label for="saison-uebernehmen">{{ texts.seasons.carryOver }}</label>
       <select
         id="saison-uebernehmen"
@@ -94,7 +94,7 @@
     </div>
     <button
       type="submit"
-      class="button button-primaer"
+      class="button button-primary"
       [disabled]="saving()"
       [attr.aria-busy]="runningAction() === 'create' ? 'true' : null"
     >

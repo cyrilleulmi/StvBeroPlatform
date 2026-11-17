@@ -1,17 +1,17 @@
 <main class="dev-login">
-  <p class="testmodus" data-testid="testmodus-hinweis">{{ texts.devLogin.notice }}</p>
+  <p class="test-mode" data-testid="testmodus-hinweis">{{ texts.devLogin.notice }}</p>
   <h1>{{ texts.devLogin.title }}</h1>
-  <p class="nebentext">{{ texts.devLogin.explanation }}</p>
+  <p class="secondary-text">{{ texts.devLogin.explanation }}</p>
 
   @if (error(); as message) {
-    <p class="meldung-fehler" role="alert">{{ message }}</p>
+    <p class="message-error" role="alert">{{ message }}</p>
   }
 
   <div [attr.aria-busy]="loading() ? 'true' : null">
     @if (loading()) {
-      <p class="leer">{{ texts.common.loading }}</p>
+      <p class="empty">{{ texts.common.loading }}</p>
     } @else {
-      <ul class="liste" [attr.aria-label]="texts.devLogin.listName">
+      <ul class="list" [attr.aria-label]="texts.devLogin.listName">
         @for (person of people(); track person.id) {
           <li [attr.data-testid]="'dev-login-person-' + person.loginKey">
             <button
@@ -23,7 +23,7 @@
             >
               <span class="name">{{ person.firstName }} {{ person.lastName }}</span>
               <span class="details">
-                <span class="schluessel">{{ person.loginKey }}</span>
+                <span class="key">{{ person.loginKey }}</span>
                 @if (person.admin) {
                   <span class="chip">{{ texts.devLogin.admin }}</span>
                 }

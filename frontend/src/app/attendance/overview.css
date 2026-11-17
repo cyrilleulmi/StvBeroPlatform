@@ -1,16 +1,16 @@
-.uebersicht {
+.overview {
   display: grid;
   gap: 16px;
   min-width: 0;
 }
 
-.uebersicht h3 {
+.overview h3 {
   font-size: 15px;
   font-weight: 800;
   margin: 0;
 }
 
-.uebersicht h4 {
+.overview h4 {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -19,7 +19,7 @@
   margin: 0 0 4px;
 }
 
-.zaehler {
+.counter {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 0;
@@ -28,7 +28,7 @@
   font-weight: 600;
 }
 
-.trenner {
+.separator {
   color: var(--muted);
   white-space: pre;
 }
@@ -41,11 +41,11 @@
   background: var(--primary-soft);
 }
 
-.total .zaehler-name {
+.total .counter-name {
   font-weight: 800;
 }
 
-.total .zahlen {
+.total .numbers {
   display: flex;
   flex-wrap: wrap;
 }
@@ -57,16 +57,16 @@
   border-top: 1px solid var(--border);
 }
 
-.team-kopf {
+.team-header {
   display: grid;
   gap: 2px;
 }
 
-.gruppe {
+.group {
   display: grid;
 }
 
-.personen {
+.people {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -76,13 +76,13 @@
 }
 
 @media (min-width: 640px) {
-  .personen {
+  .people {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .personen {
+  .people {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -107,19 +107,19 @@
   color: var(--muted);
 }
 
-.symbol[data-art='dabei'] {
+.symbol[data-kind='attending'] {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--on-primary);
 }
 
-.symbol[data-art='nicht-dabei'] {
+.symbol[data-kind='declined'] {
   background: var(--coral-soft);
   border-color: var(--coral);
   color: var(--text);
 }
 
-.symbol[data-art='vielleicht'] {
+.symbol[data-kind='maybe'] {
   background: var(--mustard-soft);
   border-color: var(--mustard);
   color: var(--text);
@@ -144,11 +144,11 @@
   color: var(--muted);
 }
 
-.person-text .kommentar {
+.person-text .comment {
   flex-basis: 100%;
 }
 
-.icon-knopf {
+.icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -162,12 +162,12 @@
   cursor: pointer;
 }
 
-.icon-knopf:disabled {
+.icon-button:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.wahl {
+.choice {
   display: grid;
   gap: 2px;
   margin: 0;
@@ -175,7 +175,7 @@
   border: 0;
 }
 
-.wahl legend {
+.choice legend {
   font-weight: 700;
   margin-bottom: 4px;
   padding: 0;

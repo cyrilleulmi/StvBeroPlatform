@@ -29,77 +29,77 @@ type ExceptionField = 'from' | 'until' | 'reason';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/termine">{{ texts.termine.allEvents }}</a>
-      <h1>{{ series()?.title ?? texts.termine.series }}</h1>
+    <div class="header">
+      <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
+      <h1>{{ series()?.title ?? texts.events.series }}</h1>
       @if (series(); as s) {
-        <p class="nebentext">{{ rule() }}</p>
+        <p class="secondary-text">{{ rule() }}</p>
       }
     </div>
     @if (success(); as message) {
-      <p class="meldung-erfolg" role="status">{{ message }}</p>
+      <p class="message-success" role="status">{{ message }}</p>
     }
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+    <div class="sections" [attr.aria-busy]="loading() ? 'true' : null">
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (series(); as s) {
-        <section class="karte" aria-labelledby="serie-angaben">
-          <h2 id="serie-angaben" class="abschnitt-titel">{{ texts.termine.details }}</h2>
-          <dl class="angaben">
+        <section class="card" aria-labelledby="serie-angaben">
+          <h2 id="serie-angaben" class="section-title">{{ texts.events.details }}</h2>
+          <dl class="facts">
             <dt>{{ texts.eventForm.type }}</dt>
-            <dd>{{ texts.termine.type[s.type] }}</dd>
+            <dd>{{ texts.events.type[s.type] }}</dd>
             <dt>{{ texts.eventForm.weekday }}</dt>
             <dd>{{ texts.eventForm.weekdays[s.weekday] }}</dd>
-            <dt>{{ texts.termine.time }}</dt>
-            <dd>{{ texts.termine.period(s.startTime, s.endTime) }}</dd>
+            <dt>{{ texts.events.time }}</dt>
+            <dd>{{ texts.events.period(s.startTime, s.endTime) }}</dd>
             <dt>{{ texts.series.period }}</dt>
             <dd>{{ texts.series.periodText(date(s.validFrom), date(s.validUntil)) }}</dd>
-            <dt>{{ texts.termine.teams }}</dt>
+            <dt>{{ texts.events.teams }}</dt>
             <dd>{{ teams() }}</dd>
             @if (s.location) {
-              <dt>{{ texts.termine.location }}</dt>
+              <dt>{{ texts.events.location }}</dt>
               <dd>{{ s.location.name }}</dd>
             }
-            <dt>{{ texts.termine.responseDeadline }}</dt>
+            <dt>{{ texts.events.responseDeadline }}</dt>
             <dd>{{ s.responseDeadlineHours ?? 24 }} Stunden vor Beginn</dd>
           </dl>
           @if (canEdit()) {
             <a
-              class="button button-sekundaer button-klein"
-              [routerLink]="['/serien', s.id, 'edit']"
+              class="button button-secondary button-small"
+              [routerLink]="['/serien', s.id, 'bearbeiten']"
               >{{ texts.series.edit }}</a
             >
           }
         </section>
 
-        <section class="karte" aria-labelledby="serie-ausnahmen" data-testid="ausnahmen">
-          <h2 id="serie-ausnahmen" class="abschnitt-titel">
-            {{ texts.series.exceptions }} <span class="anzahl">{{ s.exceptions.length }}</span>
+        <section class="card" aria-labelledby="serie-ausnahmen" data-testid="ausnahmen">
+          <h2 id="serie-ausnahmen" class="section-title">
+            {{ texts.series.exceptions }} <span class="count">{{ s.exceptions.length }}</span>
           </h2>
           @if (s.exceptions.length === 0) {
-            <p class="leer">{{ texts.series.noExceptions }}</p>
+            <p class="empty">{{ texts.series.noExceptions }}</p>
           } @else {
-            <ul class="liste" [attr.aria-label]="texts.series.exceptions">
+            <ul class="list" [attr.aria-label]="texts.series.exceptions">
               @for (a of s.exceptions; track $index) {
-                <li class="zeile">{{ exceptionText(a) }}</li>
+                <li class="row">{{ exceptionText(a) }}</li>
               }
             </ul>
           }
           @if (canEdit()) {
             <form
-              class="formular ausnahme"
+              class="form ausnahme"
               (submit)="createException($event)"
               novalidate
               aria-labelledby="ausnahme-titel"
             >
               <h3 id="ausnahme-titel">{{ texts.series.addException }}</h3>
-              <p class="nebentext" id="ausnahme-hinweis">{{ texts.series.exceptionHint }}</p>
-              <div class="feldreihe">
+              <p class="secondary-text" id="ausnahme-hinweis">{{ texts.series.exceptionHint }}</p>
+              <div class="field-row">
                 @for (f of dateFields; track f.field) {
-                  <div class="feld">
+                  <div class="field">
                     <label [for]="'ausnahme-' + f.field">{{ f.label }}</label>
                     <input
                       [id]="'ausnahme-' + f.field"
@@ -112,12 +112,12 @@ type ExceptionField = 'from' | 'until' | 'reason';
                       "
                     />
                     @if (fieldErrors()[f.field]; as m) {
-                      <p class="feldfehler" [id]="'ausnahme-' + f.field + '-fehler'">{{ m }}</p>
+                      <p class="field-error" [id]="'ausnahme-' + f.field + '-fehler'">{{ m }}</p>
                     }
                   </div>
                 }
               </div>
-              <div class="feld">
+              <div class="field">
                 <label for="ausnahme-grund">{{ texts.series.reason }}</label>
                 <input
                   id="ausnahme-grund"
@@ -132,12 +132,12 @@ type ExceptionField = 'from' | 'until' | 'reason';
                   "
                 />
                 @if (fieldErrors().reason; as m) {
-                  <p class="feldfehler" id="ausnahme-grund-fehler">{{ m }}</p>
+                  <p class="field-error" id="ausnahme-grund-fehler">{{ m }}</p>
                 }
               </div>
               <button
                 type="submit"
-                class="button button-primaer"
+                class="button button-primary"
                 [disabled]="saving()"
                 [attr.aria-busy]="saving() ? 'true' : null"
               >
@@ -198,7 +198,7 @@ export class SeriesPage {
     const s = this.series();
     if (!s) return '';
     // Alle Teams der Serie mit Namen aus der API, auch die, in denen ich nicht bin (TER-11).
-    return TEXTS.termine.joinTeams(s.teams.map((t) => t.name));
+    return TEXTS.events.joinTeams(s.teams.map((t) => t.name));
   });
 
   /** Admins und Coaches eines Teams der Serie (TER-11, RR-06). */

@@ -45,7 +45,7 @@ export class Shell {
     const n = TEXTS.navigation;
     const list: NavEntry[] = [
       { route: '/', text: n.start, icon: 'house', exact: true },
-      { route: '/termine', text: n.termine, icon: 'calendar', exact: false },
+      { route: '/termine', text: n.events, icon: 'calendar', exact: false },
       { route: '/teams', text: n.teams, icon: 'users', exact: false },
       { route: '/profil', text: n.profile, icon: 'user', exact: false },
     ];

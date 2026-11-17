@@ -259,7 +259,7 @@ export class Lines {
             sortOrder: target,
           }),
         );
-        return TEXTS.lines.rescheduled(g.name);
+        return TEXTS.lines.moved(g.name);
       },
       [button, otherButton],
     );

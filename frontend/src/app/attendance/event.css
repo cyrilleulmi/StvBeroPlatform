@@ -1,7 +1,7 @@
 :host,
-.abschnitte {
+.sections {
   display: grid;
-  gap: var(--abschnitt);
+  gap: var(--section-gap);
 }
 
 .status {
@@ -9,65 +9,65 @@
   gap: 4px;
 }
 
-.angaben {
+.facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 2px 16px;
   margin: 0 0 12px;
 }
 
-.angaben dt {
+.facts dt {
   font-size: 13px;
   font-weight: 700;
   color: var(--muted);
   margin-top: 10px;
 }
 
-.angaben dt:first-child {
+.facts dt:first-child {
   margin-top: 0;
 }
 
-.angaben dd {
+.facts dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.angaben a {
+.facts a {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);
   font-weight: 700;
 }
 
-.hinweise {
+.notes {
   white-space: pre-line;
 }
 
 @media (min-width: 640px) {
-  .angaben {
+  .facts {
     grid-template-columns: 160px minmax(0, 1fr);
     align-items: baseline;
     row-gap: 10px;
   }
 
-  .angaben dt {
+  .facts dt {
     margin-top: 0;
   }
 }
 
-.bearbeiten {
+.edit {
   justify-self: start;
 }
 
-/* Lange Wörter ohne Leerzeichen (z.B. eingefügte Links) dürfen die Seite mobil nicht verbreitern. */
+/* Long words without spaces (e.g. pasted links) must not widen the page on mobile. */
 :host,
-.abschnitte {
+.sections {
   grid-template-columns: minmax(0, 1fr);
 }
 
 h1,
-.kopf .nebentext,
+.header .secondary-text,
 .status,
-.hinweise {
+.notes {
   overflow-wrap: anywhere;
 }

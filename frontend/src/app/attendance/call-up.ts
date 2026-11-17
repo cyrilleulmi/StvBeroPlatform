@@ -31,43 +31,43 @@ import { yearOf, eventDate, clockTime } from './time';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
-    <div class="kopf">
-      <a class="zurueck" [routerLink]="['/termine', eventId()]">{{ t.toEvent }}</a>
+    <div class="header">
+      <a class="back" [routerLink]="['/termine', eventId()]">{{ t.toEvent }}</a>
       <h1>{{ t.title }}</h1>
       @if (event(); as tm) {
-        <p class="nebentext">
+        <p class="secondary-text">
           {{ tm.title }} {{ date(tm.start) }} · {{ time(tm.start) }} · {{ teamName() }}
         </p>
       }
     </div>
     @if (message(); as m) {
-      <p class="meldung-erfolg" role="status">{{ m }}</p>
+      <p class="message-success" role="status">{{ m }}</p>
     }
     @if (error(); as m) {
-      <p class="meldung-fehler" role="alert">{{ m }}</p>
+      <p class="message-error" role="alert">{{ m }}</p>
     }
-    <div class="abschnitte" [attr.aria-busy]="loading() ? 'true' : null">
+    <div class="sections" [attr.aria-busy]="loading() ? 'true' : null">
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (callUp(); as a) {
-        <section class="karte stand" aria-labelledby="aufgebot-stand-titel">
-          <h2 id="aufgebot-stand-titel" class="abschnitt-titel">{{ texts.matchDay.callUp }}</h2>
-          <p class="status-zeile">
+        <section class="card state" aria-labelledby="aufgebot-stand-titel">
+          <h2 id="aufgebot-stand-titel" class="section-title">{{ texts.matchDay.callUp }}</h2>
+          <p class="status-row">
             <span class="chip" [attr.data-art]="a.status.toLowerCase()" data-testid="aufgebot-status">{{
               statusText(a)
             }}</span>
-            <span class="anzahl-text" data-testid="aufgebot-anzahl">{{ t.count(a.calledUpCount ?? 0) }}</span>
+            <span class="count-text" data-testid="aufgebot-anzahl">{{ t.count(a.calledUpCount ?? 0) }}</span>
           </p>
           @if (!editable()) {
-            <p class="meldung-hinweis">{{ t.notEditable }}</p>
+            <p class="message-notice">{{ t.notEditable }}</p>
           } @else if (a.status === 'PUBLISHED') {
-            <p class="nebentext">{{ t.publishedNotice }}</p>
+            <p class="secondary-text">{{ t.publishedNotice }}</p>
           } @else {
-            <p class="nebentext">{{ t.draftNotice }}</p>
+            <p class="secondary-text">{{ t.draftNotice }}</p>
             <div>
               <button
                 type="button"
-                class="button button-primaer"
+                class="button button-primary"
                 data-testid="aufgebot-veroeffentlichen"
                 [disabled]="running() || (a.calledUpCount ?? 0) === 0"
                 [attr.aria-describedby]="(a.calledUpCount ?? 0) === 0 ? 'aufgebot-leer' : null"
@@ -76,19 +76,19 @@ import { yearOf, eventDate, clockTime } from './time';
                 {{ t.publish }}
               </button>
               @if ((a.calledUpCount ?? 0) === 0) {
-                <p class="nebentext" id="aufgebot-leer">{{ t.empty }}</p>
+                <p class="secondary-text" id="aufgebot-leer">{{ t.empty }}</p>
               }
             </div>
           }
         </section>
 
-        <section class="karte auswahl" data-testid="aufgebot-auswahl" aria-labelledby="aufgebot-auswahl-titel">
-          <h2 id="aufgebot-auswahl-titel" class="abschnitt-titel">{{ t.selection }}</h2>
-          <p class="nebentext">{{ t.selectionHint }}</p>
+        <section class="card selection" data-testid="aufgebot-auswahl" aria-labelledby="aufgebot-auswahl-titel">
+          <h2 id="aufgebot-auswahl-titel" class="section-title">{{ t.selection }}</h2>
+          <p class="secondary-text">{{ t.selectionHint }}</p>
           @for (g of a.groups; track g.groupId ?? 'ohne-linie') {
-            <fieldset class="gruppe">
+            <fieldset class="group">
               <legend>{{ g.name }}</legend>
-              <ul class="personen">
+              <ul class="people">
                 @for (e of g.entries; track e.person.id) {
                   <li
                     class="person"
@@ -96,7 +96,7 @@ import { yearOf, eventDate, clockTime } from './time';
                     [attr.data-antwort]="e.response.status"
                     [attr.data-aufgeboten]="e.calledUp"
                   >
-                    <label class="auswahl-zeile">
+                    <label class="selection-row">
                       <input
                         type="checkbox"
                         [checked]="e.calledUp"
@@ -107,13 +107,13 @@ import { yearOf, eventDate, clockTime } from './time';
                       />
                       <span class="person-name">{{ name(e.person) }}</span>
                     </label>
-                    <span class="antwort" [id]="'aufgebot-antwort-' + e.person.id">
+                    <span class="response" [id]="'aufgebot-antwort-' + e.person.id">
                       <span class="symbol" [attr.data-art]="key(e.response.status)" aria-hidden="true">
                         <app-icon [name]="icon[e.response.status]" [size]="14" />
                       </span>
                       <span class="status-text">{{ texts.response.status[e.response.status] }}</span>
                       @if (e.response.comment; as k) {
-                        <span class="nebentext kommentar">«{{ k }}»</span>
+                        <span class="secondary-text comment">«{{ k }}»</span>
                       }
                     </span>
                   </li>
@@ -121,7 +121,7 @@ import { yearOf, eventDate, clockTime } from './time';
               </ul>
             </fieldset>
           } @empty {
-            <p class="leer">{{ t.noPlayers }}</p>
+            <p class="empty">{{ t.noPlayers }}</p>
           }
         </section>
       }
@@ -129,18 +129,18 @@ import { yearOf, eventDate, clockTime } from './time';
 
     <dialog
       #dialog
-      class="karte dialog"
+      class="card dialog"
       aria-modal="true"
       aria-labelledby="aufgebot-dialog-titel"
       aria-describedby="aufgebot-dialog-text"
     >
-      <div class="formular">
+      <div class="form">
         <h2 id="aufgebot-dialog-titel">{{ t.dialogTitle }}</h2>
         <p id="aufgebot-dialog-text">{{ t.dialogText(callUp()?.calledUpCount ?? 0, teamName()) }}</p>
-        <div class="dialog-knoepfe">
+        <div class="dialog-buttons">
           <button
             type="button"
-            class="button button-primaer button-klein"
+            class="button button-primary button-small"
             [disabled]="running()"
             [attr.aria-busy]="running() ? 'true' : null"
             (click)="publish()"
@@ -149,7 +149,7 @@ import { yearOf, eventDate, clockTime } from './time';
           </button>
           <button
             type="button"
-            class="button button-sekundaer button-klein"
+            class="button button-secondary button-small"
             [disabled]="running()"
             (click)="closeDialog()"
           >
@@ -298,7 +298,7 @@ export class CallUpPage {
     } catch (e) {
       const status = errorStatus(e);
       if (status === 404 || status === 400) {
-        this.error.set(TEXTS.termine.notFound);
+        this.error.set(TEXTS.events.notFound);
       } else if (status === 409) {
         this.error.set(this.t.matchDayOnly);
       } else {

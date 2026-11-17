@@ -1,42 +1,42 @@
-<div class="kopf">
+<div class="header">
   <a
-    class="zurueck"
+    class="back"
     routerLink="/verwaltung/teams"
     [queryParams]="season() ? { saison: season() } : {}"
     >{{ texts.teamAdmin.allTeams }}</a
   >
   <h1>{{ team()?.name ?? texts.teamAdmin.title }}</h1>
   @if (seasonData(); as s) {
-    <p class="nebentext">{{ texts.teamAdmin.season }} {{ s.name }}</p>
+    <p class="secondary-text">{{ texts.teamAdmin.season }} {{ s.name }}</p>
   }
 </div>
 
 @if (!auth.isAdmin()) {
-  <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
+  <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
   @if (readOnly()) {
-    <p class="meldung-hinweis" data-testid="archiv-hinweis">
+    <p class="message-notice" data-testid="archiv-hinweis">
       {{ texts.season.archiveNotice(seasonData()!.name) }}
     </p>
   }
   @if (success(); as message) {
-    <p class="meldung-erfolg" role="status">{{ message }}</p>
+    <p class="message-success" role="status">{{ message }}</p>
   }
   @if (error(); as message) {
-    <p class="meldung-fehler" role="alert">{{ message }}</p>
+    <p class="message-error" role="alert">{{ message }}</p>
   }
 
   @if (loading()) {
-    <p class="leer" aria-busy="true">{{ texts.common.loading }}</p>
+    <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
   } @else if (team(); as t) {
     @if (!readOnly()) {
       <form
-        class="karte formular"
+        class="card form"
         (submit)="rename($event)"
         novalidate
         aria-label="Team umbenennen"
       >
-        <div class="feld">
+        <div class="field">
           <label for="team-name">{{ texts.teamAdmin.teamnameField }}</label>
           <input
             id="team-name"
@@ -49,12 +49,12 @@
             [attr.aria-describedby]="teamnameError() ? 'team-name-fehler' : null"
           />
           @if (teamnameError(); as m) {
-            <p class="feldfehler" id="team-name-fehler">{{ m }}</p>
+            <p class="field-error" id="team-name-fehler">{{ m }}</p>
           }
         </div>
         <button
           type="submit"
-          class="button button-sekundaer button-klein"
+          class="button button-secondary button-small"
           [disabled]="saving()"
           [attr.aria-busy]="runningAction() === 'rename' ? 'true' : null"
         >
@@ -64,9 +64,9 @@
     }
 
     @if (!readOnly()) {
-      <section class="karte formular" aria-labelledby="su-titel" data-testid="swiss-unihockey">
+      <section class="card form" aria-labelledby="su-titel" data-testid="swiss-unihockey">
         <h2 id="su-titel">{{ texts.swissUnihockey.title }}</h2>
-        <p class="nebentext">{{ texts.swissUnihockey.explanation }}</p>
+        <p class="secondary-text">{{ texts.swissUnihockey.explanation }}</p>
         <p data-testid="su-status">
           {{
             t.suTeamId
@@ -74,8 +74,8 @@
               : texts.swissUnihockey.notLinked
           }}
         </p>
-        <form class="formular" (submit)="link($event)" novalidate>
-          <div class="feld">
+        <form class="form" (submit)="link($event)" novalidate>
+          <div class="field">
             <label for="su-team-id">{{ texts.swissUnihockey.field }}</label>
             <input
               id="su-team-id"
@@ -90,15 +90,15 @@
                 suTeamIdError() ? 'su-team-id-hilfe su-team-id-fehler' : 'su-team-id-hilfe'
               "
             />
-            <p class="nebentext" id="su-team-id-hilfe">{{ texts.swissUnihockey.fieldHelp }}</p>
+            <p class="secondary-text" id="su-team-id-hilfe">{{ texts.swissUnihockey.fieldHelp }}</p>
             @if (suTeamIdError(); as m) {
-              <p class="feldfehler" id="su-team-id-fehler">{{ m }}</p>
+              <p class="field-error" id="su-team-id-fehler">{{ m }}</p>
             }
           </div>
           <div class="su-knoepfe">
             <button
               type="submit"
-              class="button button-sekundaer button-klein"
+              class="button button-secondary button-small"
               [disabled]="saving()"
               [attr.aria-busy]="runningAction() === 'link' ? 'true' : null"
             >
@@ -107,7 +107,7 @@
             @if (t.suTeamId) {
               <button
                 type="button"
-                class="button button-sekundaer button-klein"
+                class="button button-secondary button-small"
                 [disabled]="saving()"
                 [attr.aria-busy]="runningAction() === 'unlink' ? 'true' : null"
                 (click)="unlink()"
@@ -116,7 +116,7 @@
               </button>
               <button
                 type="button"
-                class="button button-primaer button-klein"
+                class="button button-primary button-small"
                 [disabled]="saving()"
                 [attr.aria-busy]="runningAction() === 'sync' ? 'true' : null"
                 (click)="sync()"
@@ -147,24 +147,24 @@
       track block.id
     ) {
       <section
-        class="karte"
+        class="card"
         [attr.aria-labelledby]="'team-' + block.id + '-titel'"
         [attr.data-testid]="'team-' + block.id"
       >
-        <h2 [id]="'team-' + block.id + '-titel'" class="abschnitt-titel">
-          {{ block.title }} <span class="anzahl">{{ block.list.length }}</span>
+        <h2 [id]="'team-' + block.id + '-titel'" class="section-title">
+          {{ block.title }} <span class="count">{{ block.list.length }}</span>
         </h2>
         @if (block.list.length === 0) {
-          <p class="leer">{{ block.empty }}</p>
+          <p class="empty">{{ block.empty }}</p>
         } @else {
-          <ul class="liste" [attr.aria-label]="block.title">
+          <ul class="list" [attr.aria-label]="block.title">
             @for (m of block.list; track m.person.id) {
               <li
-                class="zeile mitglied"
+                class="row mitglied"
                 [attr.aria-label]="name(m.person)"
                 [attr.data-testid]="'mitglied-' + m.person.id"
               >
-                <span class="zeile-titel">{{ name(m.person) }}</span>
+                <span class="row-title">{{ name(m.person) }}</span>
                 @if (readOnly()) {
                   <span class="chip" [attr.data-art]="m.teamRole === 'COACH' ? 'coach' : null">{{
                     teamRole(m.teamRole)
@@ -181,7 +181,7 @@
                   </select>
                   <button
                     type="button"
-                    class="button button-sekundaer button-klein"
+                    class="button button-secondary button-small"
                     [disabled]="saving()"
                     [attr.aria-busy]="
                       runningAction() === 'entfernen:' + m.person.id ? 'true' : null
@@ -200,14 +200,14 @@
 
     @if (!readOnly()) {
       <form
-        class="karte formular"
+        class="card form"
         (submit)="addMember($event)"
         novalidate
         aria-labelledby="aufnehmen-titel"
       >
         <h2 id="aufnehmen-titel">{{ texts.teamAdmin.addMemberTitle }}</h2>
-        <div class="feldreihe">
-          <div class="feld">
+        <div class="field-row">
+          <div class="field">
             <label for="aufnehmen-person">{{ texts.teamAdmin.person }}</label>
             <select
               id="aufnehmen-person"
@@ -229,10 +229,10 @@
               }
             </select>
             @if (personError(); as m) {
-              <p class="feldfehler" id="aufnehmen-person-fehler">{{ m }}</p>
+              <p class="field-error" id="aufnehmen-person-fehler">{{ m }}</p>
             }
           </div>
-          <div class="feld">
+          <div class="field">
             <label for="aufnehmen-funktion">{{ texts.teamAdmin.teamRole }}</label>
             <select id="aufnehmen-funktion" (change)="newTeamRole.set($any($event.target).value)">
               @for (f of teamRoles; track f) {
@@ -243,7 +243,7 @@
         </div>
         <button
           type="submit"
-          class="button button-primaer"
+          class="button button-primary"
           [disabled]="saving()"
           [attr.aria-busy]="runningAction() === 'addMember' ? 'true' : null"
         >

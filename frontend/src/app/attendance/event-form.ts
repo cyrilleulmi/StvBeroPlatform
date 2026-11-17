@@ -79,7 +79,7 @@ type Field = keyof FormValues;
 
 const EMPTY: FormValues = {
   type: 'PRACTICE',
-  title: TEXTS.termine.type.PRACTICE,
+  title: TEXTS.events.type.PRACTICE,
   date: '',
   start: '18:30',
   end: '20:00',
@@ -257,10 +257,10 @@ export class EventForm {
 
   protected selectType(type: EventType): void {
     const old = this.values();
-    const defaultTitle = Object.values(TEXTS.termine.type) as string[];
+    const defaultTitle = Object.values(TEXTS.events.type) as string[];
     this.set('type', type);
     if (!old.title || defaultTitle.includes(old.title)) {
-      this.set('title', TEXTS.termine.type[type]);
+      this.set('title', TEXTS.events.type[type]);
     }
     if (type === 'MATCH_DAY' && this.matches().length === 0) {
       this.addMatch();
@@ -652,7 +652,7 @@ export class EventForm {
     } catch (e) {
       const status = errorStatus(e);
       if (status === 404 || status === 400) {
-        this.error.set(eventId ? TEXTS.termine.notFound : TEXTS.series.notFound);
+        this.error.set(eventId ? TEXTS.events.notFound : TEXTS.series.notFound);
       } else {
         this.error.set(errorText(e));
       }

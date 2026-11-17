@@ -26,26 +26,26 @@ type Field = 'firstName' | 'lastName' | 'email';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <div class="kopf">
-      <a class="zurueck" routerLink="/verwaltung/personen">{{ texts.people.all }}</a>
+    <div class="header">
+      <a class="back" routerLink="/verwaltung/personen">{{ texts.people.all }}</a>
       <h1>{{ personId() ? texts.people.edit : texts.people.create }}</h1>
     </div>
     @if (!auth.isAdmin()) {
-      <p class="meldung-fehler" role="alert">{{ texts.common.noPermission }}</p>
+      <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       @if (success(); as message) {
-        <p class="meldung-erfolg" role="status">{{ message }}</p>
+        <p class="message-success" role="status">{{ message }}</p>
       }
       @if (error(); as message) {
-        <p class="meldung-fehler" role="alert">{{ message }}</p>
+        <p class="message-error" role="alert">{{ message }}</p>
       }
       @if (loading()) {
-        <p class="leer" aria-busy="true">{{ texts.common.loading }}</p>
+        <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
       } @else if (!notFound()) {
-        <form class="karte formular" [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <div class="feldreihe">
+        <form class="card form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <div class="field-row">
             @for (f of nameFields; track f.field) {
-              <div class="feld">
+              <div class="field">
                 <label [for]="'person-' + f.field">{{ f.label }}</label>
                 <input
                   [id]="'person-' + f.field"
@@ -59,12 +59,12 @@ type Field = 'firstName' | 'lastName' | 'email';
                   "
                 />
                 @if (fieldErrors()[f.field]; as m) {
-                  <p class="feldfehler" [id]="'person-' + f.field + '-fehler'">{{ m }}</p>
+                  <p class="field-error" [id]="'person-' + f.field + '-fehler'">{{ m }}</p>
                 }
               </div>
             }
           </div>
-          <div class="feld">
+          <div class="field">
             <label for="person-email">{{ texts.people.email }}</label>
             <input
               id="person-email"
@@ -75,7 +75,7 @@ type Field = 'firstName' | 'lastName' | 'email';
               [attr.aria-describedby]="fieldErrors()['email'] ? 'person-email-fehler' : null"
             />
             @if (fieldErrors()['email']; as m) {
-              <p class="feldfehler" id="person-email-fehler">{{ m }}</p>
+              <p class="field-error" id="person-email-fehler">{{ m }}</p>
             }
           </div>
           <label class="checkbox">
@@ -84,7 +84,7 @@ type Field = 'firstName' | 'lastName' | 'email';
           </label>
           <button
             type="submit"
-            class="button button-primaer"
+            class="button button-primary"
             [disabled]="saving()"
             [attr.aria-busy]="saving() ? 'true' : null"
           >
@@ -93,18 +93,18 @@ type Field = 'firstName' | 'lastName' | 'email';
         </form>
 
         @if (detail(); as d) {
-          <section class="karte" aria-labelledby="person-zugehoerigkeiten">
-            <h2 id="person-zugehoerigkeiten" class="abschnitt-titel">
+          <section class="card" aria-labelledby="person-zugehoerigkeiten">
+            <h2 id="person-zugehoerigkeiten" class="section-title">
               {{ texts.people.memberships }}
             </h2>
             @if (d.memberships.length === 0) {
-              <p class="leer">{{ texts.people.noMemberships }}</p>
+              <p class="empty">{{ texts.people.noMemberships }}</p>
             } @else {
-              <ul class="liste" [attr.aria-label]="texts.people.memberships">
+              <ul class="list" [attr.aria-label]="texts.people.memberships">
                 @for (z of d.memberships; track z.team.id + z.seasonId) {
-                  <li class="zeile">
+                  <li class="row">
                     <a
-                      class="zeile-titel"
+                      class="row-title"
                       [routerLink]="['/verwaltung/teams', z.team.id]"
                       [queryParams]="{ saison: z.seasonId }"
                       >{{ z.team.name }}</a
@@ -112,7 +112,7 @@ type Field = 'firstName' | 'lastName' | 'email';
                     <span class="chip" [attr.data-art]="z.teamRole === 'COACH' ? 'coach' : null">{{
                       teamRole(z.teamRole)
                     }}</span>
-                    <span class="nebentext">{{ seasonName(z.seasonId) }}</span>
+                    <span class="secondary-text">{{ seasonName(z.seasonId) }}</span>
                   </li>
                 }
               </ul>

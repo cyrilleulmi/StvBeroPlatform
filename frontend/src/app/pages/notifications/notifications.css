@@ -1,8 +1,8 @@
-.eintrag {
+.entry {
   align-items: flex-start;
 }
 
-.eintrag app-icon {
+.entry app-icon {
   margin-top: 2px;
 }
 
@@ -14,16 +14,16 @@
   justify-items: start;
 }
 
-/* Gelesene treten zurück; ungelesene sind zusätzlich mit «Neu» markiert (nicht nur über die Schrift). */
-li[data-gelesen='true'] .zeile-titel {
+/* Read ones step back; unread ones are also marked with «Neu» (not only through the font). */
+li[data-read='true'] .row-title {
   font-weight: 500;
 }
 
-.zeit {
+.time {
   color: var(--muted);
   font-size: 13px;
 }
 
-.chip[data-art='neu'] {
+.chip[data-kind='new'] {
   background: var(--coral-soft);
 }

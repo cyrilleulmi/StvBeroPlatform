@@ -1,13 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * E2E-Tests (docs/testbarkeit.md). Jeder Test läuft mobil und auf dem Desktop.
- * Backend (Profil dev) und Frontend werden gestartet, falls sie nicht schon laufen.
- * Die Datenbank muss laufen: scripts/db-start.sh (lokal) bzw. Service-Container (CI).
+ * E2E tests (docs/testability.md). Every test runs on mobile and on desktop.
+ * Backend (profile dev) and frontend are started if they are not already running.
+ * The database must be running: scripts/db-start.sh (local) or service container (CI).
  */
 export default defineConfig({
   testDir: './tests',
-  // Alle Tests teilen sich eine Datenbank und setzen sie zurück: nacheinander ausführen.
+  // All tests share one database and reset it: run them one after another.
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
@@ -26,7 +26,7 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'mobil',
+      name: 'mobile',
       use: { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, userAgent: devices['Pixel 7'].userAgent },
     },
     {

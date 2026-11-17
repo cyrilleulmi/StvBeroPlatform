@@ -1,6 +1,6 @@
 # Test plan follow-up fix #15 · Navigation labels complete on mobile
 
-Issue #15 · PR #29 · Main navigation (`data-testid="hauptnavigation"`, `docs/ui/navigation.md`)
+Issue #15 · PR #29 · Main navigation (`data-testid="main-navigation"`, `docs/ui/navigation.md`)
 
 General, for every case:
 

@@ -2,50 +2,50 @@ import type { Page } from '@playwright/test';
 import { expect, login, reset, test } from './helpers';
 
 /**
- * Nachbesserung #26 · Abmelden ist idempotent. Zwei (auch gleichzeitige) `POST /api/logout`
- * mit demselben Sitzungs-Cookie antworten beide mit 204 und löschen das Cookie, nie mit 500.
- * Die Browser-Konsole prüft `hilfen.ts` nach jedem Test.
+ * Follow-up fix #26 · Signing out is idempotent. Two (also simultaneous) `POST /api/logout`
+ * with the same session cookie both answer with 204 and delete the cookie, never with 500.
+ * `helpers.ts` checks the browser console after every test.
  */
 
-/** Sammelt alle Antworten mit Status 5xx der Seite. */
-function serverfehler(page: Page): string[] {
-  const fehler: string[] = [];
+/** Collects all responses of the page with status 5xx. */
+function collectServerErrors(page: Page): string[] {
+  const errors: string[] = [];
   page.on('response', (r) => {
-    if (r.status() >= 500) fehler.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`);
+    if (r.status() >= 500) errors.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`);
   });
-  return fehler;
+  return errors;
 }
 
-/** Konsolenfehler eines weiteren Tabs (`hilfen.ts` prüft nur `page`). */
-function konsolenfehler(tab: Page, erlaubt: RegExp[] = []): string[] {
-  const fehler: string[] = [];
+/** Console errors of another tab (`helpers.ts` checks only `page`). */
+function collectConsoleErrors(tab: Page, allowed: RegExp[] = []): string[] {
+  const errors: string[] = [];
   tab.on('console', (m) => {
-    if (m.type() === 'error' && !erlaubt.some((e) => e.test(m.text()))) fehler.push(m.text());
+    if (m.type() === 'error' && !allowed.some((e) => e.test(m.text()))) errors.push(m.text());
   });
-  tab.on('pageerror', (e) => fehler.push(e.message));
-  return fehler;
+  tab.on('pageerror', (e) => errors.push(e.message));
+  return errors;
 }
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('Nachbesserung #26 K1: zwei gleichzeitige Abmeldungen mit demselben Cookie antworten beide mit 204', async ({ page }) => {
+test('Follow-up fix #26 K1: two simultaneous sign-outs with the same cookie both answer with 204', async ({ page }) => {
   await login(page, 'anna');
 
-  const antworten = await Promise.all(
+  const responses = await Promise.all(
     Array.from({ length: 4 }, () => page.request.post('/api/logout')),
   );
 
-  for (const antwort of antworten) {
-    expect(antwort.status()).toBe(204);
-    expect(antwort.headers()['set-cookie']).toContain('stv_session=;');
+  for (const response of responses) {
+    expect(response.status()).toBe(204);
+    expect(response.headers()['set-cookie']).toContain('stv_session=;');
   }
   expect((await (await page.request.get('/api/session')).json()).signedIn).toBe(false);
 });
 
-test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Profil führt zur Anmeldung, ohne 5xx', async ({ page }) => {
-  const fehler = serverfehler(page);
+test('Follow-up fix #26 K2: double click on Abmelden in the profile leads to sign-in, without 5xx', async ({ page }) => {
+  const errors = collectServerErrors(page);
   await login(page, 'anna');
   await page.goto('/profil');
 
@@ -53,35 +53,35 @@ test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Profil führt zur Anmeld
 
   await expect(page).toHaveURL('/dev-login');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  expect(fehler).toEqual([]);
+  expect(errors).toEqual([]);
 });
 
-test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs abmelden führt beide zur Anmeldung, ohne 5xx', async ({ page, context }) => {
+test('Follow-up fix #26 K2: signing out in two tabs at the same time leads both to sign-in, without 5xx', async ({ page, context }) => {
   await login(page, 'anna');
-  const zweiter = await context.newPage();
-  const fehler = [page, zweiter].map(serverfehler);
-  const zweiterKonsole = konsolenfehler(zweiter);
+  const second = await context.newPage();
+  const errors = [page, second].map(collectServerErrors);
+  const secondConsole = collectConsoleErrors(second);
   await page.goto('/profil');
-  await zweiter.goto('/profil');
+  await second.goto('/profil');
 
   await Promise.all([
     page.getByRole('button', { name: 'Abmelden' }).click(),
-    zweiter.getByRole('button', { name: 'Abmelden' }).click(),
+    second.getByRole('button', { name: 'Abmelden' }).click(),
   ]);
 
   await expect(page).toHaveURL('/dev-login');
-  await expect(zweiter).toHaveURL('/dev-login');
-  expect(fehler.flat()).toEqual([]);
-  expect(zweiterKonsole, 'Fehler in der Konsole des zweiten Tabs').toEqual([]);
-  await zweiter.close();
+  await expect(second).toHaveURL('/dev-login');
+  expect(errors.flat()).toEqual([]);
+  expect(secondConsole, 'Errors in the console of the second tab').toEqual([]);
+  await second.close();
 });
 
-test.describe('ohne aktuelle Saison', () => {
+test.describe('without current season', () => {
   test.use({ expectedConsoleErrors: [/status of 409/] });
 
-  test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» führt zur Anmeldung, ohne 5xx', async ({ page, request }) => {
+  test('Follow-up fix #26 K2: double click on Abmelden in the «keine Saison» notice leads to sign-in, without 5xx', async ({ page, request }) => {
     expect((await request.delete('/api/test/current-season')).status()).toBe(204);
-    const fehler = serverfehler(page);
+    const errors = collectServerErrors(page);
     await login(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
@@ -89,29 +89,29 @@ test.describe('ohne aktuelle Saison', () => {
     await page.getByRole('button', { name: 'Abmelden' }).dblclick();
 
     await expect(page).toHaveURL('/dev-login');
-    expect(fehler).toEqual([]);
+    expect(errors).toEqual([]);
   });
 
-  test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs vom Hinweis «keine Saison» abmelden, ohne 5xx', async ({ page, context, request }) => {
+  test('Follow-up fix #26 K2: signing out from the «keine Saison» notice in two tabs at the same time, without 5xx', async ({ page, context, request }) => {
     expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     await login(page, 'anna');
-    const zweiter = await context.newPage();
-    const fehler = [page, zweiter].map(serverfehler);
-    const zweiterKonsole = konsolenfehler(zweiter, [/status of 409/]);
+    const second = await context.newPage();
+    const errors = [page, second].map(collectServerErrors);
+    const secondConsole = collectConsoleErrors(second, [/status of 409/]);
     await page.goto('/');
-    await zweiter.goto('/');
+    await second.goto('/');
     await expect(page).toHaveURL('/keine-saison');
-    await expect(zweiter).toHaveURL('/keine-saison');
+    await expect(second).toHaveURL('/keine-saison');
 
     await Promise.all([
       page.getByRole('button', { name: 'Abmelden' }).click(),
-      zweiter.getByRole('button', { name: 'Abmelden' }).click(),
+      second.getByRole('button', { name: 'Abmelden' }).click(),
     ]);
 
     await expect(page).toHaveURL('/dev-login');
-    await expect(zweiter).toHaveURL('/dev-login');
-    expect(fehler.flat()).toEqual([]);
-    expect(zweiterKonsole, 'Fehler in der Konsole des zweiten Tabs').toEqual([]);
-    await zweiter.close();
+    await expect(second).toHaveURL('/dev-login');
+    expect(errors.flat()).toEqual([]);
+    expect(secondConsole, 'Errors in the console of the second tab').toEqual([]);
+    await second.close();
   });
 });

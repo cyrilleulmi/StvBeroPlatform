@@ -16,20 +16,20 @@ import { TEXTS } from '../../core/texts';
   template: `
     <h1>{{ texts.teams.title }}</h1>
     @if (error(); as message) {
-      <p class="meldung-fehler" role="alert">{{ message }}</p>
+      <p class="message-error" role="alert">{{ message }}</p>
     }
-    <section class="karte" aria-labelledby="teams-liste" [attr.aria-busy]="loading() ? 'true' : null">
-      <h2 id="teams-liste" class="visuell-versteckt">{{ texts.teams.title }}</h2>
+    <section class="card" aria-labelledby="teams-liste" [attr.aria-busy]="loading() ? 'true' : null">
+      <h2 id="teams-liste" class="visually-hidden">{{ texts.teams.title }}</h2>
       @if (loading()) {
-        <p class="leer">{{ texts.common.loading }}</p>
+        <p class="empty">{{ texts.common.loading }}</p>
       } @else if (teams().length === 0) {
-        <p class="leer">{{ texts.teams.empty }}</p>
+        <p class="empty">{{ texts.teams.empty }}</p>
       } @else {
-        <ul class="liste" [attr.aria-label]="texts.teams.title">
+        <ul class="list" [attr.aria-label]="texts.teams.title">
           @for (t of teams(); track t.id) {
             <li [attr.data-testid]="'team-karte-' + t.id">
-              <a class="zeile-link" [routerLink]="['/teams', t.id]">
-                <span class="zeile-titel">{{ t.name }}</span>
+              <a class="row-link" [routerLink]="['/teams', t.id]">
+                <span class="row-title">{{ t.name }}</span>
                 <span class="chip" [attr.data-art]="t.myTeamRole === 'COACH' ? 'coach' : null">{{
                   teamRole(t.myTeamRole)
                 }}</span>
