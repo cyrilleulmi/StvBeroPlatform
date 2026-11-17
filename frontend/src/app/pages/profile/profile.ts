@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
@@ -13,11 +13,11 @@ interface Option {
   preview: string | null;
 }
 
-/** Profile: name, theme (NF-06, NF-08), log out. */
+/** Profile: name, own statistics (STA-08), theme (NF-06, NF-08), log out. */
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, RouterLink],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -29,6 +29,10 @@ export class Profile {
   protected readonly error = signal<string | null>(null);
   /** While logging out, further clicks are blocked (double click). */
   protected readonly loggingOut = signal(false);
+  /** «Meine Statistik» only for players (in at least one team of the current season, STA-08). */
+  protected readonly isPlayer = computed(
+    () => this.auth.me()?.memberships.some((m) => m.teamRole === 'PLAYER') ?? false,
+  );
 
   protected readonly options: Option[] = [
     { value: 'light', text: TEXTS.profile.light, preview: 'light' },

@@ -9,6 +9,19 @@
   </section>
 }
 
+@if (isPlayer()) {
+  <section class="card" aria-labelledby="profile-statistics">
+    <h2 id="profile-statistics" class="section-title">{{ texts.statistics.myTitle }}</h2>
+    <p class="secondary-text">{{ texts.statistics.myHint }}</p>
+    <a
+      class="button button-secondary button-small"
+      routerLink="/profil/statistik"
+      data-testid="my-statistics-link"
+      >{{ texts.statistics.myLink }}</a
+    >
+  </section>
+}
+
 <section class="card">
   <fieldset class="switch" data-testid="theme-switch">
     <legend>{{ texts.profile.theme }}</legend>

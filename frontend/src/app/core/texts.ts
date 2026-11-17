@@ -66,8 +66,7 @@ export const TEXTS = {
     onBehalf: (name: string) => `Antwort für ${name} eintragen`,
     onBehalfText: (name: string) =>
       `Zum Beispiel, wenn sich ${name} mündlich abgemeldet hat. Bei der Antwort steht, dass du sie eingetragen hast.`,
-    onBehalfSaved: (name: string, status: string) =>
-      `Antwort für ${name} gespeichert: ${status}.`,
+    onBehalfSaved: (name: string, status: string) => `Antwort für ${name} gespeichert: ${status}.`,
     response: 'Antwort',
     commentOptional: 'Kommentar (bei «vielleicht» Pflicht)',
   },
@@ -173,8 +172,7 @@ export const TEXTS = {
     },
     publishedAt: (date: string, time: string) => `veröffentlicht am ${date} ${time}`,
     draftNotice: 'Die Spielerinnen sehen das Aufgebot erst, wenn du es veröffentlichst.',
-    publishedNotice:
-      'Die Spielerinnen sehen, ob sie aufgeboten sind. Änderungen sehen sie sofort.',
+    publishedNotice: 'Die Spielerinnen sehen, ob sie aufgeboten sind. Änderungen sehen sie sofort.',
     count: (n: number) => (n === 1 ? '1 aufgeboten' : `${n} aufgeboten`),
     calledUp: 'aufgeboten',
     saved: (name: string, yes: boolean) =>
@@ -219,6 +217,70 @@ export const TEXTS = {
     notAvailable: 'Für diesen Termin lässt sich keine Präsenz erfassen.',
     yourAttendance: 'Deine Präsenz',
     yourAttendanceText: (status: string) => `Der Coach hat dich als «${status}» erfasst.`,
+  },
+  statistics: {
+    title: 'Statistik',
+    link: 'Statistik',
+    myTitle: 'Meine Statistik',
+    myLink: 'Statistik ansehen',
+    myHint: 'Wie oft du zugesagt hast und dabei warst.',
+    toStatistics: 'Zur Statistik',
+    toProfile: 'Zum Profil',
+    filter: 'Filter',
+    team: 'Team',
+    from: 'Von',
+    to: 'Bis',
+    type: 'Art',
+    allTypes: 'Alle Termine',
+    practices: 'Trainings',
+    matchDays: 'Spieltage',
+    wholeSeason: 'Ganze Saison',
+    season: (team: string, season: string) => `${team} · Saison ${season}`,
+    period: (from: string, to: string) => `${from} – ${to}`,
+    sort: 'Sortieren nach',
+    sortName: 'Name',
+    sortAttending: 'Zusagequote',
+    sortAttendance: 'Präsenzquote',
+    base: (events: number, attendanceEvents: number) =>
+      `${events} ${events === 1 ? 'Termin' : 'Termine'} im Zeitraum. ` +
+      (attendanceEvents === 0
+        ? 'Präsenz ist für keinen davon erfasst.'
+        : `Die Präsenzquote beruht auf ${attendanceEvents} ${attendanceEvents === 1 ? 'Termin' : 'Terminen'} mit erfasster Präsenz.`),
+    countsHint:
+      'Es zählen nur vergangene Termine, ohne abgesagte. Wer später ins Team gekommen ist, zählt ab diesem Tag.',
+    column: {
+      name: 'Name',
+      events: 'Termine',
+      attending: 'dabei',
+      declined: 'nicht dabei',
+      maybe: 'vielleicht',
+      pending: 'offen',
+      attendingRate: 'Zusagequote',
+      lateCancellations: 'kurzfristig abgemeldet',
+      present: 'anwesend',
+      absent: 'abwesend',
+      excused: 'entschuldigt',
+      attendanceRate: 'Präsenzquote',
+    },
+    table: (group: string) => `Statistik ${group}`,
+    average: 'Teamschnitt',
+    averageHint: 'Durchschnitt pro Spielerin.',
+    noRate: '–',
+    percent: (value: number) => `${value} %`,
+    noPlayers: 'Dieses Team hat noch keine Spielerinnen.',
+    noTeams: 'In dieser Saison gibt es noch keine Teams.',
+    numbers: 'Zahlen',
+    joinedOn: (date: string) => `Im Team seit ${date}.`,
+    attendanceBase: (n: number) =>
+      n === 0
+        ? 'Präsenz ist für keinen Termin erfasst.'
+        : `Präsenzquote auf Basis von ${n} ${n === 1 ? 'Termin' : 'Terminen'} mit erfasster Präsenz.`,
+    events: 'Termine im Zeitraum',
+    noEvents: 'Keine Termine im Zeitraum.',
+    response: (status: string) => `Antwort: ${status}`,
+    attendance: (status: string) => `Präsenz: ${status}`,
+    notPlaying: 'Du spielst in dieser Saison in keinem Team.',
+    personNotPlaying: 'Diese Person spielt in dieser Saison in keinem Team.',
   },
   eventForm: {
     newTitle: 'Termin erfassen',
@@ -468,12 +530,7 @@ export const TEXTS = {
     unlink: 'Verknüpfung lösen',
     unlinked: 'Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.',
     sync: 'Jetzt abgleichen',
-    synced: (e: {
-      created: number;
-      changed: number;
-      missing: number;
-      unchanged: number;
-    }) =>
+    synced: (e: { created: number; changed: number; missing: number; unchanged: number }) =>
       `Abgleich fertig: ${e.created} neu, ${e.changed} geändert, ` +
       `${e.missing} nicht mehr bei swiss unihockey, ${e.unchanged} unverändert.`,
   },

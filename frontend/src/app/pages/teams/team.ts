@@ -61,21 +61,30 @@ import { TEXTS } from '../../core/texts';
             </ul>
           }
         </section>
-        <section
-          class="card"
-          aria-labelledby="team-players-title"
-          data-testid="team-players"
-        >
+        <section class="card" aria-labelledby="team-players-title" data-testid="team-players">
           <div class="players-header">
             <h2 id="team-players-title" class="section-title">
               {{ texts.teams.players }} <span class="count">{{ players().length }}</span>
             </h2>
-            @if (canEditLines()) {
-              <a
-                class="button button-secondary button-small"
-                [routerLink]="['/teams', t.id, 'linien']"
-                >{{ texts.teams.editLines }}</a
-              >
+            @if (canEditLines() || canSeeStatistics()) {
+              <div class="team-actions">
+                @if (canSeeStatistics()) {
+                  <a
+                    class="button button-secondary button-small"
+                    routerLink="/statistik"
+                    [queryParams]="{ team: t.id }"
+                    data-testid="statistics-link"
+                    >{{ texts.statistics.link }}</a
+                  >
+                }
+                @if (canEditLines()) {
+                  <a
+                    class="button button-secondary button-small"
+                    [routerLink]="['/teams', t.id, 'linien']"
+                    >{{ texts.teams.editLines }}</a
+                  >
+                }
+              </div>
             }
           </div>
           @if (players().length === 0) {
@@ -108,6 +117,11 @@ import { TEXTS } from '../../core/texts';
       justify-content: space-between;
       gap: 8px;
       margin-bottom: 8px;
+    }
+    .team-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     .players-header .section-title {
       margin: 0;
@@ -162,6 +176,9 @@ export class Team {
   protected readonly canEditLines = computed(
     () => !this.season() && (this.auth.canManage() || this.team()?.myTeamRole === 'COACH'),
   );
+
+  /** Team statistics: coaches (of any team, E-69) and admins, current season (STA-01). */
+  protected readonly canSeeStatistics = computed(() => !this.season() && this.auth.canManage());
 
   /** All players: by groups, then without a line. Coaches are never included (PTF-07). */
   protected readonly players = computed<PersonSummary[]>(() => {
