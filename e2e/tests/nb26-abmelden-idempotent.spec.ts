@@ -39,7 +39,7 @@ test('Nachbesserung #26 K1: zwei gleichzeitige Abmeldungen mit demselben Cookie 
 
   for (const antwort of antworten) {
     expect(antwort.status()).toBe(204);
-    expect(antwort.headers()['set-cookie']).toContain('stv_sitzung=;');
+    expect(antwort.headers()['set-cookie']).toContain('stv_session=;');
   }
   expect((await (await page.request.get('/api/session')).json()).signedIn).toBe(false);
 });

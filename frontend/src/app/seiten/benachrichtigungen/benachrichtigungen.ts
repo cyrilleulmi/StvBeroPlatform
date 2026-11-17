@@ -150,7 +150,7 @@ export class Benachrichtigungen implements OnInit {
   }
 
   private alsGelesen(ids: string[]): void {
-    this.liste.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, gelesen: true } : b)));
+    this.liste.update((l) => l.map((b) => (ids.includes(b.id) ? { ...b, read: true } : b)));
   }
 
   private async ausfuehren(aktion: () => Promise<void>): Promise<void> {
