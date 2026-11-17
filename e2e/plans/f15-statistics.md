@@ -22,3 +22,6 @@ General for every case: `POST /api/test/reset`, clock as seeded (17.11.2026) unl
 | T13 Mobile layout (STA-10) | `petra` | 375px, `document.scrollingElement.scrollWidth` | No horizontal page scroll; table scrolls inside its card, name column stays visible |
 | T14 Dark mode | `petra`, `anna` | «GitHub Dark» on `/statistik`, `/statistik/<Anna>`, `/profil/statistik` | Readable, no white on white, sticky name column has a background |
 | T15 Robustness | `petra` | Back button after opening a player, reload on `/statistik/<Anna>?von=…`, rapid filter changes | Filters restored, no stale or mixed results, no errors |
+| T16 Percent on one line (STA-06, STA-08, STA-10, round 2) | `anna`, 375×812, light and dark | `/profil` → «Statistik ansehen»; as `petra` `/statistik/<Anna>` | In `statistics-numbers` «Präsenzquote» «100 %» on one line (`dd` height = one line height), no horizontal page scroll |
+| T17 Average with one decimal (STA-05, round 2) | `petra` | `/statistik` card «Teamschnitt» | Every count with one decimal: «24.1 1.6 0.4 0.1 22.0»; rates «6 %», «57 %» |
+| T18 Back link of a player on her own page (STA-08, round 2) | `anna`; `petra` | `/statistik/<Anna>` as `anna`; same as `petra` | `anna`: link «Zum Profil» to `/profil`, no «Zur Statistik»; `petra`: «Zur Statistik» keeps the filters |
