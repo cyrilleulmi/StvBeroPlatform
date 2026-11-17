@@ -210,8 +210,9 @@ test('F-01 K7 S16 SAI-02: Archive is visible read-only', async ({ page }) => {
   expect(change.status()).toBe(409);
 });
 
-test('F-01 K8 RR-04 RR-07: Administration is locked for non-admins', async ({ page }) => {
-  await login(page, 'petra');
+test('F-01 K8 RR-04 RR-07 F-12 K6: Administration is locked for players', async ({ page }) => {
+  // Since F-12 coaches manage people and teams; Anna is a player only.
+  await login(page, 'anna');
 
   for (const route of [
     '/verwaltung',

@@ -302,7 +302,7 @@ export const TEXTS = {
   lines: {
     title: 'Linien',
     backTo: (team: string) => `Zurück zu ${team}`,
-    readOnly: 'Nur Coaches des Teams können die Einteilung ändern.',
+    readOnly: 'Nur Coaches können die Einteilung ändern.',
     noLine: 'Ohne Linie',
     goalies: 'Goalies',
     empty: 'Noch niemand eingeteilt.',

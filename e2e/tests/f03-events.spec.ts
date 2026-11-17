@@ -112,23 +112,24 @@ test('F-03 K3 TER-01 TER-11: Petra creates an event for Team 1 + Team 2', async 
   }
 });
 
-test('F-03 K3 RR-07: Marc may not create for Team 1 (403)', async ({ page }) => {
+test('F-03 K3 F-12: Marc (coach of Team 2) may create for Team 1, Lea (player) may not (403)', async ({ page }) => {
+  const data = {
+    type: 'PRACTICE',
+    title: 'Training',
+    start: '2026-11-20T18:00:00+01:00',
+    end: '2026-11-20T19:30:00+01:00',
+    teamIds: [TEAM_1],
+  };
+  await login(page, 'lea');
+  expect((await page.request.post('/api/events', { data })).status()).toBe(403);
   await login(page, 'marc');
-  const response = await page.request.post('/api/events', {
-    data: {
-      type: 'PRACTICE',
-      title: 'Training',
-      start: '2026-11-20T18:00:00+01:00',
-      end: '2026-11-20T19:30:00+01:00',
-      teamIds: [TEAM_1],
-    },
-  });
-  expect(response.status()).toBe(403);
-  // In the UI the form offers Marc only his own teams
+  // In the UI the form offers coaches all teams (F-12)
   await page.goto('/termine/neu');
   const teams = page.getByRole('group', { name: 'Teams' });
   await expect(teams.getByRole('checkbox', { name: 'Team 2' })).toBeVisible();
-  await expect(teams.getByRole('checkbox', { name: 'Team 1' })).toHaveCount(0);
+  await expect(teams.getByRole('checkbox', { name: 'Team 1' })).toBeVisible();
+  await expect(teams.getByRole('checkbox', { name: 'Team 3' })).toBeVisible();
+  expect((await page.request.post('/api/events', { data })).status()).toBe(201);
 });
 
 test('F-03 K3 RR-05: Players see «Keine Berechtigung» when creating', async ({ page }) => {

@@ -79,7 +79,7 @@ test('F-02 K1 LIN-01 LIN-06 LIN-09: Seed with lines, goalies and «Ohne Linie»'
   await expect(page).toHaveURL(`/teams/${TEAM_1}/linien`);
 });
 
-test('F-02 K2 LIN-07 LIN-09: Add, rename, move and delete a line', async ({ page }) => {
+test('F-02 K2 LIN-07 LIN-09 RR-08: Add, rename, move and delete a line', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
   const management = page.getByTestId('lines-management');
@@ -110,6 +110,12 @@ test('F-02 K2 LIN-07 LIN-09: Add, rename, move and delete a line', async ({ page
   await page.getByRole('button', { name: 'Powerplay nach oben' }).click();
   await expect.poll(() => groupTitles(management)).toEqual(['Powerplay', 'Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
   await expect(page.getByRole('button', { name: 'Linie 2 nach unten' })).toBeDisabled();
+
+  // Deleting is for admins only (RR-08, F-12): Petra sees no «löschen»
+  await expect(page.getByRole('button', { name: /löschen/ })).toHaveCount(0);
+  await login(page, 'alex');
+  await page.reload();
+  await expect.poll(() => groupTitles(management)).toEqual(['Powerplay', 'Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
 
   // Delete with confirmation: the players are «Ohne Linie» afterwards (LIN-06)
   await page.getByRole('button', { name: 'Linie 2 löschen' }).click();
@@ -208,7 +214,7 @@ test('F-02 K5 LIN-03: Lea has different lines in Team 1 and Team 2', async ({ pa
 });
 
 test('F-02 K6 LIN-05: Goalies exist exactly once and cannot be deleted', async ({ page }) => {
-  await login(page, 'petra');
+  await login(page, 'alex');
   await page.goto(`/teams/${TEAM_1}/linien`);
   const goalies = page.getByTestId(`group-${T1_GOALIES}`);
   await expect(goalies.getByRole('heading', { level: 2 })).toContainText('Goalies');
@@ -224,10 +230,10 @@ test('F-02 K6 LIN-05: Goalies exist exactly once and cannot be deleted', async (
   await expect(page.getByRole('heading', { level: 2, name: /^Goalies/ })).toHaveCount(1);
 });
 
-test('F-02 K7 RR-07: anna sees the line-up read-only, marc may not change Team 1', async ({ page }) => {
+test('F-02 K7 RR-07 F-12: anna sees the line-up read-only, coaches of other teams may change it', async ({ page }) => {
   await login(page, 'anna');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  await expect(page.getByText('Nur Coaches des Teams können die Einteilung ändern.')).toBeVisible();
+  await expect(page.getByText('Nur Coaches können die Einteilung ändern.')).toBeVisible();
   await expect.poll(() => names(page.getByTestId(`group-${T1_LINE_1}`))).toEqual(['Mia Frei', 'Lea Graf', 'Anna Muster']);
   await expect(page.getByRole('combobox')).toHaveCount(0);
   await expect(page.getByTestId('add-line')).toHaveCount(0);
@@ -241,25 +247,28 @@ test('F-02 K7 RR-07: anna sees the line-up read-only, marc may not change Team 1
   });
   expect(annaChanges.status()).toBe(403);
 
-  // petra is only a player in Team 2: read-only
-  await login(page, 'petra');
+  // lea is a player only, also in Team 2: read-only
+  await login(page, 'lea');
   await page.goto(`/teams/${TEAM_2}/linien`);
-  await expect(page.getByText('Nur Coaches des Teams können die Einteilung ändern.')).toBeVisible();
+  await expect(page.getByText('Nur Coaches können die Einteilung ändern.')).toBeVisible();
   await expect(page.getByTestId(`group-${T2_GOALIES}`)).toBeVisible();
   await expect(page.getByRole('combobox')).toHaveCount(0);
 
+  // petra is only a player in Team 2, but coach in Team 1: she may change it (F-12 K7)
+  await login(page, 'petra');
+  await page.goto(`/teams/${TEAM_2}/linien`);
+  await expect(page.getByTestId('add-line')).toBeVisible();
+  await expect(page.getByRole('button', { name: /löschen/ })).toHaveCount(0);
+
+  // marc is coach of Team 2 and changes Team 1, without deleting (F-12 K1, K3)
   await login(page, 'marc');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
-  await expect(page.getByTestId('lines-management')).toHaveCount(0);
-  for (const request of [
-    page.request.put(`/api/teams/${TEAM_1}/assignments/${ANNA}`, { data: { groupId: T1_LINE_2 } }),
-    page.request.post(`/api/teams/${TEAM_1}/groups`, { data: { name: 'Linie 3' } }),
-    page.request.put(`/api/teams/${TEAM_1}/groups/${T1_LINE_1}`, { data: { name: 'X' } }),
-    page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_LINE_1}`),
-  ]) {
-    expect((await request).status()).toBe(403);
-  }
+  await expect(page.getByTestId('lines-management')).toBeVisible();
+  await expect(page.getByRole('button', { name: /löschen/ })).toHaveCount(0);
+  await page.getByTestId(`assignment-${ANNA}`).selectOption({ label: 'Linie 2' });
+  await expect(page.getByRole('status')).toHaveText('Anna Muster ist jetzt in Linie 2.');
+  await expect.poll(() => names(page.getByTestId(`group-${T1_LINE_2}`))).toContain('Anna Muster');
+  expect((await page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_LINE_1}`)).status()).toBe(403);
 });
 
 test.describe('Name already taken', () => {
