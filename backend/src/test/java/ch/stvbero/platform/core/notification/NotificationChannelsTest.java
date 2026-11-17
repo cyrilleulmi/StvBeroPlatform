@@ -1,5 +1,6 @@
 package ch.stvbero.platform.core.notification;
 
+import ch.stvbero.platform.core.error.Concurrently;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
@@ -253,6 +254,29 @@ class NotificationChannelsTest {
         given().cookie("stv_session", anna).contentType(ContentType.JSON).body("{\"endpoint\":\"https://push.example.test/x\"}")
                 .post("/api/me/push-subscriptions").then().statusCode(400);
         assertThat(settings(anna).getList("devices"), empty());
+    }
+
+    @Test
+    void criterion3SameDeviceRegisteredConcurrentlyNeverGives500() {
+        String anna = login("anna");
+        for (int round = 0; round < 5; round++) {
+            String endpoint = "https://push.example.test/anna-new-" + round;
+            List<Integer> codes = Concurrently.statusCodes(8,
+                    () -> register(anna, endpoint, ANDROID).extract().statusCode());
+            assertThat(codes, everyItem(equalTo(201)));
+        }
+        assertThat(settings(anna).getList("devices"), hasSize(5));
+    }
+
+    @Test
+    void criterion2EmailChangedConcurrentlyNeverGives500() {
+        // Mia has no stored choice yet: every request wants to create it
+        String mia = login("mia");
+        List<Integer> codes = Concurrently.statusCodes(4,
+                () -> given().cookie("stv_session", mia).contentType(ContentType.JSON).body("{\"email\":false}")
+                        .put("/api/me/notification-settings").then().extract().statusCode());
+        assertThat(codes, everyItem(equalTo(200)));
+        assertEquals(false, settings(mia).getBoolean("email"));
     }
 
     @Test
