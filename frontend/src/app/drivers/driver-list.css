@@ -1,0 +1,149 @@
+:host {
+  display: contents;
+}
+
+.driver-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.driver-list p {
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 6px 0 0;
+}
+
+.route {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.distance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.buttons,
+.car-actions,
+.own-car,
+.assign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  min-width: 0;
+}
+
+.car {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  min-width: 0;
+}
+
+.car-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.car-head .row-title {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.chip[data-kind='full'] {
+  background: var(--coral-soft);
+}
+
+.chip[data-kind='free'] {
+  background: var(--primary-soft);
+}
+
+.chip[data-kind='manual'] {
+  background: var(--mustard-soft);
+}
+
+.passengers {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 3px solid var(--border);
+  display: grid;
+  gap: 4px;
+}
+
+.passengers li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  min-height: var(--touch);
+  overflow-wrap: anywhere;
+}
+
+.field.inline {
+  flex: 1 1 180px;
+  min-width: 0;
+  margin: 0;
+}
+
+.field select {
+  width: 100%;
+}
+
+.enter-driver {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.enter-driver .button {
+  justify-self: start;
+}
+
+.summary-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-weight: 700;
+}
+
+.dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  color: var(--text);
+}
+
+.dialog:not([open]) {
+  display: none;
+}
+
+.dialog h2,
+.dialog p {
+  margin: 0;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
