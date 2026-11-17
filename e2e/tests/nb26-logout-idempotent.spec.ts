@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { anmelden, expect, reset, test } from './helpers';
+import { expect, login, reset, test } from './helpers';
 
 /**
  * Nachbesserung #26 · Abmelden ist idempotent. Zwei (auch gleichzeitige) `POST /api/logout`
@@ -31,7 +31,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('Nachbesserung #26 K1: zwei gleichzeitige Abmeldungen mit demselben Cookie antworten beide mit 204', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
 
   const antworten = await Promise.all(
     Array.from({ length: 4 }, () => page.request.post('/api/logout')),
@@ -46,7 +46,7 @@ test('Nachbesserung #26 K1: zwei gleichzeitige Abmeldungen mit demselben Cookie 
 
 test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Profil führt zur Anmeldung, ohne 5xx', async ({ page }) => {
   const fehler = serverfehler(page);
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/profil');
 
   await page.getByRole('button', { name: 'Abmelden' }).dblclick();
@@ -57,7 +57,7 @@ test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Profil führt zur Anmeld
 });
 
 test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs abmelden führt beide zur Anmeldung, ohne 5xx', async ({ page, context }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   const zweiter = await context.newPage();
   const fehler = [page, zweiter].map(serverfehler);
   const zweiterKonsole = konsolenfehler(zweiter);
@@ -77,12 +77,12 @@ test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs abmelden führt beide zur 
 });
 
 test.describe('ohne aktuelle Saison', () => {
-  test.use({ erwarteteKonsolenfehler: [/status of 409/] });
+  test.use({ expectedConsoleErrors: [/status of 409/] });
 
   test('Nachbesserung #26 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» führt zur Anmeldung, ohne 5xx', async ({ page, request }) => {
     expect((await request.delete('/api/test/current-season')).status()).toBe(204);
     const fehler = serverfehler(page);
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
 
@@ -94,7 +94,7 @@ test.describe('ohne aktuelle Saison', () => {
 
   test('Nachbesserung #26 K2: gleichzeitig in zwei Tabs vom Hinweis «keine Saison» abmelden, ohne 5xx', async ({ page, context, request }) => {
     expect((await request.delete('/api/test/current-season')).status()).toBe(204);
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     const zweiter = await context.newPage();
     const fehler = [page, zweiter].map(serverfehler);
     const zweiterKonsole = konsolenfehler(zweiter, [/status of 409/]);

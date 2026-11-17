@@ -1,4 +1,4 @@
-import { anmelden, expect, reset, test } from './helpers';
+import { expect, login, reset, test } from './helpers';
 
 /**
  * Nachbesserung #15 · Mobil sind alle Beschriftungen der Hauptnavigation vollständig lesbar,
@@ -17,7 +17,7 @@ for (const [schluessel, eintraege] of [
   ['anna', ADMIN_EINTRAEGE.slice(0, 4)],
 ] as const) {
   test(`Nachbesserung #15 K1/K2: Navigation für ${schluessel} vollständig beschriftet, Touch-Ziele ab 44px`, async ({ page }) => {
-    await anmelden(page, schluessel);
+    await login(page, schluessel);
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
     const links = nav.getByRole('list').getByRole('link');

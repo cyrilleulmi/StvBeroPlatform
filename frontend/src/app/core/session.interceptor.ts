@@ -2,25 +2,20 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { AnmeldungService } from './auth.service';
+import { AuthService } from './auth.service';
 
-/** Läuft die Sitzung während der Nutzung ab (401), zur Anmeldung und danach zurück. */
-export const sitzungInterceptor: HttpInterceptorFn = (anfrage, weiter) => {
+/** If the session expires during use (401), go to the login and come back afterwards. */
+export const sessionInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
-  const anmeldung = inject(AnmeldungService);
-  return weiter(anfrage).pipe(
-    catchError((fehler: unknown) => {
-      const istIch = anfrage.url.endsWith('/api/me');
-      if (
-        fehler instanceof HttpErrorResponse &&
-        fehler.status === 401 &&
-        !istIch &&
-        anmeldung.ich()
-      ) {
-        anmeldung.ich.set(null);
-        void router.navigate([anmeldung.anmeldeRoute()], { queryParams: { ziel: router.url } });
+  const auth = inject(AuthService);
+  return next(request).pipe(
+    catchError((error: unknown) => {
+      const isMe = request.url.endsWith('/api/me');
+      if (error instanceof HttpErrorResponse && error.status === 401 && !isMe && auth.me()) {
+        auth.me.set(null);
+        void router.navigate([auth.loginRoute()], { queryParams: { ziel: router.url } });
       }
-      return throwError(() => fehler);
+      return throwError(() => error);
     }),
   );
 };

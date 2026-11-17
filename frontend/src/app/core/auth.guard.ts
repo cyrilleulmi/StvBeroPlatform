@@ -1,25 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AnmeldungService, KeineAktuelleSaison } from './auth.service';
+import { AuthService, NoCurrentSeasonError } from './auth.service';
 
 /**
- * Ohne Anmeldung auf die Anmeldung umleiten, mit dem Ziel als `?ziel=` (danach zurück).
- * Ohne aktuelle Saison (409 von `GET /api/me`, SAI-03) auf den Hinweis `/keine-saison`.
+ * Without login redirect to the login, with the target as `?ziel=` (back there afterwards).
+ * Without a current season (409 from `GET /api/me`, SAI-03) redirect to the notice `/keine-saison`.
  */
-export const anmeldeGuard: CanActivateFn = async (_route, state) => {
-  const anmeldung = inject(AnmeldungService);
+export const authGuard: CanActivateFn = async (_route, state) => {
+  const auth = inject(AuthService);
   const router = inject(Router);
-  const zielParameter = state.url === '/' ? {} : { ziel: state.url };
+  const targetParams = state.url === '/' ? {} : { ziel: state.url };
   try {
-    const ich = anmeldung.ich() ?? (await anmeldung.laden());
-    if (ich) {
+    const me = auth.me() ?? (await auth.load());
+    if (me) {
       return true;
     }
-  } catch (fehler) {
-    if (fehler instanceof KeineAktuelleSaison) {
-      return router.createUrlTree(['/keine-saison'], { queryParams: zielParameter });
+  } catch (error) {
+    if (error instanceof NoCurrentSeasonError) {
+      return router.createUrlTree(['/keine-saison'], { queryParams: targetParams });
     }
-    throw fehler;
+    throw error;
   }
-  return router.createUrlTree([anmeldung.anmeldeRoute()], { queryParams: zielParameter });
+  return router.createUrlTree([auth.loginRoute()], { queryParams: targetParams });
 };

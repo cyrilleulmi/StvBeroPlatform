@@ -10,27 +10,27 @@ body:
         The test agent checks exactly the acceptance criteria. The more concrete they are, the better the result.
         Help: [Backlog](../blob/main/docs/pipeline/backlog.md) · [Test data and scenarios](../blob/main/docs/test-data.md)
   - type: textarea
-    id: ziel
+    id: goal
     attributes:
       label: Goal
       description: One or two sentences. Who can do what afterwards?
     validations:
       required: true
   - type: input
-    id: anforderungen
+    id: requirements
     attributes:
       label: Requirements
       description: IDs from docs/requirements/, e.g. ANM-01–ANM-12, RR-06
     validations:
       required: true
   - type: input
-    id: voraussetzung
+    id: prerequisite
     attributes:
       # The German keyword «Voraussetzung» (prerequisite) stays: scripts/pipeline.sh and the status page look for it.
       label: Voraussetzung
       description: Prerequisite. Features that must be on main first, e.g. F-02, F-03
   - type: textarea
-    id: kriterien
+    id: criteria
     attributes:
       label: Acceptance criteria
       description: Numbered. If possible with seed persons and scenarios from docs/test-data.md.
@@ -40,7 +40,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: hinweise
+    id: notes
     attributes:
       label: Notes and assumptions
       description: What else applies. What is not part of it.

@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-und-tests:
-    name: Build und Tests  # check name; kept in case a branch protection rule requires it
+  build-and-tests:
+    name: Build und Tests  # check name stays German; kept in case a branch protection rule requires it
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -63,6 +63,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-bericht
+          name: playwright-report
           path: e2e/playwright-report
           retention-days: 7

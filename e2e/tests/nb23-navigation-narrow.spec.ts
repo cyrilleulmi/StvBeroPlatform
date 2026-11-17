@@ -1,4 +1,4 @@
-import { anmelden, expect, reset, test } from './helpers';
+import { expect, login, reset, test } from './helpers';
 
 /**
  * Nachbesserung #23 · Die Beschriftungen der mobilen Hauptnavigation sind für Admins (fünf Einträge)
@@ -18,7 +18,7 @@ for (const breite of [375, 320]) {
       test.skip(testInfo.project.name !== 'mobil', 'Bottom-Navigation gibt es nur mobil');
       await page.setViewportSize({ width: breite, height: 812 });
       await page.emulateMedia({ colorScheme: schema });
-      await anmelden(page, 'alex');
+      await login(page, 'alex');
       await page.goto('/verwaltung');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Verwaltung');
 

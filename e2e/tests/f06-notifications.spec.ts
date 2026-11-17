@@ -1,5 +1,5 @@
 import type { APIRequestContext, Page } from '@playwright/test';
-import { anmelden, barrierefrei, expect, reset, test } from './helpers';
+import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * F-06 · Benachrichtigungen (BEN). Akzeptanzkriterien aus Issue #7 bzw. docs/pipeline/backlog.md,
@@ -69,9 +69,9 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('F-06 K1: Liste neueste zuerst, Ungelesene gekennzeichnet, Anzahl in der Navigation', async ({ page }) => {
-  await anmelden(page, 'lea');
+  await login(page, 'lea');
   await page.goto('/');
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveText('2');
+  await expect(page.getByTestId('notifications-counter')).toHaveText('2');
   await expect(glocke(page)).toHaveAccessibleName('Benachrichtigungen 2 ungelesen');
 
   await glocke(page).click();
@@ -83,8 +83,8 @@ test('F-06 K1: Liste neueste zuerst, Ungelesene gekennzeichnet, Anzahl in der Na
   const eintraege = liste(page).getByRole('listitem');
   await expect(eintraege).toHaveCount(2);
   // Neueste zuerst: Aufgebot (15.11.) vor Absage (14.11.)
-  await expect(eintraege.nth(0)).toHaveAttribute('data-testid', `benachrichtigung-${LEA_AUFGEBOT_T05}`);
-  await expect(eintraege.nth(1)).toHaveAttribute('data-testid', `benachrichtigung-${LEA_ABSAGE_T03}`);
+  await expect(eintraege.nth(0)).toHaveAttribute('data-testid', `notification-${LEA_AUFGEBOT_T05}`);
+  await expect(eintraege.nth(1)).toHaveAttribute('data-testid', `notification-${LEA_ABSAGE_T03}`);
   await expect(eintraege.nth(0)).toContainText('Das Aufgebot für Spieltag Sa 28.11. ist da: Du bist nicht aufgeboten.');
   await expect(eintraege.nth(0)).toContainText('So 15.11. 21:00');
   await expect(eintraege.nth(1)).toContainText('Training Di 24.11. ist abgesagt: Halle besetzt');
@@ -92,71 +92,71 @@ test('F-06 K1: Liste neueste zuerst, Ungelesene gekennzeichnet, Anzahl in der Na
     await expect(e).toHaveAttribute('data-gelesen', 'false');
     await expect(e.getByText('Neu', { exact: true })).toBeVisible();
   }
-  await barrierefrei(page);
+  await checkAccessibility(page);
 });
 
 test('F-06 K1: Gelesene ohne «Neu», kein Zähler, wenn alles gelesen ist', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/benachrichtigungen');
-  const eintrag = page.getByTestId(`benachrichtigung-${PETRA_AUFGEBOT_T05}`);
+  const eintrag = page.getByTestId(`notification-${PETRA_AUFGEBOT_T05}`);
   await expect(eintrag).toHaveAttribute('data-gelesen', 'true');
   await expect(eintrag.getByText('Neu', { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveCount(0);
+  await expect(page.getByTestId('notifications-counter')).toHaveCount(0);
   await expect(glocke(page)).toHaveAccessibleName('Benachrichtigungen');
   await expect(page.getByRole('button', { name: 'Alle als gelesen markieren' })).toHaveCount(0);
 });
 
 test('F-06 K1: ohne Benachrichtigungen ein Hinweis', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/benachrichtigungen');
   await expect(page.getByText('Keine Benachrichtigungen.')).toBeVisible();
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveCount(0);
+  await expect(page.getByTestId('notifications-counter')).toHaveCount(0);
 });
 
 test('F-06 K2 BEN-12: Klick führt zum Termin und markiert als gelesen', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/benachrichtigungen');
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveText('1');
+  await expect(page.getByTestId('notifications-counter')).toHaveText('1');
 
-  await page.getByTestId(`benachrichtigung-${ANNA_ABSAGE_T03}`).getByRole('link').click();
+  await page.getByTestId(`notification-${ANNA_ABSAGE_T03}`).getByRole('link').click();
   await expect(page).toHaveURL(`/termine/${T03}`);
-  await expect(page.getByTestId('termin-status')).toContainText('Halle besetzt');
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveCount(0);
+  await expect(page.getByTestId('event-status')).toContainText('Halle besetzt');
+  await expect(page.getByTestId('notifications-counter')).toHaveCount(0);
 
   await glocke(page).click();
-  await expect(page.getByTestId(`benachrichtigung-${ANNA_ABSAGE_T03}`)).toHaveAttribute('data-gelesen', 'true');
+  await expect(page.getByTestId(`notification-${ANNA_ABSAGE_T03}`)).toHaveAttribute('data-gelesen', 'true');
   // Bleibt nach Neuladen gelesen
   await page.reload();
-  await expect(page.getByTestId(`benachrichtigung-${ANNA_ABSAGE_T03}`)).toHaveAttribute('data-gelesen', 'true');
+  await expect(page.getByTestId(`notification-${ANNA_ABSAGE_T03}`)).toHaveAttribute('data-gelesen', 'true');
 });
 
 test('F-06 K1: «Alle als gelesen markieren»', async ({ page }) => {
-  await anmelden(page, 'lea');
+  await login(page, 'lea');
   await page.goto('/benachrichtigungen');
   await page.getByRole('button', { name: 'Alle als gelesen markieren' }).click();
   await expect(page.getByRole('status')).toHaveText('Alle sind als gelesen markiert.');
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveCount(0);
+  await expect(page.getByTestId('notifications-counter')).toHaveCount(0);
   await expect(liste(page).getByText('Neu', { exact: true })).toHaveCount(0);
 });
 
 test('F-06 RR-07: fremde Benachrichtigung lässt sich nicht als gelesen markieren (403)', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   const antwort = await page.request.post(`/api/notifications/${LEA_ABSAGE_T03}/read`);
   expect(antwort.status()).toBe(403);
 });
 
 test('F-06 K3 S5 BEN-02: kurzfristige Absage benachrichtigt Petra, nicht Marc', async ({ page, request }) => {
   await uhr(request, '2026-11-16T19:00:00+01:00');
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   const antwort = await page.request.put(`/api/events/${T01}/responses/me`, { data: { status: 'DECLINED' } });
   expect(antwort.status()).toBe(200);
 
   const neu = await neue(request, 'LATE_CANCELLATION', T01);
   expect(empfaenger(neu)).toEqual([PETRA]);
 
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/');
-  await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveText('1');
+  await expect(page.getByTestId('notifications-counter')).toHaveText('1');
   await page.goto('/benachrichtigungen');
   const eintrag = liste(page).getByRole('listitem').first();
   await expect(eintrag).toContainText('Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.');
@@ -172,7 +172,7 @@ test('F-06 K4 S6 BEN-01 BEN-13: Erinnerung an Personen ohne Antwort, genau einma
   await uhr(request, '2026-11-16T12:00:00+01:00');
   expect(await neue(request, 'REMINDER', T01)).toHaveLength(2);
 
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Erinnerung: Bitte gib bis Mo 16.11. 18:30 Bescheid, ob du bei Training Di 17.11. dabei bist.',
@@ -181,16 +181,16 @@ test('F-06 K4 S6 BEN-01 BEN-13: Erinnerung an Personen ohne Antwort, genau einma
 });
 
 test('F-06 K5 S9 BEN-03: Veröffentlichen benachrichtigt alle Spielerinnen des Teams', async ({ page, request }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}/aufgebot`);
   await page.getByRole('button', { name: 'Veröffentlichen' }).click();
   await page.getByRole('dialog', { name: 'Aufgebot veröffentlichen?' }).getByRole('button', { name: 'Veröffentlichen' }).click();
-  await expect(page.getByTestId('aufgebot-status')).toContainText('veröffentlicht am');
+  await expect(page.getByTestId('call-up-status')).toContainText('veröffentlicht am');
 
   const neu = await neue(request, 'CALL_UP_PUBLISHED', T04);
   expect(empfaenger(neu)).toEqual([ANNA, LEA, MIA, SARA, NINA, JANA, KIM].sort());
 
-  await anmelden(page, 'kim');
+  await login(page, 'kim');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Das Aufgebot für Spieltag So 22.11. ist da: Du bist nicht aufgeboten.',
@@ -198,15 +198,15 @@ test('F-06 K5 S9 BEN-03: Veröffentlichen benachrichtigt alle Spielerinnen des T
 });
 
 test('F-06 K6 S10 BEN-04: Abmeldung einer Aufgebotenen benachrichtigt die Coaches', async ({ page, request }) => {
-  await anmelden(page, 'eva');
+  await login(page, 'eva');
   await page.goto(`/termine/${T05}`);
-  await page.getByTestId('meine-antwort').getByRole('button', { name: 'Nicht dabei' }).click();
+  await page.getByTestId('my-response').getByRole('button', { name: 'Nicht dabei' }).click();
   await expect(page.getByRole('dialog', { name: 'Nicht dabei' })).toBeVisible();
   await page.getByRole('button', { name: 'Überspringen' }).click();
 
   await expect.poll(async () => empfaenger(await neue(request, 'CALLED_UP_PLAYER_DECLINED', T05))).toEqual([MARC]);
 
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Eva Steiner ist für Spieltag Sa 28.11. aufgeboten und hat sich abgemeldet.',
@@ -214,7 +214,7 @@ test('F-06 K6 S10 BEN-04: Abmeldung einer Aufgebotenen benachrichtigt die Coache
 });
 
 test('F-06 K7 BEN-05: Änderung eines veröffentlichten Aufgebots benachrichtigt nur Betroffene', async ({ page, request }) => {
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   // Termin 05 ist veröffentlicht mit Petra, Eva, Lara, Ella. Ella fällt heraus, Lea kommt dazu.
   const antwort = await page.request.put(`/api/events/${T05}/call-up`, {
     data: { personIds: [PETRA, EVA, LARA, LEA] },
@@ -224,7 +224,7 @@ test('F-06 K7 BEN-05: Änderung eines veröffentlichten Aufgebots benachrichtigt
   const neu = await neue(request, 'CALL_UP_CHANGED', T05);
   expect(empfaenger(neu)).toEqual([LEA, ELLA].sort());
 
-  await anmelden(page, 'ella');
+  await login(page, 'ella');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Das Aufgebot für Spieltag Sa 28.11. wurde geändert: Du bist nicht mehr aufgeboten.',
@@ -232,18 +232,18 @@ test('F-06 K7 BEN-05: Änderung eines veröffentlichten Aufgebots benachrichtigt
 });
 
 test('F-06 K8 BEN-07: Absage benachrichtigt alle Mitglieder der beteiligten Teams', async ({ page, request }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   const antwort = await page.request.post(`/api/events/${T01}/cancel`, { data: { reason: 'Halle gesperrt' } });
   expect(antwort.status()).toBe(200);
   expect(empfaenger(await neue(request, 'EVENT_CANCELLED', T01))).toEqual([...TEAM_1_UND_2_OHNE_PETRA].sort());
 
-  await anmelden(page, 'zoe');
+  await login(page, 'zoe');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText('Training Di 17.11. ist abgesagt: Halle gesperrt');
 });
 
 test('F-06 K8 BEN-07: Verschiebung benachrichtigt alle Mitglieder der beteiligten Teams', async ({ page, request }) => {
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   const antwort = await page.request.put(`/api/events/${T01}`, {
     data: {
       type: 'PRACTICE',
@@ -258,7 +258,7 @@ test('F-06 K8 BEN-07: Verschiebung benachrichtigt alle Mitglieder der beteiligte
   const neu = await neue(request, 'EVENT_RESCHEDULED', T01);
   expect(empfaenger(neu)).toEqual([...TEAM_1_UND_2_OHNE_PETRA.filter((p) => p !== MARC), PETRA].sort());
 
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/benachrichtigungen');
   await expect(liste(page).getByRole('listitem').first()).toContainText(
     'Training Di 17.11. ist verschoben auf Di 17.11. 19:00.',
@@ -268,9 +268,9 @@ test('F-06 K8 BEN-07: Verschiebung benachrichtigt alle Mitglieder der beteiligte
 for (const schema of ['light', 'dark'] as const) {
   test(`F-06: Glocke mit Zähler (${schema}) gut erreichbar und verdeckt nichts`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: schema });
-    await anmelden(page, 'lea');
+    await login(page, 'lea');
     await page.goto('/termine');
-    await expect(page.getByTestId('benachrichtigungen-zaehler')).toHaveText('2');
+    await expect(page.getByTestId('notifications-counter')).toHaveText('2');
     const box = (await glocke(page).boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
@@ -281,13 +281,13 @@ for (const schema of ['light', 'dark'] as const) {
     expect(ueberlappt, 'Glocke verdeckt die Überschrift').toBe(false);
     await page.goto('/benachrichtigungen');
     await expect(liste(page).getByRole('listitem')).toHaveCount(2);
-    await barrierefrei(page);
+    await checkAccessibility(page);
   });
 }
 
 test('F-06 O-51: Glocke verdeckt auch beim Scrollen keine Bedienelemente', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobil', 'Glocke oben rechts gibt es nur mobil');
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   const stift = page.getByRole('button', { name: 'Antwort für Mia Frei eintragen' });
   await expect(stift).toBeVisible();

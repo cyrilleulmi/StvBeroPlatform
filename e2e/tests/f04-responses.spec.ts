@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { anmelden, barrierefrei, expect, reset, test } from './helpers';
+import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * F-04 · An- und Abmeldung mit Übersicht (ANM, RR-02, RR-03, RR-06). Akzeptanzkriterien aus Issue #5 bzw.
@@ -32,11 +32,11 @@ const LINIE_2_T2 = '30000000-0000-4000-8000-000000000005';
 const GOALIES_T2 = '30000000-0000-4000-8000-000000000006';
 
 function karte(page: Page, id: string): Locator {
-  return page.getByTestId(`termin-karte-${id}`);
+  return page.getByTestId(`event-card-${id}`);
 }
 
 function knopf(bereich: Locator, wahl: 'dabei' | 'nicht-dabei' | 'vielleicht'): Locator {
-  return bereich.getByTestId('meine-antwort').getByTestId(`antwort-${wahl}`);
+  return bereich.getByTestId('my-response').getByTestId(`response-${wahl}`);
 }
 
 /** Zählertext, z.B. «7 dabei · 2 nicht dabei · 1 vielleicht · 2 offen». */
@@ -61,92 +61,92 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('F-04 K1 K2 S1 ANM-20 bis ANM-32: Übersicht von Termin 01 wie in testdaten.md', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
-  const uebersicht = page.getByTestId('uebersicht');
+  const uebersicht = page.getByTestId('overview');
   await expect(uebersicht.getByRole('heading', { level: 2, name: 'Übersicht' })).toBeVisible();
 
   // ANM-23, ANM-32: Gesamttotal, Lea zählt einmal
-  await expect(page.getByTestId('uebersicht-total')).toContainText(z(7, 2, 1, 2));
-  await expect(page.getByTestId(`uebersicht-team-${TEAM_1}-zaehler`)).toContainText(z(5, 1, 0, 1));
-  await expect(page.getByTestId(`uebersicht-team-${TEAM_2}-zaehler`)).toContainText(z(3, 1, 1, 1));
+  await expect(page.getByTestId('overview-total')).toContainText(z(7, 2, 1, 2));
+  await expect(page.getByTestId(`overview-team-${TEAM_1}-counter`)).toContainText(z(5, 1, 0, 1));
+  await expect(page.getByTestId(`overview-team-${TEAM_2}-counter`)).toContainText(z(3, 1, 1, 1));
 
   // ANM-20: Teams nach Name; ANM-21: Linien, Goalies, «Ohne Linie»
   await expect(uebersicht.getByRole('heading', { level: 3 })).toHaveText(['Team 1', 'Team 2', 'Coaches']);
-  const team1 = page.getByTestId(`uebersicht-team-${TEAM_1}`);
+  const team1 = page.getByTestId(`overview-team-${TEAM_1}`);
   await expect(team1.getByRole('heading', { level: 4 })).toHaveText([
     'Linie 1',
     'Linie 2',
     'Goalies',
     'Ohne Linie',
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_1_T1}`))).toEqual([
+  expect(await personen(page.getByTestId(`overview-group-${LINIE_1_T1}`))).toEqual([
     `${MIA} DECLINED`,
     `${LEA} ATTENDING`,
     `${ANNA} ATTENDING`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_2_T1}`))).toEqual([
+  expect(await personen(page.getByTestId(`overview-group-${LINIE_2_T1}`))).toEqual([
     `${SARA} ATTENDING`,
     `${NINA} PENDING`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T1}`))).toEqual([`${JANA} ATTENDING`]);
-  expect(await personen(page.getByTestId(`uebersicht-ohne-linie-${TEAM_1}`))).toEqual([`${KIM} ATTENDING`]);
+  expect(await personen(page.getByTestId(`overview-group-${GOALIES_T1}`))).toEqual([`${JANA} ATTENDING`]);
+  expect(await personen(page.getByTestId(`overview-no-line-${TEAM_1}`))).toEqual([`${KIM} ATTENDING`]);
 
   // ANM-31: Petra als Spielerin in Team 2, Lea in beiden Teams; Team 2 ohne «Ohne Linie» (leer)
-  const team2 = page.getByTestId(`uebersicht-team-${TEAM_2}`);
+  const team2 = page.getByTestId(`overview-team-${TEAM_2}`);
   await expect(team2.getByRole('heading', { level: 4 })).toHaveText(['Linie 1', 'Linie 2', 'Goalies']);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_1_T2}`))).toEqual([
+  expect(await personen(page.getByTestId(`overview-group-${LINIE_1_T2}`))).toEqual([
     `${PETRA} ATTENDING`,
     `${EVA} MAYBE`,
     `${LARA} ATTENDING`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${LINIE_2_T2}`))).toEqual([
+  expect(await personen(page.getByTestId(`overview-group-${LINIE_2_T2}`))).toEqual([
     `${LEA} ATTENDING`,
     `${ZOE} DECLINED`,
   ]);
-  expect(await personen(page.getByTestId(`uebersicht-gruppe-${GOALIES_T2}`))).toEqual([`${ELLA} PENDING`]);
-  await expect(page.getByTestId(`uebersicht-ohne-linie-${TEAM_2}`)).toHaveCount(0);
+  expect(await personen(page.getByTestId(`overview-group-${GOALIES_T2}`))).toEqual([`${ELLA} PENDING`]);
+  await expect(page.getByTestId(`overview-no-line-${TEAM_2}`)).toHaveCount(0);
 
   // ANM-22: Coach-Block mit Team, Petra nicht unter den Spielerinnen von Team 1
   const coaches = page.getByTestId('coach-block');
   expect(await personen(coaches)).toEqual([`${PETRA} ATTENDING`, `${MARC} DECLINED`]);
-  await expect(coaches.getByTestId(`uebersicht-person-${PETRA}`)).toContainText('(Team 1)');
-  await expect(coaches.getByTestId(`uebersicht-person-${MARC}`)).toContainText('(Team 2)');
-  await expect(team1.getByTestId(`uebersicht-person-${PETRA}`)).toHaveCount(0);
+  await expect(coaches.getByTestId(`overview-person-${PETRA}`)).toContainText('(Team 1)');
+  await expect(coaches.getByTestId(`overview-person-${MARC}`)).toContainText('(Team 2)');
+  await expect(team1.getByTestId(`overview-person-${PETRA}`)).toHaveCount(0);
 
   // ANM-24: Status als Text, nicht nur als Farbe
-  await expect(team1.getByTestId(`uebersicht-person-${MIA}`)).toContainText('nicht dabei');
-  await expect(team1.getByTestId(`uebersicht-person-${NINA}`)).toContainText('offen');
-  await barrierefrei(page);
+  await expect(team1.getByTestId(`overview-person-${MIA}`)).toContainText('nicht dabei');
+  await expect(team1.getByTestId(`overview-person-${NINA}`)).toContainText('offen');
+  await checkAccessibility(page);
 });
 
 test('F-04 K3 S2 ANM-08: Antwort mit einem Tap aus der Terminliste, Zähler ohne Neuladen', async ({
   page,
 }) => {
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   await page.goto('/termine');
   const k = karte(page, T01);
   await expect(knopf(k, 'dabei')).toHaveAttribute('aria-pressed', 'false');
-  await expect(k.getByTestId('termin-zaehler')).toContainText(z(7, 2, 1, 2));
+  await expect(k.getByTestId('event-counter')).toContainText(z(7, 2, 1, 2));
   await knopf(k, 'dabei').click();
   await expect(k.getByRole('status')).toHaveText('Gespeichert: dabei.');
   await expect(knopf(k, 'dabei')).toHaveAttribute('aria-pressed', 'true');
-  await expect(k.getByTestId('meine-antwort')).toHaveAttribute('data-antwort', 'ATTENDING');
-  await expect(k.getByTestId('termin-zaehler')).toContainText(z(8, 2, 1, 1));
+  await expect(k.getByTestId('my-response')).toHaveAttribute('data-antwort', 'ATTENDING');
+  await expect(k.getByTestId('event-counter')).toContainText(z(8, 2, 1, 1));
   // Kein Dialog bei «dabei»: wirklich ein Tap
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // Übersicht: Team 1 zeigt 6 dabei, 0 offen
   await k.getByRole('link').click();
   await expect(page).toHaveURL(new RegExp(`/termine/${T01}$`));
-  await expect(page.getByTestId(`uebersicht-team-${TEAM_1}-zaehler`)).toContainText(z(6, 1, 0, 0));
-  await barrierefrei(page);
+  await expect(page.getByTestId(`overview-team-${TEAM_1}-counter`)).toContainText(z(6, 1, 0, 0));
+  await checkAccessibility(page);
 });
 
 test('F-04 K3 K5 ANM-08 ANM-05: «nicht dabei» aus dem Detail, Grund überspringen', async ({ page }) => {
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   await page.goto(`/termine/${T01}`);
-  const team1Zaehler = page.getByTestId(`uebersicht-team-${TEAM_1}-zaehler`);
+  const team1Zaehler = page.getByTestId(`overview-team-${TEAM_1}-counter`);
   await expect(team1Zaehler).toContainText(z(5, 1, 0, 1));
   let navigationen = 0;
   page.on('framenavigated', () => navigationen++);
@@ -160,38 +160,38 @@ test('F-04 K3 K5 ANM-08 ANM-05: «nicht dabei» aus dem Detail, Grund übersprin
   await dialog.getByRole('button', { name: 'Überspringen' }).click();
   await expect(dialog).toBeHidden();
   await expect(knopf(page.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'DECLINED');
+  await expect(page.getByTestId(`overview-person-${NINA}`)).toHaveAttribute('data-antwort', 'DECLINED');
   expect(navigationen).toBe(0);
 
   // K10: nach Neuladen unverändert
   await page.reload();
   await expect(knopf(page.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'DECLINED');
+  await expect(page.getByTestId(`overview-person-${NINA}`)).toHaveAttribute('data-antwort', 'DECLINED');
 });
 
 test('F-04 K5 ANM-05: «nicht dabei» mit Grund', async ({ page }) => {
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   await page.goto(`/termine/${T01}`);
   await knopf(page.getByRole('main'), 'nicht-dabei').click();
   const dialog = page.getByRole('dialog', { name: 'Nicht dabei' });
   await dialog.getByLabel('Grund (freiwillig)').fill('Prüfung');
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await dialog.getByRole('button', { name: 'Grund speichern' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status')).toContainText('Grund gespeichert.');
-  await expect(page.getByTestId('meine-antwort')).toContainText('Dein Kommentar: Prüfung');
+  await expect(page.getByTestId('my-response')).toContainText('Dein Kommentar: Prüfung');
   // Erneut «nicht dabei»: Grund ändern, ohne die Antwort neu zu setzen
   await knopf(page.getByRole('main'), 'nicht-dabei').click();
   await expect(dialog.getByLabel('Grund (freiwillig)')).toHaveValue('Prüfung');
   await dialog.getByRole('button', { name: 'Überspringen' }).click();
   await page.reload();
-  await expect(page.getByTestId('meine-antwort')).toContainText('Dein Kommentar: Prüfung');
+  await expect(page.getByTestId('my-response')).toContainText('Dein Kommentar: Prüfung');
 });
 
 test('F-04 K4 S3 ANM-04: «vielleicht» ohne Kommentar nicht möglich, Fehlermeldung beim Feld', async ({
   page,
 }) => {
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   await page.goto(`/termine/${T01}`);
   await knopf(page.getByRole('main'), 'vielleicht').click();
   const dialog = page.getByRole('dialog', { name: 'Vielleicht – bitte kurz begründen' });
@@ -201,7 +201,7 @@ test('F-04 K4 S3 ANM-04: «vielleicht» ohne Kommentar nicht möglich, Fehlermel
   await expect(feld).toHaveAttribute('aria-invalid', 'true');
   await expect(feld).toHaveAccessibleDescription('Bei «vielleicht» bitte kurz begründen.');
   await expect(feld).toBeFocused();
-  await barrierefrei(page);
+  await checkAccessibility(page);
   // Nichts gespeichert
   await dialog.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(knopf(page.getByRole('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'false');
@@ -215,11 +215,11 @@ test('F-04 K4 S3 ANM-04: «vielleicht» ohne Kommentar nicht möglich, Fehlermel
   await dialog.getByRole('button', { name: 'Speichern' }).click();
   await expect(dialog).toBeHidden();
   await expect(knopf(page.getByRole('main'), 'vielleicht')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('meine-antwort')).toContainText('Dein Kommentar: Knie');
+  await expect(page.getByTestId('my-response')).toContainText('Dein Kommentar: Knie');
 });
 
 test('F-04 K4 S3 ANM-04: API lehnt «vielleicht» ohne Kommentar mit 422 ab', async ({ page }) => {
-  await anmelden(page, 'nina');
+  await login(page, 'nina');
   const antwort = await page.request.put(`/api/events/${T01}/responses/me`, {
     data: { status: 'MAYBE' },
   });
@@ -233,64 +233,64 @@ test('F-04 K6 S4 ANM-07: Kommentare nur für Coaches des Teams und die Person se
   page,
   browser,
 }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T01}`);
-  await expect(page.getByTestId(`uebersicht-person-${MIA}`)).toHaveAttribute('data-antwort', 'DECLINED');
-  await expect(page.getByTestId('uebersicht')).not.toContainText('Krank');
-  await expect(page.getByTestId('uebersicht')).not.toContainText('Komme evtl. später');
-  await expect(page.getByTestId('uebersicht')).not.toContainText('Ferien');
+  await expect(page.getByTestId(`overview-person-${MIA}`)).toHaveAttribute('data-antwort', 'DECLINED');
+  await expect(page.getByTestId('overview')).not.toContainText('Krank');
+  await expect(page.getByTestId('overview')).not.toContainText('Komme evtl. später');
+  await expect(page.getByTestId('overview')).not.toContainText('Ferien');
   // Auch nicht in der API-Antwort
   const json = JSON.stringify(await (await page.request.get(`/api/events/${T01}/overview`)).json());
   expect(json).not.toContain('comment');
 
   const petraKontext = await browser.newContext();
   const petra = await petraKontext.newPage();
-  await anmelden(petra, 'petra');
+  await login(petra, 'petra');
   await petra.goto(`/termine/${T01}`);
-  await expect(petra.getByTestId(`uebersicht-person-${MIA}`)).toContainText('«Krank»');
+  await expect(petra.getByTestId(`overview-person-${MIA}`)).toContainText('«Krank»');
   // RR-06: In Team 2 ist Petra Spielerin, Evas und Marcs Kommentare sieht sie nicht
-  await expect(petra.getByTestId(`uebersicht-person-${EVA}`)).not.toContainText('Komme evtl. später');
+  await expect(petra.getByTestId(`overview-person-${EVA}`)).not.toContainText('Komme evtl. später');
   await expect(petra.getByTestId('coach-block')).not.toContainText('Ferien');
   await petraKontext.close();
 
   const marcKontext = await browser.newContext();
   const marc = await marcKontext.newPage();
-  await anmelden(marc, 'marc');
+  await login(marc, 'marc');
   await marc.goto(`/termine/${T01}`);
-  await expect(marc.getByTestId(`uebersicht-person-${EVA}`)).toContainText('«Komme evtl. später»');
-  await expect(marc.getByTestId(`uebersicht-person-${MIA}`)).not.toContainText('Krank');
+  await expect(marc.getByTestId(`overview-person-${EVA}`)).toContainText('«Komme evtl. später»');
+  await expect(marc.getByTestId(`overview-person-${MIA}`)).not.toContainText('Krank');
   await marcKontext.close();
 });
 
 test('F-04 K7 S5 ANM-10: Kurzfristige Absage nach der Antwortfrist', async ({ page, browser }) => {
   const uhr = await page.request.put('/api/test/clock', { data: { now: '2026-11-16T19:00:00+01:00' } });
   expect(uhr.status()).toBe(204);
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T01}`);
   await knopf(page.getByRole('main'), 'nicht-dabei').click();
   await page.getByRole('dialog', { name: 'Nicht dabei' }).getByRole('button', { name: 'Überspringen' }).click();
-  await expect(page.getByTestId('meine-antwort')).toContainText('kurzfristig abgemeldet');
+  await expect(page.getByTestId('my-response')).toContainText('kurzfristig abgemeldet');
   const api = await page.request.get(`/api/events/${T01}`);
   expect((await api.json()).myResponse.lateCancellation).toBe(true);
 
   const petraKontext = await browser.newContext();
   const petra = await petraKontext.newPage();
-  await anmelden(petra, 'petra');
+  await login(petra, 'petra');
   await petra.goto(`/termine/${T01}`);
-  await expect(petra.getByTestId(`uebersicht-person-${ANNA}`)).toContainText('kurzfristig abgemeldet');
+  await expect(petra.getByTestId(`overview-person-${ANNA}`)).toContainText('kurzfristig abgemeldet');
   await petraKontext.close();
 });
 
 test('F-04 K8 S7 ANM-11 ANM-12: Petra trägt für Nina «nicht dabei» ein', async ({ page, browser }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
-  const nina = page.getByTestId(`uebersicht-team-${TEAM_1}`).getByTestId(`uebersicht-person-${NINA}`);
+  const nina = page.getByTestId(`overview-team-${TEAM_1}`).getByTestId(`overview-person-${NINA}`);
   await nina.getByRole('button', { name: 'Antwort für Nina Roth eintragen' }).click();
   const dialog = page.getByRole('dialog', { name: 'Antwort für Nina Roth eintragen' });
   await expect(dialog).toBeVisible();
   await dialog.getByRole('radio', { name: 'nicht dabei' }).check();
   await dialog.getByLabel('Kommentar (bei «vielleicht» Pflicht)').fill('Hat angerufen');
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await dialog.getByRole('button', { name: 'Speichern' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status').filter({ hasText: 'Antwort für Nina Roth' })).toHaveText(
@@ -299,28 +299,28 @@ test('F-04 K8 S7 ANM-11 ANM-12: Petra trägt für Nina «nicht dabei» ein', asy
   await expect(nina).toHaveAttribute('data-antwort', 'DECLINED');
   await expect(nina).toContainText('eingetragen von Petra Keller');
   await expect(nina).toContainText('«Hat angerufen»');
-  await expect(page.getByTestId(`uebersicht-team-${TEAM_1}-zaehler`)).toContainText(z(5, 2, 0, 0));
+  await expect(page.getByTestId(`overview-team-${TEAM_1}-counter`)).toContainText(z(5, 2, 0, 0));
   // Coaches tragen nicht für andere Coaches und nicht für sich selbst ein
   await expect(
     page.getByTestId('coach-block').getByRole('button', { name: /Antwort für .* eintragen/ }),
   ).toHaveCount(0);
   // RR-06: In Team 2 ist Petra Spielerin
   await expect(
-    page.getByTestId(`uebersicht-team-${TEAM_2}`).getByRole('button', { name: /Antwort für .* eintragen/ }),
+    page.getByTestId(`overview-team-${TEAM_2}`).getByRole('button', { name: /Antwort für .* eintragen/ }),
   ).toHaveCount(0);
 
   // Nina sieht, wer eingetragen hat
   const ninaKontext = await browser.newContext();
   const ninaSeite = await ninaKontext.newPage();
-  await anmelden(ninaSeite, 'nina');
+  await login(ninaSeite, 'nina');
   await ninaSeite.goto(`/termine/${T01}`);
-  await expect(ninaSeite.getByTestId('meine-antwort')).toContainText('eingetragen von Petra Keller');
+  await expect(ninaSeite.getByTestId('my-response')).toContainText('eingetragen von Petra Keller');
   await expect(knopf(ninaSeite.getByRole('main'), 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
   await ninaKontext.close();
 });
 
 test('F-04 K8 S7 ANM-04: Stellvertretend «vielleicht» verlangt einen Kommentar', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   await page.getByRole('button', { name: 'Antwort für Nina Roth eintragen' }).click();
   const dialog = page.getByRole('dialog', { name: 'Antwort für Nina Roth eintragen' });
@@ -330,11 +330,11 @@ test('F-04 K8 S7 ANM-04: Stellvertretend «vielleicht» verlangt einen Kommentar
   await expect(feld).toHaveAttribute('aria-invalid', 'true');
   await expect(feld).toHaveAccessibleDescription('Bei «vielleicht» bitte kurz begründen.');
   await dialog.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'PENDING');
+  await expect(page.getByTestId(`overview-person-${NINA}`)).toHaveAttribute('data-antwort', 'PENDING');
 });
 
 test.describe('Stellvertretende Antwort mit Feldfehler der API', () => {
-  test.use({ erwarteteKonsolenfehler: [/status of 422/] });
+  test.use({ expectedConsoleErrors: [/status of 422/] });
 
   test('F-04 K8 S7 ANM-04: Feldfehler der API zum Kommentar erscheint im Dialog beim Feld', async ({ page }) => {
     // Die API meldet Feldfehler mit englischem Feldnamen «comment» (Problem Details, NF-40).
@@ -355,7 +355,7 @@ test.describe('Stellvertretende Antwort mit Feldfehler der API', () => {
         });
       },
     );
-    await anmelden(page, 'petra');
+    await login(page, 'petra');
     await page.goto(`/termine/${T01}`);
     await page.getByRole('button', { name: 'Antwort für Nina Roth eintragen' }).click();
     const dialog = page.getByRole('dialog', { name: 'Antwort für Nina Roth eintragen' });
@@ -370,15 +370,15 @@ test.describe('Stellvertretende Antwort mit Feldfehler der API', () => {
 });
 
 test('F-04 K8 S8 RR-06: Marc kann nicht für Anna antworten', async ({ page }) => {
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   await page.goto(`/termine/${T01}`);
-  await expect(page.getByTestId(`uebersicht-person-${ANNA}`)).toBeVisible();
+  await expect(page.getByTestId(`overview-person-${ANNA}`)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Antwort für Anna Muster eintragen' })).toHaveCount(0);
   // Für Lea (auch Spielerin in Team 2) schon
   await expect(
     page
-      .getByTestId(`uebersicht-team-${TEAM_2}`)
-      .getByTestId(`uebersicht-person-${LEA}`)
+      .getByTestId(`overview-team-${TEAM_2}`)
+      .getByTestId(`overview-person-${LEA}`)
       .getByRole('button', { name: 'Antwort für Lea Graf eintragen' }),
   ).toBeVisible();
   const antwort = await page.request.put(`/api/events/${T01}/responses/${ANNA}`, {
@@ -388,9 +388,9 @@ test('F-04 K8 S8 RR-06: Marc kann nicht für Anna antworten', async ({ page }) =
 });
 
 test('F-04 K8 RR-02: Spielerinnen tragen für niemanden ein', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T01}`);
-  await expect(page.getByTestId(`uebersicht-person-${MIA}`)).toBeVisible();
+  await expect(page.getByTestId(`overview-person-${MIA}`)).toBeVisible();
   await expect(page.getByRole('button', { name: /Antwort für .* eintragen/ })).toHaveCount(0);
   const antwort = await page.request.put(`/api/events/${T01}/responses/${MIA}`, {
     data: { status: 'ATTENDING' },
@@ -399,9 +399,9 @@ test('F-04 K8 RR-02: Spielerinnen tragen für niemanden ein', async ({ page }) =
 });
 
 test('F-04 K9: Start-Screen zeigt den nächsten eigenen Termin mit Antwort-Buttons', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/');
-  const naechster = page.getByTestId('naechster-termin');
+  const naechster = page.getByTestId('next-event');
   await expect(naechster.getByRole('heading', { name: 'Nächster Termin' })).toBeVisible();
   await expect(naechster.getByRole('link')).toContainText('Training');
   await expect(naechster).toContainText('Di 17.11.');
@@ -410,25 +410,25 @@ test('F-04 K9: Start-Screen zeigt den nächsten eigenen Termin mit Antwort-Butto
     naechster.getByRole('group', { name: 'Meine Antwort für Training Di 17.11. 18:30' }),
   ).toBeVisible();
   await expect(knopf(naechster, 'dabei')).toHaveAttribute('aria-pressed', 'true');
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await knopf(naechster, 'nicht-dabei').click();
   await page.getByRole('dialog', { name: 'Nicht dabei' }).getByRole('button', { name: 'Überspringen' }).click();
   await expect(knopf(naechster, 'nicht-dabei')).toHaveAttribute('aria-pressed', 'true');
   await naechster.getByRole('link').click();
   await expect(page).toHaveURL(new RegExp(`/termine/${T01}$`));
-  await expect(page.getByTestId(`uebersicht-person-${ANNA}`)).toHaveAttribute('data-antwort', 'DECLINED');
+  await expect(page.getByTestId(`overview-person-${ANNA}`)).toHaveAttribute('data-antwort', 'DECLINED');
 });
 
 test('F-04 K9: Ohne Team zeigt der Start-Screen keinen Termin', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/');
-  await expect(page.getByTestId('naechster-termin')).toContainText('Keine kommenden Termine');
-  await expect(page.getByTestId('meine-antwort')).toHaveCount(0);
+  await expect(page.getByTestId('next-event')).toContainText('Keine kommenden Termine');
+  await expect(page.getByTestId('my-response')).toHaveCount(0);
 });
 
 test('F-04 K10 TER-06: Abgesagte Termine nehmen keine Antworten an', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/termine');
   const k = karte(page, T03);
   for (const w of ['dabei', 'nicht-dabei', 'vielleicht'] as const) {
@@ -439,16 +439,16 @@ test('F-04 K10 TER-06: Abgesagte Termine nehmen keine Antworten an', async ({ pa
   }
   await page.goto(`/termine/${T03}`);
   await expect(knopf(page.getByRole('main'), 'dabei')).toBeDisabled();
-  await expect(page.getByTestId('meine-antwort')).toContainText(
+  await expect(page.getByTestId('my-response')).toContainText(
     'Der Termin ist abgesagt. Antworten sind nicht mehr möglich.',
   );
-  await barrierefrei(page);
+  await checkAccessibility(page);
   const antwort = await page.request.put(`/api/events/${T03}/responses/me`, { data: { status: 'ATTENDING' } });
   expect(antwort.status()).toBe(409);
 });
 
 test('F-04 K1 K10: Seed-Antworten erscheinen in der Liste und bleiben nach Neuladen', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/termine');
   await expect(knopf(karte(page, T01), 'dabei')).toHaveAttribute('aria-pressed', 'true');
   await expect(knopf(karte(page, T02), 'dabei')).toHaveAttribute('aria-pressed', 'true');
@@ -460,5 +460,5 @@ test('F-04 K1 K10: Seed-Antworten erscheinen in der Liste und bleiben nach Neula
   await page.reload();
   await expect(knopf(karte(page, T02), 'vielleicht')).toHaveAttribute('aria-pressed', 'true');
   await expect(knopf(karte(page, T01), 'dabei')).toHaveAttribute('aria-pressed', 'true');
-  await barrierefrei(page);
+  await checkAccessibility(page);
 });

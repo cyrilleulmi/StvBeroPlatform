@@ -22,7 +22,7 @@ const SPIEL_01_SU = {
 /** Spiele in der Liste «Spiele» der Termin-Detailseite, als zugängliche Namen. */
 async function spiele(page: Page): Promise<(string | null)[]> {
   return page
-    .getByTestId("spiele")
+    .getByTestId("matches")
     .getByRole("listitem")
     .evaluateAll((li) => li.map((e) => e.getAttribute("aria-label")));
 }
@@ -38,13 +38,13 @@ test("NB-44 K1 SUH-06: Nicht mehr geliefertes Spiel lässt sich im Formular entf
     data: { suTeamId: 900001, matches: [SPIEL_01_SU] },
   });
   expect(sim.status()).toBe(204);
-  await anmelden(page, "alex");
+  await login(page, "alex");
   const abgleich = await page.request.post(
     `/api/teams/${TEAM_1}/swiss-unihockey/sync`,
   );
   expect(abgleich.ok()).toBe(true);
 
-  await anmelden(page, "petra");
+  await login(page, "petra");
   await page.goto(`/termine/${T04}/bearbeiten`);
   const spiel1 = page.getByRole("group", { name: "Spiel 1" });
   const spiel2 = page.getByRole("group", { name: "Spiel 2" });
@@ -56,7 +56,7 @@ test("NB-44 K1 SUH-06: Nicht mehr geliefertes Spiel lässt sich im Formular entf
   await expect(
     page.getByRole("button", { name: "Spiel 1 entfernen" }),
   ).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.getByRole("button", { name: "Spiel 2 entfernen" }).click();
   await expect(page.getByRole("group", { name: "Spiel 2" })).toHaveCount(0);
@@ -79,7 +79,7 @@ test("NB-44 K1 SUH-06: Nicht mehr geliefertes Spiel lässt sich im Formular entf
 test("NB-44 K2 SUH-06: Importierte Spiele, die swiss unihockey noch liefert, haben keinen Knopf zum Entfernen", async ({
   page,
 }) => {
-  await anmelden(page, "petra");
+  await login(page, "petra");
   await page.goto(`/termine/${T04}/bearbeiten`);
   for (const n of [1, 2]) {
     const spiel = page.getByRole("group", { name: `Spiel ${n}` });

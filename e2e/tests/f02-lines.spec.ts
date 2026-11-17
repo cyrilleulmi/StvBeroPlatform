@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { anmelden, barrierefrei, expect, reset, test } from './helpers';
+import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * F-02 · Linien (LIN). Akzeptanzkriterien aus docs/pipeline/backlog.md, Szenarien S14 und S15 aus
@@ -50,24 +50,24 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('F-02 K1 LIN-01 LIN-06 LIN-09: Seed mit Linien, Goalies und «Ohne Linie»', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Linien');
   await expect(page).toHaveTitle('Linien · STV Bero');
-  const verwaltung = page.getByTestId('linien-verwaltung');
+  const verwaltung = page.getByTestId('lines-management');
   await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
 
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf', 'Anna Muster']);
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_2}`))).toEqual(['Sara Brun', 'Nina Roth']);
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_GOALIES}`))).toEqual(['Jana Wyss']);
-  await expect.poll(() => namen(page.getByTestId('gruppe-ohne-linie'))).toEqual(['Kim Baumann']);
-  await expect(page.getByTestId(`zuweisung-${KIM}`)).toHaveValue('');
-  await expect(page.getByTestId(`zuweisung-${ANNA}`)).toHaveValue(T1_LINIE_1);
-  await barrierefrei(page);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf', 'Anna Muster']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_2}`))).toEqual(['Sara Brun', 'Nina Roth']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_GOALIES}`))).toEqual(['Jana Wyss']);
+  await expect.poll(() => namen(page.getByTestId('group-no-line'))).toEqual(['Kim Baumann']);
+  await expect(page.getByTestId(`assignment-${KIM}`)).toHaveValue('');
+  await expect(page.getByTestId(`assignment-${ANNA}`)).toHaveValue(T1_LINIE_1);
+  await checkAccessibility(page);
 
   // Team-Seite: Spielerinnen nach Linie (LIN-12), Link zu den Linien für die Coach
   await page.goto(`/teams/${TEAM_1}`);
-  const spielerinnen = page.getByTestId('team-spielerinnen');
+  const spielerinnen = page.getByTestId('team-players');
   await expect(spielerinnen.getByRole('list', { name: 'Linie 1' }).getByRole('listitem')).toHaveText([
     'Mia Frei',
     'Lea Graf',
@@ -80,12 +80,12 @@ test('F-02 K1 LIN-01 LIN-06 LIN-09: Seed mit Linien, Goalies und «Ohne Linie»'
 });
 
 test('F-02 K2 LIN-07 LIN-09: Linie hinzufügen, umbenennen, verschieben, löschen', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  const verwaltung = page.getByTestId('linien-verwaltung');
+  const verwaltung = page.getByTestId('lines-management');
 
   // Hinzufügen
-  await page.getByTestId('linie-hinzufuegen').click();
+  await page.getByTestId('add-line').click();
   await expect(page.getByRole('status')).toHaveText('Linie 3 ist hinzugefügt.');
   await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Linie 1', 'Linie 2', 'Linie 3', 'Goalies', 'Ohne Linie']);
 
@@ -116,101 +116,101 @@ test('F-02 K2 LIN-07 LIN-09: Linie hinzufügen, umbenennen, verschieben, lösche
   const dialog = page.getByRole('dialog', { name: 'Linie 2 löschen?' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Die Spielerinnen dieser Linie sind danach ohne Linie.');
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await dialog.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByTestId(`gruppe-${T1_LINIE_2}`)).toBeVisible();
+  await expect(page.getByTestId(`group-${T1_LINIE_2}`)).toBeVisible();
 
   await page.getByRole('button', { name: 'Linie 2 löschen' }).click();
   await page.getByRole('dialog', { name: 'Linie 2 löschen?' }).getByRole('button', { name: 'Löschen' }).click();
   await expect(page.getByRole('status')).toHaveText('Linie 2 ist gelöscht.');
-  await expect(page.getByTestId(`gruppe-${T1_LINIE_2}`)).toHaveCount(0);
-  await expect.poll(() => namen(page.getByTestId('gruppe-ohne-linie'))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
+  await expect(page.getByTestId(`group-${T1_LINIE_2}`)).toHaveCount(0);
+  await expect.poll(() => namen(page.getByTestId('group-no-line'))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
 
   // Nach dem Neuladen gleich
   await page.reload();
   await expect.poll(() => gruppenTitel(verwaltung)).toEqual(['Powerplay', 'Linie 1', 'Goalies', 'Ohne Linie']);
-  await expect.poll(() => namen(page.getByTestId('gruppe-ohne-linie'))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
+  await expect.poll(() => namen(page.getByTestId('group-no-line'))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
 });
 
 test('F-02 K3 LIN-07 S14: Zuweisung per Auswahlfeld speichert sofort', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
 
-  await page.getByTestId(`zuweisung-${KIM}`).selectOption({ label: 'Linie 2' });
+  await page.getByTestId(`assignment-${KIM}`).selectOption({ label: 'Linie 2' });
   await expect(page.getByRole('status')).toHaveText('Kim Baumann ist jetzt in Linie 2.');
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_2}`))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
-  await expect(page.getByTestId('gruppe-ohne-linie').getByRole('listitem')).toHaveCount(0);
-  await expect(page.getByTestId('gruppe-ohne-linie')).toContainText('Alle Spielerinnen sind eingeteilt.');
-  await expect(page.getByTestId(`zuweisung-${KIM}`)).toBeFocused();
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_2}`))).toEqual(['Kim Baumann', 'Sara Brun', 'Nina Roth']);
+  await expect(page.getByTestId('group-no-line').getByRole('listitem')).toHaveCount(0);
+  await expect(page.getByTestId('group-no-line')).toContainText('Alle Spielerinnen sind eingeteilt.');
+  await expect(page.getByTestId(`assignment-${KIM}`)).toBeFocused();
 
   await page.reload();
-  await expect(page.getByTestId(`zuweisung-${KIM}`)).toHaveValue(T1_LINIE_2);
+  await expect(page.getByTestId(`assignment-${KIM}`)).toHaveValue(T1_LINIE_2);
 
   // Zurück auf «Ohne Linie»
-  await page.getByTestId(`zuweisung-${KIM}`).selectOption({ label: 'Ohne Linie' });
+  await page.getByTestId(`assignment-${KIM}`).selectOption({ label: 'Ohne Linie' });
   await expect(page.getByRole('status')).toHaveText('Kim Baumann ist jetzt ohne Linie.');
-  await expect.poll(() => namen(page.getByTestId('gruppe-ohne-linie'))).toEqual(['Kim Baumann']);
+  await expect.poll(() => namen(page.getByTestId('group-no-line'))).toEqual(['Kim Baumann']);
 });
 
 test('F-02 K3 LIN-07: Zuweisung per Drag & Drop speichert sofort', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobil', 'Auf dem Handy wird über das Auswahlfeld zugewiesen (LIN-07).');
   // Hoch genug, dass Quelle und Ziel gleichzeitig sichtbar sind (die Maus verlässt das Fenster nicht).
   await page.setViewportSize({ width: 1280, height: 1600 });
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
 
-  await ziehen(page, page.getByRole('listitem', { name: 'Anna Muster' }), page.getByTestId(`gruppe-${T1_GOALIES}`));
+  await ziehen(page, page.getByRole('listitem', { name: 'Anna Muster' }), page.getByTestId(`group-${T1_GOALIES}`));
   await expect(page.getByRole('status')).toHaveText('Anna Muster ist jetzt in Goalies.');
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_GOALIES}`))).toEqual(['Anna Muster', 'Jana Wyss']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_GOALIES}`))).toEqual(['Anna Muster', 'Jana Wyss']);
 
-  await ziehen(page, page.getByRole('listitem', { name: 'Kim Baumann' }), page.getByTestId(`gruppe-${T1_LINIE_1}`));
+  await ziehen(page, page.getByRole('listitem', { name: 'Kim Baumann' }), page.getByTestId(`group-${T1_LINIE_1}`));
   await expect(page.getByRole('status')).toHaveText('Kim Baumann ist jetzt in Linie 1.');
 
   await page.reload();
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_1}`))).toEqual(['Kim Baumann', 'Mia Frei', 'Lea Graf']);
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_GOALIES}`))).toEqual(['Anna Muster', 'Jana Wyss']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_1}`))).toEqual(['Kim Baumann', 'Mia Frei', 'Lea Graf']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_GOALIES}`))).toEqual(['Anna Muster', 'Jana Wyss']);
 });
 
 test('F-02 K4 LIN-02 S15: höchstens eine Gruppe pro Spielerin und Team', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
 
-  await page.getByTestId(`zuweisung-${ANNA}`).selectOption({ label: 'Linie 2' });
+  await page.getByTestId(`assignment-${ANNA}`).selectOption({ label: 'Linie 2' });
   await expect(page.getByRole('status')).toHaveText('Anna Muster ist jetzt in Linie 2.');
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_2}`))).toEqual(['Sara Brun', 'Anna Muster', 'Nina Roth']);
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_2}`))).toEqual(['Sara Brun', 'Anna Muster', 'Nina Roth']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf']);
   await expect(page.getByRole('listitem', { name: 'Anna Muster' })).toHaveCount(1);
 });
 
 test('F-02 K5 LIN-03: Lea hat in Team 1 und Team 2 verschiedene Linien', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  await expect(page.getByTestId(`zuweisung-${LEA}`)).toHaveValue(T1_LINIE_1);
+  await expect(page.getByTestId(`assignment-${LEA}`)).toHaveValue(T1_LINIE_1);
   await page.goto(`/teams/${TEAM_2}/linien`);
-  await expect(page.getByTestId(`zuweisung-${LEA}`)).toHaveValue(T2_LINIE_2);
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T2_LINIE_2}`))).toEqual(['Lea Graf', 'Zoe Kaufmann']);
+  await expect(page.getByTestId(`assignment-${LEA}`)).toHaveValue(T2_LINIE_2);
+  await expect.poll(() => namen(page.getByTestId(`group-${T2_LINIE_2}`))).toEqual(['Lea Graf', 'Zoe Kaufmann']);
 
   // Änderung in Team 1 lässt Team 2 unverändert
   await page.goto(`/teams/${TEAM_1}/linien`);
-  await page.getByTestId(`zuweisung-${LEA}`).selectOption({ label: 'Goalies' });
+  await page.getByTestId(`assignment-${LEA}`).selectOption({ label: 'Goalies' });
   await expect(page.getByRole('status')).toHaveText('Lea Graf ist jetzt in Goalies.');
   await page.goto(`/teams/${TEAM_2}/linien`);
-  await expect(page.getByTestId(`zuweisung-${LEA}`)).toHaveValue(T2_LINIE_2);
+  await expect(page.getByTestId(`assignment-${LEA}`)).toHaveValue(T2_LINIE_2);
   // Im Auswahlfeld stehen nur die Gruppen dieses Teams
-  await expect(page.getByTestId(`zuweisung-${LEA}`).getByRole('option')).toHaveText([
+  await expect(page.getByTestId(`assignment-${LEA}`).getByRole('option')).toHaveText([
     'Linie 1',
     'Linie 2',
     'Goalies',
     'Ohne Linie',
   ]);
-  await expect(page.getByTestId(`gruppe-${T2_LINIE_1}`)).toBeVisible();
+  await expect(page.getByTestId(`group-${T2_LINIE_1}`)).toBeVisible();
 });
 
 test('F-02 K6 LIN-05: Goalies gibt es genau einmal, sie lassen sich nicht löschen', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  const goalies = page.getByTestId(`gruppe-${T1_GOALIES}`);
+  const goalies = page.getByTestId(`group-${T1_GOALIES}`);
   await expect(goalies.getByRole('heading', { level: 2 })).toContainText('Goalies');
   await expect(page.getByRole('heading', { level: 2, name: /^Goalies/ })).toHaveCount(1);
   await expect(goalies.getByRole('button', { name: /löschen|umbenennen|nach/ })).toHaveCount(0);
@@ -225,16 +225,16 @@ test('F-02 K6 LIN-05: Goalies gibt es genau einmal, sie lassen sich nicht lösch
 });
 
 test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ändern', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByText('Nur Coaches des Teams können die Einteilung ändern.')).toBeVisible();
-  await expect.poll(() => namen(page.getByTestId(`gruppe-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf', 'Anna Muster']);
+  await expect.poll(() => namen(page.getByTestId(`group-${T1_LINIE_1}`))).toEqual(['Mia Frei', 'Lea Graf', 'Anna Muster']);
   await expect(page.getByRole('combobox')).toHaveCount(0);
-  await expect(page.getByTestId('linie-hinzufuegen')).toHaveCount(0);
+  await expect(page.getByTestId('add-line')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /löschen|umbenennen|nach/ })).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await page.goto(`/teams/${TEAM_1}`);
-  await expect(page.getByTestId('team-spielerinnen').getByRole('list', { name: 'Linie 1' })).toBeVisible();
+  await expect(page.getByTestId('team-players').getByRole('list', { name: 'Linie 1' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Linien einteilen' })).toHaveCount(0);
   const annaAendert = await page.request.put(`/api/teams/${TEAM_1}/assignments/${ANNA}`, {
     data: { groupId: T1_LINIE_2 },
@@ -242,16 +242,16 @@ test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ä
   expect(annaAendert.status()).toBe(403);
 
   // petra ist in Team 2 nur Spielerin: lesend
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_2}/linien`);
   await expect(page.getByText('Nur Coaches des Teams können die Einteilung ändern.')).toBeVisible();
-  await expect(page.getByTestId(`gruppe-${T2_GOALIES}`)).toBeVisible();
+  await expect(page.getByTestId(`group-${T2_GOALIES}`)).toBeVisible();
   await expect(page.getByRole('combobox')).toHaveCount(0);
 
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
-  await expect(page.getByTestId('linien-verwaltung')).toHaveCount(0);
+  await expect(page.getByTestId('lines-management')).toHaveCount(0);
   for (const anfrage of [
     page.request.put(`/api/teams/${TEAM_1}/assignments/${ANNA}`, { data: { groupId: T1_LINIE_2 } }),
     page.request.post(`/api/teams/${TEAM_1}/groups`, { data: { name: 'Linie 3' } }),
@@ -264,13 +264,13 @@ test('F-02 K7 RR-07: anna sieht die Einteilung lesend, marc darf Team 1 nicht ä
 
 test.describe('Name schon vergeben', () => {
   // Der Browser meldet die erwartete 409-Antwort in der Konsole.
-  test.use({ erwarteteKonsolenfehler: [/status of 409/] });
+  test.use({ expectedConsoleErrors: [/status of 409/] });
 
   test('F-02 G1 LIN-09: doppelter Name wird beim Namensfeld gemeldet, Fokus bleibt im Feld', async ({ page }) => {
-    await anmelden(page, 'petra');
+    await login(page, 'petra');
     await page.goto(`/teams/${TEAM_1}/linien`);
-    const verwaltung = page.getByTestId('linien-verwaltung');
-    await page.getByTestId('linie-hinzufuegen').click();
+    const verwaltung = page.getByTestId('lines-management');
+    await page.getByTestId('add-line').click();
     await expect(page.getByRole('status')).toHaveText('Linie 3 ist hinzugefügt.');
 
     await page.getByRole('button', { name: 'Linie 3 umbenennen' }).click();
@@ -295,10 +295,10 @@ test.describe('Name schon vergeben', () => {
 });
 
 test('F-02 G7 LIN-09: Fokus bleibt bei der Linie, wenn sie an den Rand verschoben wird', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
-  const verwaltung = page.getByTestId('linien-verwaltung');
-  await page.getByTestId('linie-hinzufuegen').click();
+  const verwaltung = page.getByTestId('lines-management');
+  await page.getByTestId('add-line').click();
   await expect(page.getByRole('status')).toHaveText('Linie 3 ist hinzugefügt.');
 
   // Linie 2 nach ganz unten: «nach unten» ist gesperrt, Fokus wechselt auf «nach oben»

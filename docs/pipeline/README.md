@@ -106,7 +106,7 @@ What you need to know when setting it up:
 
 ## Status page and notifications
 
-**Status page:** https://cyrilleulmi.github.io/StvBeroPlatform/ (source `status/index.html`, published by `.github/workflows/statusseite.yml`). It reads the state live from the GitHub API and shows:
+**Status page:** https://cyrilleulmi.github.io/StvBeroPlatform/ (source `status/index.html`, published by `.github/workflows/status-page.yml`). It reads the state live from the GitHub API and shows:
 
 - what needs you (blocks, follow-up fixes without release)
 - what is in progress right now, with stage and round

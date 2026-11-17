@@ -1,4 +1,4 @@
-/** Entwicklung und Test: Testmodus mit /dev-login (Backend im Profil dev/test). */
-export const umgebung = {
-  testmodus: true,
+/** Development and test: test mode with /dev-login (backend in profile dev/test). */
+export const environment = {
+  testMode: true,
 };

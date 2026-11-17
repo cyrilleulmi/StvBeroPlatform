@@ -1,4 +1,4 @@
-/** Produktion: kein Testmodus, /dev-login existiert nicht. */
-export const umgebung = {
-  testmodus: false,
+/** Production: no test mode, /dev-login does not exist. */
+export const environment = {
+  testMode: false,
 };

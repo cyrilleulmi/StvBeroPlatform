@@ -1,4 +1,4 @@
-import { anmelden, barrierefrei, expect, reset, test } from './helpers';
+import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * F-01 · Personen, Teams, Saisons (PTF, SAI, RR-04). Akzeptanzkriterien aus docs/pipeline/backlog.md.
@@ -21,34 +21,34 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('F-01 K1: Seed mit Saisons, Teams, Personen und Teamzugehörigkeiten', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
 
   await page.goto('/verwaltung/personen');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Personen');
   await expect(page.getByRole('list', { name: 'Personen' }).getByRole('listitem')).toHaveCount(17);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.goto('/verwaltung/teams');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Teams verwalten');
   await expect(page.getByLabel('Saison')).toHaveValue(SAISON_2026);
   const teams = page.getByRole('list', { name: 'Teams' });
   await expect(teams.getByRole('link')).toHaveText(['Team 1', 'Team 2', 'Team 3']);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.goto('/verwaltung/saisons');
   const saisons = page.getByRole('list', { name: 'Saisons' });
-  await expect(saisons.getByRole('listitem', { name: '2026/27' }).getByTestId('saison-status')).toHaveText('aktuell');
-  await expect(saisons.getByRole('listitem', { name: '2025/26' }).getByTestId('saison-status')).toHaveText('Archiv');
-  await barrierefrei(page);
+  await expect(saisons.getByRole('listitem', { name: '2026/27' }).getByTestId('season-status')).toHaveText('aktuell');
+  await expect(saisons.getByRole('listitem', { name: '2025/26' }).getByTestId('season-status')).toHaveText('Archiv');
+  await checkAccessibility(page);
 });
 
 test('F-01 K2 PTF-11: Admin erfasst und bearbeitet eine Person', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung');
   await page.getByRole('link', { name: /^Personen/ }).click();
   await page.getByRole('link', { name: 'Person erfassen' }).click();
   await expect(page).toHaveURL('/verwaltung/personen/neu');
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByLabel('Vorname')).toHaveAttribute('aria-invalid', 'true');
@@ -75,12 +75,12 @@ test('F-01 K2 PTF-11: Admin erfasst und bearbeitet eine Person', async ({ page }
 });
 
 test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme abgelehnt', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/teams');
   await page.getByRole('link', { name: 'Team 3' }).click();
   await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_3}?saison=${SAISON_2026}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 3');
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.getByLabel('Person', { exact: true }).selectOption({ label: 'Anna Muster' });
   await page.getByLabel('Funktion', { exact: true }).selectOption({ label: 'Coach' });
@@ -88,8 +88,8 @@ test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme ab
 
   await expect(page.getByRole('status')).toHaveText('Anna Muster ist jetzt Coach in Team 3.');
   await expect(page.getByRole('list', { name: 'Coaches' }).getByRole('listitem')).toHaveCount(2);
-  await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`mitglied-${ANNA}`)).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Spielerinnen' }).getByTestId(`mitglied-${ANNA}`)).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`member-${ANNA}`)).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Spielerinnen' }).getByTestId(`member-${ANNA}`)).toHaveCount(0);
 
   // Die Oberfläche bietet die zweite Aufnahme nicht an, das Backend lehnt sie ab (PTF-04).
   await expect(page.getByRole('option', { name: 'Anna Muster (schon im Team)' })).toBeDisabled();
@@ -102,21 +102,21 @@ test('F-01 K3 PTF-04: Person mit Funktion ins Team aufnehmen, zweite Aufnahme ab
   // Funktion ändern und entfernen
   await page.getByLabel('Funktion von Tina Bucher').selectOption({ label: 'Coach' });
   await expect(page.getByRole('status')).toHaveText('Tina Bucher ist jetzt Coach.');
-  await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`mitglied-${TINA}`)).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Coaches' }).getByTestId(`member-${TINA}`)).toBeVisible();
   await page.getByRole('button', { name: 'Tina Bucher entfernen' }).click();
   await expect(page.getByRole('status')).toHaveText('Tina Bucher ist nicht mehr im Team.');
-  await expect(page.getByTestId(`mitglied-${TINA}`)).toHaveCount(0);
+  await expect(page.getByTestId(`member-${TINA}`)).toHaveCount(0);
 });
 
 test('F-01 K4 PTF-12: Petra sieht beide Teams mit ihrer jeweiligen Funktion', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/teams');
 
   const liste = page.getByRole('list', { name: 'Meine Teams' });
   await expect(liste.getByRole('listitem')).toHaveCount(2);
-  await expect(page.getByTestId(`team-karte-${TEAM_1}`)).toHaveText(/Team 1\s*Coach/);
-  await expect(page.getByTestId(`team-karte-${TEAM_2}`)).toHaveText(/Team 2\s*Spielerin/);
-  await barrierefrei(page);
+  await expect(page.getByTestId(`team-card-${TEAM_1}`)).toHaveText(/Team 1\s*Coach/);
+  await expect(page.getByTestId(`team-card-${TEAM_2}`)).toHaveText(/Team 2\s*Spielerin/);
+  await checkAccessibility(page);
 
   await page.getByRole('link', { name: /Team 2/ }).click();
   await expect(page).toHaveURL(`/teams/${TEAM_2}`);
@@ -124,11 +124,11 @@ test('F-01 K4 PTF-12: Petra sieht beide Teams mit ihrer jeweiligen Funktion', as
 });
 
 test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
 
   await page.goto(`/teams/${TEAM_1}`);
   const coaches = page.getByTestId('team-coaches');
-  const spielerinnen = page.getByTestId('team-spielerinnen');
+  const spielerinnen = page.getByTestId('team-players');
   await expect(coaches.getByRole('listitem')).toHaveText(['Petra Keller']);
   // Ab F-02 nach Linie: Linie 1, Linie 2, Goalies, Ohne Linie; darin nach Nachname (LIN-09)
   await expect(spielerinnen.getByRole('listitem')).toHaveText([
@@ -141,17 +141,17 @@ test('F-01 K5 PTF-07: /teams/:id zeigt Coaches und Spielerinnen getrennt', async
     'Kim Baumann',
   ]);
   await expect(spielerinnen.getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await page.goto(`/teams/${TEAM_2}`);
   await expect(page.getByTestId('team-coaches').getByRole('listitem')).toHaveText(['Marc Huber']);
-  await expect(page.getByTestId('team-spielerinnen').getByTestId(`team-person-${PETRA}`)).toBeVisible();
-  await expect(page.getByTestId('team-spielerinnen').getByTestId(`team-person-${MARC}`)).toHaveCount(0);
+  await expect(page.getByTestId('team-players').getByTestId(`team-person-${PETRA}`)).toBeVisible();
+  await expect(page.getByTestId('team-players').getByTestId(`team-person-${MARC}`)).toHaveCount(0);
   await expect(page.getByTestId('team-coaches').getByTestId(`team-person-${PETRA}`)).toHaveCount(0);
 });
 
 test('F-01 K6 SAI-04 SAI-06: neue Saison mit Übernahme anlegen und zur aktuellen machen', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Saisons');
 
@@ -164,45 +164,45 @@ test('F-01 K6 SAI-04 SAI-06: neue Saison mit Übernahme anlegen und zur aktuelle
 
   await expect(page.getByRole('status')).toHaveText('Saison 2027/28 ist angelegt. Du kannst sie jetzt anpassen.');
   const neu = page.getByRole('listitem', { name: '2027/28' });
-  await expect(neu.getByTestId('saison-status')).toHaveText('geplant');
-  await barrierefrei(page);
+  await expect(neu.getByTestId('season-status')).toHaveText('geplant');
+  await checkAccessibility(page);
 
   // Übernommen: Teams und Zugehörigkeiten
   await neu.getByRole('link', { name: 'Teams ansehen' }).click();
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveText(['Team 1', 'Team 2', 'Team 3']);
   await page.getByRole('link', { name: 'Team 1' }).click();
   await expect(page.getByTestId('team-coaches').getByRole('listitem')).toHaveCount(1);
-  await expect(page.getByTestId('team-spielerinnen').getByRole('listitem')).toHaveCount(7);
+  await expect(page.getByTestId('team-players').getByRole('listitem')).toHaveCount(7);
 
   await page.goto('/verwaltung/saisons');
   await page.getByRole('listitem', { name: '2027/28' }).getByRole('button', { name: 'Zur aktuellen Saison machen' }).click();
   await expect(page.getByRole('status')).toHaveText('2027/28 ist jetzt die aktuelle Saison.');
-  await expect(page.getByRole('listitem', { name: '2027/28' }).getByTestId('saison-status')).toHaveText('aktuell');
-  await expect(page.getByRole('listitem', { name: '2026/27' }).getByTestId('saison-status')).toHaveText('Archiv');
+  await expect(page.getByRole('listitem', { name: '2027/28' }).getByTestId('season-status')).toHaveText('aktuell');
+  await expect(page.getByRole('listitem', { name: '2026/27' }).getByTestId('season-status')).toHaveText('Archiv');
 
   // Petra sieht ihre Teams in der neuen Saison
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/teams');
-  await expect(page.getByTestId(`team-karte-${TEAM_1}`)).toHaveText(/Coach/);
-  await expect(page.getByTestId(`team-karte-${TEAM_2}`)).toHaveText(/Spielerin/);
+  await expect(page.getByTestId(`team-card-${TEAM_1}`)).toHaveText(/Coach/);
+  await expect(page.getByTestId(`team-card-${TEAM_2}`)).toHaveText(/Spielerin/);
 });
 
 test('F-01 K7 S16 SAI-02: Archiv ist lesend sichtbar', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await page.getByRole('listitem', { name: '2025/26' }).getByRole('link', { name: 'Teams ansehen' }).click();
 
   await expect(page).toHaveURL(`/verwaltung/teams?saison=${SAISON_2025}`);
-  await expect(page.getByTestId('archiv-hinweis')).toHaveText('Saison 2025/26 im Archiv: nur lesend.');
+  await expect(page.getByTestId('archive-notice')).toHaveText('Saison 2025/26 im Archiv: nur lesend.');
   await expect(page.getByRole('button', { name: 'Team anlegen' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Team 1' }).click();
 
   await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_1}?saison=${SAISON_2025}`);
-  await expect(page.getByTestId('archiv-hinweis')).toBeVisible();
-  await expect(page.getByTestId('team-spielerinnen').getByTestId(`mitglied-${VERA}`)).toHaveText(/Vera Studer\s*Spielerin/);
+  await expect(page.getByTestId('archive-notice')).toBeVisible();
+  await expect(page.getByTestId('team-players').getByTestId(`member-${VERA}`)).toHaveText(/Vera Studer\s*Spielerin/);
   await expect(page.getByRole('button')).toHaveCount(0);
   await expect(page.getByRole('combobox')).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   const aendern = await page.request.post(`/api/teams/${TEAM_1}/members?season=${SAISON_2025}`, {
     data: { personId: ANNA, teamRole: 'PLAYER' },
@@ -211,7 +211,7 @@ test('F-01 K7 S16 SAI-02: Archiv ist lesend sichtbar', async ({ page }) => {
 });
 
 test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
 
   for (const route of [
     '/verwaltung',
@@ -226,7 +226,7 @@ test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ 
     await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   }
   await expect(page.getByRole('navigation', { name: 'Hauptnavigation' }).getByRole('link', { name: 'Verwaltung' })).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   const anfragen = [
     page.request.get('/api/persons'),
@@ -241,7 +241,7 @@ test('F-01 K8 RR-04 RR-07: Verwaltung ist für Nicht-Admins gesperrt', async ({ 
 });
 
 test('F-01 RR-02: Fremdes Team zeigt «Keine Berechtigung»', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/teams/${TEAM_2}`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   expect((await page.request.get(`/api/teams/${TEAM_2}`)).status()).toBe(403);
@@ -257,7 +257,7 @@ function postsZaehlen(page: import('@playwright/test').Page, pfad: RegExp): { an
 }
 
 test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/personen/neu');
   const posts = postsZaehlen(page, /^\/api\/persons$/);
   await page.getByLabel('Vorname').fill('Flurina');
@@ -271,7 +271,7 @@ test('F-01 K2 PTF-11: Doppelklick auf Speichern erfasst die Person nur einmal', 
 });
 
 test('F-01 K3: Doppelklick auf Team anlegen legt das Team nur einmal an', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/teams');
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveCount(3);
   const posts = postsZaehlen(page, /^\/api\/teams$/);
@@ -289,7 +289,7 @@ test('F-01 K3: Doppelklick auf Team anlegen legt das Team nur einmal an', async 
 });
 
 test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohne Fehler', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   const posts = postsZaehlen(page, /\/members$/);
@@ -304,7 +304,7 @@ test('F-01 K3 PTF-04: Doppelklick auf Aufnehmen nimmt die Person einmal auf, ohn
 });
 
 test('F-01 K6 SAI-01: Doppelklick auf Saison anlegen legt die Saison einmal an, ohne Fehler', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
   const posts = postsZaehlen(page, /^\/api\/seasons$/);
@@ -317,13 +317,13 @@ test('F-01 K6 SAI-01: Doppelklick auf Saison anlegen legt die Saison einmal an, 
 });
 
 test('F-01 K7: Team ohne Coach zeigt «noch keinen Coach»', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}?saison=${SAISON_2025}`);
   await expect(page.getByText('Dieses Team hat noch keinen Coach.')).toBeVisible();
 });
 
 test('F-01 K2 PTF-11: Langer Name ohne Leerzeichen bricht in der Liste um', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   const lang = ('Maximiliane'.repeat(6)).slice(0, 60); // Maximum, ohne Leerzeichen
   const antwort = await page.request.post('/api/persons', {
     data: { firstName: lang, lastName: 'Lang', email: null, admin: false },

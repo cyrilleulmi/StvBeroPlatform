@@ -1,4 +1,4 @@
-import { anmelden, barrierefrei, dokumentWurzel, expect, kopfLink, reset, test } from './helpers';
+import { checkAccessibility, documentRoot, expect, headLink, login, reset, test } from './helpers';
 
 /** F-00 · Grundgerüst (NF-01–NF-24, RR-05). Akzeptanzkriterien aus docs/pipeline/backlog.md. */
 
@@ -10,14 +10,14 @@ test.describe('Anmeldung', () => {
   test('F-00 K3: /dev-login zeigt alle Seed-Personen, ein Klick meldet an und führt auf /', async ({ page }) => {
     await page.goto('/dev-login');
 
-    await expect(page.getByTestId('testmodus-hinweis')).toHaveText('Testmodus');
+    await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden als …');
     const liste = page.getByRole('list', { name: 'Testpersonen' });
     await expect(liste.getByRole('listitem')).toHaveCount(17);
     for (const name of ['Alex Admin', 'Petra Keller', 'Marc Huber', 'Ruth Meier', 'Anna Muster', 'Vera Studer']) {
       await expect(liste.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
     }
-    await barrierefrei(page);
+    await checkAccessibility(page);
 
     await liste.getByRole('button', { name: /^Anna Muster/ }).click();
 
@@ -42,7 +42,7 @@ test.describe('Anmeldung', () => {
     await page.goto('/anmelden?ziel=%2Fteams');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden');
-    await barrierefrei(page);
+    await checkAccessibility(page);
     await page.getByRole('link', { name: 'Zur Anmeldung im Testmodus' }).click();
     await page.getByRole('button', { name: /^Lea Graf/ }).click();
 
@@ -50,7 +50,7 @@ test.describe('Anmeldung', () => {
   });
 
   test('F-00: Abmelden beendet die Sitzung', async ({ page }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/profil');
 
     await page.getByRole('button', { name: 'Abmelden' }).click();
@@ -64,36 +64,36 @@ test.describe('Anmeldung', () => {
 
 test.describe('Start und Kacheln', () => {
   test('F-00 K4 NF-11 NF-12: Start zeigt Begrüssung und die Kachel Anwesenheit, die auf /termine führt', async ({ page }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
-    const kachel = page.getByTestId('kachel-anwesenheit');
+    const kachel = page.getByTestId('tile-anwesenheit');
     await expect(kachel).toHaveAccessibleName('Anwesenheit');
     await expect(kachel).toHaveAttribute('href', '/termine');
-    await barrierefrei(page);
+    await checkAccessibility(page);
 
     await kachel.click();
 
     await expect(page).toHaveURL('/termine');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Termine');
     // Seit F-03 gibt es Termine im Seed; den leeren Zustand prüft f03-termine.spec.ts (Alex).
-    await expect(page.getByTestId('termin-karte-40000000-0000-4000-8000-000000000001')).toBeVisible();
-    await barrierefrei(page);
+    await expect(page.getByTestId('event-card-40000000-0000-4000-8000-000000000001')).toBeVisible();
+    await checkAccessibility(page);
   });
 
   test('F-00 K4: Teams zeigen ohne Teamzugehörigkeit einen leeren Zustand', async ({ page }) => {
     // Seit F-01 hat nur Alex (Admin) keine Teamzugehörigkeit.
-    await anmelden(page, 'alex');
+    await login(page, 'alex');
     await page.goto('/teams');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meine Teams');
     await expect(page.getByText('Du bist noch in keinem Team.')).toBeVisible();
-    await barrierefrei(page);
+    await checkAccessibility(page);
   });
 
   test('F-00: unbekannte Route zeigt einen Hinweis statt einer leeren Seite', async ({ page }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/gibt-es-nicht');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Diese Seite gibt es nicht.');
@@ -104,11 +104,11 @@ test.describe('Start und Kacheln', () => {
 
 test.describe('Navigation', () => {
   test('F-00 K5 NF-03: Navigation mobil unten bzw. ab 1024px links, aktiver Eintrag mit aria-current', async ({ page, isMobile }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/');
 
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
-    await expect(nav).toHaveAttribute('data-testid', 'hauptnavigation');
+    await expect(nav).toHaveAttribute('data-testid', 'main-navigation');
     await expect(nav.getByRole('list').getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil']);
     await expect(nav.getByRole('link', { name: 'Start' })).toHaveAttribute('aria-current', 'page');
 
@@ -137,7 +137,7 @@ test.describe('Navigation', () => {
   });
 
   test('F-00 RR-05: «Verwaltung» nur für Admins', async ({ page }) => {
-    await anmelden(page, 'alex');
+    await login(page, 'alex');
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Hauptnavigation' });
     await expect(nav.getByRole('list').getByRole('link')).toHaveText(['Start', 'Termine', 'Teams', 'Profil', 'Verwaltung']);
@@ -146,11 +146,11 @@ test.describe('Navigation', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Verwaltung');
     await expect(page.getByRole('alert')).toHaveCount(0);
-    await barrierefrei(page);
+    await checkAccessibility(page);
   });
 
   test('F-00 RR-05: ohne Admin keine «Verwaltung», direkter Aufruf zeigt «Keine Berechtigung»', async ({ page }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/verwaltung');
 
     await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
@@ -167,52 +167,52 @@ test.describe('Design', () => {
 
   test('F-00 K6 NF-06 NF-07: Hell/GitHub Dark/System umschalten, die Wahl bleibt nach Neuladen', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/profil');
 
-    const umschalter = page.getByTestId('theme-umschalter');
+    const umschalter = page.getByTestId('theme-switch');
     await expect(umschalter).toHaveAccessibleName('Darstellung');
     await expect(umschalter.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(await hintergrund(page)).toBe(HELL);
 
     await umschalter.getByRole('radio', { name: 'GitHub Dark' }).check();
-    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'github-dark');
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
-    await barrierefrei(page);
+    await checkAccessibility(page);
 
     await page.reload();
-    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'GitHub Dark' })).toBeChecked();
-    await expect(dokumentWurzel(page)).toHaveAttribute('data-theme', 'github-dark');
+    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'GitHub Dark' })).toBeChecked();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
     expect(await hintergrund(page)).toBe(DUNKEL);
 
-    await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'Hell' }).check();
+    await page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell' }).check();
     await page.emulateMedia({ colorScheme: 'dark' });
     expect(await hintergrund(page)).toBe(HELL);
 
-    await page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' }).check();
-    await expect(dokumentWurzel(page)).not.toHaveAttribute('data-theme', /.*/);
+    await page.getByTestId('theme-switch').getByRole('radio', { name: 'System' }).check();
+    await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
     expect(await hintergrund(page)).toBe(DUNKEL);
     await page.reload();
-    await expect(page.getByTestId('theme-umschalter').getByRole('radio', { name: 'System' })).toBeChecked();
+    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System' })).toBeChecked();
   });
 
   test('F-00 K6: Start im Darkmode ohne Barrierefreiheits-Befunde', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
-    await anmelden(page, 'alex');
+    await login(page, 'alex');
     await page.goto('/');
 
-    await expect(page.getByTestId('kachel-anwesenheit')).toBeVisible();
+    await expect(page.getByTestId('tile-anwesenheit')).toBeVisible();
     expect(await hintergrund(page)).toBe(DUNKEL);
-    await barrierefrei(page);
+    await checkAccessibility(page);
   });
 });
 
 test.describe('PWA', () => {
   test('F-00 K7 NF-05: Manifest und Service Worker machen die App installierbar', async ({ page }) => {
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/');
 
-    const href = await kopfLink(page, 'manifest').getAttribute('href');
+    const href = await headLink(page, 'manifest').getAttribute('href');
     expect(href).toBe('manifest.webmanifest');
     const manifest = await (await page.request.get('/manifest.webmanifest')).json();
     expect(manifest).toMatchObject({ name: 'STV Bero', start_url: '/', display: 'standalone', lang: 'de-CH' });

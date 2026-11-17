@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { anmelden, expect, reset, test } from './helpers';
+import { expect, login, reset, test } from './helpers';
 
 /**
  * Nachbesserung #14 · Schreibende Aktionen sind gesperrt, solange ihre Anfrage läuft.
@@ -82,7 +82,7 @@ test('Nachbesserung #14 K1: Doppelklick unter /dev-login meldet genau einmal an'
 
 test.describe('fehlerhafte Anmeldung', () => {
   // Der Browser meldet die bewusst ausgelöste 503-Antwort in der Konsole.
-  test.use({ erwarteteKonsolenfehler: [/status of 503/] });
+  test.use({ expectedConsoleErrors: [/status of 503/] });
 
   test('Nachbesserung #14 K1: Nach einem Fehler ist die Anmeldung unter /dev-login wieder möglich', async ({ page }) => {
     await page.goto('/dev-login');
@@ -108,7 +108,7 @@ test.describe('fehlerhafte Anmeldung', () => {
 });
 
 test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Profil meldet einmal ab', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto('/profil');
   const bremse = await bremsen(page, 'POST', /^\/api\/logout$/);
 
@@ -119,11 +119,11 @@ test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Profil meldet einmal ab'
 });
 
 test.describe('ohne aktuelle Saison', () => {
-  test.use({ erwarteteKonsolenfehler: [/status of 409/] });
+  test.use({ expectedConsoleErrors: [/status of 409/] });
 
   test('Nachbesserung #14 K2: Doppelklick auf Abmelden im Hinweis «keine Saison» meldet einmal ab', async ({ page, request }) => {
     expect((await request.delete('/api/test/current-season')).status()).toBe(204);
-    await anmelden(page, 'anna');
+    await login(page, 'anna');
     await page.goto('/');
     await expect(page).toHaveURL('/keine-saison');
     const bremse = await bremsen(page, 'POST', /^\/api\/logout$/);
@@ -136,7 +136,7 @@ test.describe('ohne aktuelle Saison', () => {
 });
 
 test('Nachbesserung #14 K2: Doppelklick auf Umbenennen speichert den Namen einmal', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/teams/${TEAM_1}$`));
@@ -152,7 +152,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Umbenennen speichert den Namen einma
 });
 
 test('Nachbesserung #14 K2: Doppelklick auf Entfernen entfernt die Person einmal, ohne Fehler', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   const bremse = await bremsen(page, 'DELETE', new RegExp(`/members/${ANNA}$`));
@@ -173,7 +173,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Entfernen entfernt die Person einmal
 });
 
 test('Nachbesserung #14 K2: Doppelklick auf Speichern einer Person speichert einmal', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/personen/${ANNA}`);
   await expect(page.getByLabel('Vorname')).toHaveValue('Anna');
   const bremse = await bremsen(page, 'PUT', new RegExp(`^/api/persons/${ANNA}$`));
@@ -186,7 +186,7 @@ test('Nachbesserung #14 K2: Doppelklick auf Speichern einer Person speichert ein
 });
 
 test('Nachbesserung #14 K2: Doppelklick auf «Zur aktuellen Saison machen» wechselt einmal', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto('/verwaltung/saisons');
   await expect(page.getByLabel('Name')).toHaveValue('2027/28');
   await page.getByRole('button', { name: 'Saison anlegen' }).click();

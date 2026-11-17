@@ -5,7 +5,7 @@ name: Status page
 on:
   push:
     branches: [main]
-    paths: ['status/**', '.github/workflows/statusseite.yml']
+    paths: ['status/**', '.github/workflows/status-page.yml']
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  veroeffentlichen:
+  publish:
     runs-on: ubuntu-latest
     environment:
       name: github-pages

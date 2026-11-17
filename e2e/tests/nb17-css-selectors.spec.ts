@@ -22,8 +22,8 @@ function testdateien(): string[] {
 
 test('Nachbesserung #17 AK1: Die Ausnahme für Dokument-Elemente ist in hilfen.ts gekapselt', () => {
   const hilfen = readFileSync(join(__dirname, 'hilfen.ts'), 'utf8');
-  expect(hilfen).toContain('export function dokumentWurzel(');
-  expect(hilfen).toContain('export function kopfLink(');
+  expect(hilfen).toContain('export function documentRoot(');
+  expect(hilfen).toContain('export function headLink(');
 });
 
 test('Nachbesserung #17 AK2: Ausserhalb von hilfen.ts verwenden die E2E-Tests keine CSS-Selektoren', () => {

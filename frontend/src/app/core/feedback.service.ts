@@ -1,20 +1,20 @@
 import { Injectable, signal } from '@angular/core';
 
 /**
- * Erfolgsmeldung, die einen Seitenwechsel überdauert (z.B. «Person erfasst» nach dem Speichern).
- * Die Zielseite zeigt sie mit `role="status"` an und nimmt sie mit `abholen()` entgegen.
+ * Success message that survives a page change (e.g. «Person erfasst» after saving).
+ * The target page shows it with `role="status"` and takes it with `take()`.
  */
 @Injectable({ providedIn: 'root' })
-export class RueckmeldungService {
-  private readonly meldung = signal<string | null>(null);
+export class FeedbackService {
+  private readonly message = signal<string | null>(null);
 
-  setzen(text: string): void {
-    this.meldung.set(text);
+  set(text: string): void {
+    this.message.set(text);
   }
 
-  abholen(): string | null {
-    const m = this.meldung();
-    this.meldung.set(null);
+  take(): string | null {
+    const m = this.message();
+    this.message.set(null);
     return m;
   }
 }

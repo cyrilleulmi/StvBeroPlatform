@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { anmelden, barrierefrei, expect, reset, test } from './helpers';
+import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * F-05 · Spieltage und Aufgebot (AUF, RR-03). Akzeptanzkriterien aus Issue #6 bzw. docs/pipeline/backlog.md,
@@ -22,13 +22,13 @@ const SPIEL_03 = '50000000-0000-4000-8000-000000000003';
 /** Spiele in Anzeigereihenfolge, als Name des Eintrags («09:30 Team 1 – UHC Musterdorf»). */
 async function spiele(page: Page): Promise<(string | null)[]> {
   return page
-    .getByTestId('spiele')
+    .getByTestId('matches')
     .getByRole('listitem')
     .evaluateAll((li) => li.map((e) => e.getAttribute('aria-label')));
 }
 
 function eintrag(page: Page, personId: string): Locator {
-  return page.getByTestId(`aufgebot-person-${personId}`);
+  return page.getByTestId(`call-up-person-${personId}`);
 }
 
 test.beforeEach(async ({ request }) => {
@@ -38,18 +38,18 @@ test.beforeEach(async ({ request }) => {
 test('F-05 K1 K3 AUF-10 AUF-12 AUF-14: Termin 04 zeigt Spiele nach Anspielzeit, Treffpunkt und Karte', async ({
   page,
 }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T04}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Spieltag');
-  await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toBeVisible();
+  await expect(page.getByTestId(`match-${SPIEL_01}`)).toBeVisible();
   await expect.poll(() => spiele(page)).toEqual([
     '09:30 Team 1 – UHC Musterdorf',
     '11:45 Unihockey Beispielstadt – Team 1',
   ]);
-  await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toContainText('Heim');
-  await expect(page.getByTestId(`spiel-${SPIEL_02}`)).toContainText('Auswärts');
-  await expect(page.getByTestId('treffpunkt')).toHaveText('08:00 · Parkplatz Sporthalle Nord');
-  const karte = page.getByTestId('spielort-karte');
+  await expect(page.getByTestId(`match-${SPIEL_01}`)).toContainText('Heim');
+  await expect(page.getByTestId(`match-${SPIEL_02}`)).toContainText('Auswärts');
+  await expect(page.getByTestId('meeting-point')).toHaveText('08:00 · Parkplatz Sporthalle Nord');
+  const karte = page.getByTestId('venue-map');
   await expect(karte).toHaveText('In Google Maps öffnen');
   await expect(karte).toHaveAttribute(
     'href',
@@ -58,26 +58,26 @@ test('F-05 K1 K3 AUF-10 AUF-12 AUF-14: Termin 04 zeigt Spiele nach Anspielzeit, 
   await expect(karte).toHaveAttribute('target', '_blank');
   await expect(page.getByText('Weisse Trikots mitnehmen')).toBeVisible();
   // AUF-23: Entwurf ist für Spielerinnen nicht sichtbar
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('noch kein Aufgebot');
+  await expect(page.getByTestId('my-call-up')).toHaveText('noch kein Aufgebot');
   await expect(page.getByRole('link', { name: 'Aufgebot bearbeiten' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Resultat/ })).toHaveCount(0);
-  await barrierefrei(page);
+  await checkAccessibility(page);
 });
 
 test('F-05 K1 AUF-24: Termin 05 ist veröffentlicht – Eva aufgeboten, Lea nicht', async ({ page }) => {
-  await anmelden(page, 'eva');
+  await login(page, 'eva');
   await page.goto(`/termine/${T05}`);
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('aufgeboten');
+  await expect(page.getByTestId('my-call-up')).toHaveText('aufgeboten');
   await expect.poll(() => spiele(page)).toEqual(['14:00 Team 2 – UH Testingen']);
-  await expect(page.getByTestId(`spiel-${SPIEL_03}`)).toBeVisible();
+  await expect(page.getByTestId(`match-${SPIEL_03}`)).toBeVisible();
 
-  await anmelden(page, 'lea');
+  await login(page, 'lea');
   await page.goto(`/termine/${T05}`);
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('nicht aufgeboten');
+  await expect(page.getByTestId('my-call-up')).toHaveText('nicht aufgeboten');
 });
 
 test('F-05 K2 AUF-10 bis AUF-16: Petra erfasst einen Spieltag mit zwei Spielen', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByLabel('Art', { exact: true }).selectOption({ label: 'Spieltag' });
   await expect(page.getByLabel('Titel', { exact: true })).toHaveValue('Spieltag');
@@ -101,21 +101,21 @@ test('F-05 K2 AUF-10 bis AUF-16: Petra erfasst einen Spieltag mit zwei Spielen',
   const spiel2 = page.getByRole('group', { name: 'Spiel 2' });
   await spiel2.getByLabel('Gegner').fill('UHC Eins');
   await spiel2.getByLabel('Anspielzeit').fill('10:00');
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await page.getByRole('button', { name: 'Termin speichern' }).click();
 
   await expect(page).toHaveURL(/\/termine\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('status')).toHaveText('Der Termin ist erfasst.');
   await expect.poll(() => spiele(page)).toEqual(['10:00 Team 1 – UHC Eins', '13:00 UHC Zwei – Team 1']);
-  await expect(page.getByTestId('treffpunkt')).toHaveText('09:00 · Bahnhof');
-  await expect(page.getByTestId('spielort-karte')).toHaveAttribute('href', 'https://maps.google.com/?q=Halle+Ost');
-  await expect(page.getByTestId('spielort-karte')).toHaveAttribute('target', '_blank');
+  await expect(page.getByTestId('meeting-point')).toHaveText('09:00 · Bahnhof');
+  await expect(page.getByTestId('venue-map')).toHaveAttribute('href', 'https://maps.google.com/?q=Halle+Ost');
+  await expect(page.getByTestId('venue-map')).toHaveAttribute('target', '_blank');
   await expect(page.getByText('Rote Trikots')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Aufgebot bearbeiten' })).toBeVisible();
 });
 
 test('F-05 K2 AUF-14: Spiele ohne Gegner werden beim Feld gemeldet', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByLabel('Art', { exact: true }).selectOption({ label: 'Spieltag' });
   await page.getByLabel('Datum', { exact: true }).fill('2026-12-06');
@@ -129,15 +129,15 @@ test('F-05 K2 AUF-14: Spiele ohne Gegner werden beim Feld gemeldet', async ({ pa
 test('F-05 K4 AUF-21 AUF-22: Aufgebot nach Linien, Antwortstatus daneben, auch offen und vielleicht wählbar', async ({
   page,
 }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
   await page.getByRole('link', { name: 'Aufgebot bearbeiten' }).click();
   await expect(page).toHaveURL(`/termine/${T04}/aufgebot`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Aufgebot');
-  await expect(page.getByTestId('aufgebot-status')).toHaveText('Entwurf');
-  await expect(page.getByTestId('aufgebot-anzahl')).toHaveText('5 aufgeboten');
+  await expect(page.getByTestId('call-up-status')).toHaveText('Entwurf');
+  await expect(page.getByTestId('call-up-count')).toHaveText('5 aufgeboten');
 
-  const auswahl = page.getByTestId('aufgebot-auswahl');
+  const auswahl = page.getByTestId('call-up-selection');
   const gruppen = await auswahl.getByRole('group').evaluateAll((g) =>
     g.map((e) => e.querySelector('legend')?.textContent?.trim()),
   );
@@ -159,8 +159,8 @@ test('F-05 K4 AUF-21 AUF-22: Aufgebot nach Linien, Antwortstatus daneben, auch o
   await expect(page.getByRole('status')).toHaveText('Kim Baumann ist aufgeboten.');
   await eintrag(page, LEA).getByRole('checkbox', { name: 'Lea Graf' }).uncheck();
   await expect(page.getByRole('status')).toHaveText('Lea Graf ist nicht mehr aufgeboten.');
-  await expect(page.getByTestId('aufgebot-anzahl')).toHaveText('6 aufgeboten');
-  await barrierefrei(page);
+  await expect(page.getByTestId('call-up-count')).toHaveText('6 aufgeboten');
+  await checkAccessibility(page);
 
   await page.reload();
   await expect(eintrag(page, NINA).getByRole('checkbox')).toBeChecked();
@@ -169,9 +169,9 @@ test('F-05 K4 AUF-21 AUF-22: Aufgebot nach Linien, Antwortstatus daneben, auch o
 });
 
 test('F-05 K7 AUF-28: Coaches erscheinen nicht in der Auswahl', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}/aufgebot`);
-  const auswahl = page.getByTestId('aufgebot-auswahl');
+  const auswahl = page.getByTestId('call-up-selection');
   await expect(auswahl.getByRole('checkbox')).toHaveCount(7);
   await expect(eintrag(page, PETRA)).toHaveCount(0);
   await expect(auswahl.getByText('Petra Keller')).toHaveCount(0);
@@ -180,50 +180,50 @@ test('F-05 K7 AUF-28: Coaches erscheinen nicht in der Auswahl', async ({ page })
 test('F-05 K5 S9 AUF-23 AUF-24: Veröffentlichen mit Bestätigung, danach sehen Spielerinnen ihren Status', async ({
   page,
 }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('noch kein Aufgebot');
+  await expect(page.getByTestId('my-call-up')).toHaveText('noch kein Aufgebot');
 
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}/aufgebot`);
-  await page.getByTestId('aufgebot-veroeffentlichen').click();
+  await page.getByTestId('call-up-publish').click();
   const dialog = page.getByRole('dialog', { name: 'Aufgebot veröffentlichen?' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('5 Spielerinnen sind aufgeboten');
-  await barrierefrei(page);
+  await checkAccessibility(page);
   await dialog.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByTestId('aufgebot-status')).toHaveText('Entwurf');
+  await expect(page.getByTestId('call-up-status')).toHaveText('Entwurf');
 
-  await page.getByTestId('aufgebot-veroeffentlichen').click();
+  await page.getByTestId('call-up-publish').click();
   await dialog.getByRole('button', { name: 'Veröffentlichen' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status')).toHaveText('Das Aufgebot ist veröffentlicht.');
-  await expect(page.getByTestId('aufgebot-status')).toHaveText('veröffentlicht am Mo 16.11. 06:00');
-  await expect(page.getByTestId('aufgebot-veroeffentlichen')).toHaveCount(0);
+  await expect(page.getByTestId('call-up-status')).toHaveText('veröffentlicht am Mo 16.11. 06:00');
+  await expect(page.getByTestId('call-up-publish')).toHaveCount(0);
 
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('aufgeboten');
-  await anmelden(page, 'kim');
+  await expect(page.getByTestId('my-call-up')).toHaveText('aufgeboten');
+  await login(page, 'kim');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId('mein-aufgebot')).toHaveText('nicht aufgeboten');
+  await expect(page.getByTestId('my-call-up')).toHaveText('nicht aufgeboten');
 });
 
 test('F-05 K5 AUF-23: Ohne Auswahl lässt sich nichts veröffentlichen', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   const antwort = await page.request.put(`/api/events/${T04}/call-up`, { data: { personIds: [] } });
   expect(antwort.status()).toBe(200);
   await page.goto(`/termine/${T04}/aufgebot`);
-  await expect(page.getByTestId('aufgebot-veroeffentlichen')).toBeDisabled();
+  await expect(page.getByTestId('call-up-publish')).toBeDisabled();
   await expect(page.getByText('Wähle zuerst mindestens eine Spielerin aus.')).toBeVisible();
 });
 
 test('F-05 K6 S11 RR-03: Aufgebot-Screen nur für Coaches', async ({ page }) => {
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T04}/aufgebot`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
-  await expect(page.getByTestId('aufgebot-auswahl')).toHaveCount(0);
+  await expect(page.getByTestId('call-up-selection')).toHaveCount(0);
   for (const anfrage of [
     page.request.get(`/api/events/${T04}/call-up`),
     page.request.put(`/api/events/${T04}/call-up`, { data: { personIds: [ANNA] } }),
@@ -233,18 +233,18 @@ test('F-05 K6 S11 RR-03: Aufgebot-Screen nur für Coaches', async ({ page }) => 
   }
 
   // Marc ist Coach von Team 2, nicht von Team 1
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   expect((await page.request.get(`/api/events/${T04}/call-up`)).status()).toBe(403);
 });
 
 test('F-05 AUF-02: Ein Training hat kein Aufgebot', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T01}/aufgebot`);
   await expect(page.getByRole('alert')).toHaveText('Nur ein Spieltag hat ein Aufgebot.');
 });
 
 test('F-05 AUF-14 AUF-16: Marc ändert die Spiele von Termin 05 beim Bearbeiten', async ({ page }) => {
-  await anmelden(page, 'marc');
+  await login(page, 'marc');
   await page.goto(`/termine/${T05}/bearbeiten`);
   const spiel1 = page.getByRole('group', { name: 'Spiel 1' });
   await expect(spiel1.getByLabel('Gegner')).toHaveValue('UH Testingen');
@@ -269,7 +269,7 @@ test('F-05 AUF-14 AUF-16: Marc ändert die Spiele von Termin 05 beim Bearbeiten'
 });
 
 test('F-05 SUH-06: Spiele aus swiss unihockey sind im Formular nicht änderbar', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}/bearbeiten`);
   const spiel1 = page.getByRole('group', { name: 'Spiel 1' });
   await expect(spiel1).toContainText('Von swiss unihockey, nicht änderbar.');
@@ -278,12 +278,12 @@ test('F-05 SUH-06: Spiele aus swiss unihockey sind im Formular nicht änderbar',
 });
 
 test.describe('Importierter Spieltag verschieben', () => {
-  test.use({ erwarteteKonsolenfehler: [/status of 422/] });
+  test.use({ expectedConsoleErrors: [/status of 422/] });
 
   test('F-05 SUH-05 AUF-15 O-48: Importierter Spieltag nur am selben Tag verschiebbar, Resultat bleibt erfassbar', async ({
     page,
   }) => {
-    await anmelden(page, 'petra');
+    await login(page, 'petra');
     await page.goto(`/termine/${T04}/bearbeiten`);
     const datum = page.getByLabel('Datum', { exact: true });
     await datum.fill('2026-11-29');
@@ -301,12 +301,12 @@ test.describe('Importierter Spieltag verschieben', () => {
     await dialog.getByLabel('Resultat (Heim:Gast, z.B. 5:3)').fill('2:1');
     await dialog.getByRole('button', { name: 'Resultat speichern' }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toContainText('Resultat 2:1');
+    await expect(page.getByTestId(`match-${SPIEL_01}`)).toContainText('Resultat 2:1');
   });
 });
 
 test('F-05 K8 AUF-15: Resultat pro Spiel erfassen', async ({ page }) => {
-  await anmelden(page, 'petra');
+  await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
   await page.getByRole('button', { name: 'Resultat für Team 1 – UHC Musterdorf erfassen' }).click();
   const dialog = page.getByRole('dialog', { name: 'Resultat: Team 1 – UHC Musterdorf' });
@@ -316,15 +316,15 @@ test('F-05 K8 AUF-15: Resultat pro Spiel erfassen', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Resultat speichern' }).click();
   await expect(feld).toHaveAttribute('aria-invalid', 'true');
   await expect(dialog).toContainText('Resultat bitte als Heim:Gast, z.B. 5:3.');
-  await barrierefrei(page);
+  await checkAccessibility(page);
 
   await feld.fill('5:3');
   await dialog.getByRole('button', { name: 'Resultat speichern' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('status')).toHaveText('Resultat für Team 1 – UHC Musterdorf gespeichert.');
-  await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toContainText('Resultat 5:3');
+  await expect(page.getByTestId(`match-${SPIEL_01}`)).toContainText('Resultat 5:3');
 
-  await anmelden(page, 'anna');
+  await login(page, 'anna');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId(`spiel-${SPIEL_01}`)).toContainText('Resultat 5:3');
+  await expect(page.getByTestId(`match-${SPIEL_01}`)).toContainText('Resultat 5:3');
 });

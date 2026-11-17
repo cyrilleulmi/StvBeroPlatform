@@ -1,4 +1,4 @@
-import { anmelden, expect, reset, test } from './helpers';
+import { expect, login, reset, test } from './helpers';
 
 /**
  * Nachbesserung #21 · Der Teamname gilt pro Saison (SAI-02).
@@ -13,7 +13,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('Nachbesserung #21 AK1 (SAI-02): Umbenennen in der aktuellen Saison ändert den Namen im Archiv nicht', async ({ page }) => {
-  await anmelden(page, 'alex');
+  await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   await page.getByLabel('Teamname').fill('Damen 1');
@@ -23,7 +23,7 @@ test('Nachbesserung #21 AK1 (SAI-02): Umbenennen in der aktuellen Saison ändert
 
   await page.goto(`/teams/${TEAM_1}?saison=${SAISON_2025}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
-  await expect(page.getByTestId('archiv-hinweis')).toBeVisible();
+  await expect(page.getByTestId('archive-notice')).toBeVisible();
 
   await page.goto(`/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Damen 1');
