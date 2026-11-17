@@ -211,8 +211,8 @@ test('F-12 RR-02 RR-03: Marc sees events of other teams without «Meine Antwort�
 
   // Past view: no «Deine Antwort» line for events of other teams, but for his own team.
   await page.goto(`/termine?team=${TEAM_3}&ansicht=vergangen`);
-  await expect(page.locator('[data-testid^="event-card-"]').first()).toBeVisible();
-  await expect(page.locator('[data-testid^="event-card-"] [data-response]')).toHaveCount(0);
+  await expect(page.getByTestId(/^event-card-/).first()).toBeVisible();
+  await expect(page.getByText(/^Deine Antwort:/)).toHaveCount(0);
   await page.goto(`/termine?team=${TEAM_1}&ansicht=vergangen`);
-  await expect(page.getByTestId(`event-card-${T07}`).locator('[data-response]')).toBeVisible();
+  await expect(page.getByTestId(`event-card-${T07}`).getByText(/^Deine Antwort:/)).toBeVisible();
 });
