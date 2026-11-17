@@ -405,6 +405,26 @@ class DriverListTest {
         assertThat(json.getDouble("route.distanceKm"), equalTo(19.8));
     }
 
+    /** Rework #74: in an archived season the route stays as it is, also on recalculation (SAI-02, DRV-07, DRV-09). */
+    @Test
+    void drv07ArchivedSeasonRouteCannotBeRecalculated() {
+        String petra = login("petra");
+        distance(petra, T04, 21.5).statusCode(200);
+        String alex = login("alex");
+        String season = given().cookie("stv_session", alex).contentType(ContentType.JSON)
+                .body("{\"name\":\"2027/28\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\"}")
+                .post("/api/seasons").then().statusCode(201).extract().path("id");
+        given().cookie("stv_session", alex).post("/api/seasons/" + season + "/activate").then().statusCode(204);
+
+        recalculate(petra, T04).statusCode(409);
+        recalculate(alex, T04).statusCode(409);
+        distance(petra, T04, 30).statusCode(409);
+        JsonPath json = list(petra, T04).statusCode(200).extract().jsonPath();
+        assertThat(json.getString("route.status"), equalTo("MANUAL"));
+        assertThat(json.getDouble("route.distanceKm"), equalTo(21.5));
+        assertThat(json.getBoolean("canManage"), equalTo(false));
+    }
+
     @Test
     void drv07UnavailableIsRetriedAfterTenMinutes() {
         routing("{\"unavailable\":true}");

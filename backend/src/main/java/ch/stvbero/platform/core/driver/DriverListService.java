@@ -241,6 +241,7 @@ public class DriverListService {
                 throw DomainError.forbidden();
             }
             DriverRules.checkChangeable(c.missing(), c.event().status, c.event().end, clock.now(), true);
+            c.event().season.checkWritable();
             return places(c.event());
         });
         routes.calculate(eventId, places[0], places[1]);
