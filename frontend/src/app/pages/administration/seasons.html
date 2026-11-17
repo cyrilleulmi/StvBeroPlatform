@@ -13,20 +13,20 @@
     <p class="message-error" role="alert">{{ message }}</p>
   }
 
-  <section class="card" aria-labelledby="saisons-liste" [attr.aria-busy]="loading() ? 'true' : null">
-    <h2 id="saisons-liste" class="visually-hidden">{{ texts.seasons.list }}</h2>
+  <section class="card" aria-labelledby="seasons-list" [attr.aria-busy]="loading() ? 'true' : null">
+    <h2 id="seasons-list" class="visually-hidden">{{ texts.seasons.list }}</h2>
     @if (loading() && seasons().length === 0) {
       <p class="empty">{{ texts.common.loading }}</p>
     } @else {
       <ul class="list" [attr.aria-label]="texts.seasons.list">
         @for (s of seasons(); track s.id) {
-          <li class="saison" [attr.aria-label]="s.name" [attr.data-testid]="'saison-' + s.id">
-            <div class="saison-kopf">
+          <li class="season" [attr.aria-label]="s.name" [attr.data-testid]="'season-' + s.id">
+            <div class="season-header">
               <span class="row-title">{{ s.name }}</span>
               <span
                 class="chip"
-                data-testid="saison-status"
-                [attr.data-art]="s.current ? null : s.archived ? 'archive' : 'planned'"
+                data-testid="season-status"
+                [attr.data-kind]="s.current ? null : s.archived ? 'archive' : 'planned'"
                 >{{ status(s) }}</span
               >
             </div>
@@ -40,7 +40,7 @@
                   type="button"
                   class="button button-secondary button-small"
                   [disabled]="saving()"
-                  [attr.aria-busy]="runningAction() === 'aktivieren:' + s.id ? 'true' : null"
+                  [attr.aria-busy]="runningAction() === 'activate:' + s.id ? 'true' : null"
                   (click)="activate(s)"
                 >
                   {{ texts.seasons.activate }}
@@ -57,31 +57,31 @@
     class="card form"
     (submit)="create($event)"
     novalidate
-    aria-labelledby="saison-neu-titel"
+    aria-labelledby="season-new-title"
   >
-    <h2 id="saison-neu-titel">{{ texts.seasons.new }}</h2>
+    <h2 id="season-new-title">{{ texts.seasons.new }}</h2>
     @for (f of fields; track f.field) {
       <div class="field">
-        <label [for]="'saison-' + f.field">{{ f.label }}</label>
+        <label [for]="'season-' + f.field">{{ f.label }}</label>
         <input
-          [id]="'saison-' + f.field"
+          [id]="'season-' + f.field"
           [type]="f.type"
           autocomplete="off"
           [attr.maxlength]="f.type === 'text' ? 20 : null"
           [value]="newSeason()[f.field]"
           (input)="set(f.field, $any($event.target).value)"
           [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
-          [attr.aria-describedby]="fieldErrors()[f.field] ? 'saison-' + f.field + '-fehler' : null"
+          [attr.aria-describedby]="fieldErrors()[f.field] ? 'season-' + f.field + '-error' : null"
         />
         @if (fieldErrors()[f.field]; as m) {
-          <p class="field-error" [id]="'saison-' + f.field + '-fehler'">{{ m }}</p>
+          <p class="field-error" [id]="'season-' + f.field + '-error'">{{ m }}</p>
         }
       </div>
     }
     <div class="field">
-      <label for="saison-uebernehmen">{{ texts.seasons.carryOver }}</label>
+      <label for="season-carry-over">{{ texts.seasons.carryOver }}</label>
       <select
-        id="saison-uebernehmen"
+        id="season-carry-over"
         (change)="set('carryOverFrom', $any($event.target).value)"
       >
         <option value="" [selected]="newSeason().carryOverFrom === ''">

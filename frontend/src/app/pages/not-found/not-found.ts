@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TEXTS } from '../../core/texts';
 
 @Component({
-  selector: 'app-nicht-gefunden',
+  selector: 'app-not-found',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `

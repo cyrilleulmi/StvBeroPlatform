@@ -21,11 +21,11 @@ import { TEXTS } from '../core/texts';
 type ExceptionField = 'from' | 'until' | 'reason';
 
 /**
- * Serie (`/serien/:serieId`): Regel, Teams, Zeitraum und Ausnahmen (TER-05, TER-07). Coaches eines Teams der
- * Serie und Admins fügen Ausnahmen hinzu und kommen zu «Serie bearbeiten».
+ * Series (`/serien/:seriesId`): rule, teams, period and series exceptions (TER-05, TER-07). Coaches of a
+ * team of the series and admins add exceptions and get to «Serie bearbeiten».
  */
 @Component({
-  selector: 'app-serie',
+  selector: 'app-series',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
@@ -46,8 +46,8 @@ type ExceptionField = 'from' | 'until' | 'reason';
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (series(); as s) {
-        <section class="card" aria-labelledby="serie-angaben">
-          <h2 id="serie-angaben" class="section-title">{{ texts.events.details }}</h2>
+        <section class="card" aria-labelledby="series-details">
+          <h2 id="series-details" class="section-title">{{ texts.events.details }}</h2>
           <dl class="facts">
             <dt>{{ texts.eventForm.type }}</dt>
             <dd>{{ texts.events.type[s.type] }}</dd>
@@ -75,8 +75,8 @@ type ExceptionField = 'from' | 'until' | 'reason';
           }
         </section>
 
-        <section class="card" aria-labelledby="serie-ausnahmen" data-testid="ausnahmen">
-          <h2 id="serie-ausnahmen" class="section-title">
+        <section class="card" aria-labelledby="series-exceptions" data-testid="exceptions">
+          <h2 id="series-exceptions" class="section-title">
             {{ texts.series.exceptions }} <span class="count">{{ s.exceptions.length }}</span>
           </h2>
           @if (s.exceptions.length === 0) {
@@ -90,37 +90,37 @@ type ExceptionField = 'from' | 'until' | 'reason';
           }
           @if (canEdit()) {
             <form
-              class="form ausnahme"
+              class="form exception"
               (submit)="createException($event)"
               novalidate
-              aria-labelledby="ausnahme-titel"
+              aria-labelledby="exception-title"
             >
-              <h3 id="ausnahme-titel">{{ texts.series.addException }}</h3>
-              <p class="secondary-text" id="ausnahme-hinweis">{{ texts.series.exceptionHint }}</p>
+              <h3 id="exception-title">{{ texts.series.addException }}</h3>
+              <p class="secondary-text" id="exception-hint">{{ texts.series.exceptionHint }}</p>
               <div class="field-row">
                 @for (f of dateFields; track f.field) {
                   <div class="field">
-                    <label [for]="'ausnahme-' + f.field">{{ f.label }}</label>
+                    <label [for]="'exception-' + f.field">{{ f.label }}</label>
                     <input
-                      [id]="'ausnahme-' + f.field"
+                      [id]="'exception-' + f.field"
                       type="date"
                       [value]="newException()[f.field]"
                       (input)="set(f.field, $any($event.target).value)"
                       [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
                       [attr.aria-describedby]="
-                        fieldErrors()[f.field] ? 'ausnahme-' + f.field + '-fehler' : null
+                        fieldErrors()[f.field] ? 'exception-' + f.field + '-error' : null
                       "
                     />
                     @if (fieldErrors()[f.field]; as m) {
-                      <p class="field-error" [id]="'ausnahme-' + f.field + '-fehler'">{{ m }}</p>
+                      <p class="field-error" [id]="'exception-' + f.field + '-error'">{{ m }}</p>
                     }
                   </div>
                 }
               </div>
               <div class="field">
-                <label for="ausnahme-grund">{{ texts.series.reason }}</label>
+                <label for="exception-reason">{{ texts.series.reason }}</label>
                 <input
-                  id="ausnahme-grund"
+                  id="exception-reason"
                   type="text"
                   maxlength="200"
                   autocomplete="off"
@@ -128,11 +128,11 @@ type ExceptionField = 'from' | 'until' | 'reason';
                   (input)="set('reason', $any($event.target).value)"
                   [attr.aria-invalid]="fieldErrors().reason ? 'true' : null"
                   [attr.aria-describedby]="
-                    fieldErrors().reason ? 'ausnahme-grund-fehler' : 'ausnahme-hinweis'
+                    fieldErrors().reason ? 'exception-reason-error' : 'exception-hint'
                   "
                 />
                 @if (fieldErrors().reason; as m) {
-                  <p class="field-error" id="ausnahme-grund-fehler">{{ m }}</p>
+                  <p class="field-error" id="exception-reason-error">{{ m }}</p>
                 }
               </div>
               <button
@@ -151,16 +151,16 @@ type ExceptionField = 'from' | 'until' | 'reason';
   `,
   styleUrl: './event.css',
   styles: `
-    .ausnahme {
+    .exception {
       margin-top: 16px;
       padding-top: 16px;
       border-top: 1px solid var(--border);
     }
-    .ausnahme h3,
-    .ausnahme p {
+    .exception h3,
+    .exception p {
       margin: 0;
     }
-    .ausnahme .button {
+    .exception .button {
       justify-self: start;
     }
   `,
@@ -176,7 +176,7 @@ export class SeriesPage {
     { field: 'until', label: TEXTS.series.until },
   ];
 
-  /** Route `/serien/:serieId` */
+  /** Route `/serien/:seriesId` */
   readonly seriesId = input.required<string>();
 
   protected readonly series = signal<SeriesData | null>(null);
@@ -197,11 +197,11 @@ export class SeriesPage {
   protected readonly teams = computed(() => {
     const s = this.series();
     if (!s) return '';
-    // Alle Teams der Serie mit Namen aus der API, auch die, in denen ich nicht bin (TER-11).
+    // All teams of the series with names from the API, also those I am not in (TER-11).
     return TEXTS.events.joinTeams(s.teams.map((t) => t.name));
   });
 
-  /** Admins und Coaches eines Teams der Serie (TER-11, RR-06). */
+  /** Admins and coaches of a team of the series (TER-11, RR-06). */
   protected readonly canEdit = computed(() => {
     const s = this.series();
     const me = this.auth.me();
@@ -243,7 +243,7 @@ export class SeriesPage {
     this.fieldErrors.set(f);
     const first = Object.keys(f)[0];
     if (first) {
-      document.getElementById(`ausnahme-${first}`)?.focus();
+      document.getElementById(`exception-${first}`)?.focus();
       return;
     }
     this.saving.set(true);
@@ -261,7 +261,7 @@ export class SeriesPage {
       this.newException.set({ from: '', until: '', reason: '' });
       this.success.set(TEXTS.series.exceptionCreated(n.reason.trim()));
     } catch (e) {
-      const fields = fieldErrorsOf(e, { startDate: 'from', endDate: 'until', reason: 'reason' });
+      const fields = fieldErrorsOf(e, { startDate: 'from', endDate: 'until' });
       if (Object.keys(fields).length > 0) {
         this.fieldErrors.set(fields);
       } else {

@@ -4,16 +4,16 @@ import { AuthService } from '../../core/auth.service';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Verwaltung (nur Admins, RR-04/RR-05): Einstieg zu Personen, Teams und Saisons. */
+/** Administration (admins only, RR-04/RR-05): entry point to people, teams and seasons. */
 @Component({
-  selector: 'app-verwaltung',
+  selector: 'app-administration',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
     <h1>{{ texts.administration.title }}</h1>
     @if (auth.isAdmin()) {
-      <section class="card" aria-labelledby="verwaltung-bereiche">
-        <h2 id="verwaltung-bereiche" class="visually-hidden">{{ texts.administration.areas }}</h2>
+      <section class="card" aria-labelledby="administration-areas">
+        <h2 id="administration-areas" class="visually-hidden">{{ texts.administration.areas }}</h2>
         <ul class="list" [attr.aria-label]="texts.administration.areas">
           @for (b of areas; track b.route) {
             <li>
@@ -21,7 +21,7 @@ import { TEXTS } from '../../core/texts';
                 <span class="icon-field"><app-icon [name]="b.icon" [size]="20" /></span>
                 <span class="row-title">
                   {{ b.title }}
-                  <span class="secondary-text beschreibung">{{ b.text }}</span>
+                  <span class="secondary-text description">{{ b.text }}</span>
                 </span>
                 <app-icon name="chevron-right" [size]="20" />
               </a>
@@ -46,7 +46,7 @@ import { TEXTS } from '../../core/texts';
       background: var(--primary-soft);
       color: var(--primary);
     }
-    .beschreibung {
+    .description {
       display: block;
       font-weight: 500;
     }

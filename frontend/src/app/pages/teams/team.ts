@@ -18,8 +18,8 @@ import { teamRoleText, name } from '../../core/format';
 import { TEXTS } from '../../core/texts';
 
 /**
- * Team: Coaches und Spielerinnen getrennt (PTF-07), die Spielerinnen nach Linie (LIN-12).
- * `?saison=<id>` zeigt eine andere Saison, z.B. das Archiv (SAI-02).
+ * Team: coaches and players separately (PTF-07), the players by line (LIN-12).
+ * `?saison=<id>` shows another season, e.g. the archive (SAI-02).
  */
 @Component({
   selector: 'app-team',
@@ -35,7 +35,7 @@ import { TEXTS } from '../../core/texts';
     </div>
     @if (seasonData(); as s) {
       @if (s.archived) {
-        <p class="message-notice" data-testid="archiv-hinweis">
+        <p class="message-notice" data-testid="archive-notice">
           {{ texts.season.archiveNotice(s.name) }}
         </p>
       }
@@ -47,8 +47,8 @@ import { TEXTS } from '../../core/texts';
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (team(); as t) {
-        <section class="card" aria-labelledby="team-coaches-titel" data-testid="team-coaches">
-          <h2 id="team-coaches-titel" class="section-title">
+        <section class="card" aria-labelledby="team-coaches-title" data-testid="team-coaches">
+          <h2 id="team-coaches-title" class="section-title">
             {{ texts.teams.coaches }} <span class="count">{{ t.coaches.length }}</span>
           </h2>
           @if (t.coaches.length === 0) {
@@ -63,11 +63,11 @@ import { TEXTS } from '../../core/texts';
         </section>
         <section
           class="card"
-          aria-labelledby="team-spielerinnen-titel"
-          data-testid="team-spielerinnen"
+          aria-labelledby="team-players-title"
+          data-testid="team-players"
         >
-          <div class="spielerinnen-kopf">
-            <h2 id="team-spielerinnen-titel" class="section-title">
+          <div class="players-header">
+            <h2 id="team-players-title" class="section-title">
               {{ texts.teams.players }} <span class="count">{{ players().length }}</span>
             </h2>
             @if (canEditLines()) {
@@ -81,10 +81,10 @@ import { TEXTS } from '../../core/texts';
           @if (players().length === 0) {
             <p class="empty">{{ texts.teams.noPlayers }}</p>
           } @else {
-            <!-- Nach Linie, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). Leere Gruppen fehlen. -->
+            <!-- By line, then goalies, then «Ohne Linie» (LIN-06, LIN-09). Empty groups are left out. -->
             @for (g of groups(); track g.key) {
-              <h3 class="gruppe-titel" [id]="'team-gruppe-' + g.key">{{ g.name }}</h3>
-              <ul class="list" [attr.aria-labelledby]="'team-gruppe-' + g.key">
+              <h3 class="group-title" [id]="'team-group-' + g.key">{{ g.name }}</h3>
+              <ul class="list" [attr.aria-labelledby]="'team-group-' + g.key">
                 @for (p of g.players; track p.id) {
                   <li class="row" [attr.data-testid]="'team-person-' + p.id">{{ name(p) }}</li>
                 }
@@ -101,7 +101,7 @@ import { TEXTS } from '../../core/texts';
       display: grid;
       gap: var(--section-gap);
     }
-    .spielerinnen-kopf {
+    .players-header {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -109,10 +109,10 @@ import { TEXTS } from '../../core/texts';
       gap: 8px;
       margin-bottom: 8px;
     }
-    .spielerinnen-kopf .section-title {
+    .players-header .section-title {
       margin: 0;
     }
-    .gruppe-titel {
+    .group-title {
       margin: 12px 0 0;
       font-size: 13px;
       font-weight: 700;
@@ -132,6 +132,7 @@ export class Team {
   /** Route `/teams/:teamId` */
   readonly teamId = input.required<string>();
   /** Query `?saison=` */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?saison=` is part of the browser URL and stays German (NF-40)
   readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
   protected readonly team = signal<TeamDetail | null>(null);
@@ -139,7 +140,7 @@ export class Team {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
-  /** Nicht leere Gruppen in Anzeigereihenfolge, zuletzt «Ohne Linie». */
+  /** Non-empty groups in display order, «Ohne Linie» last. */
   protected readonly groups = computed(() => {
     const t = this.team();
     if (!t) return [];
@@ -150,19 +151,19 @@ export class Team {
         players: g.players,
       })),
       {
-        key: 'ohne-linie',
+        key: 'no-line',
         name: TEXTS.lines.noLine,
         players: t.lineup.noLine,
       },
     ].filter((g) => g.players.length > 0);
   });
 
-  /** Coaches des Teams und Admins teilen die Linien ein (LIN-07), nur in der aktuellen Saison. */
+  /** Coaches of the team and admins assign the lines (LIN-07), only in the current season. */
   protected readonly canEditLines = computed(
     () => !this.season() && (this.auth.isAdmin() || this.team()?.myTeamRole === 'COACH'),
   );
 
-  /** Alle Spielerinnen: nach Gruppen, dann ohne Linie. Coaches sind nie dabei (PTF-07). */
+  /** All players: by groups, then without a line. Coaches are never included (PTF-07). */
   protected readonly players = computed<PersonSummary[]>(() => {
     const t = this.team();
     if (!t) return [];
@@ -182,15 +183,15 @@ export class Team {
     this.error.set(null);
     this.team.set(null);
     const me = this.auth.me();
-    const member = me?.memberships.some((z) => z.team.id === teamId) ?? false;
+    const member = me?.memberships.some((m) => m.team.id === teamId) ?? false;
     if (!seasonId && me && !me.admin && !member) {
-      // Ohne Zugehörigkeit in der aktuellen Saison gar nicht erst anfragen; das Backend lehnt ab (403).
+      // Without membership in the current season do not even ask; the backend refuses (403).
       this.error.set(TEXTS.common.noPermission);
       this.loading.set(false);
       return;
     }
     try {
-      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
+      const params: Record<string, string> = seasonId ? { season: seasonId } : {};
       this.team.set(
         await firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
       );

@@ -20,20 +20,20 @@ import { clockTime } from './time';
 const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 
 /**
- * Teil eines Spieltags im Termin-Detail: eigener Aufgebotsstatus bzw. für Coaches der Stand mit Link zum
- * Aufgebot (AUF-23, AUF-24), Spiele nach Anspielzeit (AUF-14) und Resultat erfassen (AUF-15).
+ * Part of a match day in the event detail: own call-up status, or for coaches the state with a link to
+ * the call-up (AUF-23, AUF-24), matches by start time (AUF-14) and entering results (AUF-15).
  */
 @Component({
-  selector: 'app-spieltag',
+  selector: 'app-match-day',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
     @if (event().myCallUp || canCallUp()) {
-      <section class="card call-up" aria-labelledby="spieltag-aufgebot-titel">
-        <h2 id="spieltag-aufgebot-titel" class="section-title">{{ s.callUp }}</h2>
+      <section class="card call-up" aria-labelledby="match-day-call-up-title">
+        <h2 id="match-day-call-up-title" class="section-title">{{ s.callUp }}</h2>
         @if (event().myCallUp; as mine) {
-          <p class="mein">
-            <span class="chip" [attr.data-art]="mine.toLowerCase()" data-testid="mein-aufgebot">{{
+          <p class="mine">
+            <span class="chip" [attr.data-kind]="mine.toLowerCase()" data-testid="my-call-up">{{
               s.mine[mine]
             }}</span>
           </p>
@@ -48,8 +48,8 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
       </section>
     }
 
-    <section class="card matches" aria-labelledby="spieltag-spiele-titel">
-      <h2 id="spieltag-spiele-titel" class="section-title">{{ s.matches }}</h2>
+    <section class="card matches" aria-labelledby="match-day-matches-title">
+      <h2 id="match-day-matches-title" class="section-title">{{ s.matches }}</h2>
       @if (message(); as m) {
         <p class="message-success" role="status">{{ m }}</p>
       }
@@ -59,9 +59,9 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
       @if ((event().matches ?? []).length === 0) {
         <p class="empty">{{ s.noMatches }}</p>
       } @else {
-        <ol class="list" data-testid="spiele" aria-labelledby="spieltag-spiele-titel">
+        <ol class="list" data-testid="matches" aria-labelledby="match-day-matches-title">
           @for (m of event().matches ?? []; track m.id) {
-            <li class="match" [attr.data-testid]="'spiel-' + m.id" [attr.aria-label]="description(m)">
+            <li class="match" [attr.data-testid]="'match-' + m.id" [attr.aria-label]="description(m)">
               <span class="start-time">{{ time(m.startTime) }}</span>
               <span class="match-text">
                 <span class="pairing">{{ pairing(m) }}</span>
@@ -94,19 +94,19 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
       #dialog
       class="card dialog"
       aria-modal="true"
-      aria-labelledby="resultat-titel"
-      aria-describedby="resultat-text"
+      aria-labelledby="result-title"
+      aria-describedby="result-text"
       (close)="target.set(null)"
     >
       @if (target(); as m) {
         <form class="form" (submit)="save($event)" novalidate>
-          <h2 id="resultat-titel">{{ s.resultTitle(pairing(m)) }}</h2>
-          <p class="secondary-text" id="resultat-text">{{ s.resultText }}</p>
+          <h2 id="result-title">{{ s.resultTitle(pairing(m)) }}</h2>
+          <p class="secondary-text" id="result-text">{{ s.resultText }}</p>
           <div class="field">
-            <label for="resultat-feld">{{ s.resultField }}</label>
+            <label for="result-field">{{ s.resultField }}</label>
             <input
               #resultField
-              id="resultat-feld"
+              id="result-field"
               type="text"
               inputmode="numeric"
               maxlength="5"
@@ -114,10 +114,10 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
               [value]="result()"
               (input)="result.set($any($event.target).value)"
               [attr.aria-invalid]="resultError() ? 'true' : null"
-              [attr.aria-describedby]="resultError() ? 'resultat-fehler' : null"
+              [attr.aria-describedby]="resultError() ? 'result-error' : null"
             />
             @if (resultError(); as m) {
-              <p class="field-error" id="resultat-fehler">{{ m }}</p>
+              <p class="field-error" id="result-error">{{ m }}</p>
             }
           </div>
           <div class="dialog-buttons">
@@ -151,9 +151,9 @@ export class MatchDay {
   protected readonly time = clockTime;
 
   readonly event = input.required<EventDetail>();
-  /** Coach des Teams oder Admin: Stand des Aufgebots und Link dorthin (RR-03). */
+  /** Coach of the team or admin: state of the call-up and link to it (RR-03). */
   readonly canCallUp = input(false);
-  /** Coach des Teams oder Admin, Spieltag nicht abgesagt: Resultat erfassen (AUF-15). */
+  /** Coach of the team or admin, match day not cancelled: enter results (AUF-15). */
   readonly canEnterResult = input(false);
 
   readonly changed = output<void>();
@@ -169,7 +169,7 @@ export class MatchDay {
   private readonly resultField = viewChild<ElementRef<HTMLInputElement>>('resultField');
   private readonly team = computed(() => this.event().teams[0]?.name ?? '');
 
-  /** «Team 1 – UHC Musterdorf» (Heim zuerst). */
+  /** «Team 1 – UHC Musterdorf» (home first). */
   protected pairing(m: Match): string {
     return m.home ? this.s.pairing(this.team(), m.opponent) : this.s.pairing(m.opponent, this.team());
   }

@@ -11,7 +11,7 @@ import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
 /**
- * Start: Begrüssung, nächster eigener Termin mit Antwort-Buttons (F-04, ANM-08) und Kacheln aus
+ * Start: greeting, next own event with response buttons (F-04, ANM-08) and tiles from
  * `GET /api/tiles` (NF-11, NF-12, RR-05).
  */
 @Component({
@@ -30,7 +30,7 @@ export class Start implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
-  /** Nächster geplanter Termin der eigenen Teams; abgesagte überspringen. */
+  /** Next planned event of the own teams; skip cancelled ones. */
   protected readonly next = signal<EventSummary | null>(null);
   protected readonly eventLoading = signal(true);
   protected readonly eventError = signal<string | null>(null);
@@ -57,7 +57,7 @@ export class Start implements OnInit {
     return TEXTS.events.card(t.title, eventDate(t.start, this.year()), clockTime(t.start));
   }
 
-  /** Nach einer Antwort: Zähler nachladen, ohne die Seite neu zu laden. */
+  /** After a response: reload the counters without reloading the page. */
   protected async reload(id: string): Promise<void> {
     try {
       this.next.set(await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`)));
@@ -68,8 +68,8 @@ export class Start implements OnInit {
 
   private async loadEvent(): Promise<void> {
     try {
-      const termine = await firstValueFrom(this.http.get<EventSummary[]>('/api/events'));
-      this.next.set(termine.find((t) => t.status !== 'CANCELLED') ?? null);
+      const events = await firstValueFrom(this.http.get<EventSummary[]>('/api/events'));
+      this.next.set(events.find((t) => t.status !== 'CANCELLED') ?? null);
     } catch (e) {
       this.eventError.set(errorText(e));
     } finally {

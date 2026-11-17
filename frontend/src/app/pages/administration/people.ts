@@ -17,9 +17,9 @@ import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Personen (Admin, PTF-11): Liste mit Suche (`?suche=`), Einstieg zum Erfassen und Bearbeiten. */
+/** People (admin, PTF-11): list with search (`?suche=`), entry point to create and edit. */
 @Component({
-  selector: 'app-personen',
+  selector: 'app-people',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
@@ -30,13 +30,13 @@ import { TEXTS } from '../../core/texts';
     @if (!auth.isAdmin()) {
       <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
-      <a class="button button-primary erfassen" routerLink="/verwaltung/personen/neu">{{
+      <a class="button button-primary create" routerLink="/verwaltung/personen/neu">{{
         texts.people.create
       }}</a>
       <div class="field">
-        <label for="personen-suche">{{ texts.people.search }}</label>
+        <label for="people-search">{{ texts.people.search }}</label>
         <input
-          id="personen-suche"
+          id="people-search"
           type="search"
           autocomplete="off"
           [value]="searchQuery() ?? ''"
@@ -48,10 +48,10 @@ import { TEXTS } from '../../core/texts';
       }
       <section
         class="card"
-        aria-labelledby="personen-liste"
+        aria-labelledby="people-list"
         [attr.aria-busy]="loading() ? 'true' : null"
       >
-        <h2 id="personen-liste" class="visually-hidden">{{ texts.people.title }}</h2>
+        <h2 id="people-list" class="visually-hidden">{{ texts.people.title }}</h2>
         @if (loading() && people().length === 0) {
           <p class="empty">{{ texts.common.loading }}</p>
         } @else if (people().length === 0) {
@@ -63,7 +63,7 @@ import { TEXTS } from '../../core/texts';
                 <a class="row-link" [routerLink]="['/verwaltung/personen', p.id]">
                   <span class="row-title">{{ name(p) }}</span>
                   @if (p.admin) {
-                    <span class="chip" data-art="admin">{{ texts.people.admin }}</span>
+                    <span class="chip" data-kind="admin">{{ texts.people.admin }}</span>
                   }
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
@@ -76,7 +76,7 @@ import { TEXTS } from '../../core/texts';
   `,
   styleUrl: '../page.css',
   styles: `
-    .erfassen {
+    .create {
       justify-self: start;
     }
   `,
@@ -89,6 +89,7 @@ export class People {
   protected readonly name = name;
 
   /** Query `?suche=` */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?suche=` is part of the browser URL and stays German (NF-40)
   readonly searchQuery = input<string | undefined>(undefined, { alias: 'suche' });
 
   protected readonly people = signal<Person[]>([]);

@@ -7,7 +7,7 @@ export const TEXTS = {
   navigation: {
     name: 'Hauptnavigation',
     start: 'Start',
-    termine: 'Termine',
+    events: 'Termine',
     teams: 'Teams',
     profile: 'Profil',
     administration: 'Verwaltung',

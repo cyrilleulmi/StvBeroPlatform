@@ -23,27 +23,27 @@ import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Eine Gruppe im Screen: Linie, Goalies oder «Ohne Linie» (`id` = null). */
+/** A group on the screen: line, goalies or «Ohne Linie» (`id` = null). */
 interface DisplayGroup {
   id: string | null;
   kind: Group['type'] | 'NO_LINE';
   name: string;
   players: PersonSummary[];
-  /** Position unter den Linien (0-basiert), sonst -1. */
+  /** Position among the lines (0-based), otherwise -1. */
   index: number;
 }
 
-/** Wert im Auswahlfeld für «Ohne Linie». */
+/** Value in the select field for «Ohne Linie». */
 const NO_LINE = '';
 
 /**
- * Linien eines Teams (LIN-07): Linien anlegen, umbenennen, sortieren, löschen und Spielerinnen per
- * Drag & Drop oder Auswahlfeld zuweisen. Beides speichert sofort. Ohne Drag & Drop bedienbar
- * (Handy, Tastatur, docs/testbarkeit.md Regel 7). Mitglieder ohne Coach-Funktion sehen die
- * Einteilung nur lesend.
+ * Lines of a team (LIN-07): create, rename, sort and delete lines and assign players by
+ * drag & drop or select field. Both save immediately. Usable without drag & drop
+ * (phone, keyboard, docs/testability.md rule 7). Members without the coach team role see the
+ * lineup read-only.
  */
 @Component({
-  selector: 'app-linien',
+  selector: 'app-lines',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, NgTemplateOutlet],
   templateUrl: './lines.html',
@@ -67,22 +67,22 @@ export class Lines {
   protected readonly loadError = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   /**
-   * Laufende Aktion: `hinzufuegen`, `zuweisen:<personId>`, `oben:<id>`, `unten:<id>`,
-   * `umbenennen:<id>`, `loeschen:<id>`. `aria-busy` trägt nur das auslösende Element, `disabled` alle.
+   * Running action: `add`, `assign:<personId>`, `up:<id>`, `down:<id>`,
+   * `rename:<id>`, `delete:<id>`. Only the triggering element carries `aria-busy`, all carry `disabled`.
    */
   protected readonly runningAction = signal<string | null>(null);
   protected readonly saving = computed(() => this.runningAction() !== null);
 
-  /** Linie, die gerade umbenannt wird, und der eingegebene Name. */
+  /** Line that is being renamed, and the entered name. */
   protected readonly renameId = signal<string | null>(null);
   protected readonly newName = signal('');
   protected readonly nameError = signal<string | null>(null);
 
-  /** Linie, deren Löschen bestätigt werden soll. */
+  /** Line whose deletion is to be confirmed. */
   protected readonly toDelete = signal<DisplayGroup | null>(null);
   private readonly deleteDialog = viewChild<ElementRef<HTMLDialogElement>>('deleteDialog');
 
-  /** Drag & Drop: gezogene Spielerin und Gruppe unter dem Zeiger. */
+  /** Drag & drop: dragged player and group under the pointer. */
   protected readonly dragged = signal<PersonSummary | null>(null);
   protected readonly dropTarget = signal<string | null>(null);
 
@@ -90,7 +90,7 @@ export class Lines {
     () => this.auth.isAdmin() || this.team()?.myTeamRole === 'COACH',
   );
 
-  /** Linien nach Reihenfolge, dann Goalies, dann «Ohne Linie» (LIN-06, LIN-09). */
+  /** Lines in order, then goalies, then «Ohne Linie» (LIN-06, LIN-09). */
   protected readonly groups = computed<DisplayGroup[]>(() => {
     const t = this.team();
     if (!t) return [];
@@ -114,7 +114,7 @@ export class Lines {
   protected readonly lines = computed(() => this.groups().filter((g) => g.kind === 'LINE'));
   protected readonly others = computed(() => this.groups().filter((g) => g.kind !== 'LINE'));
 
-  /** Auswahl im Feld «Linie von …»: alle Gruppen in Anzeigereihenfolge, dann «Ohne Linie». */
+  /** Options in the field «Linie von …»: all groups in display order, then «Ohne Linie». */
   protected readonly options = computed(() =>
     this.groups().map((g) => ({ value: g.id ?? NO_LINE, name: g.name })),
   );
@@ -127,11 +127,11 @@ export class Lines {
   }
 
   protected testId(g: DisplayGroup): string {
-    return g.id ? `gruppe-${g.id}` : 'gruppe-ohne-linie';
+    return g.id ? `group-${g.id}` : 'group-no-line';
   }
 
   protected titleId(g: DisplayGroup): string {
-    return g.id ? `gruppe-titel-${g.id}` : 'gruppe-titel-ohne-linie';
+    return g.id ? `group-title-${g.id}` : 'group-title-no-line';
   }
 
   private async load(teamId: string): Promise<void> {
@@ -139,7 +139,7 @@ export class Lines {
     this.loadError.set(null);
     const me = this.auth.me();
     if (me && !me.admin && !me.memberships.some((z) => z.team.id === teamId)) {
-      // Ohne Zugehörigkeit gar nicht erst anfragen; das Backend lehnt ab (403, RR-07).
+      // Without membership do not even ask; the backend refuses (403, RR-07).
       this.team.set(null);
       this.loadError.set(TEXTS.common.noPermission);
       this.loading.set(false);
@@ -160,9 +160,9 @@ export class Lines {
   }
 
   /**
-   * Führt eine Änderung aus, lädt die Einteilung neu und meldet das Ergebnis. `fokus`: IDs der
-   * Elemente, die danach den Fokus bekommen sollen; das erste, das es gibt und nicht gesperrt ist.
-   * `beiFehler`: zeigt einen Fehler selbst an (z.B. beim Feld) statt oben auf der Seite.
+   * Runs a change, reloads the lineup and reports the result. `focus`: IDs of the elements that
+   * should get the focus afterwards; the first one that exists and is not disabled.
+   * `onError`: shows an error itself (e.g. at the field) instead of at the top of the page.
    */
   private async run(
     key: string,
@@ -183,7 +183,7 @@ export class Lines {
     } catch (e) {
       if (onError) onError(errorText(e));
       else this.error.set(errorText(e));
-      // Bei einem Fehler den tatsächlichen Stand zeigen (z.B. gleichzeitig geändert).
+      // On an error show the actual state (e.g. changed at the same time).
       await this.reload().catch(() => undefined);
     } finally {
       this.runningAction.set(null);
@@ -194,7 +194,7 @@ export class Lines {
     return ok;
   }
 
-  /** Nach dem nächsten Rendern das erste vorhandene, nicht gesperrte Element fokussieren. */
+  /** After the next render focus the first existing element that is not disabled. */
   private focusElement(ids: string[]): void {
     afterNextRender(
       () => {
@@ -210,13 +210,13 @@ export class Lines {
     );
   }
 
-  /** Spielerin einer Gruppe zuweisen; `gruppeId` leer = ohne Linie (LIN-02, LIN-06, LIN-07). */
+  /** Assign a player to a group; empty `groupId` = no line (LIN-02, LIN-06, LIN-07). */
   protected assign(person: PersonSummary, groupId: string, focus = true): void {
     const target = this.groups().find((g) => (g.id ?? NO_LINE) === groupId);
     const current = this.groups().find((g) => g.players.some((p) => p.id === person.id));
     if (!target || target === current) return;
     void this.run(
-      `zuweisen:${person.id}`,
+      `assign:${person.id}`,
       async () => {
         await firstValueFrom(
           this.http.put(`/api/teams/${this.teamId()}/assignments/${person.id}`, {
@@ -227,11 +227,11 @@ export class Lines {
           ? TEXTS.lines.assigned(name(person), target.name)
           : TEXTS.lines.noLineSet(name(person));
       },
-      focus ? `zuweisung-${person.id}` : undefined,
+      focus ? `assignment-${person.id}` : undefined,
     );
   }
 
-  /** Neue Linie am Ende mit dem nächsten freien Namen «Linie n» (LIN-07, LIN-09). */
+  /** New line at the end with the next free name «Linie n» (LIN-07, LIN-09). */
   protected add(): void {
     const names = new Set(this.groups().map((g) => g.name.toLowerCase()));
     let nr = this.lines().length + 1;
@@ -243,15 +243,15 @@ export class Lines {
     });
   }
 
-  /** Linie eine Position nach oben oder unten (LIN-09). */
+  /** Move a line one position up or down (LIN-09). */
   protected move(g: DisplayGroup, direction: -1 | 1): void {
     const target = g.index + 1 + direction;
     if (!g.id || target < 1 || target > this.lines().length) return;
-    // Landet die Linie am Rand, ist dieser Knopf danach gesperrt: dann den Gegenknopf fokussieren.
-    const button = `${direction < 0 ? 'oben' : 'unten'}-${g.id}`;
-    const otherButton = `${direction < 0 ? 'unten' : 'oben'}-${g.id}`;
+    // If the line ends up at the edge, this button is disabled afterwards: then focus the opposite button.
+    const button = `${direction < 0 ? 'up' : 'down'}-${g.id}`;
+    const otherButton = `${direction < 0 ? 'down' : 'up'}-${g.id}`;
     void this.run(
-      `${direction < 0 ? 'oben' : 'unten'}:${g.id}`,
+      `${direction < 0 ? 'up' : 'down'}:${g.id}`,
       async () => {
         await firstValueFrom(
           this.http.put(`/api/teams/${this.teamId()}/groups/${g.id}`, {
@@ -279,7 +279,7 @@ export class Lines {
     this.renameId.set(null);
     this.nameError.set(null);
     afterNextRender(
-      () => this.host.nativeElement.querySelector<HTMLElement>(`#umbenennen-${g.id}`)?.focus(),
+      () => this.host.nativeElement.querySelector<HTMLElement>(`#rename-${g.id}`)?.focus(),
       { injector: this.injector },
     );
   }
@@ -296,9 +296,9 @@ export class Lines {
       this.cancelRename(g);
       return;
     }
-    // Fehler (z.B. Name schon vergeben, LIN-09) beim Namensfeld zeigen, Fokus bleibt im Feld.
+    // Show errors (e.g. name already taken, LIN-09) at the name field, the focus stays in the field.
     const ok = await this.run(
-      `umbenennen:${g.id}`,
+      `rename:${g.id}`,
       async () => {
         await firstValueFrom(
           this.http.put(`/api/teams/${this.teamId()}/groups/${g.id}`, { name: newValue }),
@@ -325,27 +325,27 @@ export class Lines {
     this.deleteDialog()?.nativeElement.close();
   }
 
-  /** Nach dem Schliessen des Dialogs (Abbrechen, Esc) den Fokus zurück auf «löschen». */
+  /** After closing the dialog (cancel, Esc) put the focus back on «löschen». */
   protected dialogClosed(): void {
     const g = this.toDelete();
     this.toDelete.set(null);
     if (g?.id && this.lines().some((l) => l.id === g.id)) {
-      this.host.nativeElement.querySelector<HTMLElement>(`#loeschen-${g.id}`)?.focus();
+      this.host.nativeElement.querySelector<HTMLElement>(`#delete-${g.id}`)?.focus();
     }
   }
 
-  /** Linie löschen; ihre Spielerinnen sind danach «Ohne Linie» (LIN-06). */
+  /** Delete a line; its players are «Ohne Linie» afterwards (LIN-06). */
   protected delete(): void {
     const g = this.toDelete();
     if (!g?.id) return;
     this.deleteDialog()?.nativeElement.close();
-    void this.run(`loeschen:${g.id}`, async () => {
+    void this.run(`delete:${g.id}`, async () => {
       await firstValueFrom(this.http.delete(`/api/teams/${this.teamId()}/groups/${g.id}`));
       return TEXTS.lines.deleted(g.name);
     });
   }
 
-  // ---- Drag & Drop (Ergänzung zum Auswahlfeld, LIN-07) ----
+  // ---- Drag & drop (in addition to the select field, LIN-07) ----
 
   protected dragStart(domEvent: DragEvent, person: PersonSummary): void {
     if (!this.canEdit() || this.saving()) {

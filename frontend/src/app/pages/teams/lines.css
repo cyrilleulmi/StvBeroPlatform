@@ -22,7 +22,7 @@
   border-style: dashed;
 }
 
-.group.ziel {
+.group.target {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary);
 }
@@ -103,7 +103,7 @@
   cursor: grab;
 }
 
-.player.gezogen {
+.player.dragged {
   opacity: 0.5;
 }
 

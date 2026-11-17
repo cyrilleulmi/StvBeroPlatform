@@ -22,12 +22,12 @@ import { OverviewSection } from './overview';
 import { yearOf, eventDate, clockTime } from './time';
 
 /**
- * Termin (`/termine/:terminId`): Angaben, Status (abgesagt mit Grund, verschoben), für Coaches der Link
- * zum Bearbeiten (TER-04, TER-06), die eigene Antwort und die Übersicht nach Team und Linie (F-04, ANM).
- * Bei Spieltagen zusätzlich Aufgebot und Spiele (F-05, AUF).
+ * Event (`/termine/:eventId`): details, status (cancelled with reason, rescheduled), for coaches the
+ * link to edit (TER-04, TER-06), the own response and the overview by team and line (F-04, ANM).
+ * For match days also call-up and matches (F-05, AUF).
  */
 @Component({
-  selector: 'app-termin',
+  selector: 'app-event',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, MyResponse, MatchDay, OverviewSection],
   template: `
@@ -49,21 +49,21 @@ import { yearOf, eventDate, clockTime } from './time';
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (event(); as t) {
         @if (t.status === 'CANCELLED') {
-          <div class="message-error status" data-testid="termin-status">
+          <div class="message-error status" data-testid="event-status">
             <strong>{{ texts.events.cancelledWithReason(t.cancellationReason ?? '') }}</strong>
             <span>{{ texts.events.cancelledNotice }}</span>
           </div>
         } @else if (t.rescheduled) {
-          <p class="message-notice" data-testid="termin-status">
+          <p class="message-notice" data-testid="event-status">
             {{ texts.events.rescheduledNotice }}
           </p>
         }
         @if (isMember()) {
-          <section class="card" aria-labelledby="termin-meine-antwort">
-            <h2 id="termin-meine-antwort" class="section-title">
+          <section class="card" aria-labelledby="event-my-response">
+            <h2 id="event-my-response" class="section-title">
               {{ texts.response.myResponse }}
             </h2>
-            <app-meine-antwort
+            <app-my-response
               [eventId]="t.id"
               [response]="t.myResponse"
               [name]="texts.response.myResponse"
@@ -74,15 +74,15 @@ import { yearOf, eventDate, clockTime } from './time';
           </section>
         }
         @if (t.type === 'MATCH_DAY') {
-          <app-spieltag
+          <app-match-day
             [event]="t"
             [canCallUp]="coachOrAdmin()"
             [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
             (changed)="reload()"
           />
         }
-        <section class="card" aria-labelledby="termin-angaben">
-          <h2 id="termin-angaben" class="section-title">{{ texts.events.details }}</h2>
+        <section class="card" aria-labelledby="event-details">
+          <h2 id="event-details" class="section-title">{{ texts.events.details }}</h2>
           <dl class="facts">
             <dt>{{ texts.events.date }}</dt>
             <dd>{{ date(t.start) }}</dd>
@@ -103,18 +103,18 @@ import { yearOf, eventDate, clockTime } from './time';
                     [href]="t.location.mapsUrl"
                     target="_blank"
                     rel="noopener"
-                    data-testid="spielort-karte"
+                    data-testid="venue-map"
                     >{{ texts.events.openMap }}</a
                   >
                 }
               </dd>
             }
-            @if (t.meetingPoint; as tp) {
+            @if (t.meetingPoint; as mp) {
               <dt>{{ texts.events.meetingPoint }}</dt>
-              <dd data-testid="treffpunkt">{{ clockTime(tp.time) }} · {{ tp.location }}</dd>
+              <dd data-testid="meeting-point">{{ clockTime(mp.time) }} · {{ mp.location }}</dd>
             }
             <dt>{{ texts.events.responseDeadline }}</dt>
-            <dd data-testid="antwortfrist">
+            <dd data-testid="response-deadline">
               {{
                 texts.events.responseDeadlineText(
                   date(t.responseDeadline),
@@ -147,13 +147,13 @@ import { yearOf, eventDate, clockTime } from './time';
           }
         </section>
         @if (overview(); as u) {
-          <app-uebersicht
+          <app-overview
             [eventId]="t.id"
             [data]="u"
             [coachIn]="coachIn()"
             [admin]="auth.me()?.admin ?? false"
             [meId]="auth.me()?.id ?? null"
-            [open]="!lock()"
+            [responsesOpen]="!lock()"
             (changed)="reload()"
           />
         }
@@ -169,7 +169,7 @@ export class EventPage {
   protected readonly texts = TEXTS;
   protected readonly clockTime = clockTime;
 
-  /** Route `/termine/:terminId` */
+  /** Route `/termine/:eventId` */
   readonly eventId = input.required<string>();
 
   protected readonly event = signal<EventData | null>(null);
@@ -185,22 +185,22 @@ export class EventPage {
     return t ? TEXTS.events.period(clockTime(t.start), clockTime(t.end)) : '';
   });
 
-  /** Mitglied eines beteiligten Teams: kann für sich antworten (ANM-01). */
+  /** Member of an involved team: can respond for themselves (ANM-01). */
   protected readonly isMember = computed(() =>
     (this.event()?.teams ?? []).some((t) => !!t.myTeamRole),
   );
 
-  /** Teams des Termins, in denen die angemeldete Person Coach ist (RR-06). */
+  /** Teams of the event in which the logged-in person is coach (RR-06). */
   protected readonly coachIn = computed(() =>
     (this.event()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
   );
 
-  /** Coach eines beteiligten Teams oder Admin: Aufgebot und Resultate (RR-03). */
+  /** Coach of an involved team or admin: call-up and results (RR-03). */
   protected readonly coachOrAdmin = computed(
     () => this.coachIn().length > 0 || (this.auth.me()?.admin ?? false),
   );
 
-  /** Erklärung, warum nicht mehr geantwortet werden kann (TER-06), sonst `null`. */
+  /** Explanation why responding is no longer possible (TER-06), otherwise `null`. */
   protected readonly lock = computed(() => {
     const t = this.event();
     if (!t) return null;
@@ -226,7 +226,7 @@ export class EventPage {
     return eventDate(iso, this.year());
   }
 
-  /** Nach einer Antwort: Termin (eigene Antwort, Zähler) und Übersicht ohne Neuladen der Seite. */
+  /** After a response: event (own response, counters) and overview without reloading the page. */
   protected async reload(): Promise<void> {
     const id = this.eventId();
     try {

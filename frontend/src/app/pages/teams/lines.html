@@ -27,7 +27,7 @@
     <p class="message-notice">{{ texts.lines.readOnly }}</p>
   }
 
-  <div class="groups" data-testid="linien-verwaltung">
+  <div class="groups" data-testid="lines-management">
     @for (g of lines(); track g.id) {
       <ng-container *ngTemplateOutlet="groupTemplate; context: { $implicit: g }" />
     }
@@ -35,7 +35,7 @@
       <button
         type="button"
         class="button button-secondary add"
-        data-testid="linie-hinzufuegen"
+        data-testid="add-line"
         [disabled]="saving()"
         [attr.aria-busy]="runningAction() === 'add' ? 'true' : null"
         (click)="add()"
@@ -43,7 +43,7 @@
         + {{ texts.lines.add }}
       </button>
     }
-    @for (g of others(); track g.id ?? 'ohne-linie') {
+    @for (g of others(); track g.id ?? 'no-line') {
       <ng-container *ngTemplateOutlet="groupTemplate; context: { $implicit: g }" />
     }
   </div>
@@ -53,7 +53,7 @@
   <section
     class="card group"
     [class.target]="dropTarget() === (g.id ?? noLineValue)"
-    [attr.data-art]="g.kind"
+    [attr.data-kind]="g.kind"
     [attr.aria-labelledby]="titleId(g)"
     [attr.data-testid]="testId(g)"
     (dragover)="over($event, g)"
@@ -65,14 +65,14 @@
         {{ g.name }} <span class="count">{{ g.players.length }}</span>
       </h2>
       @if (canEdit() && g.kind === 'LINE' && renameId() !== g.id) {
-        <div class="buttons reihenfolge">
+        <div class="buttons order">
           <button
             type="button"
             class="icon-button"
-            [id]="'oben-' + g.id"
+            [id]="'up-' + g.id"
             [attr.aria-label]="texts.lines.moveUp(g.name)"
             [disabled]="saving() || g.index === 0"
-            [attr.aria-busy]="runningAction() === 'oben:' + g.id ? 'true' : null"
+            [attr.aria-busy]="runningAction() === 'up:' + g.id ? 'true' : null"
             (click)="move(g, -1)"
           >
             <app-icon name="chevron-up" [size]="20" />
@@ -80,10 +80,10 @@
           <button
             type="button"
             class="icon-button"
-            [id]="'unten-' + g.id"
+            [id]="'down-' + g.id"
             [attr.aria-label]="texts.lines.moveDown(g.name)"
             [disabled]="saving() || g.index === lines().length - 1"
-            [attr.aria-busy]="runningAction() === 'unten:' + g.id ? 'true' : null"
+            [attr.aria-busy]="runningAction() === 'down:' + g.id ? 'true' : null"
             (click)="move(g, 1)"
           >
             <app-icon name="chevron-down" [size]="20" />
@@ -93,7 +93,7 @@
           <button
             type="button"
             class="button button-secondary button-small"
-            [id]="'umbenennen-' + g.id"
+            [id]="'rename-' + g.id"
             [attr.aria-label]="texts.lines.rename(g.name)"
             [disabled]="saving()"
             (click)="startRename(g)"
@@ -103,10 +103,10 @@
           <button
             type="button"
             class="button button-secondary button-small delete"
-            [id]="'loeschen-' + g.id"
+            [id]="'delete-' + g.id"
             [attr.aria-label]="texts.lines.delete(g.name)"
             [disabled]="saving()"
-            [attr.aria-busy]="runningAction() === 'loeschen:' + g.id ? 'true' : null"
+            [attr.aria-busy]="runningAction() === 'delete:' + g.id ? 'true' : null"
             (click)="askDelete(g)"
           >
             {{ texts.lines.deleteShort }}
@@ -127,10 +127,10 @@
             (input)="newName.set($any($event.target).value)"
             (keydown.escape)="cancelRename(g)"
             [attr.aria-invalid]="nameError() ? 'true' : null"
-            [attr.aria-describedby]="nameError() ? 'name-fehler-' + g.id : null"
+            [attr.aria-describedby]="nameError() ? 'name-error-' + g.id : null"
           />
           @if (nameError(); as m) {
-            <p class="field-error" [id]="'name-fehler-' + g.id">{{ m }}</p>
+            <p class="field-error" [id]="'name-error-' + g.id">{{ m }}</p>
           }
         </div>
         <div class="buttons">
@@ -138,7 +138,7 @@
             type="submit"
             class="button button-primary button-small"
             [disabled]="saving()"
-            [attr.aria-busy]="runningAction() === 'umbenennen:' + g.id ? 'true' : null"
+            [attr.aria-busy]="runningAction() === 'rename:' + g.id ? 'true' : null"
           >
             {{ texts.lines.save }}
           </button>
@@ -162,7 +162,7 @@
             class="row player"
             [class.dragged]="dragged()?.id === p.id"
             [attr.aria-label]="name(p)"
-            [attr.data-testid]="'spielerin-' + p.id"
+            [attr.data-testid]="'player-' + p.id"
             [attr.draggable]="canEdit() ? 'true' : null"
             (dragstart)="dragStart($event, p)"
             (dragend)="dragEnd()"
@@ -173,11 +173,11 @@
             <span class="row-title">{{ name(p) }}</span>
             @if (canEdit()) {
               <select
-                [id]="'zuweisung-' + p.id"
-                [attr.data-testid]="'zuweisung-' + p.id"
+                [id]="'assignment-' + p.id"
+                [attr.data-testid]="'assignment-' + p.id"
                 [attr.aria-label]="texts.lines.assignmentOf(name(p))"
                 [disabled]="saving()"
-                [attr.aria-busy]="runningAction() === 'zuweisen:' + p.id ? 'true' : null"
+                [attr.aria-busy]="runningAction() === 'assign:' + p.id ? 'true' : null"
                 (change)="assign(p, $any($event.target).value)"
               >
                 @for (o of options(); track o.value) {
@@ -198,13 +198,13 @@
   #deleteDialog
   class="card dialog"
   aria-modal="true"
-  aria-labelledby="loeschen-titel"
-  aria-describedby="loeschen-text"
+  aria-labelledby="delete-title"
+  aria-describedby="delete-text"
   (close)="dialogClosed()"
 >
   @if (toDelete(); as g) {
-    <h2 id="loeschen-titel">{{ texts.lines.deleteQuestion(g.name) }}</h2>
-    <p id="loeschen-text">
+    <h2 id="delete-title">{{ texts.lines.deleteQuestion(g.name) }}</h2>
+    <p id="delete-text">
       {{ g.players.length > 0 ? texts.lines.deleteConsequence : texts.lines.deleteEmpty }}
     </p>
     <div class="buttons">

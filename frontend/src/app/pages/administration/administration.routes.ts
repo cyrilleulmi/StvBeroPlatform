@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 const title = (page: string) => `${page} · STV Bero`;
 
-/** Verwaltung (Admin), lazy geladen. Routen nach docs/oberflaeche/navigation.md. */
+/** Administration (admin), lazy loaded. Routes according to docs/ui/navigation.md. */
 export const ADMINISTRATION_ROUTES: Routes = [
   {
     path: '',

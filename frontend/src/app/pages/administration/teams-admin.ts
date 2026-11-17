@@ -18,9 +18,9 @@ import { seasonStatus } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Teams verwalten (Admin): Teams einer Saison (`?saison=`), Team anlegen. Archiv nur lesend (SAI-02). */
+/** Manage teams (admin): teams of a season (`?saison=`), create a team. Archive read-only (SAI-02). */
 @Component({
-  selector: 'app-teams-verwaltung',
+  selector: 'app-teams-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
@@ -32,8 +32,8 @@ import { TEXTS } from '../../core/texts';
       <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
     } @else {
       <div class="field">
-        <label for="teams-saison">{{ texts.teamAdmin.season }}</label>
-        <select id="teams-saison" (change)="selectSeason($any($event.target).value)">
+        <label for="teams-season">{{ texts.teamAdmin.season }}</label>
+        <select id="teams-season" (change)="selectSeason($any($event.target).value)">
           @for (s of seasons(); track s.id) {
             <option [value]="s.id" [selected]="s.id === seasonData()?.id">
               {{ s.name }} ({{ status(s) }})
@@ -42,7 +42,7 @@ import { TEXTS } from '../../core/texts';
         </select>
       </div>
       @if (seasonData()?.archived) {
-        <p class="message-notice" data-testid="archiv-hinweis">
+        <p class="message-notice" data-testid="archive-notice">
           {{ texts.season.archiveNotice(seasonData()!.name) }}
         </p>
       }
@@ -54,10 +54,10 @@ import { TEXTS } from '../../core/texts';
       }
       <section
         class="card"
-        aria-labelledby="teams-verwaltung-liste"
+        aria-labelledby="teams-admin-list"
         [attr.aria-busy]="loading() ? 'true' : null"
       >
-        <h2 id="teams-verwaltung-liste" class="section-title">
+        <h2 id="teams-admin-list" class="section-title">
           {{ texts.teamAdmin.teamsList }}
         </h2>
         @if (loading() && teams().length === 0) {
@@ -67,7 +67,7 @@ import { TEXTS } from '../../core/texts';
         } @else {
           <ul class="list" [attr.aria-label]="texts.teamAdmin.teamsList">
             @for (t of teams(); track t.id) {
-              <li class="team-zeile" [attr.data-testid]="'team-' + t.id">
+              <li class="team-row" [attr.data-testid]="'team-' + t.id">
                 <a
                   class="row-link"
                   [routerLink]="['/verwaltung/teams', t.id]"
@@ -77,7 +77,7 @@ import { TEXTS } from '../../core/texts';
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
                 @if (t.suTeamId) {
-                  <span class="chip" [attr.data-testid]="'su-verknuepft-' + t.id">{{
+                  <span class="chip" [attr.data-testid]="'su-linked-' + t.id">{{
                     texts.swissUnihockey.chip
                   }}</span>
                 }
@@ -91,23 +91,23 @@ import { TEXTS } from '../../core/texts';
           class="card form"
           (submit)="create($event)"
           novalidate
-          aria-labelledby="team-neu-titel"
+          aria-labelledby="team-new-title"
         >
-          <h2 id="team-neu-titel">{{ texts.teamAdmin.newTeam }}</h2>
+          <h2 id="team-new-title">{{ texts.teamAdmin.newTeam }}</h2>
           <div class="field">
-            <label for="team-neu-name">{{ texts.teamAdmin.teamName }}</label>
+            <label for="team-new-name">{{ texts.teamAdmin.teamName }}</label>
             <input
-              id="team-neu-name"
+              id="team-new-name"
               type="text"
               maxlength="60"
               autocomplete="off"
               [value]="newName()"
               (input)="newName.set($any($event.target).value)"
               [attr.aria-invalid]="nameError() ? 'true' : null"
-              [attr.aria-describedby]="nameError() ? 'team-neu-name-fehler' : null"
+              [attr.aria-describedby]="nameError() ? 'team-new-name-error' : null"
             />
             @if (nameError(); as m) {
-              <p class="field-error" id="team-neu-name-fehler">{{ m }}</p>
+              <p class="field-error" id="team-new-name-error">{{ m }}</p>
             }
           </div>
           <button
@@ -127,12 +127,12 @@ import { TEXTS } from '../../core/texts';
     form .button {
       justify-self: start;
     }
-    .team-zeile {
+    .team-row {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .team-zeile .row-link {
+    .team-row .row-link {
       flex: 1 1 auto;
       min-width: 0;
     }
@@ -145,7 +145,8 @@ export class TeamsAdmin {
   protected readonly texts = TEXTS;
   protected readonly status = seasonStatus;
 
-  /** Query `?saison=`; ohne Angabe die aktuelle Saison. */
+  /** Query `?saison=`; without it the current season. */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?saison=` is part of the browser URL and stays German (NF-40)
   readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
   protected readonly seasons = signal<Season[]>([]);
@@ -179,7 +180,7 @@ export class TeamsAdmin {
     this.error.set(null);
     this.success.set(null);
     try {
-      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
+      const params: Record<string, string> = seasonId ? { season: seasonId } : {};
       const [seasons, teams] = await Promise.all([
         firstValueFrom(this.http.get<Season[]>('/api/seasons')),
         firstValueFrom(this.http.get<Team[]>('/api/teams', { params })),
@@ -208,7 +209,7 @@ export class TeamsAdmin {
     this.saving.set(true);
     try {
       const params: Record<string, string> = this.seasonData()
-        ? { saison: this.seasonData()!.id }
+        ? { season: this.seasonData()!.id }
         : {};
       const team = await firstValueFrom(this.http.post<Team>('/api/teams', { name }, { params }));
       this.newName.set('');

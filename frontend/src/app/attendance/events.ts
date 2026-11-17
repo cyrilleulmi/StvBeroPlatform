@@ -22,16 +22,16 @@ import { yearOf, month, monthKey, eventDate, clockTime } from './time';
 interface Month {
   key: string;
   name: string;
-  termine: EventSummary[];
+  events: EventSummary[];
 }
 
 /**
- * Kachel Anwesenheit: Termine aller eigenen Teams, chronologisch (TER-13), mit der eigenen Antwort direkt
- * in der Karte (ANM-08) und dem Gesamtzähler, der sich nach einer Antwort ohne Neuladen aktualisiert. Filter `?team=<id>` und
- * Ansicht `?ansicht=vergangen` stehen in der URL (docs/testbarkeit.md, Regel 5).
+ * Tile Anwesenheit: events of all own teams, chronological (TER-13), with the own response directly
+ * in the card (ANM-08) and the total counter, which updates after a response without reloading. Filter
+ * `?team=<id>` and view `?ansicht=vergangen` are in the URL (docs/testability.md, rule 5).
  */
 @Component({
-  selector: 'app-termine',
+  selector: 'app-events',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, MyResponse],
   template: `
@@ -63,8 +63,8 @@ interface Month {
       </nav>
       @if (myTeams().length > 1 || team()) {
         <div class="field">
-          <label for="termine-team">{{ texts.events.team }}</label>
-          <select id="termine-team" (change)="selectTeam($any($event.target).value)">
+          <label for="events-team">{{ texts.events.team }}</label>
+          <select id="events-team" (change)="selectTeam($any($event.target).value)">
             <option value="" [selected]="!team()">{{ texts.events.allTeams }}</option>
             @for (t of teamSelection(); track t.id) {
               <option [value]="t.id" [selected]="team() === t.id">{{ t.name }}</option>
@@ -80,24 +80,24 @@ interface Month {
 
     <section
       class="card"
-      aria-labelledby="termine-liste-titel"
+      aria-labelledby="events-list-title"
       [attr.aria-busy]="loading() ? 'true' : null"
     >
-      <h2 id="termine-liste-titel" class="visually-hidden">
+      <h2 id="events-list-title" class="visually-hidden">
         {{ past() ? texts.events.pastEvents : texts.events.upcomingEvents }}
       </h2>
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
-      } @else if (termine().length === 0) {
+      } @else if (events().length === 0) {
         <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
       } @else {
         @for (m of months(); track m.key) {
-          <h3 class="month" [id]="'monat-' + m.key">{{ m.name }}</h3>
-          <ul class="list" [attr.aria-labelledby]="'monat-' + m.key">
-            @for (t of m.termine; track t.id) {
+          <h3 class="month" [id]="'month-' + m.key">{{ m.name }}</h3>
+          <ul class="list" [attr.aria-labelledby]="'month-' + m.key">
+            @for (t of m.events; track t.id) {
               <li
                 class="event-entry"
-                [attr.data-testid]="'termin-karte-' + t.id"
+                [attr.data-testid]="'event-card-' + t.id"
                 [attr.aria-label]="cardName(t)"
                 [attr.data-status]="t.status"
               >
@@ -118,7 +118,7 @@ interface Month {
                     </span>
                     @if (t.status === 'CANCELLED') {
                       <span class="status-row">
-                        <span class="chip" data-art="abgesagt" data-testid="termin-status">{{
+                        <span class="chip" data-kind="cancelled" data-testid="event-status">{{
                           texts.events.cancelled
                         }}</span>
                         @if (t.cancellationReason) {
@@ -128,29 +128,29 @@ interface Month {
                     } @else {
                       @if (t.rescheduled) {
                         <span class="status-row">
-                          <span class="chip" data-art="verschoben" data-testid="termin-status">{{
+                          <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
                             texts.events.rescheduled
                           }}</span>
                         </span>
                       }
                       @if (t.counts; as z) {
-                        <span class="secondary-text counter" data-testid="termin-zaehler">
-                          <span data-zaehler="dabei">{{ texts.overview.attending(z.attending) }}</span>
+                        <span class="secondary-text counter" data-testid="event-counter">
+                          <span data-counter="attending">{{ texts.overview.attending(z.attending) }}</span>
                           ·
-                          <span data-zaehler="nicht-dabei">{{
+                          <span data-counter="declined">{{
                             texts.overview.declined(z.declined)
                           }}</span>
                           ·
-                          <span data-zaehler="vielleicht">{{
+                          <span data-counter="maybe">{{
                             texts.overview.maybe(z.maybe)
                           }}</span>
                           ·
-                          <span data-zaehler="offen">{{ texts.overview.pending(z.pending) }}</span>
+                          <span data-counter="pending">{{ texts.overview.pending(z.pending) }}</span>
                         </span>
                       }
                     }
                     @if (past()) {
-                      <span class="secondary-text" [attr.data-antwort]="t.myResponse.status">{{
+                      <span class="secondary-text" [attr.data-response]="t.myResponse.status">{{
                         texts.response.yourResponse(texts.response.status[t.myResponse.status])
                       }}</span>
                     }
@@ -158,7 +158,7 @@ interface Month {
                   <app-icon name="chevron-right" [size]="20" />
                 </a>
                 @if (!past()) {
-                  <app-meine-antwort
+                  <app-my-response
                     class="card-response"
                     [eventId]="t.id"
                     [response]="t.myResponse"
@@ -185,16 +185,17 @@ export class Events {
   /** Query `?team=` */
   readonly team = input<string | undefined>();
   /** Query `?ansicht=vergangen` */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?ansicht=` is part of the browser URL and stays German (NF-40)
   readonly view = input<string | undefined>(undefined, { alias: 'ansicht' });
 
-  protected readonly termine = signal<EventSummary[]>([]);
+  protected readonly events = signal<EventSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
   protected readonly past = computed(() => this.view() === 'vergangen');
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
-  /** Eigene Teams der aktuellen Saison, nach Name. */
+  /** Own teams of the current season, by name. */
   protected readonly myTeams = computed(() =>
     (this.auth.me()?.memberships ?? [])
       .map((z) => z.team)
@@ -202,37 +203,37 @@ export class Events {
   );
 
   /**
-   * Auswahl «Team»: die eigenen Teams. Zeigt `?team=` auf ein anderes Team (z.B. ein geteilter Link),
-   * erscheint es zusätzlich, damit Auswahl und Liste übereinstimmen (Test-Befund F-03).
+   * Select «Team»: the own teams. If `?team=` points to another team (e.g. a shared link), it appears
+   * in addition, so that the select and the list match (test finding F-03).
    */
   protected readonly teamSelection = computed(() => {
     const own = this.myTeams();
     const id = this.team();
     if (!id || own.some((t) => t.id === id)) return own;
     const name =
-      this.termine()
+      this.events()
         .flatMap((t) => t.teams)
         .find((t) => t.id === id)?.name ?? TEXTS.events.otherTeam;
     return [...own, { id, name }];
   });
 
-  /** Termine erfassen: Coaches (in irgendeinem Team) und Admins (TER-11, RR-05). */
+  /** Create events: coaches (in any team) and admins (TER-11, RR-05). */
   protected readonly canCreate = computed(() => {
     const me = this.auth.me();
     return !!me && (me.admin || me.memberships.some((z) => z.teamRole === 'COACH'));
   });
 
-  /** Termine nach Monat gruppiert, in der Reihenfolge der API. */
+  /** Events grouped by month, in the order of the API. */
   protected readonly months = computed<Month[]>(() => {
     const months: Month[] = [];
-    for (const t of this.termine()) {
+    for (const t of this.events()) {
       const key = monthKey(t.start);
       let m = months.at(-1);
       if (!m || m.key !== key) {
-        m = { key, name: month(t.start), termine: [] };
+        m = { key, name: month(t.start), events: [] };
         months.push(m);
       }
-      m.termine.push(t);
+      m.events.push(t);
     }
     return months;
   });
@@ -257,7 +258,7 @@ export class Events {
     return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
   }
 
-  /** Name des Listeneintrags, z.B. «Training Di 17.11. 18:30». */
+  /** Name of the list entry, e.g. «Training Di 17.11. 18:30». */
   protected cardName(t: EventSummary): string {
     return TEXTS.events.card(t.title, this.date(t.start), clockTime(t.start));
   }
@@ -269,11 +270,11 @@ export class Events {
     });
   }
 
-  /** Nach einer Antwort: eigene Antwort und Zähler dieses Termins neu holen (ohne Neuladen der Seite). */
+  /** After a response: fetch the own response and counters of this event again (without reloading the page). */
   protected async reload(id: string): Promise<void> {
     try {
       const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
-      this.termine.update((list) => list.map((t) => (t.id === id ? updated : t)));
+      this.events.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
       this.error.set(errorText(e));
     }
@@ -286,11 +287,11 @@ export class Events {
       const params: Record<string, string> = {};
       if (team) params['team'] = team;
       if (view === 'vergangen') params['view'] = 'past';
-      this.termine.set(
+      this.events.set(
         await firstValueFrom(this.http.get<EventSummary[]>('/api/events', { params })),
       );
     } catch (e) {
-      this.termine.set([]);
+      this.events.set([]);
       this.error.set(errorText(e));
     } finally {
       this.loading.set(false);

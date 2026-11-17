@@ -6,7 +6,7 @@ import { Shell } from './shell/shell';
 
 const title = (page: string) => `${page} · STV Bero`;
 
-/** Routen nach docs/oberflaeche/navigation.md. */
+/** Routes according to docs/ui/navigation.md. */
 export const routes: Routes = [
   {
     path: 'anmelden',

@@ -1,6 +1,6 @@
 import type { components } from './schema';
 
-/** Types from docs/api/openapi.yaml (generated with `npm run api-typen`). */
+/** Types from docs/api/openapi.yaml (generated with `npm run api-types`). */
 export type Me = components['schemas']['Me'];
 export type Session = components['schemas']['Session'];
 export type Tile = components['schemas']['Tile'];

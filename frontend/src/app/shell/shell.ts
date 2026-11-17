@@ -15,8 +15,8 @@ interface NavEntry {
 }
 
 /**
- * Rahmen für angemeldete Personen: Navigation (mobil unten, ab 1024px links) und Inhalt. Die Anzahl
- * ungelesener Benachrichtigungen wird bei jedem Seitenwechsel neu geladen.
+ * Frame for logged-in people: navigation (mobile at the bottom, from 1024px on the left) and content.
+ * The number of unread notifications is reloaded on every page change.
  */
 @Component({
   selector: 'app-shell',
@@ -32,7 +32,7 @@ export class Shell {
   protected readonly unread = this.notifications.unread;
 
   constructor() {
-    // Der Rahmen entsteht vor dem ersten NavigationEnd, deshalb lädt auch der erste Aufruf den Zähler.
+    // The frame is created before the first NavigationEnd, so the first call also loads the counter.
     inject(Router)
       .events.pipe(
         filter((e) => e instanceof NavigationEnd),

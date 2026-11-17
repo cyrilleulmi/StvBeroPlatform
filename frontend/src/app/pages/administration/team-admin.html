@@ -15,7 +15,7 @@
   <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
 } @else {
   @if (readOnly()) {
-    <p class="message-notice" data-testid="archiv-hinweis">
+    <p class="message-notice" data-testid="archive-notice">
       {{ texts.season.archiveNotice(seasonData()!.name) }}
     </p>
   }
@@ -46,10 +46,10 @@
             [value]="teamname()"
             (input)="teamname.set($any($event.target).value)"
             [attr.aria-invalid]="teamnameError() ? 'true' : null"
-            [attr.aria-describedby]="teamnameError() ? 'team-name-fehler' : null"
+            [attr.aria-describedby]="teamnameError() ? 'team-name-error' : null"
           />
           @if (teamnameError(); as m) {
-            <p class="field-error" id="team-name-fehler">{{ m }}</p>
+            <p class="field-error" id="team-name-error">{{ m }}</p>
           }
         </div>
         <button
@@ -64,8 +64,8 @@
     }
 
     @if (!readOnly()) {
-      <section class="card form" aria-labelledby="su-titel" data-testid="swiss-unihockey">
-        <h2 id="su-titel">{{ texts.swissUnihockey.title }}</h2>
+      <section class="card form" aria-labelledby="su-title" data-testid="swiss-unihockey">
+        <h2 id="su-title">{{ texts.swissUnihockey.title }}</h2>
         <p class="secondary-text">{{ texts.swissUnihockey.explanation }}</p>
         <p data-testid="su-status">
           {{
@@ -87,15 +87,15 @@
               (input)="suTeamId.set($any($event.target).value)"
               [attr.aria-invalid]="suTeamIdError() ? 'true' : null"
               [attr.aria-describedby]="
-                suTeamIdError() ? 'su-team-id-hilfe su-team-id-fehler' : 'su-team-id-hilfe'
+                suTeamIdError() ? 'su-team-id-help su-team-id-error' : 'su-team-id-help'
               "
             />
-            <p class="secondary-text" id="su-team-id-hilfe">{{ texts.swissUnihockey.fieldHelp }}</p>
+            <p class="secondary-text" id="su-team-id-help">{{ texts.swissUnihockey.fieldHelp }}</p>
             @if (suTeamIdError(); as m) {
-              <p class="field-error" id="su-team-id-fehler">{{ m }}</p>
+              <p class="field-error" id="su-team-id-error">{{ m }}</p>
             }
           </div>
-          <div class="su-knoepfe">
+          <div class="su-buttons">
             <button
               type="submit"
               class="button button-secondary button-small"
@@ -148,10 +148,10 @@
     ) {
       <section
         class="card"
-        [attr.aria-labelledby]="'team-' + block.id + '-titel'"
+        [attr.aria-labelledby]="'team-' + block.id + '-title'"
         [attr.data-testid]="'team-' + block.id"
       >
-        <h2 [id]="'team-' + block.id + '-titel'" class="section-title">
+        <h2 [id]="'team-' + block.id + '-title'" class="section-title">
           {{ block.title }} <span class="count">{{ block.list.length }}</span>
         </h2>
         @if (block.list.length === 0) {
@@ -160,13 +160,13 @@
           <ul class="list" [attr.aria-label]="block.title">
             @for (m of block.list; track m.person.id) {
               <li
-                class="row mitglied"
+                class="row member"
                 [attr.aria-label]="name(m.person)"
-                [attr.data-testid]="'mitglied-' + m.person.id"
+                [attr.data-testid]="'member-' + m.person.id"
               >
                 <span class="row-title">{{ name(m.person) }}</span>
                 @if (readOnly()) {
-                  <span class="chip" [attr.data-art]="m.teamRole === 'COACH' ? 'coach' : null">{{
+                  <span class="chip" [attr.data-kind]="m.teamRole === 'COACH' ? 'coach' : null">{{
                     teamRole(m.teamRole)
                   }}</span>
                 } @else {
@@ -184,7 +184,7 @@
                     class="button button-secondary button-small"
                     [disabled]="saving()"
                     [attr.aria-busy]="
-                      runningAction() === 'entfernen:' + m.person.id ? 'true' : null
+                      runningAction() === 'remove:' + m.person.id ? 'true' : null
                     "
                     (click)="remove(m)"
                   >
@@ -203,17 +203,17 @@
         class="card form"
         (submit)="addMember($event)"
         novalidate
-        aria-labelledby="aufnehmen-titel"
+        aria-labelledby="add-member-title"
       >
-        <h2 id="aufnehmen-titel">{{ texts.teamAdmin.addMemberTitle }}</h2>
+        <h2 id="add-member-title">{{ texts.teamAdmin.addMemberTitle }}</h2>
         <div class="field-row">
           <div class="field">
-            <label for="aufnehmen-person">{{ texts.teamAdmin.person }}</label>
+            <label for="add-member-person">{{ texts.teamAdmin.person }}</label>
             <select
-              id="aufnehmen-person"
+              id="add-member-person"
               (change)="newPerson.set($any($event.target).value)"
               [attr.aria-invalid]="personError() ? 'true' : null"
-              [attr.aria-describedby]="personError() ? 'aufnehmen-person-fehler' : null"
+              [attr.aria-describedby]="personError() ? 'add-member-person-error' : null"
             >
               <option value="" [selected]="newPerson() === ''">
                 {{ texts.teamAdmin.selectPerson }}
@@ -229,12 +229,12 @@
               }
             </select>
             @if (personError(); as m) {
-              <p class="field-error" id="aufnehmen-person-fehler">{{ m }}</p>
+              <p class="field-error" id="add-member-person-error">{{ m }}</p>
             }
           </div>
           <div class="field">
-            <label for="aufnehmen-funktion">{{ texts.teamAdmin.teamRole }}</label>
-            <select id="aufnehmen-funktion" (change)="newTeamRole.set($any($event.target).value)">
+            <label for="add-member-team-role">{{ texts.teamAdmin.teamRole }}</label>
+            <select id="add-member-team-role" (change)="newTeamRole.set($any($event.target).value)">
               @for (f of teamRoles; track f) {
                 <option [value]="f" [selected]="newTeamRole() === f">{{ teamRole(f) }}</option>
               }

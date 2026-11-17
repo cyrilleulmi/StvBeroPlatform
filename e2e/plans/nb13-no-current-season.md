@@ -50,7 +50,7 @@ General, for every case:
 
 ## Rework round 1
 
-- K2.14 fixed: `keineSaisonGuard` (`frontend/src/app/kern/keine-saison.guard.ts`) on `/keine-saison`. E2E: `nb13-no-current-season.spec.ts`, block «mit aktueller Saison».
+- K2.14 fixed: `noSeasonGuard` (`frontend/src/app/core/no-season.guard.ts`) on `/keine-saison`. E2E: `nb13-no-current-season.spec.ts`, block «mit aktueller Saison».
 - K2.15 stays outside this PR (follow-up fix #26).
 
 ## Result round 1 (at `0eb25ed`)

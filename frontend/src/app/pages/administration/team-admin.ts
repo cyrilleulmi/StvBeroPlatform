@@ -33,11 +33,11 @@ interface Member {
 const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 
 /**
- * Team verwalten (Admin, PTF-11): umbenennen, Personen mit Funktion aufnehmen (PTF-03, PTF-04),
- * Funktion ändern, entfernen. `?saison=` wählt die Saison; das Archiv ist nur lesend (SAI-02).
+ * Manage a team (admin, PTF-11): rename, add people with a team role (PTF-03, PTF-04),
+ * change the team role, remove. `?saison=` selects the season; the archive is read-only (SAI-02).
  */
 @Component({
-  selector: 'app-team-verwaltung',
+  selector: 'app-team-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   templateUrl: './team-admin.html',
@@ -46,15 +46,15 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
     form .button {
       justify-self: start;
     }
-    .su-knoepfe {
+    .su-buttons {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
-    .mitglied .row-title {
+    .member .row-title {
       min-width: 10em;
     }
-    .mitglied select {
+    .member select {
       min-height: var(--touch);
       padding: 0 12px;
       border: 1.5px solid var(--border);
@@ -75,7 +75,8 @@ export class TeamAdmin {
 
   /** Route `/verwaltung/teams/:teamId` */
   readonly teamId = input.required<string>();
-  /** Query `?saison=`; ohne Angabe die aktuelle Saison. */
+  /** Query `?saison=`; without it the current season. */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?saison=` is part of the browser URL and stays German (NF-40)
   readonly season = input<string | undefined>(undefined, { alias: 'saison' });
 
   protected readonly team = signal<TeamDetail | null>(null);
@@ -83,8 +84,8 @@ export class TeamAdmin {
   protected readonly people = signal<Person[]>([]);
   protected readonly loading = signal(true);
   /**
-   * Welche Aktion gerade läuft: `umbenennen`, `aufnehmen`, `funktion:<personId>`,
-   * `entfernen:<personId>`, `verknuepfen`, `loesen` oder `abgleichen`. `aria-busy` trägt nur deren Schaltfläche, `disabled` alle.
+   * Which action is running: `rename`, `addMember`, `team-role:<personId>`,
+   * `remove:<personId>`, `link`, `unlink` or `sync`. Only its button carries `aria-busy`, all carry `disabled`.
    */
   protected readonly runningAction = signal<string | null>(null);
   protected readonly saving = computed(() => this.runningAction() !== null);
@@ -100,7 +101,7 @@ export class TeamAdmin {
   protected readonly suTeamId = signal('');
   protected readonly suTeamIdError = signal<string | null>(null);
 
-  /** Coaches und Spielerinnen getrennt (PTF-07). */
+  /** Coaches and players separately (PTF-07). */
   protected readonly coaches = computed<Member[]>(() =>
     (this.team()?.coaches ?? []).map((person) => ({ person, teamRole: 'COACH' })),
   );
@@ -134,14 +135,14 @@ export class TeamAdmin {
 
   private params(): Record<string, string> {
     const id = this.seasonData()?.id ?? this.season();
-    return id ? { saison: id } : {};
+    return id ? { season: id } : {};
   }
 
   private async load(teamId: string, seasonId: string | undefined): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const params: Record<string, string> = seasonId ? { saison: seasonId } : {};
+      const params: Record<string, string> = seasonId ? { season: seasonId } : {};
       const [seasons, team, people] = await Promise.all([
         firstValueFrom(this.http.get<Season[]>('/api/seasons')),
         firstValueFrom(this.http.get<TeamDetail>(`/api/teams/${teamId}`, { params })),
@@ -231,7 +232,7 @@ export class TeamAdmin {
   }
 
   protected changeTeamRole(m: Member, teamRole: TeamRole): void {
-    void this.run(`funktion:${m.person.id}`, async () => {
+    void this.run(`team-role:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.put(
           `/api/teams/${this.teamId()}/members/${m.person.id}`,
@@ -244,7 +245,7 @@ export class TeamAdmin {
   }
 
   protected remove(m: Member): void {
-    void this.run(`entfernen:${m.person.id}`, async () => {
+    void this.run(`remove:${m.person.id}`, async () => {
       await firstValueFrom(
         this.http.delete(`/api/teams/${this.teamId()}/members/${m.person.id}`, {
           params: this.params(),
@@ -254,7 +255,7 @@ export class TeamAdmin {
     });
   }
 
-  /** Mit swiss unihockey verknüpfen (SUH-02). */
+  /** Link with swiss unihockey (SUH-02). */
   protected link(domEvent: Event): void {
     domEvent.preventDefault();
     const input = this.suTeamId().trim();
@@ -283,7 +284,7 @@ export class TeamAdmin {
     });
   }
 
-  /** Abgleich sofort auslösen (SUH-03). Bei einer Störung meldet das Backend den Grund (SUH-09). */
+  /** Trigger a sync right away (SUH-03). On a failure the backend reports the reason (SUH-09). */
   protected sync(): void {
     void this.run('sync', async () => {
       const outcome = await firstValueFrom(

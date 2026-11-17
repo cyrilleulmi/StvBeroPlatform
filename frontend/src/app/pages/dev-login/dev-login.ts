@@ -8,7 +8,7 @@ import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Testmodus-Anmeldung: alle Seed-Personen, ein Klick meldet an (nur dev/test). */
+/** Test mode login: all seed people, one click logs in (dev/test only). */
 @Component({
   selector: 'app-dev-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,13 +22,14 @@ export class DevLogin implements OnInit {
   private readonly router = inject(Router);
   protected readonly texts = TEXTS;
 
-  /** Wohin nach der Anmeldung (`?ziel=`). */
+  /** Where to go after the login (`?ziel=`). */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?ziel=` is part of the browser URL and stays German (NF-40)
   readonly target = input<string>(undefined, { alias: 'ziel' });
 
   protected readonly people = signal<TestPerson[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  /** Schlüssel der Person, deren Anmeldung gerade läuft; sperrt weitere Klicks (Doppelklick). */
+  /** Key of the person whose login is running; blocks further clicks (double click). */
   protected readonly loggingIn = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {

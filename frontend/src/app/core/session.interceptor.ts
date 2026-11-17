@@ -13,7 +13,7 @@ export const sessionInterceptor: HttpInterceptorFn = (request, next) => {
       const isMe = request.url.endsWith('/api/me');
       if (error instanceof HttpErrorResponse && error.status === 401 && !isMe && auth.me()) {
         auth.me.set(null);
-        void router.navigate([auth.loginRoute()], { queryParams: { target: router.url } });
+        void router.navigate([auth.loginRoute()], { queryParams: { ziel: router.url } });
       }
       return throwError(() => error);
     }),

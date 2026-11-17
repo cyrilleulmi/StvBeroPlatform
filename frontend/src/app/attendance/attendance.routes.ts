@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 const title = (page: string) => `${page} · STV Bero`;
 
-/** Routen der Kachel «Anwesenheit» unter `/termine`, lazy geladen. */
+/** Routes of the tile «Anwesenheit» under `/termine`, lazy loaded. */
 export const ATTENDANCE_ROUTES: Routes = [
   {
     path: '',
@@ -31,7 +31,7 @@ export const ATTENDANCE_ROUTES: Routes = [
   },
 ];
 
-/** Serien unter `/serien` (TER-05, TER-07). */
+/** Series under `/serien` (TER-05, TER-07). */
 export const SERIES_ROUTES: Routes = [
   {
     path: ':seriesId',

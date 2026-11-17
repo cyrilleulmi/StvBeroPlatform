@@ -8,7 +8,7 @@ import { teamRoleText } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 
-/** Meine Teams: alle Teams der aktuellen Saison, denen ich angehöre, mit meiner Funktion (PTF-12). */
+/** My teams: all teams of the current season I belong to, with my team role (PTF-12). */
 @Component({
   selector: 'app-teams',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,8 +18,8 @@ import { TEXTS } from '../../core/texts';
     @if (error(); as message) {
       <p class="message-error" role="alert">{{ message }}</p>
     }
-    <section class="card" aria-labelledby="teams-liste" [attr.aria-busy]="loading() ? 'true' : null">
-      <h2 id="teams-liste" class="visually-hidden">{{ texts.teams.title }}</h2>
+    <section class="card" aria-labelledby="teams-list" [attr.aria-busy]="loading() ? 'true' : null">
+      <h2 id="teams-list" class="visually-hidden">{{ texts.teams.title }}</h2>
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (teams().length === 0) {
@@ -27,10 +27,10 @@ import { TEXTS } from '../../core/texts';
       } @else {
         <ul class="list" [attr.aria-label]="texts.teams.title">
           @for (t of teams(); track t.id) {
-            <li [attr.data-testid]="'team-karte-' + t.id">
+            <li [attr.data-testid]="'team-card-' + t.id">
               <a class="row-link" [routerLink]="['/teams', t.id]">
                 <span class="row-title">{{ t.name }}</span>
-                <span class="chip" [attr.data-art]="t.myTeamRole === 'COACH' ? 'coach' : null">{{
+                <span class="chip" [attr.data-kind]="t.myTeamRole === 'COACH' ? 'coach' : null">{{
                   teamRole(t.myTeamRole)
                 }}</span>
                 <app-icon name="chevron-right" [size]="20" />
@@ -54,7 +54,7 @@ export class Teams implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       const all = await firstValueFrom(this.http.get<Team[]>('/api/teams'));
-      // Admins erhalten alle Teams; hier zählen nur die eigenen.
+      // Admins get all teams; only the own ones count here.
       this.teams.set(all.filter((t) => t.myTeamRole != null));
     } catch (e) {
       this.error.set(errorText(e));

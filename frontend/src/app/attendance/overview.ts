@@ -30,27 +30,27 @@ interface Target {
 }
 
 /**
- * Übersicht eines Termins (ANM-20 bis ANM-32): Gesamtzähler, pro Team Zähler und Gruppen (Linien, Goalies,
- * «Ohne Linie»), Coach-Block. Coaches tragen Antworten für Spielerinnen ihres Teams ein (ANM-11, RR-06),
- * Admins für alle (RR-04). Kommentare liefert die API nur an Berechtigte (ANM-07).
+ * Overview of an event (ANM-20 to ANM-32): total counter, per team counters and groups (lines, goalies,
+ * «Ohne Linie»), coach block. Coaches respond on behalf of players of their team (ANM-11, RR-06),
+ * admins for everyone (RR-04). The API only delivers comments to those permitted (ANM-07).
  */
 @Component({
-  selector: 'app-uebersicht',
+  selector: 'app-overview',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon, NgTemplateOutlet],
   template: `
-    <section class="card overview" data-testid="uebersicht" aria-labelledby="uebersicht-titel">
-      <h2 id="uebersicht-titel" class="section-title">{{ t.title }}</h2>
-      <p class="counter total" data-testid="uebersicht-total">
+    <section class="card overview" data-testid="overview" aria-labelledby="overview-title">
+      <h2 id="overview-title" class="section-title">{{ t.title }}</h2>
+      <p class="counter total" data-testid="overview-total">
         <span class="counter-name">{{ t.total }}</span>
         <span class="numbers">
-          <span data-zaehler="dabei">{{ t.attending(data().total.attending) }}</span>
+          <span data-counter="attending">{{ t.attending(data().total.attending) }}</span>
           <span class="separator"> · </span>
-          <span data-zaehler="nicht-dabei">{{ t.declined(data().total.declined) }}</span>
+          <span data-counter="declined">{{ t.declined(data().total.declined) }}</span>
           <span class="separator"> · </span>
-          <span data-zaehler="vielleicht">{{ t.maybe(data().total.maybe) }}</span>
+          <span data-counter="maybe">{{ t.maybe(data().total.maybe) }}</span>
           <span class="separator"> · </span>
-          <span data-zaehler="offen">{{ t.pending(data().total.pending) }}</span>
+          <span data-counter="pending">{{ t.pending(data().total.pending) }}</span>
         </span>
       </p>
 
@@ -64,40 +64,40 @@ interface Target {
       @for (block of data().teams; track block.team.id) {
         <section
           class="team"
-          [attr.data-testid]="'uebersicht-team-' + block.team.id"
-          [attr.aria-labelledby]="'uebersicht-team-titel-' + block.team.id"
+          [attr.data-testid]="'overview-team-' + block.team.id"
+          [attr.aria-labelledby]="'overview-team-title-' + block.team.id"
         >
           <div class="team-header">
-            <h3 [id]="'uebersicht-team-titel-' + block.team.id">{{ block.team.name }}</h3>
+            <h3 [id]="'overview-team-title-' + block.team.id">{{ block.team.name }}</h3>
             <p
               class="counter"
-              [attr.data-testid]="'uebersicht-team-' + block.team.id + '-zaehler'"
+              [attr.data-testid]="'overview-team-' + block.team.id + '-counter'"
             >
-              <span data-zaehler="dabei">{{ t.attending(block.counts.attending) }}</span>
+              <span data-counter="attending">{{ t.attending(block.counts.attending) }}</span>
               <span class="separator"> · </span>
-              <span data-zaehler="nicht-dabei">{{ t.declined(block.counts.declined) }}</span>
+              <span data-counter="declined">{{ t.declined(block.counts.declined) }}</span>
               <span class="separator"> · </span>
-              <span data-zaehler="vielleicht">{{ t.maybe(block.counts.maybe) }}</span>
+              <span data-counter="maybe">{{ t.maybe(block.counts.maybe) }}</span>
               <span class="separator"> · </span>
-              <span data-zaehler="offen">{{ t.pending(block.counts.pending) }}</span>
+              <span data-counter="pending">{{ t.pending(block.counts.pending) }}</span>
             </p>
           </div>
-          @for (g of block.groups; track g.groupId ?? 'ohne-linie') {
-            @let groupsId = g.groupId ? 'uebersicht-gruppe-' + g.groupId : 'uebersicht-ohne-linie-' + block.team.id;
-            <section class="group" [attr.data-testid]="groupsId" [attr.aria-labelledby]="groupsId + '-titel'">
-              <h4 [id]="groupsId + '-titel'">{{ g.name }}</h4>
-              <ul class="people" [attr.aria-labelledby]="groupsId + '-titel'">
+          @for (g of block.groups; track g.groupId ?? 'no-line') {
+            @let groupKey = g.groupId ? 'overview-group-' + g.groupId : 'overview-no-line-' + block.team.id;
+            <section class="group" [attr.data-testid]="groupKey" [attr.aria-labelledby]="groupKey + '-title'">
+              <h4 [id]="groupKey + '-title'">{{ g.name }}</h4>
+              <ul class="people" [attr.aria-labelledby]="groupKey + '-title'">
                 @for (e of g.entries; track e.person.id) {
                   <li
                     class="person"
-                    [attr.data-testid]="'uebersicht-person-' + e.person.id"
-                    [attr.data-antwort]="e.response.status"
+                    [attr.data-testid]="'overview-person-' + e.person.id"
+                    [attr.data-response]="e.response.status"
                   >
                     <ng-container
                       [ngTemplateOutlet]="personTpl"
                       [ngTemplateOutletContext]="{ $implicit: e, extra: null }"
                     />
-                    @if (canForPlayer(block.team.id, e.person.id)) {
+                    @if (canRespondForPlayer(block.team.id, e.person.id)) {
                       <button
                         type="button"
                         class="icon-button"
@@ -117,20 +117,20 @@ interface Target {
       }
 
       @if (data().coaches.length > 0) {
-        <section class="team coaches" data-testid="coach-block" aria-labelledby="uebersicht-coaches-titel">
-          <h3 id="uebersicht-coaches-titel">{{ t.coaches }}</h3>
-          <ul class="people" aria-labelledby="uebersicht-coaches-titel">
+        <section class="team coaches" data-testid="coach-block" aria-labelledby="overview-coaches-title">
+          <h3 id="overview-coaches-title">{{ t.coaches }}</h3>
+          <ul class="people" aria-labelledby="overview-coaches-title">
             @for (c of data().coaches; track c.person.id + c.team.id) {
               <li
                 class="person"
-                [attr.data-testid]="'uebersicht-person-' + c.person.id"
-                [attr.data-antwort]="c.response.status"
+                [attr.data-testid]="'overview-person-' + c.person.id"
+                [attr.data-response]="c.response.status"
               >
                 <ng-container
                   [ngTemplateOutlet]="personTpl"
                   [ngTemplateOutletContext]="{ $implicit: c, extra: t.coachOf(c.team.name) }"
                 />
-                @if (canForCoach(c.person.id)) {
+                @if (canRespondForCoach(c.person.id)) {
                   <button
                     type="button"
                     class="icon-button"
@@ -148,7 +148,7 @@ interface Target {
       }
 
       <ng-template #personTpl let-e let-extra="extra">
-        <span class="symbol" [attr.data-art]="key(e.response.status)" aria-hidden="true">
+        <span class="symbol" [attr.data-kind]="key(e.response.status)" aria-hidden="true">
           <app-icon [name]="icon[status(e.response)]" [size]="16" />
         </span>
         <span class="person-text">
@@ -158,11 +158,11 @@ interface Target {
               <span class="secondary-text">{{ extra }}</span>
             }
           </span>
-          <span class="status-text" [attr.data-art]="key(e.response.status)">{{
+          <span class="status-text" [attr.data-kind]="key(e.response.status)">{{
             a.status[status(e.response)]
           }}</span>
           @if (e.response.lateCancellation) {
-            <span class="chip" data-art="kurzfristig">{{ a.lateCancellation }}</span>
+            <span class="chip" data-kind="late-cancellation">{{ a.lateCancellation }}</span>
           }
           @if (e.response.comment; as k) {
             <span class="secondary-text comment">«{{ k }}»</span>
@@ -178,21 +178,21 @@ interface Target {
       #dialog
       class="card dialog"
       aria-modal="true"
-      aria-labelledby="stellvertretend-titel"
-      aria-describedby="stellvertretend-text"
+      aria-labelledby="on-behalf-title"
+      aria-describedby="on-behalf-text"
       (close)="closed()"
     >
       @if (target(); as z) {
         <form class="form" (submit)="save($event)" novalidate>
-          <h2 id="stellvertretend-titel">{{ a.onBehalf(name(z.person)) }}</h2>
-          <p class="secondary-text" id="stellvertretend-text">{{ a.onBehalfText(z.person.firstName) }}</p>
+          <h2 id="on-behalf-title">{{ a.onBehalf(name(z.person)) }}</h2>
+          <p class="secondary-text" id="on-behalf-text">{{ a.onBehalfText(z.person.firstName) }}</p>
           <fieldset class="choice">
             <legend class="label">{{ a.response }}</legend>
             @for (w of choices; track w) {
               <label class="checkbox">
                 <input
                   type="radio"
-                  name="stellvertretend-status"
+                  name="on-behalf-status"
                   [value]="w"
                   [checked]="choice() === w"
                   (change)="choice.set(w)"
@@ -202,19 +202,19 @@ interface Target {
             }
           </fieldset>
           <div class="field">
-            <label for="stellvertretend-kommentar">{{ a.commentOptional }}</label>
+            <label for="on-behalf-comment">{{ a.commentOptional }}</label>
             <input
-              id="stellvertretend-kommentar"
+              id="on-behalf-comment"
               type="text"
               maxlength="200"
               autocomplete="off"
               [value]="comment()"
               (input)="comment.set($any($event.target).value)"
               [attr.aria-invalid]="commentError() ? 'true' : null"
-              [attr.aria-describedby]="commentError() ? 'stellvertretend-kommentar-fehler' : null"
+              [attr.aria-describedby]="commentError() ? 'on-behalf-comment-error' : null"
             />
             @if (commentError(); as m) {
-              <p class="field-error" id="stellvertretend-kommentar-fehler">{{ m }}</p>
+              <p class="field-error" id="on-behalf-comment-error">{{ m }}</p>
             }
           </div>
           <div class="dialog-buttons">
@@ -251,12 +251,12 @@ export class OverviewSection {
 
   readonly eventId = input.required<string>();
   readonly data = input.required<OverviewData>();
-  /** Teams, in denen die angemeldete Person Coach ist (RR-06). */
+  /** Teams in which the logged-in person is coach (RR-06). */
   readonly coachIn = input<string[]>([]);
   readonly admin = input(false);
   readonly meId = input<string | null>(null);
-  /** Antworten möglich (Termin geplant und nicht vorbei). */
-  readonly open = input(true);
+  /** Responding possible (event planned and not past). */
+  readonly responsesOpen = input(true);
 
   readonly changed = output<void>();
 
@@ -279,18 +279,18 @@ export class OverviewSection {
     return a.status;
   }
 
-  /** Coaches für Spielerinnen ihres Teams, Admins für alle; nicht für sich selbst (ANM-11, RR-06). */
-  protected canForPlayer(teamId: string, personId: string): boolean {
+  /** Coaches for players of their team, admins for everyone; not for themselves (ANM-11, RR-06). */
+  protected canRespondForPlayer(teamId: string, personId: string): boolean {
     return (
-      this.pending() &&
+      this.responsesOpen() &&
       personId !== this.meId() &&
       (this.admin() || this.coachTeams().has(teamId))
     );
   }
 
-  /** Antworten anderer Coaches trägt nur ein Admin ein. */
-  protected canForCoach(personId: string): boolean {
-    return this.pending() && this.admin() && personId !== this.meId();
+  /** Only an admin enters responses of other coaches. */
+  protected canRespondForCoach(personId: string): boolean {
+    return this.responsesOpen() && this.admin() && personId !== this.meId();
   }
 
   protected open(z: Target): void {
@@ -319,7 +319,7 @@ export class OverviewSection {
     const comment = this.comment().trim();
     if (this.choice() === 'MAYBE' && !comment) {
       this.commentError.set(this.a.commentRequired);
-      document.getElementById('stellvertretend-kommentar')?.focus();
+      document.getElementById('on-behalf-comment')?.focus();
       return;
     }
     this.running.set(true);

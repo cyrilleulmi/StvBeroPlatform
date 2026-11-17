@@ -3,9 +3,9 @@ import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { TEXTS } from '../../core/texts';
 
-/** Anmeldung. Das produktive Verfahren ist offen (O-01). Im Testmodus Verweis auf /dev-login. */
+/** Login. The production method is open (O-01). In test mode a link to /dev-login. */
 @Component({
-  selector: 'app-anmelden',
+  selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
@@ -30,5 +30,6 @@ import { TEXTS } from '../../core/texts';
 export class Login {
   protected readonly texts = TEXTS;
   protected readonly testMode = environment.testMode;
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?ziel=` is part of the browser URL and stays German (NF-40)
   readonly target = input<string>(undefined, { alias: 'ziel' });
 }

@@ -97,7 +97,7 @@ a span {
 }
 
 /* Mobile: bell as a round button at the top right, label only for screen readers (F-06). */
-a.glocke {
+a.bell {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top));
   right: 12px;
@@ -122,7 +122,7 @@ a.glocke {
   white-space: nowrap;
 }
 
-a.glocke .counter {
+a.bell .counter {
   position: absolute;
   top: -4px;
   right: -4px;
@@ -139,14 +139,14 @@ a.glocke .counter {
   letter-spacing: normal;
 }
 
-a.aktiv {
+a.active {
   background: var(--primary-soft);
   color: var(--primary);
   font-weight: 700;
 }
 
 /* Text in `text` instead of `primary`: primary on primary-soft only reaches 3.97:1 in light mode (WCAG AA 4.5:1). */
-a.aktiv span {
+a.active span {
   color: var(--text);
 }
 
@@ -204,7 +204,7 @@ a.aktiv span {
     padding: 40px 48px;
   }
 
-  a.glocke {
+  a.bell {
     position: relative;
     top: auto;
     right: auto;
@@ -220,7 +220,7 @@ a.aktiv span {
     color: var(--muted);
   }
 
-  a.glocke.aktiv {
+  a.bell.active {
     background: var(--primary-soft);
     color: var(--primary);
   }
@@ -234,7 +234,7 @@ a.aktiv span {
     clip: auto;
   }
 
-  a.glocke .counter {
+  a.bell .counter {
     position: static;
     margin-left: auto;
   }

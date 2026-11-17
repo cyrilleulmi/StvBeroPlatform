@@ -16,7 +16,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
 | Season parameter | Endpoints related to a season take `?season=<id>`; without it the current season applies. Seasons before the current one are read-only (409, SAI-02) |
 | Contract | `OpenApiContractTest` compares `/q/openapi` with `docs/api/openapi.yaml` (paths, methods, operationId, status codes, schemas) |
-| Frontend types | `npm run api-typen` generates `src/app/api/schema.d.ts` from the contract (runs before `start` and `build`) |
+| Frontend types | `npm run api-types` generates `src/app/api/schema.d.ts` from the contract (runs before `start` and `build`) |
 | Texts | `frontend/src/app/core/texts.ts` |
 | Font | Plus Jakarta Sans served locally via `@fontsource` (no requests to Google Fonts) |
 | PWA | `public/manifest.webmanifest`, own lean service worker `public/sw.js` (offline page, no data caches) |

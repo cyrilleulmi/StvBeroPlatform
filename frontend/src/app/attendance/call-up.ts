@@ -22,21 +22,21 @@ import { RESPONSE_ICON, responseKey } from './response';
 import { yearOf, eventDate, clockTime } from './time';
 
 /**
- * Aufgebot eines Spieltags (`/termine/:terminId/aufgebot`, nur Coaches und Admins): alle Spielerinnen des
- * Teams nach Linien mit Antwortstatus, Auswahl speichert sofort, Veröffentlichen mit Bestätigung
- * (AUF-21 bis AUF-25, AUF-28).
+ * Call-up of a match day (`/termine/:eventId/aufgebot`, coaches and admins only): all players of the
+ * team by line with response status, the selection saves immediately, publishing with confirmation
+ * (AUF-21 to AUF-25, AUF-28).
  */
 @Component({
-  selector: 'app-aufgebot',
+  selector: 'app-call-up',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
     <div class="header">
       <a class="back" [routerLink]="['/termine', eventId()]">{{ t.toEvent }}</a>
       <h1>{{ t.title }}</h1>
-      @if (event(); as tm) {
+      @if (event(); as ev) {
         <p class="secondary-text">
-          {{ tm.title }} {{ date(tm.start) }} · {{ time(tm.start) }} · {{ teamName() }}
+          {{ ev.title }} {{ date(ev.start) }} · {{ time(ev.start) }} · {{ teamName() }}
         </p>
       }
     </div>
@@ -50,13 +50,13 @@ import { yearOf, eventDate, clockTime } from './time';
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (callUp(); as a) {
-        <section class="card state" aria-labelledby="aufgebot-stand-titel">
-          <h2 id="aufgebot-stand-titel" class="section-title">{{ texts.matchDay.callUp }}</h2>
+        <section class="card state" aria-labelledby="call-up-state-title">
+          <h2 id="call-up-state-title" class="section-title">{{ texts.matchDay.callUp }}</h2>
           <p class="status-row">
-            <span class="chip" [attr.data-art]="a.status.toLowerCase()" data-testid="aufgebot-status">{{
+            <span class="chip" [attr.data-kind]="a.status.toLowerCase()" data-testid="call-up-status">{{
               statusText(a)
             }}</span>
-            <span class="count-text" data-testid="aufgebot-anzahl">{{ t.count(a.calledUpCount ?? 0) }}</span>
+            <span class="count-text" data-testid="call-up-count">{{ t.count(a.calledUpCount ?? 0) }}</span>
           </p>
           @if (!editable()) {
             <p class="message-notice">{{ t.notEditable }}</p>
@@ -68,33 +68,33 @@ import { yearOf, eventDate, clockTime } from './time';
               <button
                 type="button"
                 class="button button-primary"
-                data-testid="aufgebot-veroeffentlichen"
+                data-testid="call-up-publish"
                 [disabled]="running() || (a.calledUpCount ?? 0) === 0"
-                [attr.aria-describedby]="(a.calledUpCount ?? 0) === 0 ? 'aufgebot-leer' : null"
+                [attr.aria-describedby]="(a.calledUpCount ?? 0) === 0 ? 'call-up-empty' : null"
                 (click)="openDialog()"
               >
                 {{ t.publish }}
               </button>
               @if ((a.calledUpCount ?? 0) === 0) {
-                <p class="secondary-text" id="aufgebot-leer">{{ t.empty }}</p>
+                <p class="secondary-text" id="call-up-empty">{{ t.empty }}</p>
               }
             </div>
           }
         </section>
 
-        <section class="card selection" data-testid="aufgebot-auswahl" aria-labelledby="aufgebot-auswahl-titel">
-          <h2 id="aufgebot-auswahl-titel" class="section-title">{{ t.selection }}</h2>
+        <section class="card selection" data-testid="call-up-selection" aria-labelledby="call-up-selection-title">
+          <h2 id="call-up-selection-title" class="section-title">{{ t.selection }}</h2>
           <p class="secondary-text">{{ t.selectionHint }}</p>
-          @for (g of a.groups; track g.groupId ?? 'ohne-linie') {
+          @for (g of a.groups; track g.groupId ?? 'no-line') {
             <fieldset class="group">
               <legend>{{ g.name }}</legend>
               <ul class="people">
                 @for (e of g.entries; track e.person.id) {
                   <li
                     class="person"
-                    [attr.data-testid]="'aufgebot-person-' + e.person.id"
-                    [attr.data-antwort]="e.response.status"
-                    [attr.data-aufgeboten]="e.calledUp"
+                    [attr.data-testid]="'call-up-person-' + e.person.id"
+                    [attr.data-response]="e.response.status"
+                    [attr.data-called-up]="e.calledUp"
                   >
                     <label class="selection-row">
                       <input
@@ -102,13 +102,13 @@ import { yearOf, eventDate, clockTime } from './time';
                         [checked]="e.calledUp"
                         [disabled]="running() || !editable()"
                         [attr.aria-busy]="runningPerson() === e.person.id ? 'true' : null"
-                        [attr.aria-describedby]="'aufgebot-antwort-' + e.person.id"
+                        [attr.aria-describedby]="'call-up-response-' + e.person.id"
                         (change)="toggle(e.person, $any($event.target))"
                       />
                       <span class="person-name">{{ name(e.person) }}</span>
                     </label>
-                    <span class="response" [id]="'aufgebot-antwort-' + e.person.id">
-                      <span class="symbol" [attr.data-art]="key(e.response.status)" aria-hidden="true">
+                    <span class="response" [id]="'call-up-response-' + e.person.id">
+                      <span class="symbol" [attr.data-kind]="key(e.response.status)" aria-hidden="true">
                         <app-icon [name]="icon[e.response.status]" [size]="14" />
                       </span>
                       <span class="status-text">{{ texts.response.status[e.response.status] }}</span>
@@ -131,12 +131,12 @@ import { yearOf, eventDate, clockTime } from './time';
       #dialog
       class="card dialog"
       aria-modal="true"
-      aria-labelledby="aufgebot-dialog-titel"
-      aria-describedby="aufgebot-dialog-text"
+      aria-labelledby="call-up-dialog-title"
+      aria-describedby="call-up-dialog-text"
     >
       <div class="form">
-        <h2 id="aufgebot-dialog-titel">{{ t.dialogTitle }}</h2>
-        <p id="aufgebot-dialog-text">{{ t.dialogText(callUp()?.calledUpCount ?? 0, teamName()) }}</p>
+        <h2 id="call-up-dialog-title">{{ t.dialogTitle }}</h2>
+        <p id="call-up-dialog-text">{{ t.dialogText(callUp()?.calledUpCount ?? 0, teamName()) }}</p>
         <div class="dialog-buttons">
           <button
             type="button"
@@ -170,7 +170,7 @@ export class CallUpPage {
   protected readonly key = responseKey;
   protected readonly time = clockTime;
 
-  /** Route `/termine/:terminId/aufgebot` */
+  /** Route `/termine/:eventId/aufgebot` */
   readonly eventId = input.required<string>();
 
   protected readonly event = signal<EventDetail | null>(null);
@@ -186,7 +186,7 @@ export class CallUpPage {
 
   protected readonly teamName = computed(() => this.event()?.teams[0]?.name ?? '');
 
-  /** Geplant und nicht vorbei (TER-06); `darfBearbeiten` gilt für Coaches und Admins genau dann. */
+  /** Planned and not past (TER-06); `canEdit` is true for coaches and admins exactly then. */
   protected readonly editable = computed(() => this.event()?.canEdit === true);
 
   constructor() {
@@ -211,7 +211,7 @@ export class CallUpPage {
     return this.t.status[a.status];
   }
 
-  /** Auswahl sofort speichern (AUF-21, AUF-22). Schlägt es fehl, bleibt die alte Auswahl. */
+  /** Save the selection right away (AUF-21, AUF-22). If that fails, the old selection stays. */
   protected async toggle(person: PersonSummary, field: HTMLInputElement): Promise<void> {
     const a = this.callUp();
     if (!a || this.running()) {
@@ -253,7 +253,7 @@ export class CallUpPage {
     this.dialog()?.nativeElement.close();
   }
 
-  /** Veröffentlichen nach Bestätigung (AUF-23, AUF-24). */
+  /** Publish after confirmation (AUF-23, AUF-24). */
   protected async publish(): Promise<void> {
     if (this.running()) return;
     this.running.set(true);
@@ -282,7 +282,7 @@ export class CallUpPage {
     try {
       const event = await firstValueFrom(this.http.get<EventDetail>(`/api/events/${id}`));
       this.event.set(event);
-      // Rechte und Art zuerst aus dem Termin: so entsteht ohne Berechtigung keine 403-Anfrage.
+      // Permissions and type first from the event: so without permission no 403 request is made.
       if (event.type !== 'MATCH_DAY') {
         this.error.set(this.t.matchDayOnly);
         return;

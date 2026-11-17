@@ -19,29 +19,29 @@ import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 type Choice = ResponseInput['status'];
 
 /**
- * Antwort-Buttons der angemeldeten Person (`meine-antwort`): «dabei» und «nicht dabei» mit einem Tap
- * (ANM-08), «nicht dabei» bietet danach einen freiwilligen Grund an (ANM-05), «vielleicht» verlangt einen
- * Kommentar (ANM-04). Bei abgesagten oder vergangenen Terminen deaktiviert, mit Erklärung (TER-06).
+ * Response buttons of the logged-in person (`my-response`): «dabei» and «nicht dabei» with one tap
+ * (ANM-08), «nicht dabei» then offers an optional reason (ANM-05), «vielleicht» requires a
+ * comment (ANM-04). Disabled for cancelled or past events, with an explanation (TER-06).
  */
 @Component({
-  selector: 'app-meine-antwort',
+  selector: 'app-my-response',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon],
   template: `
     <div
       class="response"
       role="group"
-      data-testid="meine-antwort"
+      data-testid="my-response"
       [attr.aria-label]="name()"
-      [attr.data-antwort]="current().status"
+      [attr.data-response]="current().status"
     >
       <div class="buttons">
         @for (w of choices; track w) {
           <button
             type="button"
             class="response-button"
-            [attr.data-art]="key(w)"
-            [attr.data-testid]="'antwort-' + key(w)"
+            [attr.data-kind]="key(w)"
+            [attr.data-testid]="'response-' + key(w)"
             [attr.aria-pressed]="current().status === w ? 'true' : 'false'"
             [attr.aria-busy]="running() === w ? 'true' : null"
             [attr.aria-describedby]="locked() ? id('lock') : null"
@@ -64,7 +64,7 @@ type Choice = ResponseInput['status'];
           <p class="secondary-text">{{ texts.enteredBy(from.firstName + ' ' + from.lastName) }}</p>
         }
         @if (current().lateCancellation) {
-          <p><span class="chip" data-art="kurzfristig">{{ texts.lateCancellation }}</span></p>
+          <p><span class="chip" data-kind="late-cancellation">{{ texts.lateCancellation }}</span></p>
         }
       }
       @if (message(); as m) {
@@ -79,13 +79,13 @@ type Choice = ResponseInput['status'];
       #maybeDialog
       class="card dialog"
       aria-modal="true"
-      [attr.aria-labelledby]="id('vielleicht-titel')"
-      [attr.aria-describedby]="id('vielleicht-text')"
-      (close)="dialogClosedHandler()"
+      [attr.aria-labelledby]="id('maybe-title')"
+      [attr.aria-describedby]="id('maybe-text')"
+      (close)="onDialogClose()"
     >
       <form class="form" (submit)="saveMaybe($event)" novalidate>
-        <h2 [id]="id('vielleicht-titel')">{{ texts.maybeTitle }}</h2>
-        <p class="secondary-text" [id]="id('vielleicht-text')">{{ texts.maybeText }}</p>
+        <h2 [id]="id('maybe-title')">{{ texts.maybeTitle }}</h2>
+        <p class="secondary-text" [id]="id('maybe-text')">{{ texts.maybeText }}</p>
         <div class="field">
           <label [for]="id('comment')">{{ texts.comment }}</label>
           <input
@@ -97,10 +97,10 @@ type Choice = ResponseInput['status'];
             [value]="comment()"
             (input)="comment.set($any($event.target).value)"
             [attr.aria-invalid]="commentError() ? 'true' : null"
-            [attr.aria-describedby]="commentError() ? id('kommentar-fehler') : null"
+            [attr.aria-describedby]="commentError() ? id('comment-error') : null"
           />
           @if (commentError(); as m) {
-            <p class="field-error" [id]="id('kommentar-fehler')">{{ m }}</p>
+            <p class="field-error" [id]="id('comment-error')">{{ m }}</p>
           }
         </div>
         <div class="dialog-buttons">
@@ -128,13 +128,13 @@ type Choice = ResponseInput['status'];
       #reasonDialog
       class="card dialog"
       aria-modal="true"
-      [attr.aria-labelledby]="id('grund-titel')"
-      [attr.aria-describedby]="id('grund-text')"
-      (close)="dialogClosedHandler()"
+      [attr.aria-labelledby]="id('reason-title')"
+      [attr.aria-describedby]="id('reason-text')"
+      (close)="onDialogClose()"
     >
       <form class="form" (submit)="saveReason($event)" novalidate>
-        <h2 [id]="id('grund-titel')">{{ texts.declinedTitle }}</h2>
-        <p class="secondary-text" [id]="id('grund-text')">{{ texts.declinedText }}</p>
+        <h2 [id]="id('reason-title')">{{ texts.declinedTitle }}</h2>
+        <p class="secondary-text" [id]="id('reason-text')">{{ texts.declinedText }}</p>
         <div class="field">
           <label [for]="id('reason')">{{ texts.reason }}</label>
           <input
@@ -146,10 +146,10 @@ type Choice = ResponseInput['status'];
             [value]="comment()"
             (input)="comment.set($any($event.target).value)"
             [attr.aria-invalid]="commentError() ? 'true' : null"
-            [attr.aria-describedby]="commentError() ? id('grund-fehler') : null"
+            [attr.aria-describedby]="commentError() ? id('reason-error') : null"
           />
           @if (commentError(); as m) {
-            <p class="field-error" [id]="id('grund-fehler')">{{ m }}</p>
+            <p class="field-error" [id]="id('reason-error')">{{ m }}</p>
           }
         </div>
         <div class="dialog-buttons">
@@ -184,14 +184,14 @@ export class MyResponse {
 
   readonly eventId = input.required<string>();
   readonly response = input.required<EventResponse>();
-  /** Name der Gruppe, z.B. «Meine Antwort für Training Di 17.11. 18:30». */
+  /** Name of the group, e.g. «Meine Antwort für Training Di 17.11. 18:30». */
   readonly name = input<string>(TEXTS.response.myResponse);
-  /** Erklärung, warum nicht geantwortet werden kann (abgesagt, vorbei). Gesetzt: Buttons deaktiviert. */
+  /** Explanation why responding is not possible (cancelled, past). If set: buttons disabled. */
   readonly locked = input<string | null>(null);
-  /** Eigenen Kommentar, «eingetragen von» und «kurzfristig» anzeigen (Detail eines Termins). */
+  /** Show own comment, «eingetragen von» and «kurzfristig» (detail of an event). */
   readonly details = input(false);
 
-  /** Nach jedem Speichern, damit die Seite Zähler und Übersicht nachlädt. */
+  /** After every save, so that the page reloads counters and overview. */
   readonly changed = output<EventResponse>();
 
   protected readonly current = linkedSignal(() => this.response());
@@ -204,7 +204,7 @@ export class MyResponse {
   private readonly maybeDialog = viewChild<ElementRef<HTMLDialogElement>>('maybeDialog');
   private readonly reasonDialog = viewChild<ElementRef<HTMLDialogElement>>('reasonDialog');
 
-  private readonly prefix = computed(() => `antwort-${this.eventId()}`);
+  private readonly prefix = computed(() => `response-${this.eventId()}`);
 
   protected id(part: string): string {
     return `${this.prefix()}-${part}`;
@@ -224,7 +224,7 @@ export class MyResponse {
       this.open(this.reasonDialog());
       return;
     }
-    // Ein Tap: sofort speichern (ANM-08). Bei «nicht dabei» danach den freiwilligen Grund anbieten (ANM-05).
+    // One tap: save right away (ANM-08). For «nicht dabei» then offer the optional reason (ANM-05).
     if (await this.save({ status: w })) {
       if (w === 'DECLINED') {
         this.comment.set('');
@@ -262,7 +262,7 @@ export class MyResponse {
     dialog.close();
   }
 
-  protected dialogClosedHandler(): void {
+  protected onDialogClose(): void {
     this.commentError.set(null);
   }
 
@@ -275,7 +275,7 @@ export class MyResponse {
     queueMicrotask(() => document.getElementById(this.id(part))?.focus());
   }
 
-  /** Speichert und meldet das Ergebnis. Fehler beim Kommentar erscheinen beim Feld (ANM-04). */
+  /** Saves and reports the result. Errors on the comment appear at the field (ANM-04). */
   private async save(input: ResponseInput, reasonOnly = false): Promise<boolean> {
     this.running.set(input.status);
     this.message.set(null);
@@ -296,7 +296,7 @@ export class MyResponse {
       if (fields['comment']) {
         this.commentError.set(fields['comment']);
       } else {
-        // Dialog schliessen, damit die Meldung sichtbar ist (z.B. Termin inzwischen abgesagt, 409).
+        // Close the dialog so that the message is visible (e.g. event cancelled in the meantime, 409).
         this.error.set(errorText(e));
         this.maybeDialog()?.nativeElement.close();
         this.reasonDialog()?.nativeElement.close();

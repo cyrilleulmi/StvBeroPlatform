@@ -5,18 +5,18 @@ import { errorText } from '../../core/error-text';
 import { TEXTS } from '../../core/texts';
 
 /**
- * Hinweis, wenn keine Saison als aktuell festgelegt ist (409 von `GET /api/me`, SAI-03).
- * Ausserhalb der Shell, weil Navigation und Seiten die aktuelle Saison voraussetzen.
+ * Notice when no season is set as current (409 from `GET /api/me`, SAI-03).
+ * Outside the shell, because navigation and pages require the current season.
  */
 @Component({
-  selector: 'app-keine-saison',
+  selector: 'app-no-season',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="login">
       <div class="card">
         <p class="eyebrow">{{ texts.appName }}</p>
         <h1>{{ texts.noSeason.title }}</h1>
-        <p role="status" data-testid="keine-saison-hinweis">{{ texts.noSeason.notice }}</p>
+        <p role="status" data-testid="no-season-notice">{{ texts.noSeason.notice }}</p>
         <p>{{ texts.noSeason.administration }}</p>
         @if (error()) {
           <p class="message-error" role="alert">{{ error() }}</p>
@@ -45,11 +45,12 @@ export class NoSeason {
   private readonly router = inject(Router);
   protected readonly texts = TEXTS;
   protected readonly error = signal('');
-  /** Läuft die Abmeldung, sind weitere Klicks gesperrt (Doppelklick). */
+  /** While logging out, further clicks are blocked (double click). */
   protected readonly loggingOut = signal(false);
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?ziel=` is part of the browser URL and stays German (NF-40)
   readonly target = input<string>(undefined, { alias: 'ziel' });
 
-  /** Zurück zum Ziel. Der Guard prüft erneut und zeigt diesen Hinweis wieder, falls nötig. */
+  /** Back to the target. The guard checks again and shows this notice again if needed. */
   protected async retry(): Promise<void> {
     this.error.set('');
     await this.router.navigateByUrl(safeTarget(this.target()));

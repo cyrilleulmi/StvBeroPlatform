@@ -20,9 +20,9 @@ import { TEXTS } from '../../core/texts';
 
 type Field = 'firstName' | 'lastName' | 'email';
 
-/** Person erfassen (`/verwaltung/personen/neu`) oder bearbeiten (`/verwaltung/personen/:personId`). */
+/** Create a person (`/verwaltung/personen/neu`) or edit one (`/verwaltung/personen/:personId`). */
 @Component({
-  selector: 'app-person-formular',
+  selector: 'app-person-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
@@ -55,11 +55,11 @@ type Field = 'firstName' | 'lastName' | 'email';
                   maxlength="60"
                   [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
                   [attr.aria-describedby]="
-                    fieldErrors()[f.field] ? 'person-' + f.field + '-fehler' : null
+                    fieldErrors()[f.field] ? 'person-' + f.field + '-error' : null
                   "
                 />
                 @if (fieldErrors()[f.field]; as m) {
-                  <p class="field-error" [id]="'person-' + f.field + '-fehler'">{{ m }}</p>
+                  <p class="field-error" [id]="'person-' + f.field + '-error'">{{ m }}</p>
                 }
               </div>
             }
@@ -72,10 +72,10 @@ type Field = 'firstName' | 'lastName' | 'email';
               formControlName="email"
               autocomplete="email"
               [attr.aria-invalid]="fieldErrors()['email'] ? 'true' : null"
-              [attr.aria-describedby]="fieldErrors()['email'] ? 'person-email-fehler' : null"
+              [attr.aria-describedby]="fieldErrors()['email'] ? 'person-email-error' : null"
             />
             @if (fieldErrors()['email']; as m) {
-              <p class="field-error" id="person-email-fehler">{{ m }}</p>
+              <p class="field-error" id="person-email-error">{{ m }}</p>
             }
           </div>
           <label class="checkbox">
@@ -93,8 +93,8 @@ type Field = 'firstName' | 'lastName' | 'email';
         </form>
 
         @if (detail(); as d) {
-          <section class="card" aria-labelledby="person-zugehoerigkeiten">
-            <h2 id="person-zugehoerigkeiten" class="section-title">
+          <section class="card" aria-labelledby="person-memberships">
+            <h2 id="person-memberships" class="section-title">
               {{ texts.people.memberships }}
             </h2>
             @if (d.memberships.length === 0) {
@@ -109,7 +109,7 @@ type Field = 'firstName' | 'lastName' | 'email';
                       [queryParams]="{ saison: z.seasonId }"
                       >{{ z.team.name }}</a
                     >
-                    <span class="chip" [attr.data-art]="z.teamRole === 'COACH' ? 'coach' : null">{{
+                    <span class="chip" [attr.data-kind]="z.teamRole === 'COACH' ? 'coach' : null">{{
                       teamRole(z.teamRole)
                     }}</span>
                     <span class="secondary-text">{{ seasonName(z.seasonId) }}</span>
@@ -137,7 +137,7 @@ export class PersonForm {
   protected readonly texts = TEXTS;
   protected readonly teamRole = teamRoleText;
 
-  /** Route `/verwaltung/personen/:personId`; fehlt bei «neu». */
+  /** Route `/verwaltung/personen/:personId`; missing for «neu». */
   readonly personId = input<string | undefined>();
 
   protected readonly form = inject(NonNullableFormBuilder).group({
@@ -248,7 +248,7 @@ export class PersonForm {
         await this.router.navigate(['/verwaltung/personen', created.id]);
       }
     } catch (e) {
-      this.fieldErrors.set(fieldErrorsOf(e, { firstName: 'firstName', lastName: 'lastName' }));
+      this.fieldErrors.set(fieldErrorsOf(e));
       this.error.set(errorText(e));
     } finally {
       this.saving.set(false);

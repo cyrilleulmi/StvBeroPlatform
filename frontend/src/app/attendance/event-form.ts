@@ -32,7 +32,7 @@ import { TEXTS } from '../core/texts';
 import { inputParts, zurich } from './time';
 
 type Weekday = SeriesInput['weekday'];
-type FormMode = 'neu' | 'termin' | 'serie';
+type FormMode = 'new' | 'event' | 'series';
 
 const WEEKDAYS: Weekday[] = [
   'MONDAY',
@@ -62,7 +62,7 @@ interface FormValues {
   meetingPointLocation: string;
 }
 
-/** Ein Spiel im Formular eines Spieltags (AUF-14). `id` leer: neu, wird beim Speichern angelegt. */
+/** A match in the form of a match day (AUF-14). Empty `id`: new, created on saving. */
 interface MatchRow {
   key: number;
   id: string | null;
@@ -71,7 +71,7 @@ interface MatchRow {
   time: string;
   home: boolean;
   result: string | null;
-  /** Importiert und von swiss unihockey nicht mehr geliefert: darf entfernt werden (SUH-06). */
+  /** Imported and no longer delivered by swiss unihockey: may be removed (SUH-06). */
   missingAtSu: boolean;
 }
 
@@ -95,7 +95,7 @@ const EMPTY: FormValues = {
   meetingPointLocation: '',
 };
 
-/** Feldnamen der API auf die Felder des Formulars. */
+/** Field names of the API mapped to the fields of the form. */
 const API_FIELDS: Record<string, Field> = {
   start: 'start',
   end: 'end',
@@ -114,13 +114,13 @@ const API_FIELDS: Record<string, Field> = {
 };
 
 /**
- * Termin erfassen (`/termine/neu`, `?art=serie` für eine Serie), Termin bearbeiten und absagen
- * (`/termine/:terminId/bearbeiten`) und Serie bearbeiten (`/serien/:serieId/bearbeiten`).
- * TER-01, TER-04 bis TER-06, TER-08, TER-10, TER-11. Spieltage mit Spielen, Treffpunkt und
- * Google-Maps-Link (AUF-10 bis AUF-16).
+ * Create an event (`/termine/neu`, `?art=serie` for a series), edit and cancel an event
+ * (`/termine/:eventId/bearbeiten`) and edit a series (`/serien/:seriesId/bearbeiten`).
+ * TER-01, TER-04 to TER-06, TER-08, TER-10, TER-11. Match days with matches, meeting point and
+ * Google Maps link (AUF-10 to AUF-16).
  */
 @Component({
-  selector: 'app-termin-formular',
+  selector: 'app-event-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   templateUrl: './event-form.html',
@@ -142,35 +142,36 @@ export class EventForm {
     { field: 'validUntil', label: TEXTS.eventForm.validUntil },
   ];
 
-  /** Route `/termine/:terminId/bearbeiten` */
+  /** Route `/termine/:eventId/bearbeiten` */
   readonly eventId = input<string | undefined>();
-  /** Route `/serien/:serieId/bearbeiten` */
+  /** Route `/serien/:seriesId/bearbeiten` */
   readonly seriesId = input<string | undefined>();
-  /** Query `?art=serie` auf `/termine/neu` */
+  /** Query `?art=serie` on `/termine/neu` */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?art=` is part of the browser URL and stays German (NF-40)
   readonly kind = input<string | undefined>(undefined, { alias: 'art' });
 
   protected readonly mode = computed<FormMode>(() =>
-    this.eventId() ? 'termin' : this.seriesId() ? 'serie' : 'neu',
+    this.eventId() ? 'event' : this.seriesId() ? 'series' : 'new',
   );
-  /** Felder einer Serie (Wochentag, Zeitraum) statt eines einzelnen Datums. */
+  /** Fields of a series (weekday, period) instead of a single date. */
   protected readonly asSeries = computed(
-    () => this.mode() === 'serie' || (this.mode() === 'neu' && this.kind() === 'serie'),
+    () => this.mode() === 'series' || (this.mode() === 'new' && this.kind() === 'serie'),
   );
 
   protected readonly values = signal<FormValues>({ ...EMPTY });
   protected readonly event = signal<EventDetail | null>(null);
   protected readonly series = signal<Series | null>(null);
-  /** Teams zur Auswahl: eigene Teams, für Admins alle der aktuellen Saison. */
+  /** Teams to choose from: own teams, for admins all of the current season. */
   protected readonly teams = signal<Team[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly fieldErrors = signal<Partial<Record<Field | 'reason', string>>>({});
-  /** `speichern` oder `absagen`: aria-busy nur dort, `disabled` für alle. */
+  /** `save` or `cancelEvent`: aria-busy only there, `disabled` for all. */
   protected readonly runningAction = signal<string | null>(null);
   protected readonly saving = computed(() => this.runningAction() !== null);
   protected readonly reason = signal('');
   protected readonly matches = signal<MatchRow[]>([]);
-  /** Feldfehler der Spiele, Schlüssel `<schluessel>-gegner` bzw. `<schluessel>-zeit`. */
+  /** Field errors of the matches, key `<key>-opponent` or `<key>-time`. */
   protected readonly matchErrors = signal<Record<string, string>>({});
   private nextKey = 1;
 
@@ -179,27 +180,27 @@ export class EventForm {
   private readonly cancelDialog = viewChild<ElementRef<HTMLDialogElement>>('cancelDialog');
   private readonly reasonField = viewChild<ElementRef<HTMLInputElement>>('reasonField');
 
-  /** Wer erfassen und bearbeiten darf: Coaches (in irgendeinem Team) und Admins (TER-11). */
+  /** Who may create and edit: coaches (in any team) and admins (TER-11). */
   protected readonly canCreate = computed(() => {
     const me = this.auth.me();
     return !!me && (me.admin || me.memberships.some((z) => z.teamRole === 'COACH'));
   });
 
-  /** Ob das Formular gezeigt wird. Sonst steht dort ein Hinweis (`hinweis()`). */
+  /** Whether the form is shown. Otherwise a notice is shown there (`notice()`). */
   protected readonly editable = computed(() => {
     switch (this.mode()) {
-      case 'neu':
+      case 'new':
         return this.canCreate();
-      case 'termin':
+      case 'event':
         return this.event()?.canEdit === true;
-      case 'serie':
+      case 'series':
         return this.canEditSeries();
     }
   });
 
   protected readonly notice = computed(() => {
     if (this.loading() || this.error()) return null;
-    if (this.mode() === 'termin' && this.event() && !this.event()!.canEdit) {
+    if (this.mode() === 'event' && this.event() && !this.event()!.canEdit) {
       const t = this.event()!;
       const coach = t.teams.some((x) => x.myTeamRole === 'COACH') || this.auth.isAdmin();
       return coach ? TEXTS.eventForm.notEditable : TEXTS.common.noPermission;
@@ -209,26 +210,26 @@ export class EventForm {
 
   protected readonly title = computed(() => {
     switch (this.mode()) {
-      case 'neu':
+      case 'new':
         return TEXTS.eventForm.newTitle;
-      case 'termin':
+      case 'event':
         return TEXTS.eventForm.editTitle;
-      case 'serie':
+      case 'series':
         return TEXTS.eventForm.editSeriesTitle;
     }
   });
 
   /**
-   * Termintypen zur Auswahl. Neue Einzeltermine: alle drei (AUF-16). Ein bestehender Spieltag bleibt ein
-   * Spieltag, Serien sind Trainings oder Anlässe.
+   * Event types to choose from. New single events: all three (AUF-16). An existing match day stays a
+   * match day, series are practices or other events.
    */
   protected readonly types = computed<EventType[]>(() => {
     if (this.event()?.type === 'MATCH_DAY') return ['MATCH_DAY'];
-    if (this.mode() === 'neu' && !this.asSeries()) return ['PRACTICE', 'MATCH_DAY', 'OTHER'];
+    if (this.mode() === 'new' && !this.asSeries()) return ['PRACTICE', 'MATCH_DAY', 'OTHER'];
     return ['PRACTICE', 'OTHER'];
   });
 
-  /** Teams der Serie bzw. des Termins, in denen die Person nicht Mitglied ist. Sie bleiben erhalten. */
+  /** Teams of the series or event in which the person is not a member. They are kept. */
   protected readonly moreTeams = computed(() => {
     const visible = new Set(this.teams().map((t) => t.id));
     return this.values().teamIds.filter((id) => !visible.has(id)).length;
@@ -308,25 +309,25 @@ export class EventForm {
 
   protected matchErrorId(key: number, field: 'opponent' | 'time'): string | null {
     return this.matchErrors()[`${key}-${field}`]
-      ? `spiel-${key}-${field}-fehler`
+      ? `match-${key}-${field}-error`
       : null;
   }
 
-  protected toggleTeam(teamId: string, an: boolean): void {
+  protected toggleTeam(teamId: string, checked: boolean): void {
     const ids = this.values().teamIds.filter((id) => id !== teamId);
-    this.set('teamIds', an ? [...ids, teamId] : ids);
+    this.set('teamIds', checked ? [...ids, teamId] : ids);
   }
 
-  protected selectKind(kind: 'einzel' | 'serie'): void {
+  protected selectKind(kind: 'single' | 'series'): void {
     this.fieldErrors.set({});
     void this.router.navigate(['/termine/neu'], {
-      queryParams: { art: kind === 'serie' ? 'serie' : null },
+      queryParams: { art: kind === 'series' ? 'serie' : null },
       replaceUrl: true,
     });
   }
 
   protected errorId(field: Field | 'reason'): string | null {
-    return this.fieldErrors()[field] ? `termin-${field}-fehler` : null;
+    return this.fieldErrors()[field] ? `event-${field}-error` : null;
   }
 
   async save(domEvent: Event): Promise<void> {
@@ -337,7 +338,7 @@ export class EventForm {
     this.error.set(null);
     try {
       switch (this.mode()) {
-        case 'neu':
+        case 'new':
           if (this.asSeries()) {
             const s = await firstValueFrom(this.http.post<Series>('/api/series', this.seriesData()));
             this.feedback.set(TEXTS.eventForm.seriesCreated);
@@ -351,7 +352,7 @@ export class EventForm {
             await this.router.navigate(['/termine', t.id]);
           }
           break;
-        case 'termin': {
+        case 'event': {
           const before = this.event()!;
           const t = await firstValueFrom(
             this.http.put<EventDetail>(`/api/events/${before.id}`, this.eventData()),
@@ -365,7 +366,7 @@ export class EventForm {
           await this.router.navigate(['/termine', t.id]);
           break;
         }
-        case 'serie': {
+        case 'series': {
           const s = await firstValueFrom(
             this.http.put<Series>(`/api/series/${this.series()!.id}`, this.seriesData()),
           );
@@ -431,7 +432,7 @@ export class EventForm {
     };
   }
 
-  /** Treffpunkt eines Spieltags am Tag des Spieltags (AUF-12); beide Felder leer: keiner. */
+  /** Meeting point of a match day on the day of the match day (AUF-12); both fields empty: none. */
   private meetingPoint(): MeetingPoint | null {
     const w = this.values();
     const location = w.meetingPointLocation.trim();
@@ -440,10 +441,10 @@ export class EventForm {
   }
 
   /**
-   * Spiele eines Spieltags nach dem Speichern des Termins: neue anlegen, geänderte speichern, entfernte
-   * löschen (AUF-14, AUF-16). Importierte Spiele bleiben unberührt, ausser swiss unihockey liefert sie
-   * nicht mehr: dann dürfen sie entfernt werden (SUH-06). Liefert eine Meldung, falls etwas
-   * nicht ging; der Termin selbst ist dann schon gespeichert.
+   * Matches of a match day after saving the event: create new ones, save changed ones, delete removed
+   * ones (AUF-14, AUF-16). Imported matches stay untouched, unless swiss unihockey no longer delivers
+   * them: then they may be removed (SUH-06). Returns a message if something failed; the event
+   * itself is already saved then.
    */
   private async saveMatches(t: EventDetail, before: EventDetail | null): Promise<string | null> {
     if (t.type !== 'MATCH_DAY') return null;
@@ -499,8 +500,8 @@ export class EventForm {
   }
 
   /**
-   * Ort aus dem Namen und (bei Einzelterminen) dem Google-Maps-Link (AUF-10, AUF-11). Adresse und Koordinaten
-   * eines bestehenden Orts bleiben, solange der Name gleich ist; bei Serien auch der Link.
+   * Location from the name and (for single events) the Google Maps link (AUF-10, AUF-11). Address and
+   * coordinates of an existing location stay as long as the name is the same; for series also the link.
    */
   private location(previous: EventLocation | null | undefined, withLink: boolean): EventLocation | null {
     const name = this.values().location.trim();
@@ -512,7 +513,7 @@ export class EventForm {
     return base;
   }
 
-  /** Pflichtfelder im Browser prüfen; die übrigen Regeln prüft das Backend. */
+  /** Check required fields in the browser; the backend checks the other rules. */
   private validate(): boolean {
     const w = this.values();
     const f: Partial<Record<Field, string>> = {};
@@ -532,7 +533,7 @@ export class EventForm {
       if (!w.location.trim()) f.location = required('den Ort');
       if (!/^https:\/\/\S+$/.test(w.mapsUrl.trim())) f.mapsUrl = TEXTS.eventForm.mapsUrlFormat;
     }
-    const sf: Record<string, string> = {};
+    const matchFieldErrors: Record<string, string> = {};
     if (this.matchDay()) {
       const time = !!w.meetingPointTime;
       const location = !!w.meetingPointLocation.trim();
@@ -540,11 +541,11 @@ export class EventForm {
       if (!time && location) f.meetingPointTime = TEXTS.eventForm.meetingPointBoth;
       for (const z of this.matches()) {
         if (z.source !== 'MANUAL') continue;
-        if (!z.opponent.trim()) sf[`${z.key}-gegner`] = required('den Gegner');
-        if (!z.time) sf[`${z.key}-zeit`] = required('eine Zeit');
+        if (!z.opponent.trim()) matchFieldErrors[`${z.key}-opponent`] = required('den Gegner');
+        if (!z.time) matchFieldErrors[`${z.key}-time`] = required('eine Zeit');
       }
     }
-    this.matchErrors.set(sf);
+    this.matchErrors.set(matchFieldErrors);
     const deadline = Number(w.responseDeadline);
     if (w.responseDeadline.trim() === '' || !Number.isInteger(deadline))
       f.responseDeadline = required('eine ganze Zahl');
@@ -553,12 +554,12 @@ export class EventForm {
     this.fieldErrors.set(f);
     const first = Object.keys(f)[0];
     if (first) {
-      document.getElementById(`termin-${first}`)?.focus();
+      document.getElementById(`event-${first}`)?.focus();
       return false;
     }
-    const firstMatch = Object.keys(sf)[0];
+    const firstMatch = Object.keys(matchFieldErrors)[0];
     if (firstMatch) {
-      document.getElementById(`spiel-${firstMatch}`)?.focus();
+      document.getElementById(`match-${firstMatch}`)?.focus();
       return false;
     }
     return true;
@@ -567,7 +568,7 @@ export class EventForm {
   private showErrors(e: unknown): void {
     const fields = fieldErrorsOf(e);
     const assigned: Partial<Record<Field, string>> = {};
-    // Spieltag mit Spielen aus swiss unihockey: nur am selben Tag verschiebbar, die Meldung gehört zum Datum (SUH-05).
+    // Match day with matches from swiss unihockey: can only be moved within the same day, the message belongs to the date (SUH-05).
     const dateRule = errorRule(e) === 'SUH-05';
     for (const [field, message] of Object.entries(fields)) {
       const target =
@@ -578,7 +579,7 @@ export class EventForm {
     }
     if (Object.keys(assigned).length > 0) {
       this.fieldErrors.set(assigned);
-      document.getElementById(`termin-${Object.keys(assigned)[0]}`)?.focus();
+      document.getElementById(`event-${Object.keys(assigned)[0]}`)?.focus();
     } else {
       this.error.set(errorText(e));
     }
@@ -643,7 +644,7 @@ export class EventForm {
           responseDeadline: String(s.responseDeadlineHours ?? 24),
         });
       } else {
-        // Neu: vorgewählt ist das Team, in dem die Person Coach ist, wenn es genau eines gibt.
+        // New: the team in which the person is coach is preselected if there is exactly one.
         const coach = (this.auth.me()?.memberships ?? []).filter(
           (z) => z.teamRole === 'COACH',
         );
@@ -668,7 +669,7 @@ export class EventForm {
     this.teams.set([...teams].sort((a, b) => a.name.localeCompare(b.name, 'de-CH')));
   }
 
-  /** Teams eines bestehenden Termins, die nicht zu den eigenen gehören, bleiben sichtbar und gewählt. */
+  /** Teams of an existing event that are not among the own ones stay visible and selected. */
   private addTeams(teams: Team[]): void {
     const known = new Set(this.teams().map((t) => t.id));
     const added = teams.filter((t) => !known.has(t.id));
@@ -679,7 +680,7 @@ export class EventForm {
     }
   }
 
-  /** Serie: bearbeiten dürfen Admins und Coaches eines Teams der Serie (TER-11, RR-06). */
+  /** Series: admins and coaches of a team of the series may edit (TER-11, RR-06). */
   private canEditSeries(): boolean {
     const s = this.series();
     const me = this.auth.me();

@@ -3,12 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { EventResponse, ResponseInput, ResponseStatus } from '../api/types';
 
-/** Antworten setzen (ANM): eigene Antwort und stellvertretend (Coach, ANM-11). */
+/** Set responses (ANM): own response and on behalf of others (coach, ANM-11). */
 @Injectable({ providedIn: 'root' })
 export class ResponseService {
   private readonly http = inject(HttpClient);
 
-  /** `personId` leer: eigene Antwort (`/antworten/ich`). */
+  /** Empty `personId`: own response (`/responses/me`). */
   set(eventId: string, input: ResponseInput, personId?: string): Promise<EventResponse> {
     return firstValueFrom(
       this.http.put<EventResponse>(`/api/events/${eventId}/responses/${personId ?? 'me'}`, input),
@@ -16,7 +16,7 @@ export class ResponseService {
   }
 }
 
-/** Icon pro Antwortstatus (O-16, docs/design-grundlagen.md): Farbe allein trägt keine Information. */
+/** Icon per response status (O-16, docs/design-principles.md): color alone carries no information. */
 export const RESPONSE_ICON: Record<ResponseStatus, string> = {
   ATTENDING: 'check',
   DECLINED: 'x',
@@ -25,14 +25,13 @@ export const RESPONSE_ICON: Record<ResponseStatus, string> = {
 };
 
 /**
- * Wert für `data-art`/Test-IDs in kebab-case, z.B. `nicht-dabei`. Die Test-IDs bleiben deutsch
- * (docs/ui/navigation.md), auch wenn die API die Antworten englisch nennt (F-10).
+ * Value for `data-kind` and test IDs: the response status in lowercase, e.g. `declined` (F-11).
  */
 const RESPONSE_KEY: Record<ResponseStatus, string> = {
   ATTENDING: 'attending',
-  DECLINED: 'nicht-dabei',
-  MAYBE: 'vielleicht',
-  PENDING: 'offen',
+  DECLINED: 'declined',
+  MAYBE: 'maybe',
+  PENDING: 'pending',
 };
 
 export function responseKey(status: ResponseStatus): string {
