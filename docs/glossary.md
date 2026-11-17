@@ -27,6 +27,16 @@ If a term is missing, add it here in the same style before using it.
 | Kalenderadresse | calendar address, feed path | personal address of the iCalendar feed with the token |
 | Kalender-Feed | calendar feed | the iCalendar file behind the address |
 | Adresse erneuern | renew (the address) | new token, the old address answers 404 |
+| Fahrerliste | driver list | per match day (F-20, DRV) |
+| Auto | car | a driver with free seats on a match day |
+| Fahrerin, Fahrer | driver | |
+| Mitfahrende, mitfahren | passenger, ride along | |
+| Platz, freie Plätze | seat, seats | |
+| Ohne Platz | without seat | players who still need a seat (DRV-04) |
+| Strecke | route | from the meeting point to the venue, status `CALCULATED`, `NOT_FOUND`, `UNAVAILABLE`, `MANUAL` |
+| Gutschrift | credit | kilometres credited to a driver: twice the distance (DRV-05) |
+| Fahrten | trips | season summary per person (DRV-09) |
+| Routendienst | routing service | OpenRouteService in production, simulator in dev/test (DRV-06) |
 | Warnung | warning | types `GOALIES`, `FIELD_PLAYERS`, `LINE` (F-16) |
 | Mindestzahl (für Warnungen) | warning minimum | per team (F-16) |
 | Termin | event | types `PRACTICE`, `MATCH_DAY`, `OTHER` |

@@ -13,6 +13,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | BEN-05 | A published call-up is changed. | The affected players | Assumption |
 | BEN-06 | An imported match is moved or changed. | All members of the team | Accepted |
 | BEN-07 | An event is cancelled or moved. | All members of the participating teams | Assumption |
+| DRV-11 | A car of the driver list changes (F-20, type `DRIVER_LIST_CHANGED`, subject «Fahrerliste geändert»). | The people affected, never the one who made the change ([14 · Driver list](14-driver-list.md)) | Decided |
 
 ## Further requirements
 

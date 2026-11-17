@@ -219,6 +219,49 @@ stateDiagram-v2
 | The feed is built anew on every call from the current data and the backend clock: events of the own teams (member in the season of the event) that ended after «now» minus 30 days, chronologically, cancelled ones with `STATUS:CANCELLED`. A changed or moved event keeps its `UID`. | CAL-02, CAL-04 |
 | The feed shows only the own response and the own comment, never those of others. | CAL-08 |
 
+## Driver list of a match day (F-20)
+
+The list itself has no stored state; it follows from the match day. The route of a match day is stored with the places it was calculated for.
+
+```mermaid
+stateDiagram-v2
+    [*] --> NotReady: meeting point or venue missing
+    NotReady --> Open: meeting point and venue set
+    Open --> Open: drivers and passengers change
+    Open --> AfterEnd: end of the match day
+    AfterEnd --> AfterEnd: only coaches and admins change
+    Open --> Cancelled: match day cancelled
+    AfterEnd --> Cancelled: match day cancelled
+    Cancelled --> [*]: list kept, no credits, read-only
+```
+
+Route of a match day:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Calculated: first view, service finds a route
+    [*] --> NotFound: first view, no route
+    [*] --> Unavailable: first view, service unavailable
+    Unavailable --> Calculated: next view after 10 minutes, or «Strecke neu berechnen»
+    NotFound --> Calculated: «Strecke neu berechnen» or other places
+    Calculated --> Manual: «Kilometer erfassen»
+    Unavailable --> Manual: «Kilometer erfassen»
+    NotFound --> Manual: «Kilometer erfassen»
+    Manual --> Calculated: «Strecke neu berechnen» or other places
+    Calculated --> Calculated: meeting point or venue changed (calculated again)
+```
+
+| Rule | Reference |
+|---|---|
+| Not a match day: 409 (rule DRV-01). Meeting point or venue missing: the list shows what is missing; every change gives 409 (rule DRV-01). | DRV-01 |
+| Every change locks the match day (`select … for update`): two concurrent requests for the last seat give one 200 and one 409, never a 500 and never an overfull car. A person never ends up in two cars. | DRV-02, DRV-03 |
+| Entering the same passenger into the same car again changes nothing and notifies nobody. Leaving a car one does not sit in: 404. | DRV-03 |
+| A passenger who becomes driver leaves her seat; a driver cannot ride along (422). A car removed takes its passengers out. | DRV-02, DRV-03 |
+| After the end of the match day members get 409 (rule DRV-02), coaches and admins can still correct the list. Cancelled: 409 for everyone (rule DRV-10). Archived season: 409. | DRV-02, DRV-10 |
+| The routing service is called outside the transaction; the result is stored per match day with its places. A stored route is used as long as the places are the same, except «unavailable», which is retried after 10 minutes. A cancelled match day is not calculated again. | DRV-05, DRV-07, DRV-08 |
+| Credits are not stored: they follow from the cars, the route and the status of the match day on every read. | DRV-05, DRV-09, DRV-10 |
+| Notifications go out in the transaction of the change, to the people affected but never to the person who made the change. | DRV-11 |
+
 ## Match of a match day
 
 | Rule | Reference |

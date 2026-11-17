@@ -73,6 +73,7 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 11 | [Attendance check](docs/requirements/11-attendance-check.md) | PRS |
 | 12 | [Attendance statistics](docs/requirements/12-statistics.md) | STA |
 | 13 | [Calendar subscription](docs/requirements/13-calendar.md) | CAL |
+| 14 | [Driver list](docs/requirements/14-driver-list.md) | DRV |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 
