@@ -87,7 +87,10 @@ public class AttendanceService {
         return ids;
     }
 
-    /** All players by line, then goalies, then «Ohne Linie»; empty groups are left out (like the call-up). */
+    /**
+     * All players by team (by name, as in the overview), within the team by line, then goalies, then «Ohne Linie»;
+     * empty groups and teams without players are left out (like the call-up).
+     */
     private AttendanceDto dto(Event event, AttendanceRecord record) {
         Map<UUID, AttendanceStatus> recorded = record == null ? Map.of() : record.entries;
         Map<UUID, ResponseService.Stored> stored = responses.responses(event.id);
@@ -96,38 +99,45 @@ public class AttendanceService {
         Map<UUID, PersonSummary> persons = new HashMap<>();
         players.forEach(m -> persons.put(m.person.id, PersonSummary.of(m.person)));
 
-        Map<UUID, List<AttendanceDto.Entry>> perGroup = new LinkedHashMap<>();
-        List<AttendanceDto.Entry> noLine = new ArrayList<>();
-        for (TeamMembership m : players) {
-            ResponseService.Stored response = stored.get(m.person.id);
-            AttendanceStatus saved = recorded.get(m.person.id);
-            AttendanceDto.Entry entry = new AttendanceDto.Entry(persons.get(m.person.id),
-                    ResponseService.response(response, true, persons),
-                    AttendanceRules.shown(saved, response == null ? ResponseStatus.PENDING : response.status()),
-                    saved != null);
-            if (m.groups.isEmpty()) {
-                noLine.add(entry);
-            } else {
-                m.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(entry));
+        List<AttendanceDto.TeamBlock> teams = new ArrayList<>();
+        for (OverviewDto.TeamName team : ResponseService.teamNames(event)) {
+            Map<UUID, List<AttendanceDto.Entry>> perGroup = new LinkedHashMap<>();
+            List<AttendanceDto.Entry> noLine = new ArrayList<>();
+            for (TeamMembership m : players) {
+                if (!m.team.id.equals(team.id())) {
+                    continue;
+                }
+                ResponseService.Stored response = stored.get(m.person.id);
+                AttendanceStatus saved = recorded.get(m.person.id);
+                AttendanceDto.Entry entry = new AttendanceDto.Entry(persons.get(m.person.id),
+                        ResponseService.response(response, true, persons),
+                        AttendanceRules.shown(saved, response == null ? ResponseStatus.PENDING : response.status()),
+                        saved != null);
+                if (m.groups.isEmpty()) {
+                    noLine.add(entry);
+                } else {
+                    m.groups.forEach(g -> perGroup.computeIfAbsent(g.id, k -> new ArrayList<>()).add(entry));
+                }
             }
-        }
-        List<AttendanceDto.Group> groups = new ArrayList<>();
-        for (Team team : event.teams) {
-            for (Group g : Group.of(team, event.season)) {
+            List<AttendanceDto.Group> groups = new ArrayList<>();
+            for (Group g : Group.of(Team.findById(team.id()), event.season)) {
                 List<AttendanceDto.Entry> entries = perGroup.get(g.id);
                 if (entries != null && !entries.isEmpty()) {
                     groups.add(new AttendanceDto.Group(g.id, g.type == GroupType.GOALIES
                             ? OverviewDto.Type.GOALIES : OverviewDto.Type.LINE, g.name, sorted(entries)));
                 }
             }
-        }
-        if (!noLine.isEmpty()) {
-            groups.add(new AttendanceDto.Group(null, OverviewDto.Type.NO_LINE, ResponseService.NO_LINE, sorted(noLine)));
+            if (!noLine.isEmpty()) {
+                groups.add(new AttendanceDto.Group(null, OverviewDto.Type.NO_LINE, ResponseService.NO_LINE, sorted(noLine)));
+            }
+            if (!groups.isEmpty()) {
+                teams.add(new AttendanceDto.TeamBlock(team, groups));
+            }
         }
         boolean saved = record != null;
         PersonSummary recordedBy = record == null || record.recordedBy == null ? null
                 : Person.<Person>findByIdOptional(record.recordedBy).map(PersonSummary::of).orElse(null);
-        return new AttendanceDto(event.id, saved, saved ? EventReader.time(record.recordedAt) : null, recordedBy, groups);
+        return new AttendanceDto(event.id, saved, saved ? EventReader.time(record.recordedAt) : null, recordedBy, teams);
     }
 
     private static List<AttendanceDto.Entry> sorted(List<AttendanceDto.Entry> entries) {

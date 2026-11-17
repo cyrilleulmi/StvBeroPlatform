@@ -186,7 +186,7 @@ public class ResponseService {
     }
 
     /** Teams of the event by name, with the name in the season of the event (SAI-02). */
-    private static List<OverviewDto.TeamName> teamNames(Event event) {
+    static List<OverviewDto.TeamName> teamNames(Event event) {
         Map<UUID, String> names = new HashMap<>();
         List<UUID> ids = event.teams.stream().map(team -> team.id).toList();
         if (!ids.isEmpty()) {

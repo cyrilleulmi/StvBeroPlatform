@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.nullValue;
 class AttendanceTest {
 
     static final String TEAM_1 = "10000000-0000-4000-8000-000000000001";
+    static final String TEAM_2 = "10000000-0000-4000-8000-000000000002";
     static final String PETRA = "20000000-0000-4000-8000-000000000002";
     static final String MARC = "20000000-0000-4000-8000-000000000003";
     static final String ANNA = "20000000-0000-4000-8000-000000000005";
@@ -84,8 +85,8 @@ class AttendanceTest {
 
     /** Status per person name in the attendance list. */
     private static Map<String, String> statuses(JsonPath json) {
-        List<String> names = json.getList("groups.entries.flatten().person.firstName");
-        List<String> values = json.getList("groups.entries.flatten().status");
+        List<String> names = json.getList("teams.groups.flatten().entries.flatten().person.firstName");
+        List<String> values = json.getList("teams.groups.flatten().entries.flatten().status");
         java.util.Map<String, String> result = new java.util.LinkedHashMap<>();
         for (int i = 0; i < names.size(); i++) {
             result.put(names.get(i), values.get(i));
@@ -172,21 +173,43 @@ class AttendanceTest {
         JsonPath json = attendance(login("petra"), T09).statusCode(200).extract().jsonPath();
         assertThat(json.getBoolean("recorded"), equalTo(false));
         assertThat(json.get("recordedBy"), nullValue());
-        assertThat(json.getList("groups.name"), contains("Linie 1", "Linie 2", "Goalies", "Ohne Linie"));
-        assertThat(json.getList("groups.type"), contains("LINE", "LINE", "GOALIES", "NO_LINE"));
-        assertThat(json.getList("groups[0].entries.person.firstName"), contains("Mia", "Lea", "Anna"));
-        assertThat(json.getList("groups[1].entries.person.firstName"), contains("Sara", "Nina"));
+        assertThat(json.getList("teams[0].groups.name"), contains("Linie 1", "Linie 2", "Goalies", "Ohne Linie"));
+        assertThat(json.getList("teams[0].groups.type"), contains("LINE", "LINE", "GOALIES", "NO_LINE"));
+        assertThat(json.getList("teams[0].groups[0].entries.person.firstName"), contains("Mia", "Lea", "Anna"));
+        assertThat(json.getList("teams[0].groups[1].entries.person.firstName"), contains("Sara", "Nina"));
         // «dabei» → anwesend, everything else (nicht dabei, vielleicht, offen) → abwesend
         Map<String, String> statuses = statuses(json);
         assertThat(statuses, equalTo(Map.of("Anna", "PRESENT", "Lea", "PRESENT", "Mia", "ABSENT", "Sara", "PRESENT",
                 "Nina", "ABSENT", "Jana", "PRESENT", "Kim", "ABSENT")));
-        assertThat(json.getList("groups.entries.flatten().recorded"), everyItem(equalTo(false)));
+        assertThat(json.getList("teams.groups.flatten().entries.flatten().recorded"), everyItem(equalTo(false)));
         // Response next to the name, with comment for the coach
-        assertThat(json.getString("groups[0].entries.find { it.person.firstName == 'Mia' }.response.status"), equalTo("DECLINED"));
-        assertThat(json.getString("groups[0].entries.find { it.person.firstName == 'Mia' }.response.comment"), equalTo("Krank"));
-        assertThat(json.getString("groups[3].entries[0].response.status"), equalTo("PENDING"));
+        assertThat(json.getString("teams[0].groups[0].entries.find { it.person.firstName == 'Mia' }.response.status"), equalTo("DECLINED"));
+        assertThat(json.getString("teams[0].groups[0].entries.find { it.person.firstName == 'Mia' }.response.comment"), equalTo("Krank"));
+        assertThat(json.getString("teams[0].groups[3].entries[0].response.status"), equalTo("PENDING"));
         // Nothing saved by looking at it
         event(login("petra"), T09).body("attendanceRecorded", equalTo(false));
+    }
+
+    @Test
+    void prs03SharedEventIsGroupedByTeamThenLine() {
+        String petra = login("petra");
+        String id = given().cookie("stv_session", petra).contentType(ContentType.JSON).body("""
+                        {"type":"PRACTICE","title":"Gemeinsames Training","start":"2026-11-20T18:00:00+01:00",
+                         "end":"2026-11-20T20:00:00+01:00","teamIds":["%s","%s"],"attendanceCheck":true}"""
+                        .formatted(TEAM_2, TEAM_1))
+                .post("/api/events").then().statusCode(201).extract().path("id");
+        clock("2026-11-20T19:00:00+01:00");
+        JsonPath json = attendance(petra, id).statusCode(200).extract().jsonPath();
+        // Teams by name as in the overview, each with its own lines
+        assertThat(json.getList("teams.team.name"), contains("Team 1", "Team 2"));
+        assertThat(json.getList("teams.team.id"), contains(TEAM_1, TEAM_2));
+        assertThat(json.getList("teams[0].groups.name"), contains("Linie 1", "Linie 2", "Goalies", "Ohne Linie"));
+        assertThat(json.getList("teams[0].groups[0].entries.person.id"), hasItem(LEA));
+        assertThat(json.getList("teams[1].groups.find { it.name == 'Linie 2' }.entries.person.id"), hasItem(LEA));
+        // Lea is in both teams and has one status in both
+        JsonPath saved = record(petra, id, Map.of(LEA, "EXCUSED")).statusCode(200).extract().jsonPath();
+        assertThat(saved.getList("teams.groups.flatten().entries.flatten().findAll { it.person.id == '%s' }.status"
+                .formatted(LEA)), contains("EXCUSED", "EXCUSED"));
     }
 
     // ------------------------------------------------------------------ PRS-04 save and correct
@@ -206,7 +229,7 @@ class AttendanceTest {
         assertThat(statuses.get("Kim"), equalTo("PRESENT"));
         // Not saved: still the preselection
         assertThat(statuses.get("Lea"), equalTo("PRESENT"));
-        assertThat(saved.getBoolean("groups[0].entries.find { it.person.firstName == 'Lea' }.recorded"), equalTo(false));
+        assertThat(saved.getBoolean("teams[0].groups[0].entries.find { it.person.firstName == 'Lea' }.recorded"), equalTo(false));
 
         // Correction later by Marc (coach of another team, E-69): the last value counts
         clock("2026-11-13T08:00:00+01:00");
@@ -230,7 +253,7 @@ class AttendanceTest {
         assertThat(json.getString("recordedAt"), equalTo("2026-11-05T21:00:00+01:00"));
         assertThat(statuses(json), equalTo(Map.of("Anna", "PRESENT", "Lea", "PRESENT", "Mia", "EXCUSED", "Sara", "ABSENT",
                 "Nina", "PRESENT", "Jana", "PRESENT", "Kim", "ABSENT")));
-        assertThat(json.getList("groups.entries.flatten().recorded"), everyItem(equalTo(true)));
+        assertThat(json.getList("teams.groups.flatten().entries.flatten().recorded"), everyItem(equalTo(true)));
     }
 
     @Test
@@ -257,7 +280,7 @@ class AttendanceTest {
     void prs05CoachesAreNotPartOfTheList() {
         String petra = login("petra");
         JsonPath json = attendance(petra, T09).extract().jsonPath();
-        assertThat(json.getList("groups.entries.flatten().person.id"), not(hasItem(PETRA)));
+        assertThat(json.getList("teams.groups.flatten().entries.flatten().person.id"), not(hasItem(PETRA)));
         record(petra, T09, Map.of(PETRA, "PRESENT")).statusCode(422).body("rule", equalTo("PRS-05"));
         record(petra, T09, Map.of(TINA, "PRESENT")).statusCode(422).body("rule", equalTo("PRS-05"));
         event(petra, T09).body("attendanceRecorded", equalTo(false));

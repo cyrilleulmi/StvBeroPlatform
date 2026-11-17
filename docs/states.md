@@ -160,7 +160,7 @@ stateDiagram-v2
 |---|---|
 | The switch is off by default. A series passes it on to the events it creates or changes (only future, not individually changed events, TER-08); changing it on a single event makes the event individually changed. Missing in the request: off for new, unchanged for existing events and series. | PRS-01 |
 | Recording only with the switch on (409 rule PRS-07), not for a cancelled event (409 rule PRS-09), only from the start time on (409 rule PRS-02). No end. Archived season: 409 (SAI-02). | PRS-02, PRS-07, PRS-09 |
-| Coaches (any team) and admins see and save the list, everyone else 403. The list contains the players of the involved teams by line, no coaches (save with a coach or an outsider: 422 rule PRS-05). | PRS-05, PRS-10 |
+| Coaches (any team) and admins see and save the list, everyone else 403. The list contains the players of the involved teams by team and line (as in the overview), no coaches (save with a coach or an outsider: 422 rule PRS-05). | PRS-05, PRS-10 |
 | Without a recorded value the status is the preselection: ATTENDING → PRESENT, everything else → ABSENT. Looking at the list saves nothing. | PRS-03 |
 | Saving sets the status of the given players, stores who and when, and keeps the values of players not in the request. The response is never changed. Concurrent saves never give 500. | PRS-04 |
 | A player sees only their own recorded value (`myAttendance`), only while the switch is on. The overview contains no attendance. | PRS-06 |
@@ -338,7 +338,7 @@ sequenceDiagram
     participant N as Notifications
     C->>F: opens /termine/{id}/aufgebot
     F->>B: GET /api/events/{id}/call-up
-    B-->>F: all players by line, with response
+    B-->>F: all players by team and line, with response
     C->>F: selects
     F->>B: PUT /api/events/{id}/call-up {personIds}
     B-->>F: status DRAFT

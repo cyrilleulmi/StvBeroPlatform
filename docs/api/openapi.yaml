@@ -1848,7 +1848,7 @@ components:
 
     Attendance:
       type: object
-      required: [eventId, recorded, groups]
+      required: [eventId, recorded, teams]
       properties:
         eventId: { type: string, format: uuid }
         recorded: { type: boolean, description: Attendance has been saved at least once (PRS-04) }
@@ -1858,28 +1858,42 @@ components:
             - $ref: '#/components/schemas/PersonSummary'
             - type: 'null'
           description: Who saved last (PRS-04)
-        groups:
+        teams:
           type: array
-          description: All players of the involved teams, grouped as in the overview; coaches are not part of it (PRS-03, PRS-05)
+          description: >-
+            All players of the involved teams by team (sorted by name) and line, as in the overview; teams without
+            players are left out. A player in two teams appears in both. Coaches are not part of it (PRS-03, PRS-05)
           items:
             type: object
-            required: [type, name, entries]
+            required: [team, groups]
             properties:
-              groupId: { type: [string, 'null'], format: uuid }
-              type:
-                type: string
-                enum: [LINE, GOALIES, NO_LINE]
-              name: { type: string }
-              entries:
+              team:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+              groups:
                 type: array
                 items:
                   type: object
-                  required: [person, response, status, recorded]
+                  required: [type, name, entries]
                   properties:
-                    person: { $ref: '#/components/schemas/PersonSummary' }
-                    response: { $ref: '#/components/schemas/Response' }
-                    status: { $ref: '#/components/schemas/AttendanceStatus' }
-                    recorded: { type: boolean, description: 'false: the status is the preselection from the response' }
+                    groupId: { type: [string, 'null'], format: uuid }
+                    type:
+                      type: string
+                      enum: [LINE, GOALIES, NO_LINE]
+                    name: { type: string }
+                    entries:
+                      type: array
+                      items:
+                        type: object
+                        required: [person, response, status, recorded]
+                        properties:
+                          person: { $ref: '#/components/schemas/PersonSummary' }
+                          response: { $ref: '#/components/schemas/Response' }
+                          status: { $ref: '#/components/schemas/AttendanceStatus' }
+                          recorded: { type: boolean, description: 'false: the status is the preselection from the response' }
     AttendanceInput:
       type: object
       required: [entries]

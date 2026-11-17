@@ -12,7 +12,9 @@ const ANNA = '20000000-0000-4000-8000-000000000005';
 const MIA = '20000000-0000-4000-8000-000000000007';
 const SARA = '20000000-0000-4000-8000-000000000008';
 const KIM = '20000000-0000-4000-8000-000000000011';
+const LEA = '20000000-0000-4000-8000-000000000006';
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
+const TEAM_2 = '10000000-0000-4000-8000-000000000002';
 const T01 = '40000000-0000-4000-8000-000000000001';
 const T09 = '40000000-0000-4000-8000-000000000009';
 const T10 = '40000000-0000-4000-8000-000000000010';
@@ -118,7 +120,8 @@ test('PRS-02 PRS-03 PRS-05: Petra sees the players of event 09 by line with the 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Präsenz erfassen');
 
   const list = page.getByTestId('attendance-list');
-  await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
+  await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Team 1']);
+  await expect(list.getByRole('heading', { level: 4 })).toHaveText(['Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
   await expect(page.getByTestId('attendance-state')).toHaveText('Noch keine Präsenz erfasst.');
   // «dabei» → anwesend, «nicht dabei», «vielleicht», «offen» → abwesend
   await expect(option(page, ANNA, 'anwesend')).toBeChecked();
@@ -142,6 +145,46 @@ test('PRS-02 PRS-03 PRS-05: Petra sees the players of event 09 by line with the 
   await expect(option(page, MIA, 'abwesend')).toBeChecked();
   const event = await (await page.request.get(`/api/events/${T09}`)).json();
   expect(event.attendanceRecorded).toBe(false);
+});
+
+test('PRS-03: a shared event shows the players by team, then by line, as in the overview', async ({
+  page,
+  request,
+}) => {
+  await login(page, 'petra');
+  const response = await page.request.post('/api/events', {
+    data: {
+      type: 'PRACTICE',
+      title: 'Gemeinsames Training',
+      start: '2026-11-20T18:00:00+01:00',
+      end: '2026-11-20T20:00:00+01:00',
+      teamIds: [TEAM_2, TEAM_1],
+      attendanceCheck: true,
+    },
+  });
+  expect(response.status()).toBe(201);
+  const id = (await response.json()).id;
+  await setClock(request, '2026-11-20T19:00:00+01:00');
+  await page.goto(`/termine/${id}/praesenz`);
+
+  const list = page.getByTestId('attendance-list');
+  await expect(list.getByRole('heading', { level: 3 })).toHaveText(['Team 1', 'Team 2']);
+  const team1 = page.getByTestId(`attendance-team-${TEAM_1}`);
+  const team2 = page.getByTestId(`attendance-team-${TEAM_2}`);
+  await expect(team1.getByRole('heading', { level: 4 })).toHaveText(['Linie 1', 'Linie 2', 'Goalies', 'Ohne Linie']);
+  await expect(page.getByRole('region', { name: 'Team 1' })).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Team 2' })).toHaveCount(1);
+  // Lea plays in both teams, in a different line in each: one status for both entries
+  await expect(team1.getByRole('region', { name: 'Linie 1' }).getByTestId(`attendance-person-${LEA}`)).toHaveCount(1);
+  await expect(team2.getByRole('region', { name: 'Linie 2' }).getByTestId(`attendance-person-${LEA}`)).toHaveCount(1);
+  await team1.getByTestId(`attendance-person-${LEA}`).getByRole('radio', { name: 'entschuldigt' }).check();
+  await expect(team2.getByTestId(`attendance-person-${LEA}`).getByRole('radio', { name: 'entschuldigt' })).toBeChecked();
+  await checkAccessibility(page);
+
+  await page.getByRole('button', { name: 'Präsenz speichern' }).click();
+  await expect(page.getByRole('status')).toHaveText('Die Präsenz ist gespeichert.');
+  await page.reload();
+  await expect(team2.getByTestId(`attendance-person-${LEA}`)).toHaveAttribute('data-attendance', 'EXCUSED');
 });
 
 test('PRS-04: saving stores who and when, a later correction counts', async ({ page, request }) => {

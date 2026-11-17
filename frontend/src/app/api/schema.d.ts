@@ -1375,19 +1375,26 @@ export interface components {
             recordedAt?: string | null;
             /** @description Who saved last (PRS-04) */
             recordedBy?: components["schemas"]["PersonSummary"] | null;
-            /** @description All players of the involved teams, grouped as in the overview; coaches are not part of it (PRS-03, PRS-05) */
-            groups: {
-                /** Format: uuid */
-                groupId?: string | null;
-                /** @enum {string} */
-                type: "LINE" | "GOALIES" | "NO_LINE";
-                name: string;
-                entries: {
-                    person: components["schemas"]["PersonSummary"];
-                    response: components["schemas"]["Response"];
-                    status: components["schemas"]["AttendanceStatus"];
-                    /** @description false: the status is the preselection from the response */
-                    recorded: boolean;
+            /** @description All players of the involved teams by team (sorted by name) and line, as in the overview; teams without players are left out. A player in two teams appears in both. Coaches are not part of it (PRS-03, PRS-05) */
+            teams: {
+                team: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                groups: {
+                    /** Format: uuid */
+                    groupId?: string | null;
+                    /** @enum {string} */
+                    type: "LINE" | "GOALIES" | "NO_LINE";
+                    name: string;
+                    entries: {
+                        person: components["schemas"]["PersonSummary"];
+                        response: components["schemas"]["Response"];
+                        status: components["schemas"]["AttendanceStatus"];
+                        /** @description false: the status is the preselection from the response */
+                        recorded: boolean;
+                    }[];
                 }[];
             }[];
         };

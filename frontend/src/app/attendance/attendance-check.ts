@@ -62,7 +62,13 @@ export function attendanceKey(status: AttendanceStatus): string {
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (attendance(); as a) {
-        <form class="card selection" data-testid="attendance-list" aria-labelledby="attendance-list-title" (submit)="save($event)" novalidate>
+        <form
+          class="card selection"
+          data-testid="attendance-list"
+          aria-labelledby="attendance-list-title"
+          (submit)="save($event)"
+          novalidate
+        >
           <h2 id="attendance-list-title" class="section-title">{{ t.list }}</h2>
           <p class="secondary-text">{{ t.hint }}</p>
           <p class="state" data-testid="attendance-state" [attr.data-recorded]="a.recorded">
@@ -72,48 +78,84 @@ export function attendanceKey(status: AttendanceStatus): string {
               {{ t.notRecorded }}
             }
           </p>
-          @for (g of a.groups; track g.groupId ?? 'no-line') {
-            <section class="group" [attr.aria-label]="g.name">
-              <h3 class="group-title">{{ g.name }}</h3>
-              <ul class="people" [attr.aria-label]="g.name">
-                @for (e of g.entries; track e.person.id) {
-                  <li
-                    class="person"
-                    [attr.aria-label]="name(e.person)"
-                    [attr.data-testid]="'attendance-person-' + e.person.id"
-                    [attr.data-response]="e.response.status"
-                    [attr.data-attendance]="choice(e.person.id)"
-                  >
-                    <div class="person-head">
-                      <span class="person-name">{{ name(e.person) }}</span>
-                      <span class="response">
-                        <span class="symbol" [attr.data-kind]="key(e.response.status)" aria-hidden="true">
-                          <app-icon [name]="icon[e.response.status]" [size]="14" />
-                        </span>
-                        <span class="status-text">{{ texts.response.status[e.response.status] }}</span>
-                        @if (e.response.comment; as k) {
-                          <span class="secondary-text comment">«{{ k }}»</span>
-                        }
-                      </span>
-                    </div>
-                    <div class="options" role="radiogroup" [attr.aria-label]="t.of(name(e.person))">
-                      @for (s of statuses; track s) {
-                        <label class="option" [attr.data-kind]="attendanceKey(s)">
-                          <input
-                            type="radio"
-                            [name]="'attendance-' + (g.groupId ?? 'no-line') + '-' + e.person.id"
-                            [value]="s"
-                            [checked]="choice(e.person.id) === s"
-                            [disabled]="saving()"
-                            (change)="choose(e.person.id, s)"
-                          />
-                          <span>{{ t.status[s] }}</span>
-                        </label>
-                      }
-                    </div>
-                  </li>
-                }
-              </ul>
+          @for (block of a.teams; track block.team.id) {
+            <section
+              class="team-block"
+              [attr.data-testid]="'attendance-team-' + block.team.id"
+              [attr.aria-labelledby]="'attendance-team-title-' + block.team.id"
+            >
+              <h3 class="team-title" [id]="'attendance-team-title-' + block.team.id">
+                {{ block.team.name }}
+              </h3>
+              @for (g of block.groups; track g.groupId ?? 'no-line') {
+                @let groupKey =
+                  g.groupId
+                    ? 'attendance-group-' + g.groupId
+                    : 'attendance-no-line-' + block.team.id;
+                <section
+                  class="group"
+                  [attr.data-testid]="groupKey"
+                  [attr.aria-labelledby]="groupKey + '-title'"
+                >
+                  <h4 class="group-title" [id]="groupKey + '-title'">{{ g.name }}</h4>
+                  <ul class="people" [attr.aria-labelledby]="groupKey + '-title'">
+                    @for (e of g.entries; track e.person.id) {
+                      <li
+                        class="person"
+                        [attr.aria-label]="name(e.person)"
+                        [attr.data-testid]="'attendance-person-' + e.person.id"
+                        [attr.data-response]="e.response.status"
+                        [attr.data-attendance]="choice(e.person.id)"
+                      >
+                        <div class="person-head">
+                          <span class="person-name">{{ name(e.person) }}</span>
+                          <span class="response">
+                            <span
+                              class="symbol"
+                              [attr.data-kind]="key(e.response.status)"
+                              aria-hidden="true"
+                            >
+                              <app-icon [name]="icon[e.response.status]" [size]="14" />
+                            </span>
+                            <span class="status-text">{{
+                              texts.response.status[e.response.status]
+                            }}</span>
+                            @if (e.response.comment; as k) {
+                              <span class="secondary-text comment">«{{ k }}»</span>
+                            }
+                          </span>
+                        </div>
+                        <div
+                          class="options"
+                          role="radiogroup"
+                          [attr.aria-label]="t.of(name(e.person))"
+                        >
+                          @for (s of statuses; track s) {
+                            <label class="option" [attr.data-kind]="attendanceKey(s)">
+                              <input
+                                type="radio"
+                                [name]="
+                                  'attendance-' +
+                                  block.team.id +
+                                  '-' +
+                                  (g.groupId ?? 'no-line') +
+                                  '-' +
+                                  e.person.id
+                                "
+                                [value]="s"
+                                [checked]="choice(e.person.id) === s"
+                                [disabled]="saving()"
+                                (change)="choose(e.person.id, s)"
+                              />
+                              <span>{{ t.status[s] }}</span>
+                            </label>
+                          }
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
             </section>
           } @empty {
             <p class="empty">{{ t.noPlayers }}</p>
@@ -173,7 +215,11 @@ export class AttendanceCheckPage {
 
   /** Every player once, in display order. */
   protected readonly persons = computed(() => [
-    ...new Set((this.attendance()?.groups ?? []).flatMap((g) => g.entries.map((e) => e.person.id))),
+    ...new Set(
+      (this.attendance()?.teams ?? []).flatMap((b) =>
+        b.groups.flatMap((g) => g.entries.map((e) => e.person.id)),
+      ),
+    ),
   ]);
 
   protected readonly dirty = computed(() => {
@@ -242,7 +288,9 @@ export class AttendanceCheckPage {
 
   private apply(a: Attendance): void {
     const values: Record<string, AttendanceStatus> = {};
-    a.groups.forEach((g) => g.entries.forEach((e) => (values[e.person.id] = e.status)));
+    a.teams.forEach((b) =>
+      b.groups.forEach((g) => g.entries.forEach((e) => (values[e.person.id] = e.status))),
+    );
     this.attendance.set(a);
     this.choices.set({ ...values });
     this.saved.set(a.recorded ? { ...values } : {});
@@ -281,7 +329,12 @@ export class AttendanceCheckPage {
 
   private notAvailable(event: EventDetail): string {
     const now = this.auth.me()?.now;
-    if (event.attendanceCheck && event.status !== 'CANCELLED' && now && Date.parse(now) < Date.parse(event.start)) {
+    if (
+      event.attendanceCheck &&
+      event.status !== 'CANCELLED' &&
+      now &&
+      Date.parse(now) < Date.parse(event.start)
+    ) {
       return this.t.beforeStart;
     }
     return this.t.notAvailable;
