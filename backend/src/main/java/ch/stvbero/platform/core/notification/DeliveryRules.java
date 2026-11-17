@@ -87,6 +87,7 @@ public final class DeliveryRules {
             case MATCH_CHANGED -> "Spiel geändert";
             case EVENT_CANCELLED -> "Abgesagt";
             case EVENT_RESCHEDULED -> "Verschoben";
+            case DRIVER_LIST_CHANGED -> "Fahrerliste geändert";
         };
         if (eventTitle == null) {
             return essence;

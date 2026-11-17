@@ -26,6 +26,10 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Warning** | Computed note for coaches and admins when an upcoming practice or match day has a gap: too few goalies or field players attending (or called up), or a line with too few players (F-16). Not stored. |
 | **Warning minimums** | Setting of a team: below these numbers a warning appears (defaults 1 goalie, 10 field players for match days, 6 for practices, 3 per line). |
 | **Meeting point** | Time and place where the team meets before a match day. |
+| **Driver list** | Per match day: the cars with driver and free seats, the passengers, and who still needs a seat (DRV, F-20). |
+| **Car** | A driver on a match day with a number of free seats (1 to 8) and her passengers. A person drives or sits in at most one car per match day. |
+| **Route** | Distance and driving time from the meeting point to the venue, calculated once per match day and again when the places change; or kilometres entered by hand. |
+| **Credit** | Kilometres credited to a driver for a match day: twice the distance of the route; none for a cancelled match day. |
 | **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
 | **Calendar subscription** | Personal address of a person with a random token. Behind it is an iCalendar feed with the events of her teams, which calendar apps fetch without login. Renewing replaces the token (CAL, F-18). |
 | **Notification** | Message to one person about a change (BEN-01 to BEN-07). Always in the list in the app; also by e-mail and push (F-19). |
@@ -52,6 +56,11 @@ erDiagram
     EVENT ||--o| CALL_UP : "has (match day only)"
     CALL_UP ||--o{ CALL_UP_ENTRY : includes
     PERSON ||--o{ CALL_UP_ENTRY : "is called up"
+    EVENT ||--o{ CAR : "has (match day only)"
+    PERSON ||--o{ CAR : drives
+    CAR ||--o{ CAR_PASSENGER : carries
+    PERSON ||--o{ CAR_PASSENGER : "rides along"
+    EVENT ||--o| ROUTE : "has (match day only)"
     EVENT ||--o| ATTENDANCE_RECORD : "has (check on)"
     ATTENDANCE_RECORD ||--o{ ATTENDANCE_ENTRY : includes
     PERSON ||--o{ ATTENDANCE_ENTRY : "is recorded"
@@ -72,3 +81,4 @@ erDiagram
 5. **Lines are standard lines.** There are no different lines for single events.
 6. **One match day, one call-up.** All matches of a match day share one response and one call-up.
 7. **Intention and fact stay separate.** A response is never turned into attendance and attendance never changes a response. Attendance is only recorded where the check is switched on (PRS, E-70).
+8. **One car per person and match day.** A person drives one car or sits in one car, never both, never two. A car never has more passengers than seats (DRV-02, DRV-03).

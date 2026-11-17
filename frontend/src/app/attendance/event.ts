@@ -18,18 +18,19 @@ import { FeedbackService } from '../core/feedback.service';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
 import { MatchDay } from './match-day';
+import { DriverListSection } from '../drivers/driver-list';
 import { OverviewSection } from './overview';
 import { yearOf, eventDate, clockTime } from './time';
 
 /**
  * Event (`/termine/:eventId`): details, status (cancelled with reason, rescheduled), for coaches the
  * link to edit (TER-04, TER-06), the own response and the overview by team and line (F-04, ANM).
- * For match days also call-up and matches (F-05, AUF).
+ * For match days also call-up and matches (F-05, AUF) and the driver list (F-20, DRV).
  */
 @Component({
   selector: 'app-event',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MyResponse, MatchDay, OverviewSection],
+  imports: [RouterLink, MyResponse, MatchDay, DriverListSection, OverviewSection],
   template: `
     <div class="header">
       <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
@@ -103,6 +104,12 @@ import { yearOf, eventDate, clockTime } from './time';
             [canCallUp]="coachOrAdmin()"
             [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
             (changed)="reload()"
+          />
+          <app-driver-list
+            [eventId]="t.id"
+            [meId]="auth.me()?.id ?? null"
+            [canEditEvent]="!!t.canEdit"
+            [version]="version()"
           />
         }
         <section class="card" aria-labelledby="event-details">
@@ -201,6 +208,8 @@ export class EventPage {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
+  /** Counts the reloads, so that the driver list loads again as well (DRV-04 follows the responses). */
+  protected readonly version = signal(0);
 
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
@@ -272,6 +281,7 @@ export class EventPage {
       ]);
       this.event.set(event);
       this.overview.set(overview);
+      this.version.update((v) => v + 1);
     } catch (e) {
       this.error.set(errorText(e));
     }

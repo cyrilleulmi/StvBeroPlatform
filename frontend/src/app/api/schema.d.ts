@@ -778,6 +778,193 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/driver-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Driver list of a match day with cars, passengers, route and who has no seat (DRV-01 to DRV-10)
+         * @description Members of the teams of the match day (any team role), coaches (of any team, E-69) and admins; otherwise 403.
+         *     Not a match day: 409 (rule DRV-01). Without meeting point or venue `ready` is false, `missing` names what is
+         *     missing and there is no `route` (DRV-01). Otherwise the route from the meeting point to the venue is
+         *     calculated on the first view and stored; it is calculated again when meeting point or venue changed, or
+         *     when the service was unavailable more than 10 minutes ago (DRV-05, DRV-07, DRV-08). A cancelled match day
+         *     keeps its list and route, but `creditKm` is missing (DRV-10). `withoutSeat`: with a published call-up the
+         *     called-up players, otherwise the players who responded «dabei», without drivers and passengers (DRV-04).
+         *     `members` only for coaches and admins.
+         */
+        get: operations["getDriverList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/cars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enter a car: oneself, or someone else as coach or admin (DRV-02)
+         * @description Without `driverId` the caller drives. Someone else: only coaches and admins (otherwise 403). The driver must be
+         *     a member of a team of the match day (422, rule DRV-02) and drives at most one car (409, rule DRV-02). If she
+         *     sat in another car, she leaves that seat. Not usable (meeting point or venue missing, DRV-01), cancelled
+         *     (DRV-10), archived season: 409. After the end of the match day only coaches and admins (409, rule DRV-02).
+         *     Seats 1 to 8 (400). Notifies the driver if someone else entered her (DRV-11). Answers with the whole list.
+         */
+        post: operations["addCar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/cars/{carId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the number of seats of a car (DRV-02, DRV-03)
+         * @description The driver herself, coaches and admins. Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
+         *     `addCar`. Notifies the driver if someone else changed it (DRV-11).
+         */
+        put: operations["changeCarSeats"];
+        post?: never;
+        /**
+         * Remove a car; its passengers lose their seat (DRV-02, DRV-11)
+         * @description The driver herself, coaches and admins. The passengers are notified, and the driver if someone else removed
+         *     the car (DRV-11). Same 409 cases as `addCar`.
+         */
+        delete: operations["removeCar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/cars/{carId}/passengers/{personId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put a person into a car, or move her from another car (DRV-03)
+         * @description Oneself: every member of a team of the match day. Someone else: coaches and admins (otherwise 403). A person
+         *     sits in at most one car: from another car she moves. Already in this car: no change. Car full: 409 (rule
+         *     DRV-03). A driver cannot ride along (422, rule DRV-03); not a member: 422 (rule DRV-02). Notifies the driver
+         *     (and the previous driver when moving) and, if someone else made the change, the passenger (DRV-11).
+         */
+        put: operations["addPassenger"];
+        post?: never;
+        /**
+         * Take a person out of a car (DRV-03)
+         * @description Oneself, or someone else as coach or admin. Not in this car: 404. Notifies the driver and, if someone else
+         *     made the change, the passenger (DRV-11).
+         */
+        delete: operations["removePassenger"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Enter the kilometres of the route by hand (DRV-07, coach)
+         * @description Only coaches and admins (otherwise 403). One-way kilometres 0.1 to 1000 (400). The route gets the status
+         *     MANUAL for the current meeting point and venue, without driving time; it stays until meeting point or venue
+         *     change or the route is calculated again. Same 409 cases as `addCar`.
+         */
+        put: operations["setRouteDistance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/route/recalculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calculate the route again with the routing service (DRV-07, coach)
+         * @description Only coaches and admins (otherwise 403). Replaces kilometres entered by hand. If the service is unavailable
+         *     or finds nothing, the route has the status UNAVAILABLE or NOT_FOUND (still 200). Same 409 cases as `addCar`.
+         */
+        post: operations["recalculateRoute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/driver-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trips and credited kilometres per person in a season (DRV-09)
+         * @description Coaches (of any team, E-69) and admins see every person who drove in the season (`everyone: true`), all
+         *     other people only themselves (one row, also with 0 trips). A trip is a car on a match day of the season that
+         *     is not cancelled (DRV-10), upcoming ones included; the credit is twice the distance of the route. Trips
+         *     without known distance count as trips without kilometres (`tripsWithoutDistance`). Routes not yet
+         *     calculated are calculated first. Sorted by name.
+         */
+        get: operations["getDriverSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/statistics": {
         parameters: {
             query?: never;
@@ -1202,6 +1389,30 @@ export interface paths {
          *     (docs/test-data.md).
          */
         put: operations["testSetSuMatches"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test/routing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the routes the routing simulator delivers per pair of places, or an outage (DRV-06)
+         * @description Pairs are matched by the label of the places: the text of the meeting point and the name of the venue,
+         *     ignoring case. Without `distanceKm` there is no route for the pair (DRV-07). `unavailable` makes every
+         *     calculation fail until the next call or reset. After `POST /api/test/reset` the simulator knows
+         *     «Parkplatz Sporthalle Nord» → «Sporthalle Seefeld» (23.4 km, 26 min, match day 04) and «Sporthalle Nord» →
+         *     «Turnhalle Weid» (12.6 km, 16 min, match day 05); every other pair has no route (docs/test-data.md).
+         */
+        put: operations["testSetRouting"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1982,14 +2193,143 @@ export interface components {
              */
             eventId?: string | null;
         };
+        /** @description Driver list of a match day (DRV-01 to DRV-10) */
+        DriverList: {
+            /** Format: uuid */
+            eventId: string;
+            /** @description Meeting point and venue are set, so the list can be used (DRV-01) */
+            ready: boolean;
+            /** @description What is missing before the list can be used (DRV-01) */
+            missing: ("MEETING_POINT" | "VENUE")[];
+            route?: components["schemas"]["Route"];
+            /** @description Match day cancelled: list kept, no credits (DRV-10) */
+            cancelled: boolean;
+            /** @description The caller can enter herself as driver or passenger right now */
+            canJoin: boolean;
+            /** @description Coach or admin: enters and changes drivers and passengers for others, route by hand */
+            canManage: boolean;
+            /** @description The call-up is published: «without seat» counts the called-up players (DRV-04) */
+            callUpPublished: boolean;
+            /** @description By name of the driver */
+            cars: components["schemas"]["Car"][];
+            /** @description Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04) */
+            withoutSeat: components["schemas"]["PersonSummary"][];
+            /** @description Members of the teams of the match day, by name; only for coaches and admins */
+            members?: components["schemas"]["PersonSummary"][];
+        };
+        /** @description A car with its driver and passengers (DRV-02, DRV-03) */
+        Car: {
+            /** Format: uuid */
+            id: string;
+            driver: components["schemas"]["PersonSummary"];
+            /** Format: int32 */
+            seats: number;
+            /** Format: int32 */
+            freeSeats: number;
+            /** @description By name */
+            passengers: components["schemas"]["PersonSummary"][];
+            /**
+             * Format: double
+             * @description Credited kilometres for the return trip; missing without distance or if cancelled (DRV-05, DRV-10)
+             */
+            creditKm?: number | null;
+        };
+        /** @description Route from the meeting point to the venue (DRV-05, DRV-07) */
+        Route: {
+            /** @enum {string} */
+            status: "CALCULATED" | "NOT_FOUND" | "UNAVAILABLE" | "MANUAL";
+            /** @example Parkplatz Sporthalle Nord */
+            from: string;
+            /** @example Sporthalle Seefeld */
+            to: string;
+            /**
+             * Format: double
+             * @example 23.4
+             */
+            distanceKm?: number;
+            /**
+             * Format: int32
+             * @example 26
+             */
+            durationMinutes?: number;
+            /**
+             * Format: double
+             * @description Credit per driver: twice the distance; missing without distance
+             * @example 46.8
+             */
+            creditKm?: number;
+        };
+        /** @description Enter a car (DRV-02): for oneself without `driverId`, for someone else only as coach or admin */
+        CarInput: {
+            /**
+             * Format: uuid
+             * @description Driver; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: int32 */
+            seats: number;
+        };
+        SeatsInput: {
+            /** Format: int32 */
+            seats: number;
+        };
+        /** @description Kilometres of the one-way route entered by hand (DRV-07) */
+        RouteInput: {
+            /** Format: double */
+            distanceKm: number;
+        };
+        /** @description Trips and credited kilometres per person in a season (DRV-09) */
+        DriverSummary: {
+            /** Format: uuid */
+            seasonId: string;
+            /** @example 2026/27 */
+            seasonName: string;
+            /** @description Coach or admin: all drivers; otherwise only the caller */
+            everyone: boolean;
+            rows: components["schemas"]["DriverSummaryRow"][];
+        };
+        DriverSummaryRow: {
+            person: components["schemas"]["PersonSummary"];
+            /** Format: int32 */
+            trips: number;
+            /** Format: double */
+            kilometres: number;
+            /**
+             * Format: int32
+             * @description Trips without known distance (no kilometres credited)
+             */
+            tripsWithoutDistance: number;
+        };
+        RoutingPreset: {
+            /** @description Routes per pair of places (meeting point text, venue name; case is ignored) */
+            routes?: components["schemas"]["RoutingPair"][] | null;
+            /**
+             * @description Simulates an outage of the routing service (DRV-07)
+             * @default false
+             */
+            unavailable: boolean | null;
+        };
+        RoutingPair: {
+            /** @example Parkplatz Sporthalle Nord */
+            from: string;
+            /** @example Sporthalle Seefeld */
+            to: string;
+            /**
+             * Format: double
+             * @description One-way distance; omitted: there is no route for this pair
+             */
+            distanceKm?: number | null;
+            /** Format: int32 */
+            durationMinutes?: number | null;
+        };
         Notification: {
             /** Format: uuid */
             id: string;
             /**
-             * @description Corresponds to BEN-01 to BEN-07
+             * @description Corresponds to BEN-01 to BEN-07 and DRV-11
              * @enum {string}
              */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
             recipient: components["schemas"]["PersonSummary"];
             /** @example Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet. */
             text: string;
@@ -2052,7 +2392,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
             recipient: components["schemas"]["PersonSummary"];
             text: string;
             /** Format: uuid */
@@ -2149,6 +2489,7 @@ export interface components {
         eventId: string;
         seriesId: string;
         matchId: string;
+        carId: string;
     };
     requestBodies: never;
     headers: never;
@@ -3428,6 +3769,254 @@ export interface operations {
             422: components["responses"]["RuleViolation"];
         };
     };
+    getDriverList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    addCar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CarInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    changeCarSeats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeatsInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    removeCar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    addPassenger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    removePassenger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                carId: components["parameters"]["carId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    setRouteDistance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    recalculateRoute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getDriverSummary: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverSummary"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
     getTeamStatistics: {
         parameters: {
             query?: {
@@ -3990,6 +4579,29 @@ export interface operations {
                     /** @description League view (F-17). Omitted, the league view of this team ID stays as it is */
                     league?: components["schemas"]["SuLeague"] | null;
                 };
+            };
+        };
+        responses: {
+            /** @description Set */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    testSetRouting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutingPreset"];
             };
         };
         responses: {

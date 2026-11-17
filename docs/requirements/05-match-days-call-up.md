@@ -55,5 +55,5 @@ The teams play in tournament format: on a match day several matches take place i
 ## Not part of the core
 
 - Different lines for a single match day: dropped (see [LIN-08](02-lines.md)).
-- Driver list with automatic travel time: see [Later features](../later-features.md). Meeting point and venue are already in the model on purpose, so that this can build on them later.
+- Driver list with automatic travel time: built with F-20, see [14 · Driver list](14-driver-list.md). It builds on meeting point and venue.
 - Calling up guest players from other teams: see [Later features](../later-features.md).

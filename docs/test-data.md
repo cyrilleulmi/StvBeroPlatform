@@ -35,6 +35,7 @@ All IDs are UUIDs. The first digit shows the type, the last two the number.
 | Account | `80000000-0000-4000-8000-0000000000NN` (same number as the person) |
 | Notification | `90000000-0000-4000-8000-0000000000NN` |
 | Push device | `a0000000-0000-4000-8000-0000000000NN` |
+| Car (driver list) | `b0000000-0000-4000-8000-0000000000NN` |
 
 ## Seed contents
 
@@ -56,6 +57,7 @@ The seed grows with the features. What is in the seed today:
 | F-17 | League data of Team 1 as loaded by the daily sync on **Mon 16.11.2026 04:30**: «Herren Kleinfeld 3. Liga», «Gruppe 12», table with eight teams and ten matches (see [League of Team 1](#league-of-team-1)). The simulator delivers the same league after the reset. Teams 2 and 3 are not linked and have no league data |
 | F-18 | Anna has a calendar address with the fixed token `seed-anna-calendar-000000000000000000000005` (created 15.11.2026 20:00), so her feed is `/api/calendar/seed-anna-calendar-000000000000000000000005.ics` (through the frontend: `http://localhost:4200/api/calendar/…`). Everybody else gets a random address on the first visit of «Profil». Expected feed in scenario S56 |
 | F-19 | **Kim** switched e-mails off (`notification_preference`); everybody else has e-mails on by default, to `<loginKey>@example.ch`. **Lea** has push on one phone: device `a0000000-0000-4000-8000-000000000001`, «Chrome auf Android», endpoint `https://push.example.test/seed-lea-phone`, registered 15.11.2026 20:00. Nobody else has a push device. The seed notifications 01–18 have no e-mails or pushes. Scenarios S57–S59 |
+| F-20 | Driver list of match day 04 (see [Event 04](#event-04-match-day-sun-22112026-team-1)): car 01 of Petra with 3 seats, full with Anna, Lea, Mia; car 02 of Sara with 3 seats, empty. Jana («dabei») has no seat. No route is stored: it is calculated by the [routing simulator](#simulated-routing) on the first view. Match day 05 has no cars |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -224,6 +226,24 @@ Ohne Linie   ☐ Kim ✗
 
 Petra (coach) is not in the selection (AUF-28).
 
+**Driver list (F-20):**
+
+| Car | Driver | Seats | Passengers |
+|---|---|---|---|
+| 01 `b0000000-0000-4000-8000-000000000001` | Petra Keller | 3 | Mia, Lea, Anna (full) |
+| 02 `b0000000-0000-4000-8000-000000000002` | Sara Brun | 3 | – (3 free) |
+
+Route «Parkplatz Sporthalle Nord → Sporthalle Seefeld»: 23.4 km, about 26 minutes (simulator); credit 46.8 km per car. «Ohne Platz» (call-up in draft, so the players with «dabei»): Jana. Mia («vielleicht») sits in Petra's car anyway.
+
+```
+Strecke    Parkplatz Sporthalle Nord → Sporthalle Seefeld · 23.4 km · etwa 26 Min. Fahrzeit
+Autos      Sara Brun     3 von 3 Plätzen frei · Gutschrift 46.8 km
+           Petra Keller  voll · Gutschrift 46.8 km   Mia Frei, Lea Graf, Anna Muster
+Ohne Platz Jana Wyss
+```
+
+«Fahrten» (`/fahrten`) as `petra`: Sara Brun 1 · 46.8 km, Petra Keller 1 · 46.8 km. As `anna`: 0 Fahrten · 0.0 km.
+
 ### Event 05: Match day Sat 28.11.2026, Team 2
 
 | | |
@@ -342,6 +362,17 @@ Matches of Team 1 in the league view:
 
 So after the reset «Kommende Spiele» shows 01, 02 (both link to event 04), 17 and 18, «Letzte Resultate» shows 16, 15, 14, 13, 12. The past matches are only in the league view, not match days in the app.
 
+## Simulated routing
+
+In the `dev`/`test` profiles the app does not ask OpenRouteService but a simulator (F-20, DRV-06). It matches the pair of places by label (text of the meeting point, name of the venue, case ignored). After reset it knows:
+
+| From | To | Distance | Driving time | Match day |
+|---|---|---|---|---|
+| Parkplatz Sporthalle Nord | Sporthalle Seefeld | 23.4 km | 26 min | 04 |
+| Sporthalle Nord | Turnhalle Weid | 12.6 km | 16 min | 05 |
+
+Every other pair has no route («Für Treffpunkt und Spielort wurde keine Strecke gefunden.»). `PUT /api/test/routing` adds pairs (`routes`, without `distanceKm`: no route) or simulates an outage (`"unavailable": true`); `POST /api/test/reset` resets the simulator.
+
 ## Scenarios for tests
 
 Every scenario starts with `POST /api/test/reset`.
@@ -408,3 +439,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S59 | Lea's phone is gone | `PUT /api/test/delivery` `{"expiredEndpoints":["https://push.example.test/seed-lea-phone"]}`, Petra cancels event 01 | Push `DISCARDED`, Lea has no device any more; her e-mail is `SENT` | BEN-19 |
 | S57 | Renew the address | As `anna` at `/profil` «Adresse erneuern» → «Erneuern» | «Neue Adresse erstellt. Die bisherige funktioniert nicht mehr.», the field shows a new address; the seed address answers 404 | CAL-07 |
 | S43 | Attendance not before the start | As `petra` create an event for Fri 20.11. with «Präsenz erfassen» | Event shows «Die Präsenz lässt sich ab Beginn des Termins erfassen.», no link; API 409 rule PRS-02. Clock to 20.11. 18:00: link «Präsenz erfassen» | PRS-02 |
+| S60 | Ride along | As `jana` at event 04 «Bei Sara Brun mitfahren» | «Du fährst bei Sara Brun mit.», Sara's car «2 von 3 Plätzen frei», «Alle haben einen Platz.»; Sara receives «Jana Wyss fährt am Spieltag So 22.11. bei dir mit.» | DRV-03, DRV-04, DRV-11 |
+| S61 | Full car | As `jana` at event 04: Petra's car shows «voll» and no «mitfahren»; API `PUT …/cars/b0000000-0000-4000-8000-000000000001/passengers/<Jana>` | 409 rule DRV-03 | DRV-03 |
+| S62 | Routing outage | `PUT /api/test/routing` `{"unavailable":true}`, change the meeting point of event 04, open it as `petra` | Hint «Die Strecke lässt sich gerade nicht berechnen …», no credits; «Kilometer erfassen» 21.5 → «21.5 km von Hand erfasst», credit 43.0 km | DRV-07 |
+| S63 | Cancelled match day | Cancel event 04, open it | Notice, cars kept, no credits, list read-only; `/fahrten` empty | DRV-10 |

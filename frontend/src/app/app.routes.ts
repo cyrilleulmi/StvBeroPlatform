@@ -54,6 +54,11 @@ export const routes: Routes = [
           import('./statistics/statistics.routes').then((m) => m.STATISTICS_ROUTES),
       },
       {
+        path: 'fahrten',
+        title: title('Fahrten'),
+        loadComponent: () => import('./drivers/trips').then((m) => m.TripsPage),
+      },
+      {
         path: 'teams',
         title: title('Teams'),
         loadComponent: () => import('./pages/teams/teams').then((m) => m.Teams),
