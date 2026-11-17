@@ -337,8 +337,8 @@ export class Uebersicht {
       this.geaendert.emit();
     } catch (e) {
       const felder = feldfehler(e);
-      if (felder['kommentar']) {
-        this.kommentarFehler.set(felder['kommentar']);
+      if (felder['comment']) {
+        this.kommentarFehler.set(felder['comment']);
       } else {
         this.schliessen();
         this.fehler.set(fehlertext(e));

@@ -333,6 +333,42 @@ test('F-04 K8 S7 ANM-04: Stellvertretend «vielleicht» verlangt einen Kommentar
   await expect(page.getByTestId(`uebersicht-person-${NINA}`)).toHaveAttribute('data-antwort', 'PENDING');
 });
 
+test.describe('Stellvertretende Antwort mit Feldfehler der API', () => {
+  test.use({ erwarteteKonsolenfehler: [/status of 422/] });
+
+  test('F-04 K8 S7 ANM-04: Feldfehler der API zum Kommentar erscheint im Dialog beim Feld', async ({ page }) => {
+    // Die API meldet Feldfehler mit englischem Feldnamen «comment» (Problem Details, NF-40).
+    await page.route(
+      (url) => url.pathname === `/api/events/${T01}/responses/${NINA}`,
+      async (route) => {
+        if (route.request().method() !== 'PUT') return route.fallback();
+        await route.fulfill({
+          status: 422,
+          contentType: 'application/problem+json',
+          body: JSON.stringify({
+            status: 422,
+            title: 'Unprocessable Entity',
+            detail: 'Bei «vielleicht» bitte kurz begründen.',
+            rule: 'ANM-04',
+            fields: [{ field: 'comment', message: 'Kommentar vom Server abgelehnt.' }],
+          }),
+        });
+      },
+    );
+    await anmelden(page, 'petra');
+    await page.goto(`/termine/${T01}`);
+    await page.getByRole('button', { name: 'Antwort für Nina Roth eintragen' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Antwort für Nina Roth eintragen' });
+    await dialog.getByRole('radio', { name: 'vielleicht' }).check();
+    const feld = dialog.getByLabel('Kommentar (bei «vielleicht» Pflicht)');
+    await feld.fill('Vielleicht');
+    await dialog.getByRole('button', { name: 'Speichern' }).click();
+    await expect(feld).toHaveAttribute('aria-invalid', 'true');
+    await expect(feld).toHaveAccessibleDescription('Kommentar vom Server abgelehnt.');
+    await expect(dialog).toBeVisible();
+  });
+});
+
 test('F-04 K8 S8 RR-06: Marc kann nicht für Anna antworten', async ({ page }) => {
   await anmelden(page, 'marc');
   await page.goto(`/termine/${T01}`);

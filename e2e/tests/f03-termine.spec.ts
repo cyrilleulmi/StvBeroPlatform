@@ -245,6 +245,26 @@ test('F-03 K7 S13 TER-06: Abgesagter Termin ist erkennbar, mit Grund', async ({ 
   await barrierefrei(page);
 });
 
+test('F-03 K7 TER-06: Abgesagter Termin hat in der Liste ein korallfarbenes Datum', async ({ page }) => {
+  await anmelden(page, 'anna');
+  await page.goto('/termine');
+  // Das Datum ist das erste Element im Link der Karte (aria-hidden, darum ohne Rolle).
+  const hintergrund = (id: string) =>
+    karte(page, id)
+      .getByRole('link')
+      .evaluate((a) => getComputedStyle(a.firstElementChild as Element).backgroundColor);
+  const koralle = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.background = 'var(--coral-soft)';
+    document.body.append(probe);
+    const farbe = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return farbe;
+  });
+  expect(await hintergrund(T03)).toBe(koralle);
+  expect(await hintergrund(T01)).not.toBe(koralle);
+});
+
 test('F-03 K7 TER-06: Coach sagt einen Termin mit Grund ab', async ({ page }) => {
   await anmelden(page, 'petra');
   await page.goto(`/termine/${T01}/bearbeiten`);

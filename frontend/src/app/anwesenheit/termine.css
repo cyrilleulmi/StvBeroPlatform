@@ -81,7 +81,7 @@
   line-height: 1.2;
 }
 
-li[data-status='ABGESAGT'] .datum {
+li[data-status='CANCELLED'] .datum {
   background: var(--coral-soft);
 }
 
