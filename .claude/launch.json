@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--", "--port", "4200"],
+      "cwd": "frontend",
+      "port": 4200
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": ["-B", "quarkus:dev", "-Dquarkus.console.enabled=false"],
+      "cwd": "backend",
+      "port": 8080
+    }
+  ]
+}
