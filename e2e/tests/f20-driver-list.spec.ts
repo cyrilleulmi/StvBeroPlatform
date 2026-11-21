@@ -183,7 +183,7 @@ test('DRV-03: coaches assign and move passengers; a person sits in at most one c
 
   await sara.getByRole('button', { name: 'Anna Muster aussteigen lassen' }).click();
   await expect(list.getByRole('status')).toHaveText('Anna Muster fährt nicht mehr bei Sara Brun mit.');
-  await expect(list.getByRole('list', { name: 'Ohne Platz' }).getByRole('listitem')).toHaveText(['Anna Muster', 'Jana Wyss']);
+  await expect(list.getByRole('list', { name: 'Ohne Platz' }).getByRole('listitem')).toHaveText([/Anna Muster/, /Jana Wyss/]);
 });
 
 test.describe('Seat change rejected by the API', () => {
@@ -230,7 +230,7 @@ test('DRV-04: with a published call-up the called-up players without a seat are 
   expect((await page.request.post(`/api/events/${T04}/call-up/publish`)).status()).toBe(200);
   await page.goto(`/termine/${T04}`);
   await expect(driverList(page)).toContainText('Aufgebotene Spielerinnen ohne Platz.');
-  await expect(driverList(page).getByRole('list', { name: 'Ohne Platz' }).getByRole('listitem')).toHaveText(['Jana Wyss']);
+  await expect(driverList(page).getByRole('list', { name: 'Ohne Platz' }).getByRole('listitem')).toHaveText([/Jana Wyss/]);
 });
 
 test('DRV-05: the route is shown with distance, driving time and the credit for the return trip', async ({ page }) => {

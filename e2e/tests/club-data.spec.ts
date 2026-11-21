@@ -266,6 +266,13 @@ test('TML-04: a coach takes over the suggested departure as meeting time', async
 
 test('TML-04: without a meeting time the departure is a suggestion', async ({ page }) => {
   await login(page, 'petra');
+  // With the automatic departure switched off for «Spieltag», the meeting time stays open (VAR-08)
+  const variants = await (await page.request.get(`/api/teams/${TEAM_1}/event-variants`)).json();
+  const matchDayVariant = variants.find((v: { kind: string }) => v.kind === 'MATCH_DAY');
+  const switchedOff = await page.request.put(`/api/teams/${TEAM_1}/event-variants/${matchDayVariant.id}`, {
+    data: { name: matchDayVariant.name, color: matchDayVariant.color, autoDeparture: false },
+  });
+  expect(switchedOff.status()).toBe(200);
   const matchDay = await createMatchDay(page, '2026-12-06');
   const added = await page.request.post(`/api/events/${matchDay}/matches`, {
     data: { opponent: 'UHC Drei', startTime: '2026-12-06T10:00:00+01:00', home: false },

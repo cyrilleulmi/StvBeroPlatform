@@ -41,7 +41,7 @@ Default "now": Mon 16.11.2026 06:00. Seed: match day 04 of Team 1 (matches 09:30
 |---|---|---|
 | Whole day (TML-01) | As `anna` open match day 04 | 08:00 Abfahrt, 08:26 Ankunft, Zeit vor dem 1. Spiel 64 Min., Spiel 1 09:30–10:20, Zeit zwischen den Spielen 85 Min., Spiel 2 11:45–12:35, Auslaufen und Duschen 20 Min., 13:21 Rückkehr (ungefähr); hint that the team arrives less than 70 minutes before the first match; no button |
 | Take over the suggestion (TML-04) | As `petra` «Vorschlag als Treffpunkt-Zeit übernehmen» | «Vorschlag für die Abfahrt: 07:50» before; afterwards «Die Treffpunkt-Zeit ist jetzt 07:50.», the hint is gone, the meeting point shows 07:50 |
-| No meeting time (TML-04) | Match day with a meeting point but no time, one match at 10:00 | Meeting point «Zeit offen · …»; departure 08:20 marked «Vorschlag» |
+| No meeting time (TML-04) | Automatic departure of «Spieltag» switched off (VAR-08); match day with a meeting point but no time, one match at 10:00 | Meeting point «Zeit offen · …»; departure 08:20 marked «Vorschlag» |
 | Settings (TML-02, TML-03) | As `petra` set 60 and 45 minutes under `/verwaltung/teams/<Team 1>` | Invalid numbers are refused; the timeline says «Ein Spiel dauert 60 Minuten. Ankunft 45 Minuten vor dem ersten Spiel.» and match 1 ends at 10:30 |
 
 ## Driver plan of the season (DRV-14, DRV-17)
