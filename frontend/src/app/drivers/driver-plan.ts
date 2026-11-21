@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Car, DriverPlan, DriverPlanMatchDay } from '../api/types';
+import type { Car, DriverPlan, DriverPlanMatchDay, DriverSetting } from '../api/types';
 import { clockTime, eventDate, yearOf } from '../attendance/time';
 import { AuthService } from '../core/auth.service';
 import { errorStatus, errorText, fieldErrorsOf } from '../core/error-text';
@@ -250,6 +250,54 @@ import { TEXTS } from '../core/texts';
             </table>
           </div>
         </section>
+
+        <!-- Who can drive, and with how many places: for the proposed driver list (DRV-18) -->
+        <section class="card" aria-labelledby="plan-drivers-title" data-testid="driver-plan-drivers">
+          <h2 id="plan-drivers-title" class="section-title">{{ texts.driving.planSection }}</h2>
+          <p class="secondary-text">{{ texts.driving.planIntro }}</p>
+          <ul class="list drivers" aria-labelledby="plan-drivers-title">
+            @for (x of d.drivers; track x.person.id) {
+              <li
+                class="driver-row"
+                [attr.aria-label]="name(x.person)"
+                [attr.data-testid]="'plan-driver-' + x.person.id"
+                [attr.data-can-drive]="x.canDrive"
+              >
+                <span class="row-title">{{ name(x.person) }}</span>
+                @if (x.canChange) {
+                  <label class="check">
+                    <input
+                      type="checkbox"
+                      [checked]="x.canDrive"
+                      [disabled]="busy()"
+                      [attr.aria-label]="texts.driving.canDriveFor(name(x.person))"
+                      (change)="setDriving(x, $any($event.target).checked, x.carSeats)"
+                    />
+                    {{ texts.driving.canDrive }}
+                  </label>
+                  @if (x.canDrive) {
+                    <label class="seats-field">
+                      <span>{{ texts.driving.seatsShort }}</span>
+                      <select
+                        [attr.aria-label]="texts.driving.seatsFor(name(x.person))"
+                        [disabled]="busy()"
+                        (change)="setDriving(x, true, +$any($event.target).value)"
+                      >
+                        @for (n of carSeatOptions; track n) {
+                          <option [value]="n" [selected]="n === x.carSeats">{{ n }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+                } @else {
+                  <span class="secondary-text">{{
+                    x.canDrive ? texts.driving.yes(x.carSeats) : texts.driving.no
+                  }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </section>
       }
     </div>
   `,
@@ -404,6 +452,33 @@ import { TEXTS } from '../core/texts';
       overflow-x: auto;
       min-width: 0;
     }
+    .driver-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 16px;
+      padding: 8px 0;
+    }
+    .driver-row .row-title {
+      flex: 1 1 180px;
+    }
+    .driver-row .check,
+    .seats-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--touch);
+      font-weight: 600;
+    }
+    .seats-field select {
+      min-height: var(--touch);
+      padding: 0 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-icon);
+      background: var(--surface);
+      color: var(--text);
+      font: 600 14px/1.2 var(--font);
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -507,8 +582,46 @@ export class DriverPlanPage {
     this.selectionError.set(null);
   }
 
+  protected readonly carSeatOptions = [2, 3, 4, 5, 6, 7, 8, 9];
+
+  /** Seats for passengers the driver usually offers: her places minus herself (DRV-18). */
+  private usualSeats(id: string): string {
+    const places = this.data()?.drivers.find((x) => x.person.id === id)?.carSeats ?? 5;
+    return String(Math.max(1, Math.min(8, places - 1)));
+  }
+
+  /** Coach, admin or the person herself: can drive and the places of the car (DRV-18). */
+  protected async setDriving(x: DriverSetting, canDrive: boolean, carSeats: number): Promise<void> {
+    if (this.busy()) return;
+    this.running.set('driving-' + x.person.id);
+    this.error.set(null);
+    this.success.set(null);
+    try {
+      await firstValueFrom(
+        this.http.put(`/api/persons/${x.person.id}/driving`, { canDrive, carSeats }),
+      );
+      this.apply(
+        await firstValueFrom(
+          this.http.get<DriverPlan>(`/api/teams/${this.teamId()}/driver-plan`, {
+            params: this.params(),
+          }),
+        ),
+      );
+      this.success.set(
+        x.person.id === this.meId()
+          ? TEXTS.driving.saved
+          : TEXTS.driving.savedFor(name(x.person)),
+      );
+    } catch (e) {
+      this.error.set(errorText(e));
+    } finally {
+      this.running.set(null);
+    }
+  }
+
   protected setDriver(id: string): void {
     this.driver.set(id);
+    this.seats.set(this.usualSeats(id));
     // Match days on which the new driver already drives are no longer a choice
     this.selected.update((ids) =>
       ids.filter((eventId) => !this.plannable().some((m) => m.eventId === eventId && this.drives(m))),
@@ -551,6 +664,7 @@ export class DriverPlanPage {
     if (!this.driver() || (plan.canManage && !members.some((p) => p.id === this.driver()))) {
       // Coaches plan for anyone of the team; everyone else for themselves
       this.driver.set(plan.canManage ? (members.find((p) => p.id === me)?.id ?? members[0]?.id ?? '') : (me ?? ''));
+      this.seats.set(this.usualSeats(this.driver()));
     }
   }
 

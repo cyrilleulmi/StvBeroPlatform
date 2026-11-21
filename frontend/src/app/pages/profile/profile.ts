@@ -7,6 +7,7 @@ import { TEXTS } from '../../core/texts';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { CalendarSubscriptionSection } from './calendar-subscription';
 import { NotificationSettingsSection } from './notification-settings';
+import { MyDrivingSection } from './driving';
 
 /** One choice in the switch. `preview` is the value of `data-theme` in which the choice shows itself. */
 interface Option {
@@ -22,7 +23,13 @@ interface Option {
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, RouterLink, CalendarSubscriptionSection, NotificationSettingsSection],
+  imports: [
+    Icon,
+    RouterLink,
+    CalendarSubscriptionSection,
+    NotificationSettingsSection,
+    MyDrivingSection,
+  ],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
