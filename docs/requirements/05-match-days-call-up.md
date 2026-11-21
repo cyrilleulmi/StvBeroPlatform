@@ -29,6 +29,8 @@ The teams play in tournament format: on a match day several matches take place i
 
 ## Flow
 
+A team decides per [event variant](16-event-variants.md) whether its match days have a call-up at all ([VAR-06](16-event-variants.md), AUF-33). With a call-up:
+
 1. The players respond to the match day, exactly as for a practice ([04](04-responses.md)).
 2. The coach chooses the call-up.
 3. The coach publishes the call-up. Everyone is notified.
@@ -44,6 +46,8 @@ The teams play in tournament format: on a match day several matches take place i
 | AUF-26 | Anyone who is called up but cannot come after all cancels their response. The coach is notified. | Decided |
 | AUF-27 | If the coach changes a published call-up, the affected players are notified. | Assumption |
 | AUF-28 | Coaches respond to the match day, are listed in the coach block and are not part of the call-up. | Accepted |
+| AUF-33 | A call-up is only made where the event variant of the match day says so ([VAR-06](16-event-variants.md)). Default: no call-up, the responses are enough («nur An- und Abmeldungen»). Without a call-up AUF-21 to AUF-31 do not apply to the match day. | Decided |
+| AUF-34 | The match day shows the current ranks of the league table next to its matches: the rank of the own team with the number of teams and the league («3. Rang von 10 · Herren KF 3. Liga Gruppe 2», linked to the league page), and per match the rank of the opponent («Gegner: 5. Rang»). The call-up screen shows the same lines above the selection. The ranks come from the league data last loaded (F-17), for teams linked with swiss unihockey; an opponent that is not in the table has no rank. | Decided (ranks at the call-up), Assumption (also without a call-up, wording) |
 
 ## Warnings in the call-up (F-16)
 

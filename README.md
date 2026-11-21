@@ -78,6 +78,7 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 13 | [Calendar subscription](docs/requirements/13-calendar.md) | CAL |
 | 14 | [Driver list](docs/requirements/14-driver-list.md) | DRV |
 | 15 | [Timeline of a match day](docs/requirements/15-timeline.md) | TML |
+| 16 | [Event variants](docs/requirements/16-event-variants.md) | VAR |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 

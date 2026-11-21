@@ -16,6 +16,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | TML-06 | The approximate return is the end of the cool down plus the driving time back to the meeting point. | Decided |
 | TML-07 | The driving time is the one of the driver list (DRV-05). Without a meeting point, or without a driving time (no route found, routing unavailable, kilometres entered by hand), departure suggestion, arrival and return are missing and the timeline says why. If the set meeting time leaves less than the arrival lead, the timeline says so. | Assumption |
 | TML-08 | Match duration, arrival lead and the usual meeting point (AUF-32) are settings of the team, changed by coaches (of any team, E-69) and admins under `/verwaltung/teams/:id`. They apply to the team, not per season, and to every match day from then on. With several teams on one match day the longest duration and the longest lead apply. | Assumption |
+| TML-09 | **Automatic departure** ([VAR-08](16-event-variants.md)): if the event variant of the match day says so (default: on), the meeting time is set to the suggested departure by itself, as soon as meeting point, first match and driving time are known, and follows when one of them changes (a match is moved by the sync, the meeting point changes). A meeting time entered by hand is never overwritten; emptying it hands the time back to the automatic. The timeline marks an automatic time «automatisch gesetzt». Nobody is notified about an automatic time. | Decided (option, default on), Assumption (by hand wins, no notification) |
 
 ## Notes
 

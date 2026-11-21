@@ -6,7 +6,7 @@ Status legend: see [README](../../README.md#requirement-status).
 
 | ID | Trigger | Who is notified | Status |
 |---|---|---|---|
-| BEN-01 | The response deadline of an event is approaching and someone has not responded yet. | The person without a response | Accepted |
+| BEN-01 | The response deadline of an event is approaching and someone has not responded yet. People whose teams are all invited without obligation («freiwillig», [TER-16](03-events.md)) are not reminded. | The person without a response | Accepted |
 | BEN-02 | Late cancellation: someone changes to «nicht dabei» or «vielleicht» after the response deadline. | Coaches of the participating teams | Accepted |
 | BEN-03 | A call-up is published. | All players of the team | Accepted |
 | BEN-04 | A called-up player cancels. | Coaches of the team | Decided |

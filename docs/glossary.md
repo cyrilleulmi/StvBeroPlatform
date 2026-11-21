@@ -79,6 +79,14 @@ If a term is missing, add it here in the same style before using it.
 | Abgleich (swiss unihockey) | sync | |
 | Verknüpfung (swiss unihockey) | link | a team at swiss unihockey linked with a team of the app for one season (SUH-11); `su_link`, `SuLink` |
 | Zeitplan (Spieltag) | timeline | from departure to return (TML) |
+| Terminvariante | event variant | how a kind of event looks and behaves in a team: name, colour, call-up or responses only, sections, automatic departure (VAR); four standard variants per team plus the team's own |
+| Abschnitt (Terminseite) | section | part of the event page a variant shows and orders: `RESPONSES`, `MATCHES`, `CALL_UP`, `TIMELINE`, `DRIVER_LIST`, `LINEUPS`, `ATTENDANCE`, `DETAILS` (VAR-07) |
+| Abfahrtszeit automatisch setzen | automatic departure | the meeting time follows the suggested departure until someone enters one by hand (TML-09) |
+| Spezialaufstellung | special line-up | named line-up for a situation such as «Überzahl» (power play) or «Unterzahl» (penalty kill), 1 to 10 places (LIN-13); not a line |
+| erwartet / freiwillig | expected / optional (invited) | per team of an event; invited people are not reminded and not counted as «offen» (TER-15); `EXPECTED`, `OPTIONAL` |
+| Kann fahren, Plätze im Auto | driving settings | per person: can drive, places of the car including herself (DRV-18) |
+| Vorschlag (Fahrerliste) | proposal | driver list worked out by the app; changes nothing until applied (DRV-19) |
+| Reist individuell an | travels on her own (individual travel) | mark per person and match day: needs no seat (DRV-20, ANM-13) |
 | Fahrerliste der Saison | driver plan | all match days of a team in a season with their cars (DRV-14) |
 | Verteilung der Fahrten | shares | trips per member in the season plan (DRV-17) |
 | Üblicher Treffpunkt | usual meeting point | per team, start value of new match days (AUF-32) |

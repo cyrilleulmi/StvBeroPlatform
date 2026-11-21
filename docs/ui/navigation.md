@@ -88,6 +88,15 @@ flowchart LR
 | `/verwaltung/teams/:id` | «Team verwalten» (manage team) | admin, coach | Link «Team ansehen» (to `/teams/:id`, not in the archive), rename, section «swiss unihockey» (admins only) (field «Team-ID bei swiss unihockey», «Verknüpfen», «Verknüpfung lösen», «Jetzt abgleichen» with result as `role="status"`, failure as `role="alert"`; not in the archive), coaches and players with select «Funktion von <Name>» and «<Name> entfernen» (admins only, RR-08), «Person aufnehmen». `?saison=<id>`; archive read-only | F-01, F-07 |
 | `/verwaltung/saisons` | «Saisons» (seasons) | admin (coaches see «Keine Berechtigung») | Seasons with status (current, archive, planned), «Teams ansehen», «Zur aktuellen Saison machen», form «Neue Saison» with carry-over | F-01 |
 
+Added by the batch «event variants» (E-86 to E-89), on the routes above:
+
+- `/termine`: every entry shows the colour (date box) and the name (chip) of its event variant; events that are voluntary for the person carry the chip «Freiwillig», and the checkbox «Freiwillige Termine anzeigen» hides them (`?freiwillig=aus`).
+- `/termine/:id`: «Meine Antwort» first, then the sections of the event variant in its order, by default «Anmeldungen» (the overview), «Spiele», «Aufgebot» (only where the variant makes a call-up), «Zeitplan», «Fahrerliste», «Aufstellungen», «Präsenz», «Angaben». «Spiele» shows the ranks of the league table; the driver list has «Vorschlag erarbeiten» and «Reist individuell an».
+- `/termine/neu`, `/termine/:id/bearbeiten`, `/serien/:id/bearbeiten`: with several teams the group «Wer wird erwartet?»; for single events the field «Variante» if the first team has variants of its own for the type.
+- `/verwaltung/teams/:id`: section «Terminvarianten» with a dialog per variant.
+- `/teams/:id/linien`: section «Spezialaufstellungen» with a dialog (name, number of places, position and player per place).
+- `/teams/:id/fahrerliste`: section «Wer kann fahren». `/profil`: section «Fahren».
+
 Without permission a screen shows the text «Keine Berechtigung» (`role="alert"`) instead of an empty screen. Without login every route redirects to `/anmelden` (or `/dev-login` in test mode) with `?ziel=<original route>` and returns there after login. The frontend checks whether someone is logged in via `GET /api/session` (always 200), so that no errors appear in the console without login.
 
 ## Dialogs
@@ -281,6 +290,27 @@ Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 | `match-su-change`, `match-missing` | On a match in `/termine/:id`: what swiss unihockey changed, with before and after (items with `data-field`), and «swiss unihockey liefert dieses Spiel nicht mehr.»; button «Gesehen» for coaches and admins (SUH-12) |
 | `my-trips-link` | Link «Fahrten ansehen» in `/profil` |
 | `trips`, `trips-season`, `trips-person-<personId>` | Card, subtitle and row (or `dl`) in `/fahrten` |
+
+### Event variants, special line-ups and the rest of the batch «event variants»
+
+| Test ID | Element |
+|---|---|
+| `event-variant` | Chip with the name of the event variant on an entry of `/termine` and under the title of `/termine/:id`; `data-tag` is the colour (`GREEN`, `TEAL`, `BLUE`, `VIOLET`, `PINK`, `RED`, `ORANGE`, `YELLOW`, `GREY`). The entry itself carries `data-variant` (kind) and `data-participation` |
+| `event-optional` | Chip «Freiwillig» on an entry of `/termine`; on `/termine/:id` the note «Für dich freiwillig …» above the own response (TER-17) |
+| `optional-filter`, `optional-hidden` | Checkbox «Freiwillige Termine anzeigen» in `/termine` (`?freiwillig=aus` hides them) and the line «<n> freiwillige Termine sind ausgeblendet.» |
+| `overview-team-optional` | Chip «freiwillig» next to an invited team in the overview |
+| `travels-individually` | Checkbox «Ich reise individuell an …» under the own response on a match day (only with «dabei»); in the overview the chip «reist individuell an» of a person (ANM-13) |
+| `participation` | Group «Wer wird erwartet?» in the event form with one select «Teilnahme <Team>» per chosen team (several teams, not a match day) |
+| `event-variants` | Section «Terminvarianten» in `/verwaltung/teams/:id`; entries `variant-<KIND>` for the standard variants and `variant-<id>` for the team's own (`data-color`, `data-call-up`), `variant-summary`, button `variant-add` |
+| `variant-call-up`, `variant-auto-departure`, `variant-sections` | In the dialog of a variant: checkboxes «Aufgebot machen» and «Abfahrtszeit automatisch setzen» (match days only), list of the sections (items with `data-section`, `data-shown`; checkbox «<Abschnitt> anzeigen», buttons «<Abschnitt> nach oben/unten») |
+| `standing`, `opponent-rank` | In the section «Spiele» of a match day: «2. Rang von 8 · <Liga> · Tabelle ansehen» and per match «Gegner: 1. Rang» (AUF-34); `call-up-ranks` is the card «Tabelle» on `/termine/:id/aufgebot` |
+| `departure-auto` | Chip «automatisch gesetzt» on the departure of the timeline (TML-09) |
+| `driver-proposal` | Button «Vorschlag erarbeiten» in the driver list (coaches, admins); in the dialog `proposal-cars` (items «Auto von <Name>», `data-existing`), `proposal-without-seat`, `proposal-nothing` |
+| `individual`, `individual-self` | List «Reist individuell an» in the driver list and the button «Ich reise individuell an» |
+| `my-driving`, `my-can-drive` | Section «Fahren» in `/profil` with the checkbox «Kann fahren» and the field «Plätze im Auto (mit dir)» |
+| `driver-plan-drivers`, `plan-driver-<personId>` | Section «Wer kann fahren» in `/teams/:id/fahrerliste` and its rows (`data-can-drive`) |
+| `special-lineups`, `special-lineup-<id>`, `special-lineup-add` | Section «Spezialaufstellungen» in `/teams/:id/linien`, one line-up, button «Aufstellung hinzufügen» |
+| `event-lineups` | Section «Aufstellungen» of a match day; places with `data-gap` and `data-empty` (LIN-16) |
 
 ### Lines
 

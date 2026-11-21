@@ -99,6 +99,8 @@ A local database created before F-10 must be reset once with `scripts/db-start.s
 
 Every team has the default match day settings (TML-02, TML-03, AUF-32): a match takes 50 minutes, arrival 70 minutes before the first match, no usual meeting point.
 
+Every team has the four standard event variants (VAR-01) with their defaults, with one exception: in the test data set the match day variants of all three teams make a **call-up** (VAR-11), so that the call-up can be tested; a team created during a test does not. The automatic departure is on (TML-09): match day 04 keeps its meeting time 08:00 because it was entered by hand. IDs of the standard variants are derived from team and kind (`md5(<team id> || <kind>)` as UUID). Everyone can drive and has 5 places (DRV-18). There are no special line-ups, nobody travels on her own, and no team is invited without obligation; tests create these.
+
 ## Groups
 
 | No. | Team | Group | Order |
@@ -495,6 +497,12 @@ Team IDs in the app are `10000000-0000-4000-8000-0000000000NN` with the number a
 
 Every team has the usual meeting point «Oberstufenschulhaus Beromünster» (the home hall, AUF-32), a match duration of 50 minutes and an arrival lead of 70 minutes.
 
+Event variants (VAR-11): only «Herren KF 3. Liga», the first men's team, makes a **call-up** on its match days; all other teams work with the responses alone. The automatic departure is on everywhere, so the match days from swiss unihockey get their meeting time by themselves as soon as they are looked at.
+
+Special line-ups (LIN-13): «Herren KF 3. Liga» and «Damen KF 1. Liga» each have «Überzahl 1» (three places: «Center», «Flügel links», «Flügel rechts»), «Überzahl 2» (the third place empty) and «Unterzahl» (two places without a position).
+
+Driving (DRV-18): the adults can drive with 5 places; the players of the six junior teams cannot. One player of the men has 7 places, one of the women 4, and one of the women cannot drive.
+
 ### People
 
 The key for `/dev-login` is the first name in lower case (`petra`, `reto`, `luca`, …). `/dev-login` lists everyone by team with the coaches on top.
@@ -516,7 +524,7 @@ Players: the four adult teams have 12 each (Linie 1 and Linie 2 with four, two g
 
 ### Events
 
-- **Practices:** every team trains once or twice a week from 17.08.2026 to 30.04.2027 (Christmas break 21.12.–03.01.) in «Oberstufenschulhaus Beromünster». The men's teams share the Tuesday practice, the women's teams the Wednesday practice. Practices of the last four and the next two weeks have responses; the Thursday practice of «Herren KF 3. Liga» and the Monday practice of «Damen KF 1. Liga» record attendance, with records for the last eight weeks (statistics, F-15).
+- **Practices:** every team trains once or twice a week from 17.08.2026 to 30.04.2027 (Christmas break 21.12.–03.01.) in «Oberstufenschulhaus Beromünster». The men's teams share the Tuesday practice, the women's teams the Thursday practice (19:00). On Thursday «Damen KF 1. Liga» is expected and «Damen KF 3. Liga II» is invited without obligation («freiwillig», TER-15): of the second team only a few responded. The next Tuesday practice of the men is changed the same way for this one event: «Herren KF 3. Liga» is expected, «Herren KF 4. Liga II» is invited. Practices of the last four and the next two weeks have responses; the Thursday practice of «Herren KF 3. Liga» and the Monday practice of «Damen KF 1. Liga» record attendance, with records for the last eight weeks (statistics, F-15).
 - **Match days from swiss unihockey** (linked teams): loaded in the background right after the start, visible a few seconds later. They start with the usual meeting point and no meeting time, so their timeline shows a suggested departure (TML-04).
 - **Match days entered by hand** («Herren KF 4. Liga II», events `40000000-0000-4000-8000-00000000000N`, N = 1 to 8): Sundays 9, 6, 3 and 1 weeks ago and in 1, 4, 7 and 10 weeks, two matches each, in real halls of the league with invented opponents. The past ones have a meeting time, results and two cars each (Bruno Felder drives most often); the next one has a meeting time, a draft call-up, a full car, a car with free seats and players without a seat; the later ones have only the usual meeting point.
 - **Vereinsessen:** an event of the type «Anderes» for the adult teams, on a Friday about three weeks from now.
