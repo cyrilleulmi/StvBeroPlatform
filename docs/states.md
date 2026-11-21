@@ -281,7 +281,8 @@ stateDiagram-v2
     [*] --> Current: sync finds new match<br/>match day is created or extended
     Current --> Current: sync without change
     Current --> Changed: time, venue or opponent changed at SU
-    Changed --> Current: taken over, team notified (BEN-06)
+    Changed --> ToConfirm: taken over, team notified (BEN-06),<br/>warning with before and after (SUH-12)
+    ToConfirm --> Current: coach or admin clicks «Gesehen»,<br/>or SU changes everything back
     Current --> NoLongerAvailable: SU no longer delivers match
     NoLongerAvailable --> Current: SU delivers it again
     NoLongerAvailable --> [*]: coach deletes it
@@ -289,12 +290,17 @@ stateDiagram-v2
 
 - The sync only overwrites imported fields: opponent, start time, home/away, venue, result. Meeting point, notes, responses and call-up stay untouched (SUH-06).
 - Matches of the same team on the same day in the same hall form one match day (SUH-04). A new match joins an existing imported match day with the same day and the same hall, otherwise a new match day «Spieltag» is created. Manually created match days never get matches from the sync (SUH-10).
-- Start and end of an affected match day follow its matches: start is the first start time, end is the last plus 75 minutes (assumption F-07). If this changes the start, the match day counts as rescheduled.
+- Start and end of an affected match day follow its matches: start is the first start time, end is the last plus the match duration of the team (TML-02, default 50 minutes; 75 minutes before E-85). If this changes the start, the match day counts as rescheduled.
 - If matches move to another day or another hall, the sync looks at all matches of a match day together: if none stays on the previous day in the previous hall (e.g. a whole tournament one week later), the match day moves with all its matches (new venue and time; meeting point, notes, responses and call-up stay, assumption F-07). If the matches go to different targets, it moves to where most of them go, on a tie to the earliest match. The remaining matches move to the matching or a new match day. If at least one match stays, the match day stays too. A day and a hall always belong to at most one imported match day (SUH-04).
 - All members of the team are notified (BEN-06), once per match day and sync, if time, hall, opponent or home/away of a match changed and the match day is planned and not over. A new result (SUH-08) or a «nicht mehr vorhanden» mark does not notify.
+- A changed match keeps the values it had before the first unconfirmed change (`suChange` of the match: time, hall, opponent, home/away, each with before and after). Coaches and admins see the warning in the event list (`warningCount`), in the overview (`MATCH_CHANGED`) and on the match, until one of them confirms it (`POST /api/events/{eventId}/matches/{matchId}/confirm-su-change`). A second change before that keeps the first «before»; if swiss unihockey changes everything back, the warning disappears by itself. Only match days that are planned and not over get the warning (SUH-12).
+- A match that swiss unihockey lists as «Abgesagt» (no date, hall «???») counts as no longer delivered.
+- A team can have several links in a season; the sync takes the matches of all of them (SUH-11). If the last link of a team is removed, the imported matches of its upcoming match days are marked «nicht mehr vorhanden».
+- A match day created by the sync starts with the usual meeting point of the team and no meeting time (AUF-32); its end is the last start plus the match duration of the team (TML-02, default 50 minutes).
+- After every sync the links remember when it ran and whether it worked (SUH-13).
 - A match «nicht mehr vorhanden» (no longer available) stays until the coach removes it: in `/termine/:id/bearbeiten` with «Spiel <n> entfernen» and «Änderungen speichern» (`DELETE /api/events/{eventId}/matches/{matchId}`). Imported matches that swiss unihockey still delivers cannot be removed (SUH-06, #44).
 - The sync only overwrites the result if swiss unihockey delivers one; a manually entered result stays otherwise (O-47).
-- If swiss unihockey cannot be reached or delivers something unexpected, nothing changes. The manual sync reports it (502, rule SUH-09), the daily run (04:30) tries again the next day; a failing team does not hold up the others (SUH-09).
+- If swiss unihockey cannot be reached or delivers something unexpected, nothing changes. The manual sync reports it (502, rule SUH-09) and the link shows the failed attempt (SUH-13), the daily run (04:30) tries again the next day; a failing team does not hold up the others (SUH-09).
 - The current season is synced. A team without a link or outside the current season: 409.
 
 ## Notification

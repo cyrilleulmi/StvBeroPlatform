@@ -378,6 +378,8 @@ class NotificationChannelsTest {
     void removedDeviceGetsNoPendingPush() {
         deliveryMode("{\"failing\":[\"PUSH\"]}");
         cancelT01();
+        // The first attempt runs in the background right after the commit; wait for it before removing the device
+        created("EVENT_CANCELLED");
         given().cookie("stv_session", login("lea")).delete("/api/me/push-subscriptions/" + LEA_PHONE).then().statusCode(204);
         deliveryMode("{}");
         clock("2026-11-16T06:01:00+01:00");

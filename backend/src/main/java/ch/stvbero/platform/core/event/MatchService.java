@@ -65,6 +65,21 @@ public class MatchService {
         match.delete();
     }
 
+    /**
+     * A coach or admin confirms that she has seen what swiss unihockey changed about the match (SUH-12). The
+     * warning disappears; the change itself was already applied by the sync.
+     */
+    @Transactional
+    public MatchDto confirmSuChange(CurrentUser user, UUID eventId, UUID matchId) {
+        Event event = EventService.find(eventId);
+        checkCanEdit(user, event);
+        Match match = find(event, matchId);
+        event.season.checkWritable();
+        MatchRules.checkHasSuChange(match.suChangedAt);
+        match.clearSuChange();
+        return match.dto();
+    }
+
     private static void checkCanEdit(CurrentUser user, Event event) {
         EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, event.teams, event.season));
     }

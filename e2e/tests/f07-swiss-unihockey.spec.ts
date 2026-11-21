@@ -64,7 +64,7 @@ function section(page: Page) {
 async function syncAsAlex(page: Page): Promise<void> {
   await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
-  await expect(section(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
+  await expect(section(page).getByTestId('su-link-900001')).toContainText('Herren KF 3. Liga (Team-ID 900001)');
   await section(page).getByRole('button', { name: 'Jetzt abgleichen' }).click();
 }
 
@@ -94,20 +94,26 @@ test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the s
   await expect(su.getByRole('button', { name: 'Jetzt abgleichen' })).toHaveCount(0);
   await checkAccessibility(page);
 
-  // Required field: digits only
-  await su.getByLabel('Team-ID bei swiss unihockey').fill('abc');
-  await su.getByRole('button', { name: 'Verknüpfen' }).click();
-  await expect(su.getByText('Bitte eine Team-ID eingeben (nur Ziffern).')).toBeVisible();
-  await expect(su.getByLabel('Team-ID bei swiss unihockey')).toHaveAttribute('aria-invalid', 'true');
+  // Linking happens in a dialog (E-84); the team ID can still be typed by hand. Digits only
+  await su.getByRole('button', { name: 'Team verknüpfen' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Team-ID von Hand eingeben').check();
+  await dialog.getByLabel('Team-ID bei swiss unihockey').fill('abc');
+  await dialog.getByRole('button', { name: 'Verknüpfen', exact: true }).click();
+  await expect(dialog.getByText('Bitte ein Team wählen oder eine Team-ID eingeben (nur Ziffern).')).toBeVisible();
+  await expect(dialog.getByLabel('Team-ID bei swiss unihockey')).toHaveAttribute('aria-invalid', 'true');
 
-  await su.getByLabel('Team-ID bei swiss unihockey').fill('900002');
-  await su.getByRole('button', { name: 'Verknüpfen' }).click();
-  await expect(page.getByRole('status')).toHaveText('Das Team ist mit Team-ID 900002 verknüpft.');
-  await expect(su.getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900002.');
+  await dialog.getByLabel('Team-ID bei swiss unihockey').fill('900002');
+  await dialog.getByRole('button', { name: 'Verknüpfen', exact: true }).click();
+  // Linking loads the matches right away (SUH-02)
+  await expect(page.getByRole('status')).toHaveText(
+    'Verknüpft mit Damen KF 2. Liga (Team-ID 900002). Die Spiele sind geladen.',
+  );
+  await expect(su.getByTestId('su-link-900002')).toBeVisible();
 
   await su.getByRole('button', { name: 'Jetzt abgleichen' }).click();
   await expect(page.getByRole('status')).toHaveText(
-    'Abgleich fertig: 1 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 0 unverändert.',
+    'Abgleich fertig: 0 neu, 0 geändert, 0 nicht mehr bei swiss unihockey, 1 unverändert.',
   );
   await checkAccessibility(page);
 
@@ -124,21 +130,25 @@ test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the s
 test('F-07 K1 SUH-02: Unlink', async ({ page }) => {
   await login(page, 'alex');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
-  await section(page).getByRole('button', { name: 'Verknüpfung lösen' }).click();
+  await section(page).getByRole('button', { name: /^Verknüpfung lösen/ }).click();
   await expect(page.getByRole('status')).toHaveText('Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.');
   await expect(section(page).getByTestId('su-status')).toHaveText('Nicht verknüpft.');
-  await expect(section(page).getByLabel('Team-ID bei swiss unihockey')).toHaveValue('');
+  await expect(section(page).getByRole('button', { name: 'Jetzt abgleichen' })).toHaveCount(0);
 });
 
-test('F-07 K1 RR-07: Only admins link and sync', async ({ page }) => {
-  // Since F-12 Petra (coach) manages the team, but the section «swiss unihockey» stays with admins (RR-04)
+test('F-07 K1 RR-07: Coaches and admins link and sync, players do not', async ({ page }) => {
+  // Since E-84 coaches (of any team) link and sync too
   await login(page, 'petra');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
-  await expect(section(page)).toHaveCount(0);
-  expect((await page.request.put(`/api/teams/${TEAM_1}/swiss-unihockey`, { data: { suTeamId: null } })).status()).toBe(403);
-  const response = await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`);
-  expect(response.status()).toBe(403);
+  await expect(section(page).getByRole('button', { name: 'Team verknüpfen' })).toBeVisible();
+  expect((await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`)).status()).toBe(200);
+
+  await login(page, 'anna');
+  expect(
+    (await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/links`, { data: { suTeamId: 900002 } })).status(),
+  ).toBe(403);
+  expect((await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`)).status()).toBe(403);
 });
 
 test('F-07 K2: In profile dev/test the simulator delivers the matches of event 04', async ({ page }) => {
@@ -261,7 +271,8 @@ test.describe('F-07 K6 SUH-09', () => {
     await expect(page.getByRole('alert')).toHaveText(
       'swiss unihockey ist im Moment nicht erreichbar. Es wurde nichts geändert. Der nächste Abgleich versucht es wieder.',
     );
-    await expect(section(page).getByTestId('su-status')).toHaveText('Verknüpft mit Team-ID 900001.');
+    // The link stays and says that its last sync failed (SUH-13)
+    await expect(section(page).getByTestId('su-link-900001')).toHaveAttribute('data-sync', 'failed');
 
     await login(page, 'petra');
     await page.goto(`/termine/${T04}`);

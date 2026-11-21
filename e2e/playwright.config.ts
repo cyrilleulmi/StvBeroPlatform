@@ -2,7 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * E2E tests (docs/testability.md). Every test runs on mobile and on desktop.
- * Backend (profile dev) and frontend are started if they are not already running.
+ * Backend (profile dev) and frontend are started if they are not already running. The tests reset the
+ * database before every test: to keep an app you are trying out by hand, run scripts/e2e-isolated.sh,
+ * which gives the tests their own database and ports.
  * The database must be running: scripts/db-start.sh (local) or service container (CI).
  */
 export default defineConfig({
@@ -34,10 +36,14 @@ export default defineConfig({
       use: { viewport: { width: 1280, height: 800 } },
     },
   ],
-  webServer: [
+  // scripts/e2e-isolated.sh starts its own backend and frontend on other ports and passes BASE_URL
+  webServer: process.env.E2E_NO_WEBSERVER ? undefined : [
     {
       command: 'mvn -B -q quarkus:dev -Dquarkus.console.enabled=false',
       cwd: '../backend',
+      // Start with the test data set and the simulators: the tests never ask the real swiss unihockey
+      // (docs/test-data.md, data sets). A backend that is already running is reset by every test anyway.
+      env: { STV_SIMULATION: 'true' },
       url: 'http://localhost:8080/api/test/clock',
       reuseExistingServer: true,
       timeout: 300_000,

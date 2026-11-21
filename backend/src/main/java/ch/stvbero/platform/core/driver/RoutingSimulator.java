@@ -2,6 +2,7 @@ package ch.stvbero.platform.core.driver;
 
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Typed;
 
 import java.util.Locale;
 import java.util.Map;
@@ -10,12 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Simulates the routing service in the profiles {@code dev} and {@code test} (DRV-06, docs/test-data.md,
- * simulated routing). Fixed values per pair of places, matched by the label of the places (meeting point text,
+ * Simulates the routing service while the app simulates ({@code Simulation}: the test data set in the profiles
+ * {@code dev} and {@code test}; DRV-06, docs/test-data.md, simulated routing). Fixed values per pair of places, matched by the label of the places (meeting point text,
  * venue name), ignoring case. After the reset it knows the routes of match days 04 and 05; every other pair has
  * no route. The test support endpoint {@code PUT /api/test/routing} adds pairs or simulates an outage.
  */
 @ApplicationScoped
+@Typed(RoutingSimulator.class)
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
 public class RoutingSimulator implements Routing {
 

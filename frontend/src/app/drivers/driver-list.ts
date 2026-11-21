@@ -297,7 +297,18 @@ export function km(value: number | null | undefined): string {
             </ul>
           }
         }
-        <a routerLink="/fahrten" class="summary-link" data-testid="driver-summary-link">{{ s.summaryLink }}</a>
+        <div class="links">
+          @if (teamId(); as team) {
+            <!-- Often one person plans the drivers of the whole season (DRV-14) -->
+            <a
+              [routerLink]="['/teams', team, 'fahrerliste']"
+              class="summary-link"
+              data-testid="driver-plan-link"
+              >{{ texts.driverPlan.link }}</a
+            >
+          }
+          <a routerLink="/fahrten" class="summary-link" data-testid="driver-summary-link">{{ s.summaryLink }}</a>
+        </div>
       }
     </section>
 
@@ -386,6 +397,8 @@ export class DriverListSection {
   protected readonly has = (v: number | null | undefined): v is number => v !== null && v !== undefined;
 
   readonly eventId = input.required<string>();
+  /** Team of the match day, for the link to its driver plan of the season (DRV-14). */
+  readonly teamId = input<string | null>(null);
   /** ID of the signed-in person. */
   readonly meId = input<string | null>(null);
   /** Coach or admin who may edit the event: hint where meeting point and venue are entered. */

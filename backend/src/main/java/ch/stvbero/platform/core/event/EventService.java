@@ -239,7 +239,8 @@ public class EventService {
         event.location = Location.of(input.location());
         event.notes = EventRules.blankToNull(input.notes());
         event.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
-        event.meetingPointTime = input.meetingPoint() == null ? null : input.meetingPoint().time().toInstant();
+        event.meetingPointTime = input.meetingPoint() == null || input.meetingPoint().time() == null ? null
+                : input.meetingPoint().time().toInstant();
         event.meetingPointLocation = input.meetingPoint() == null ? null : input.meetingPoint().location().strip();
         if (input.attendanceCheck() != null) {
             event.attendanceCheck = input.attendanceCheck();

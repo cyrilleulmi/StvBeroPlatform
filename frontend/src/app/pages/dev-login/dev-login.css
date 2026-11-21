@@ -92,3 +92,107 @@
 .person app-icon {
   color: var(--muted);
 }
+
+/* Data set, search, jump links and groups */
+.dev-login {
+  max-width: 720px;
+}
+
+.data-set {
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.data-set h2,
+.data-set p {
+  margin: 0;
+}
+
+.data-set h2 {
+  font-size: 16px;
+}
+
+.data-set-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.groups {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jump-link {
+  min-height: var(--touch);
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: 700 13px/1.2 var(--font);
+  cursor: pointer;
+}
+
+.jump-link:hover {
+  background: var(--primary-soft);
+}
+
+.group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  scroll-margin-top: 12px;
+}
+
+.group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 17px;
+}
+
+.count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.name-block {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.also {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.details {
+  flex: none;
+}
+
+/* Coaches stand out: chip and a bar on the left, not only a colour */
+li[data-role='coach'] .person {
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+.chip[data-kind='coach'] {
+  background: var(--primary);
+  color: var(--on-primary);
+}

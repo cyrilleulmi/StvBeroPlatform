@@ -458,12 +458,15 @@ export class EventForm {
     };
   }
 
-  /** Meeting point of a match day on the day of the match day (AUF-12); both fields empty: none. */
+  /**
+   * Meeting point of a match day on the day of the match day (AUF-12); without a place: none. The time may
+   * stay open, the timeline then suggests a departure (TML-04).
+   */
   private meetingPoint(): MeetingPoint | null {
     const w = this.values();
     const location = w.meetingPointLocation.trim();
-    if (!w.meetingPointTime || !location) return null;
-    return { time: zurich(w.date, w.meetingPointTime), location: location };
+    if (!location) return null;
+    return { time: w.meetingPointTime ? zurich(w.date, w.meetingPointTime) : null, location: location };
   }
 
   /**
@@ -565,7 +568,6 @@ export class EventForm {
       const time = !!w.meetingPointTime;
       const location = !!w.meetingPointLocation.trim();
       if (time && !location) f.meetingPointLocation = TEXTS.eventForm.meetingPointBoth;
-      if (!time && location) f.meetingPointTime = TEXTS.eventForm.meetingPointBoth;
       for (const z of this.matches()) {
         if (z.source !== 'MANUAL') continue;
         if (!z.opponent.trim()) matchFieldErrors[`${z.key}-opponent`] = required('den Gegner');
@@ -639,7 +641,7 @@ export class EventForm {
           mapsUrl: t.location?.mapsUrl ?? '',
           notes: t.notes ?? '',
           responseDeadline: String(t.responseDeadlineHours ?? 24),
-          meetingPointTime: t.meetingPoint ? inputParts(t.meetingPoint.time).time : '',
+          meetingPointTime: t.meetingPoint?.time ? inputParts(t.meetingPoint.time).time : '',
           meetingPointLocation: t.meetingPoint?.location ?? '',
           attendanceCheck: t.attendanceCheck ?? false,
         });

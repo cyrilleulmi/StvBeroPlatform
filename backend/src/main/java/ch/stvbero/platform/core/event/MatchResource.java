@@ -91,6 +91,22 @@ public class MatchResource {
         return Response.noContent().build();
     }
 
+    @POST
+    @Path("/matches/{matchId}/confirm-su-change")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "confirmSuChange", summary = "Confirm a change by swiss unihockey as seen; the warning disappears (SUH-12, coach)")
+    @APIResponse(responseCode = "200", description = "Confirmed",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MatchDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public MatchDto confirmSuChange(@PathParam("eventId") UUID eventId, @PathParam("matchId") UUID matchId) {
+        return matches.confirmSuChange(auth.person(), eventId, matchId);
+    }
+
     @GET
     @Path("/call-up")
     @Produces(MediaType.APPLICATION_JSON)

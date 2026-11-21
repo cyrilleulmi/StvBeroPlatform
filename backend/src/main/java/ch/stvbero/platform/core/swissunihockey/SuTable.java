@@ -52,6 +52,11 @@ final class SuTable {
                     // skip rows without a match in between (e.g. headings)
                     continue;
                 }
+                if (withoutDate(text(row.path("cells").path(0)))) {
+                    // «Abgesagt» instead of date and time, hall «???» (recorded live on 21.11.2026): swiss
+                    // unihockey has cancelled the match. It counts as no longer delivered (SUH-12).
+                    continue;
+                }
                 matches.add(match(row, id, today));
             }
         }
@@ -94,6 +99,13 @@ final class SuTable {
         }
         return new SuMatch(suMatchId, startTime.atZone(BackendClock.ZONE).toInstant(), home, away, hall, location, mapsUrl,
                 latitude, longitude, result);
+    }
+
+    /** A status word such as «Abgesagt» instead of a date: no digit and none of the relative days. */
+    private static boolean withoutDate(String text) {
+        String lower = text.toLowerCase();
+        return !text.isBlank() && text.chars().noneMatch(Character::isDigit)
+                && !lower.contains("heute") && !lower.contains("gestern") && !lower.contains("morgen");
     }
 
     private static LocalDateTime startTime(String text, LocalDate today, int suMatchId) {

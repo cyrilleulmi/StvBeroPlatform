@@ -11,6 +11,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Registering a tile | Backend: CDI bean that implements `TileDefinition` (metadata, `visibleFor`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `core/icon.ts` |
 | «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/clock` |
 | Test helpers | Build property `stv.test-support` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
+| Outside world | swiss unihockey and routing sit behind an interface with a real client and a simulator. A switch (`SuSource`, `RoutingSwitch`) picks at runtime: the simulator while `Simulation` is on (test data set), the real client otherwise. Production has no simulators. `POST /api/test/reset?dataset=` switches (E-85) |
 | Login | Cookie `stv_session` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Public` require a session (401) |
 | Errors | `DomainError` → Problem Details (`application/problem+json`), validation → 400 with `fields` |
 | Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01) |

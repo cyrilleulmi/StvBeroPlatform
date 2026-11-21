@@ -53,7 +53,7 @@ final class SuRanking {
                 table.add(standing(row, columns));
             }
         }
-        String league = text(data.path("title"));
+        String league = leagueName(text(data.path("title")));
         String group = text(data.path("subtitle"));
         if (group == null && league != null) {
             // Some responses put the group into the title, e.g. «Herren Kleinfeld 3. Liga Gruppe 12»
@@ -64,6 +64,23 @@ final class SuRanking {
             }
         }
         return new SuLeague(league, group, table, List.of());
+    }
+
+    private static final Pattern TITLE_PREFIX = Pattern.compile("^Tabelle\\s+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern TITLE_SUFFIX = Pattern.compile(
+            "(\\s+\\d{4}/\\d{2,4})?(\\s+per\\s+\\d{1,2}\\.\\d{1,2}\\.\\d{2,4})?\\s*$", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * The league name without what the real interface puts around it: «Tabelle Damen KF 1. Liga Gruppe 2 2026/27
+     * per 21.11.2026» becomes «Damen KF 1. Liga Gruppe 2» (recorded live on 21.11.2026).
+     */
+    static String leagueName(String title) {
+        if (title == null) {
+            return null;
+        }
+        String name = TITLE_SUFFIX.matcher(TITLE_PREFIX.matcher(title.strip()).replaceFirst("")).replaceFirst("")
+                .strip();
+        return name.isEmpty() ? null : name;
     }
 
     /** Column index by meaning, from the header texts. */

@@ -19,6 +19,7 @@ import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
 import { MatchDay } from './match-day';
 import { DriverListSection } from '../drivers/driver-list';
+import { TimelineSection } from '../drivers/timeline';
 import { OverviewSection } from './overview';
 import { yearOf, eventDate, clockTime } from './time';
 
@@ -30,7 +31,7 @@ import { yearOf, eventDate, clockTime } from './time';
 @Component({
   selector: 'app-event',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MyResponse, MatchDay, DriverListSection, OverviewSection],
+  imports: [RouterLink, MyResponse, MatchDay, TimelineSection, DriverListSection, OverviewSection],
   template: `
     <div class="header">
       <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
@@ -103,10 +104,18 @@ import { yearOf, eventDate, clockTime } from './time';
             [event]="t"
             [canCallUp]="coachOrAdmin()"
             [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
+            [canConfirm]="!!t.canEdit"
+            (changed)="reload()"
+          />
+          <app-timeline
+            [eventId]="t.id"
+            [team]="t.teams[0]?.name ?? ''"
+            [version]="version()"
             (changed)="reload()"
           />
           <app-driver-list
             [eventId]="t.id"
+            [teamId]="t.teams[0]?.id ?? null"
             [meId]="auth.me()?.id ?? null"
             [canEditEvent]="!!t.canEdit"
             [version]="version()"
@@ -142,7 +151,9 @@ import { yearOf, eventDate, clockTime } from './time';
             }
             @if (t.meetingPoint; as mp) {
               <dt>{{ texts.events.meetingPoint }}</dt>
-              <dd data-testid="meeting-point">{{ clockTime(mp.time) }} · {{ mp.location }}</dd>
+              <dd data-testid="meeting-point">
+                {{ mp.time ? clockTime(mp.time) : texts.events.meetingPointTimeOpen }} · {{ mp.location }}
+              </dd>
             }
             <dt>{{ texts.events.responseDeadline }}</dt>
             <dd data-testid="response-deadline">

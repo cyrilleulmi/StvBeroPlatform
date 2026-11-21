@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Match, MatchInput, EventDetail } from '../api/types';
 import { fieldErrorsOf, errorText } from '../core/error-text';
+import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { clockTime } from './time';
 
@@ -26,7 +27,7 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 @Component({
   selector: 'app-match-day',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   template: `
     @if (event().myCallUp || canCallUp()) {
       <section class="card call-up" aria-labelledby="match-day-call-up-title">
@@ -70,9 +71,37 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
                   <span class="result">{{ s.result(m.result) }}</span>
                 }
                 @if (m.missingAtSu) {
-                  <span class="secondary-text">{{ s.missingAtSu }}</span>
+                  <span class="su-warning" data-testid="match-missing">
+                    <app-icon name="triangle-alert" [size]="16" />
+                    <span>{{ s.missingAtSu }}</span>
+                  </span>
+                }
+                @if (m.suChange; as change) {
+                  <span class="su-warning" data-testid="match-su-change">
+                    <app-icon name="triangle-alert" [size]="16" />
+                    <span>
+                      <strong>{{ s.suChangeTitle }}</strong>
+                      @for (item of change.changes; track item.field) {
+                        <span class="su-change-item" [attr.data-field]="item.field">{{
+                          s.suChangeItem(s.suChangeField[item.field], item.before, item.after)
+                        }}</span>
+                      }
+                    </span>
+                  </span>
                 }
               </span>
+              @if (m.suChange && canConfirm()) {
+                <button
+                  type="button"
+                  class="button button-secondary button-small"
+                  [attr.aria-label]="s.confirmSuChangeFor(pairing(m))"
+                  [disabled]="running()"
+                  [attr.aria-busy]="confirming() === m.id ? 'true' : null"
+                  (click)="confirm(m)"
+                >
+                  {{ s.confirmSuChange }}
+                </button>
+              }
               @if (canEnterResult()) {
                 <button
                   type="button"
@@ -155,6 +184,8 @@ export class MatchDay {
   readonly canCallUp = input(false);
   /** Coach of the team or admin, match day not cancelled: enter results (AUF-15). */
   readonly canEnterResult = input(false);
+  /** Coach of the team or admin: confirm a change by swiss unihockey as seen (SUH-12). */
+  readonly canConfirm = input(false);
 
   readonly changed = output<void>();
 
@@ -162,6 +193,8 @@ export class MatchDay {
   protected readonly result = signal('');
   protected readonly resultError = signal<string | null>(null);
   protected readonly running = signal(false);
+  /** ID of the match whose change is being confirmed. */
+  protected readonly confirming = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
 
@@ -190,6 +223,27 @@ export class MatchDay {
 
   protected close(): void {
     this.dialog()?.nativeElement.close();
+  }
+
+  /** The coach has seen what swiss unihockey changed: the warning disappears (SUH-12). */
+  protected async confirm(m: Match): Promise<void> {
+    if (this.running()) return;
+    this.running.set(true);
+    this.confirming.set(m.id);
+    this.message.set(null);
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.http.post<Match>(`/api/events/${this.event().id}/matches/${m.id}/confirm-su-change`, null),
+      );
+      this.message.set(this.s.suChangeConfirmed(this.pairing(m)));
+      this.changed.emit();
+    } catch (e) {
+      this.error.set(errorText(e));
+    } finally {
+      this.running.set(false);
+      this.confirming.set(null);
+    }
   }
 
   protected async save(domEvent: Event): Promise<void> {

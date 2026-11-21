@@ -90,4 +90,20 @@ public final class WarningRules {
         });
         return warnings;
     }
+
+    /**
+     * Warnings about imported matches (SUH-12): {@code changed} matches that swiss unihockey changed and no coach
+     * or admin confirmed yet, {@code missing} matches it no longer delivers. One warning per kind with the number
+     * of matches as {@code count}; they belong to the match day, {@code team} is its first team.
+     */
+    public static List<WarningDto> suWarnings(OverviewDto.TeamName team, int changed, int missing) {
+        List<WarningDto> warnings = new ArrayList<>();
+        if (changed > 0) {
+            warnings.add(new WarningDto(WarningType.MATCH_CHANGED, team, null, null, changed, 0));
+        }
+        if (missing > 0) {
+            warnings.add(new WarningDto(WarningType.MATCH_MISSING, team, null, null, missing, 0));
+        }
+        return warnings;
+    }
 }

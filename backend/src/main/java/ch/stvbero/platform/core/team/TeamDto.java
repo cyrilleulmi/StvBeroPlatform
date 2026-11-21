@@ -9,6 +9,11 @@ public record TeamDto(UUID id, String name, Integer suTeamId, TeamRole myTeamRol
 
     /** Team with the name it has in this season (SAI-02). */
     public static TeamDto of(TeamSeason ts, TeamRole myTeamRole) {
-        return new TeamDto(ts.team.id, ts.name, ts.team.suTeamId, myTeamRole);
+        return new TeamDto(ts.team.id, ts.name, ts.team.suTeamIdIn(ts.season), myTeamRole);
+    }
+
+    /** As {@link #of(TeamSeason, TeamRole)}, with the team ID at swiss unihockey already looked up. */
+    public static TeamDto of(TeamSeason ts, TeamRole myTeamRole, Integer suTeamId) {
+        return new TeamDto(ts.team.id, ts.name, suTeamId, myTeamRole);
     }
 }

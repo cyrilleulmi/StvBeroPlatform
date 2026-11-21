@@ -77,6 +77,12 @@ If a term is missing, add it here in the same style before using it.
 | Recht | permission | |
 | Archiv | archive | past seasons |
 | Abgleich (swiss unihockey) | sync | |
+| Verknüpfung (swiss unihockey) | link | a team at swiss unihockey linked with a team of the app for one season (SUH-11); `su_link`, `SuLink` |
+| Zeitplan (Spieltag) | timeline | from departure to return (TML) |
+| Fahrerliste der Saison | driver plan | all match days of a team in a season with their cars (DRV-14) |
+| Verteilung der Fahrten | shares | trips per member in the season plan (DRV-17) |
+| Üblicher Treffpunkt | usual meeting point | per team, start value of new match days (AUF-32) |
+| Datensatz | data set | test data set or club data set in dev (docs/test-data.md) |
 | swiss unihockey | swiss unihockey | proper name, also «SU» |
 | Darstellung | theme | |
 | Übersicht (Anwesenheit) | overview | |

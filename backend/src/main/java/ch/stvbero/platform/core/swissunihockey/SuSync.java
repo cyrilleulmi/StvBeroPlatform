@@ -6,8 +6,8 @@ import ch.stvbero.platform.core.notification.Notifications;
 import ch.stvbero.platform.core.notification.Message;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.season.Season;
+import ch.stvbero.platform.core.team.SuLink;
 import ch.stvbero.platform.core.team.Team;
-import ch.stvbero.platform.core.team.TeamDto;
 import ch.stvbero.platform.core.team.TeamSeason;
 import ch.stvbero.platform.core.event.Location;
 import ch.stvbero.platform.core.event.MatchSource;
@@ -18,6 +18,7 @@ import ch.stvbero.platform.core.event.EventRules;
 import ch.stvbero.platform.core.event.EventStatus;
 import ch.stvbero.platform.core.event.EventType;
 import ch.stvbero.platform.core.clock.BackendClock;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,9 +26,11 @@ import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -42,7 +45,9 @@ import java.util.UUID;
  *   <li>New matches become match days: the same day and the same hall give one match day (SUH-04).</li>
  *   <li>Changed matches are applied. Meeting point, notes, responses and call-up stay (SUH-05, SUH-06);
  *       the team is notified (BEN-06).</li>
- *   <li>Matches that swiss unihockey no longer delivers are marked, not deleted.</li>
+ *   <li>Matches that swiss unihockey no longer delivers are marked, not deleted. Changed and missing matches
+ *       show a warning to coaches and admins (SUH-12).</li>
+ *   <li>A team can have several links in a season; the sync takes the matches of all of them (SUH-11).</li>
  *   <li>Match days and matches entered by hand stay untouched (SUH-10).</li>
  *   <li>If swiss unihockey is not reachable, nothing changes (502, SUH-09).</li>
  * </ul>
@@ -54,6 +59,9 @@ public class SuSync {
 
     public static final String UNAVAILABLE = "swiss unihockey ist im Moment nicht erreichbar. Es wurde nichts "
             + "geändert. Der nächste Abgleich versucht es wieder.";
+
+    /** What the app says about a failed sync on the links (SUH-13). */
+    public static final String FAILED = "swiss unihockey war nicht erreichbar oder hat unerwartete Daten geliefert.";
 
     @Inject
     SwissUnihockeySource source;
@@ -67,41 +75,26 @@ public class SuSync {
     @Inject
     BackendClock clock;
 
-    // ------------------------------------------------------------------ Linking (SUH-02)
-
-    /** Links a team with swiss unihockey ({@code null} removes the link). Admins only. */
-    @Transactional
-    public TeamDto link(CurrentUser user, UUID teamId, Integer suTeamId) {
-        user.checkAdmin();
-        Team team = find(teamId);
-        if (suTeamId != null && suTeamId <= 0) {
-            throw DomainError.invalidField("suTeamId", "Die Team-ID ist eine positive Zahl.");
-        }
-        if (suTeamId != null) {
-            Team.<Team>find("suTeamId = ?1 and id <> ?2", suTeamId, team.id).firstResultOptional().ifPresent(other -> {
-                throw DomainError.conflict("Schon verknüpft", "Die Team-ID " + suTeamId + " ist schon mit «"
-                        + name(other) + "» verknüpft.", "SUH-02");
-            });
-        }
-        team.suTeamId = suTeamId;
-        return new TeamDto(team.id, name(team), team.suTeamId, null);
-    }
-
     // ------------------------------------------------------------------ Sync
 
-    /** Triggers the sync by hand (admin). */
+    /** Triggers the sync by hand (coach, admin; E-84). */
     @Transactional
     public SyncResultDto sync(CurrentUser user, UUID teamId) {
-        user.checkAdmin();
+        user.checkAllTeams();
         return sync(teamId);
     }
 
-    /** Syncs one team in the current season. Also used by the daily run. */
+    /**
+     * Syncs one team in the current season with all its links (SUH-11). Also used by the daily run. If swiss
+     * unihockey fails for one link, nothing changes for the team (502, SUH-09); the failure is noted on the links
+     * (SUH-13).
+     */
     @Transactional
     public SyncResultDto sync(UUID teamId) {
         Team team = find(teamId);
         Season season = Season.currentOrFail();
-        if (team.suTeamId == null) {
+        List<SuLink> links = SuLink.of(team.id, season.id);
+        if (links.isEmpty()) {
             throw DomainError.conflict("Nicht verknüpft",
                     "«" + name(team) + "» ist nicht mit swiss unihockey verknüpft.", "SUH-02");
         }
@@ -111,15 +104,35 @@ public class SuSync {
         }
         // Two syncs of the same team run one after the other, never at the same time.
         em.lock(team, LockModeType.PESSIMISTIC_WRITE);
-        List<SuMatch> delivered;
+        Instant now = clock.now();
+        List<SuMatch> delivered = new ArrayList<>();
+        // Which name the own team has in the matches of each link (it can differ per link)
+        Map<Integer, String> ownTeams = new HashMap<>();
         try {
-            delivered = source.matches(team.suTeamId, season.startDate.getYear());
+            for (SuLink link : links) {
+                List<SuMatch> matches = source.matches(link.suTeamId, season.startDate.getYear());
+                String own = SyncRules.ownTeam(matches, team.nameIn(season));
+                for (SuMatch match : matches) {
+                    if (!ownTeams.containsKey(match.suMatchId())) {
+                        ownTeams.put(match.suMatchId(), own);
+                        delivered.add(match);
+                    }
+                }
+            }
         } catch (SuUnavailable e) {
-            LOG.warnf("swiss unihockey sync for team %s (SU %d) failed: %s", team.id, team.suTeamId,
-                    e.getMessage());
+            LOG.warnf("swiss unihockey sync for team %s failed: %s", team.id, e.getMessage());
+            List<UUID> ids = links.stream().map(link -> link.id).toList();
+            QuarkusTransaction.requiringNew().run(() -> SuLink.update(
+                    "lastSyncAt = ?1, lastSyncOk = false, lastSyncError = ?2 where id in ?3", now, FAILED, ids));
             throw new DomainError(502, "swiss unihockey nicht erreichbar", UNAVAILABLE, "SUH-09");
         }
-        return apply(team, season, delivered);
+        SyncResultDto result = apply(team, season, delivered, ownTeams);
+        for (SuLink link : links) {
+            link.lastSyncAt = now;
+            link.lastSyncOk = true;
+            link.lastSyncError = null;
+        }
+        return result;
     }
 
     /** IDs of the linked teams of the current season, for the daily run. */
@@ -127,14 +140,15 @@ public class SuSync {
     public List<UUID> linkedTeams() {
         return em.createQuery("""
                         select ts.team.id from TeamSeason ts
-                        where ts.season.current = true and ts.team.suTeamId is not null
+                        where ts.season.current = true and exists (
+                            select l.id from SuLink l where l.team.id = ts.team.id and l.season.id = ts.season.id)
                         order by ts.name, ts.team.id""", UUID.class)
                 .getResultList();
     }
 
-    private SyncResultDto apply(Team team, Season season, List<SuMatch> delivered) {
+    private SyncResultDto apply(Team team, Season season, List<SuMatch> delivered, Map<Integer, String> ownTeams) {
         Instant now = clock.now();
-        String own = SyncRules.ownTeam(delivered, team.nameIn(season));
+        Duration matchDuration = Duration.ofMinutes(team.matchDurationMinutes);
         Map<Integer, SuMatch> byId = new LinkedHashMap<>();
         delivered.stream().filter(m -> SyncRules.inSeason(m.startTime(), season.startDate, season.endDate))
                 .forEach(m -> byId.put(m.suMatchId(), m));
@@ -160,6 +174,7 @@ public class SuSync {
         Map<Event, Instant> oldStart = new LinkedHashMap<>();
         List<SuMatch> newMatches = new ArrayList<>();
         Map<Event, List<Move>> moves = new LinkedHashMap<>();
+        List<Match> changedMatches = new ArrayList<>();
 
         for (SuMatch suMatch : byId.values()) {
             if (ofOtherTeams.contains(suMatch.suMatchId())) {
@@ -172,7 +187,7 @@ public class SuSync {
                 continue;
             }
             Event matchDay = match.event;
-            SyncRules.Side side = SyncRules.side(suMatch, own);
+            SyncRules.Side side = SyncRules.side(suMatch, ownTeams.get(suMatch.suMatchId()));
             SyncRules.MatchState old = new SyncRules.MatchState(match.opponent, match.startTime, match.home,
                     matchDay.location == null ? null : matchDay.location.name);
             SyncRules.MatchState incoming = new SyncRules.MatchState(side.opponent(), suMatch.startTime(), side.home(),
@@ -189,6 +204,9 @@ public class SuSync {
                 if (matchDay.status == EventStatus.PLANNED && !matchDay.isOver(now)) {
                     oldStart.putIfAbsent(matchDay, matchDay.start);
                     changeTexts.computeIfAbsent(matchDay, k -> new ArrayList<>()).add(SyncRules.change(old, incoming));
+                    // Warning for coaches and admins until one of them confirms the change (SUH-12)
+                    match.noteSuChange(now, old.hall());
+                    changedMatches.add(match);
                 }
                 SyncRules.Key target = SyncRules.Key.of(suMatch.startTime(), suMatch.hall());
                 if (!target.equals(key(matchDay))) {
@@ -229,7 +247,7 @@ public class SuSync {
                 matchDays.put(key, matchDay);
             }
             for (SuMatch suMatch : group) {
-                SyncRules.Side side = SyncRules.side(suMatch, own);
+                SyncRules.Side side = SyncRules.side(suMatch, ownTeams.get(suMatch.suMatchId()));
                 Match match = Match.create(matchDay);
                 match.source = MatchSource.SWISS_UNIHOCKEY;
                 match.suMatchId = suMatch.suMatchId();
@@ -250,7 +268,7 @@ public class SuSync {
             if (times.isEmpty()) {
                 continue;
             }
-            SyncRules.Period period = SyncRules.period(times);
+            SyncRules.Period period = SyncRules.period(times, matchDuration);
             if (!createdMatchDays.contains(matchDay)) {
                 matchDay.rescheduled = EventRules.rescheduled(matchDay.rescheduled, matchDay.start, period.start());
             }
@@ -258,6 +276,13 @@ public class SuSync {
             matchDay.end = period.end();
         }
 
+        // swiss unihockey changed a match back to what it was before: nothing left to warn about (SUH-12)
+        em.flush();
+        for (Match match : previous) {
+            if (match.suChangedAt != null && match.suChange() == null) {
+                match.clearSuChange();
+            }
+        }
         // Notify the team about changed matches (BEN-06)
         List<Message> messages = new ArrayList<>();
         changeTexts.forEach((matchDay, texts) -> {
@@ -358,8 +383,10 @@ public class SuSync {
         matchDay.type = EventType.MATCH_DAY;
         matchDay.title = SyncRules.TITLE;
         matchDay.start = first.startTime();
-        matchDay.end = first.startTime().plus(SyncRules.MATCH_DURATION);
+        matchDay.end = first.startTime().plus(Duration.ofMinutes(team.matchDurationMinutes));
         setLocation(matchDay, first);
+        // The team usually meets at the same place (AUF-32); the time stays open until a coach sets it.
+        matchDay.meetingPointLocation = team.meetingPointLocation;
         matchDay.teams.add(team);
         matchDay.persist();
         return matchDay;
