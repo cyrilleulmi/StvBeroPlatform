@@ -115,7 +115,7 @@ import { TEXTS } from '../../core/texts';
               >
             } @else {
               <p class="secondary-text">{{ texts.league.notLinked }}</p>
-              @if (auth.isAdmin()) {
+              @if (auth.canManage()) {
                 <a [routerLink]="['/verwaltung/teams', t.id]">{{
                   texts.league.linkInAdministration
                 }}</a>
@@ -123,6 +123,18 @@ import { TEXTS } from '../../core/texts';
             }
           </section>
         }
+        <!-- Driver plan of the season: who drives to which match day (DRV-14) -->
+        <section class="card" aria-labelledby="team-driver-plan-title" data-testid="team-driver-plan">
+          <h2 id="team-driver-plan-title" class="section-title">{{ texts.driverPlan.title }}</h2>
+          <p class="secondary-text">{{ texts.driverPlan.explanation }}</p>
+          <a
+            class="button button-secondary button-small"
+            [routerLink]="['/teams', t.id, 'fahrerliste']"
+            [queryParams]="season() ? { saison: season() } : {}"
+            data-testid="team-driver-plan-link"
+            >{{ texts.driverPlan.openPlan }}</a
+          >
+        </section>
         @if (minimums(); as m) {
           <!-- Minimums for the warnings, coaches and admins in the current season (F-16, criterion 4) -->
           <section

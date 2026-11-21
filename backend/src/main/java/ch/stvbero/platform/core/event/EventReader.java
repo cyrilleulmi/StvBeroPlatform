@@ -6,6 +6,7 @@ import ch.stvbero.platform.core.line.LineRules;
 import ch.stvbero.platform.core.person.Person;
 import ch.stvbero.platform.core.person.PersonSummary;
 import ch.stvbero.platform.core.team.TeamRole;
+import ch.stvbero.platform.core.team.SuLink;
 import ch.stvbero.platform.core.team.Team;
 import ch.stvbero.platform.core.team.TeamDto;
 import ch.stvbero.platform.core.team.TeamSeason;
@@ -47,6 +48,10 @@ final class EventReader {
     private final Map<TeamInSeason, String> names = new HashMap<>();
     private final Map<TeamInSeason, List<Member>> members = new HashMap<>();
     private final Map<UUID, Map<UUID, StoredResponse>> responses = new HashMap<>();
+    /** Per event: matches changed by swiss unihockey and not confirmed, matches no longer delivered (SUH-12). */
+    private final Map<UUID, int[]> suWarnings = new HashMap<>();
+    /** Team ID at swiss unihockey of the primary link, per season and team (SUH-11). */
+    private final Map<UUID, Map<UUID, Integer>> suTeamIds = new HashMap<>();
 
     EventReader(EntityManager em, CurrentUser user, Collection<Event> events, Instant now) {
         this.user = user;
@@ -75,6 +80,9 @@ final class EventReader {
                 responses.computeIfAbsent((UUID) row[0], key -> new HashMap<>()).put((UUID) row[1],
                         new StoredResponse(ResponseStatus.valueOf((String) row[2]), (String) row[3], instant(row[4]),
                                 (UUID) row[5], Boolean.TRUE.equals(row[6])));
+            }
+            if (WarningRules.visible(user.allTeams())) {
+                suWarnings.putAll(suWarnings(em, ids));
             }
         }
     }
@@ -112,7 +120,8 @@ final class EventReader {
             return 0;
         }
         Map<UUID, StoredResponse> eventResponses = responses.getOrDefault(event.id, Map.of());
-        int count = 0;
+        int[] su = suWarnings.getOrDefault(event.id, new int[2]);
+        int count = WarningRules.suWarnings(null, su[0], su[1]).size();
         for (Team team : event.teams) {
             List<WarningRules.Player> players = members.getOrDefault(new TeamInSeason(team.id, event.season.id), List.of())
                     .stream().filter(m -> m.teamRole() == TeamRole.PLAYER)
@@ -132,8 +141,11 @@ final class EventReader {
     EventDto full(Event event, boolean canEdit, Instant now) {
         EventSummaryDto base = summary(event);
         boolean matchDay = event.type == EventType.MATCH_DAY;
-        MeetingPointDto meetingPoint = event.meetingPointTime == null ? null
-                : new MeetingPointDto(time(event.meetingPointTime), event.meetingPointLocation);
+        // The place can be known before the time: imported match days start with the usual meeting point of the
+        // team (AUF-32) and no time yet.
+        MeetingPointDto meetingPoint = event.meetingPointLocation == null ? null
+                : new MeetingPointDto(event.meetingPointTime == null ? null : time(event.meetingPointTime),
+                event.meetingPointLocation);
         List<MatchDto> matches = null;
         CallUpStatus callUpStatus = null;
         MyCallUp myCallUp = null;
@@ -165,6 +177,28 @@ final class EventReader {
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance);
     }
 
+    /**
+     * Per event the number of matches with an unconfirmed change by swiss unihockey and of matches it no longer
+     * delivers (SUH-12): {@code [changed, missing]}.
+     */
+    static Map<UUID, int[]> suWarnings(EntityManager em, Collection<UUID> eventIds) {
+        Map<UUID, int[]> counts = new HashMap<>();
+        if (eventIds.isEmpty()) {
+            return counts;
+        }
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("""
+                        select event_id, count(*) filter (where su_changed_at is not null),
+                               count(*) filter (where missing_at_su)
+                        from match where event_id in (:ids) and (su_changed_at is not null or missing_at_su)
+                        group by event_id""")
+                .setParameter("ids", eventIds).getResultList();
+        for (Object[] row : rows) {
+            counts.put((UUID) row[0], new int[] {((Number) row[1]).intValue(), ((Number) row[2]).intValue()});
+        }
+        return counts;
+    }
+
     /** Teams by name, with the name in the season of the event (SAI-02) and the caller's own team role. */
     private List<TeamDto> teams(Event event) {
         List<TeamDto> teams = new ArrayList<>();
@@ -172,7 +206,8 @@ final class EventReader {
             TeamInSeason key = new TeamInSeason(team.id, event.season.id);
             TeamRole mine = members.getOrDefault(key, List.of()).stream()
                     .filter(m -> m.person().equals(user.personId())).map(Member::teamRole).findFirst().orElse(null);
-            teams.add(new TeamDto(team.id, names.getOrDefault(key, ""), team.suTeamId, mine));
+            Integer suTeamId = suTeamIds.computeIfAbsent(event.season.id, SuLink::primaryIds).get(team.id);
+            teams.add(new TeamDto(team.id, names.getOrDefault(key, ""), suTeamId, mine));
         }
         teams.sort(Comparator.comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id));
         return teams;

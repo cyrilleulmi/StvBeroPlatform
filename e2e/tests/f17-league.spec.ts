@@ -44,14 +44,14 @@ test('F-17 criterion 1: section «Liga» on the team page, hint for teams withou
   await expect(page.getByRole('heading', { level: 1, name: 'Liga' })).toBeVisible();
   await checkAccessibility(page);
 
-  // Team 2 is not linked: hint, for admins with a link to the administration
-  await login(page, 'marc');
+  // Team 2 is not linked: hint, for coaches and admins with a link to the administration (E-84)
+  await login(page, 'eva');
   await page.goto(`/teams/${TEAM_2}`);
   const hint = page.getByRole('region', { name: 'Liga' });
   await expect(hint).toContainText('nicht mit swiss unihockey verknüpft');
   await expect(hint.getByRole('link', { name: 'In der Verwaltung verknüpfen' })).toHaveCount(0);
 
-  await login(page, 'alex');
+  await login(page, 'marc');
   await page.goto(`/teams/${TEAM_2}`);
   await page.getByRole('region', { name: 'Liga' }).getByRole('link', { name: 'In der Verwaltung verknüpfen' }).click();
   await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_2}`);
@@ -166,15 +166,16 @@ test.describe('swiss unihockey unavailable', () => {
 
   test('F-17 criterion 9: never loaded, clear empty state', async ({ page, request }) => {
     await login(page, 'alex');
-    const link = await page.request.put(`/api/teams/${TEAM_2}/swiss-unihockey`, { data: { suTeamId: 900002 } });
-    expect(link.status()).toBe(200);
+    // Linking loads the league right away (SUH-02); swiss unihockey is down, so nothing was ever loaded
+    await simulator(request, { suTeamId: 900002, matches: [], unavailable: true });
+    const link = await page.request.post(`/api/teams/${TEAM_2}/swiss-unihockey/links`, { data: { suTeamId: 900002 } });
+    expect(link.status()).toBe(201);
     await page.goto(`/teams/${TEAM_2}/liga`);
     await expect(page.getByTestId('league-never-loaded')).toHaveText(
       'Es sind noch keine Daten von swiss unihockey geladen.',
     );
     await expect(page.getByRole('table')).toHaveCount(0);
 
-    await simulator(request, { suTeamId: 900002, matches: [], unavailable: true });
     await page.getByRole('button', { name: 'Neu laden' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'swiss unihockey ist im Moment nicht erreichbar. Bitte später nochmals versuchen.',

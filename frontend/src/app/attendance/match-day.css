@@ -100,3 +100,27 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* Changed or no longer delivered by swiss unihockey (SUH-12): icon and text, not only a colour */
+.su-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius-icon);
+  background: var(--mustard-soft);
+  border: 1px solid var(--mustard);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.su-warning app-icon {
+  flex: none;
+  color: var(--mustard);
+  padding-top: 1px;
+}
+
+.su-change-item {
+  display: block;
+  overflow-wrap: anywhere;
+}

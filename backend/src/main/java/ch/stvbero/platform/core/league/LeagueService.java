@@ -80,7 +80,8 @@ public class LeagueService {
             throw DomainError.forbidden();
         }
         String name = team.nameIn(season);
-        if (team.suTeamId == null) {
+        Integer suTeamId = team.suTeamIdIn(season);
+        if (suTeamId == null) {
             return new LeagueDto(team.id, name, false, null, null, null, null, List.of(), List.of(), List.of());
         }
         LeagueSnapshot snapshot = LeagueSnapshot.findById(team.id);
@@ -89,7 +90,7 @@ public class LeagueService {
         }
         List<SuStanding> standings = read(snapshot.standings, STANDINGS);
         List<SuMatch> matches = read(snapshot.matches, MATCHES);
-        int own = LeagueRules.ownRow(standings, team.suTeamId, matches, name);
+        int own = LeagueRules.ownRow(standings, suTeamId, matches, name);
         List<LeagueDto.Row> table = new ArrayList<>();
         for (int i = 0; i < standings.size(); i++) {
             SuStanding s = standings.get(i);
@@ -140,7 +141,9 @@ public class LeagueService {
             throw DomainError.conflict("Nicht in der aktuellen Saison",
                     "Das Team gehört nicht zur Saison " + season.name + ".", "SUH-03");
         }
-        if (team.suTeamId == null) {
+        // With several links the league page shows the first one (SUH-11)
+        Integer suTeamId = team.suTeamIdIn(season);
+        if (suTeamId == null) {
             throw DomainError.conflict("Nicht verknüpft",
                     "«" + team.nameIn(season) + "» ist nicht mit swiss unihockey verknüpft.", "SUH-02");
         }
@@ -158,13 +161,13 @@ public class LeagueService {
         }
         Instant now = clock.now();
         try {
-            SuLeague league = source.league(team.suTeamId, season.startDate.getYear());
+            SuLeague league = source.league(suTeamId, season.startDate.getYear());
             store(snapshot, season, league, now);
             LOG.infof("League of team %s loaded: %d rows, %d matches", team.id, league.table().size(),
                     league.matches().size());
             return true;
         } catch (SuUnavailable e) {
-            LOG.warnf("League of team %s (SU %d) not loaded: %s", team.id, team.suTeamId, e.getMessage());
+            LOG.warnf("League of team %s (SU %d) not loaded: %s", team.id, suTeamId, e.getMessage());
             snapshot.failedAt = now;
             return false;
         }

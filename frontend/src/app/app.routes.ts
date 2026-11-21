@@ -74,6 +74,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/teams/lines').then((m) => m.Lines),
       },
       {
+        path: 'teams/:teamId/fahrerliste',
+        title: title('Fahrerliste der Saison'),
+        loadComponent: () => import('./drivers/driver-plan').then((m) => m.DriverPlanPage),
+      },
+      {
         path: 'teams/:teamId/liga',
         title: title('Liga'),
         loadComponent: () => import('./pages/teams/league').then((m) => m.League),

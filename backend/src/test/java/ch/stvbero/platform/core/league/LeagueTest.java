@@ -169,12 +169,14 @@ class LeagueTest {
     @Test
     void suh09NeverLoaded() {
         String alex = login("alex");
+        // Linking loads the league right away (SUH-02); swiss unihockey is down, so nothing was ever loaded
+        presetSimulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
         given().cookie("stv_session", alex).contentType(ContentType.JSON).body("{\"suTeamId\":900002}")
-                .put("/api/teams/" + TEAM_2 + "/swiss-unihockey").then().statusCode(200);
+                .post("/api/teams/" + TEAM_2 + "/swiss-unihockey/links").then().statusCode(201)
+                .body("links[0].lastSyncOk", equalTo(false));
         league("marc", TEAM_2).statusCode(200)
                 .body("linked", equalTo(true)).body("loadedAt", nullValue()).body("table", hasSize(0));
 
-        presetSimulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
         // No data to keep showing: the message must not claim otherwise (test observation round 0)
         refresh("alex", TEAM_2).statusCode(502).body("rule", equalTo("SUH-09"))
                 .body("detail", equalTo(LeagueService.UNAVAILABLE_NEVER_LOADED));

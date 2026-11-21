@@ -319,6 +319,33 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/match-day-settings:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    put:
+      tags: [Teams]
+      operationId: setMatchDaySettings
+      summary: Change match duration, arrival lead and usual meeting point of the team (TML-02, TML-03, AUF-32, admin, coach)
+      description: |
+        `matchDurationMinutes` (default 50) is how long a match takes; `arrivalLeadMinutes` (default 70) how long
+        before the first match the team wants to arrive at the venue. Both feed the timeline of every match day
+        and the suggested departure (TML). `meetingPoint` is where the team usually meets: match days created by
+        the sync start with it (AUF-32); `null` or empty removes it. The settings apply to the team, not per
+        season.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MatchDaySettings' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchDaySettings' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/members:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -926,6 +953,72 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/matches/{matchId}/confirm-su-change:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/matchId'
+    post:
+      tags: [MatchDays]
+      operationId: confirmSuChange
+      summary: Confirm a change by swiss unihockey as seen; the warning disappears (SUH-12, coach)
+      description: |
+        The sync applies changed matches right away (SUH-05) and remembers what the match looked like before
+        (`suChange` of the match). Coaches of the team and admins confirm that they have seen the change; until
+        then the match day shows the warning `MATCH_CHANGED`. 409 (rule SUH-12) if the match has no open change.
+      responses:
+        '200':
+          description: Confirmed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Match' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/timeline:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [MatchDays]
+      operationId: getTimeline
+      summary: 'Timeline of a match day: departure, arrival, matches, cool down, approximate return (TML-01)'
+      description: |
+        Everyone who may see the match day. Not a match day: 409 (rule DRV-01). `items` in order of time:
+        `DEPARTURE` at the meeting time, or at the suggested departure while no meeting time is set
+        (`departureSuggested`); `ARRIVAL` after the driving time of the route (DRV-05); `WARM_UP` until the first
+        match; each `MATCH` for the match duration of the team; `BREAK` between two matches; `COOL_DOWN` of 20
+        minutes after the last match; `RETURN` after the driving time back. The suggested departure is the first
+        match minus the arrival lead of the team minus the driving time, rounded down to five minutes (TML-04).
+        Without a meeting point or without a driving time there is no departure suggestion, no arrival and no
+        return; `hints` says why. Matches that swiss unihockey no longer delivers are left out. With several teams
+        the longest match duration and the longest arrival lead apply. Calculates the route first if needed.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Timeline' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/timeline/apply-departure:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [MatchDays]
+      operationId: applySuggestedDeparture
+      summary: Take over the suggested departure as meeting time of the match day (TML-04, coach)
+      description: |
+        Coaches of the team and admins, for a planned match day that is not over. 409 (rule TML-04) if there is
+        no suggestion (no meeting point or no driving time).
+      responses:
+        '200':
+          description: Taken over
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Timeline' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/events/{eventId}/call-up:
     parameters:
       - $ref: '#/components/parameters/eventId'
@@ -1246,6 +1339,64 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/DriverSummary' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/driver-plan:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [DriverList]
+      operationId: getDriverPlan
+      summary: 'Driver plan of a team for a season: all match days with their cars, and the trips per member (DRV-14, DRV-17)'
+      description: |
+        Members of the team in the season, coaches (of any team, E-69) and admins; otherwise 403. `matchDays` are
+        all match days of the team in the season by start, each with its cars as in the driver list of the match
+        day, the route if known, and `changeable` if the caller can enter drivers right now (ready, not cancelled,
+        not over; after the end only coaches and admins). `shares` lists every member of the team with the trips
+        on match days that are over (`trips`, `kilometres`) and on upcoming ones (`plannedTrips`,
+        `plannedKilometres`), so that the trips can be shared fairly (DRV-17); a cancelled match day counts
+        nothing (DRV-10). `members` only for coaches and admins. Routes not yet calculated are calculated first,
+        at most twelve per call.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/driver-plan/cars:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [DriverList]
+      operationId: planDriver
+      summary: Enter one driver for several match days at once (DRV-14)
+      description: |
+        Often one person plans the drivers of a whole season. Members of the team enter themselves (without
+        `driverId`), coaches and admins also others. Per match day the rules of the driver list apply (DRV-01,
+        DRV-02): the match day must be ready, not cancelled and, for members, not over; the driver must be a
+        member of the team. Match days on which the person already drives stay as they are. If one match day
+        refuses, nothing is entered. `eventIds` must be match days of this team in the season (400 on `eventIds`
+        otherwise).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverPlanInput' }
+      responses:
+        '200':
+          description: Entered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
 
   # ---------------------------------------------------------------- Statistics
   /api/statistics:
@@ -1323,52 +1474,128 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
 
   # ---------------------------------------------------------------- swiss unihockey
+  /api/swiss-unihockey/teams:
+    get:
+      tags: [SwissUnihockey]
+      operationId: listSuClubTeams
+      summary: Teams of the club at swiss unihockey in the current season, with the team they are linked with (SUH-02, admin, coach)
+      description: |
+        The choice in the link dialog: the teams swiss unihockey lists for the club (`STV_SU_CLUB_ID`) in the
+        current season, in its order. `linkedTeamId` and `linkedTeamName` name the team of the app a team is
+        already linked with. 502 if swiss unihockey is unavailable (SUH-09); the dialog then takes the team ID by
+        hand.
+      responses:
+        '200':
+          description: In the order of swiss unihockey
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SuClubTeam' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502':
+          description: swiss unihockey unavailable or unexpected answer (SUH-09)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+  /api/swiss-unihockey/status:
+    get:
+      tags: [SwissUnihockey]
+      operationId: getSuStatus
+      summary: 'State of the connection: linked teams, last successful sync, links whose last sync failed (SUH-13, admin, coach)'
+      description: |
+        For the hint to coaches and admins: if the last sync of a link failed (swiss unihockey not reachable or
+        unexpected data), `failures` names the team, the time and a German sentence. The app keeps running with
+        the data it has (SUH-09).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuStatus' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/teams/{teamId}/swiss-unihockey:
     parameters:
       - $ref: '#/components/parameters/teamId'
-    put:
+    get:
       tags: [SwissUnihockey]
-      operationId: linkSu
-      summary: Link a team to swiss unihockey or remove the link (SUH-02, admin)
+      operationId: getSuConnection
+      summary: Links of the team to swiss unihockey in the current season, with the state of the last sync (SUH-11, SUH-13)
       description: |
-        The team ID can be found on swissunihockey.ch in the address of the team page. A team ID belongs to
-        at most one team (otherwise 409). Removing the link leaves already imported match days unchanged.
+        Members of the team, coaches and admins. A team has none, one or several links per season (SUH-11): the
+        team at swiss unihockey changes from season to season. `canManage` for coaches and admins.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuConnection' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/swiss-unihockey/links:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [SwissUnihockey]
+      operationId: addSuLink
+      summary: Link the team with a team at swiss unihockey and load its matches and league right away (SUH-02, SUH-11, admin, coach)
+      description: |
+        The link applies to the current season. A team at swiss unihockey belongs to at most one team per season
+        (409, rule SUH-02); the team must belong to the current season (409, rule SUH-03). Without `name` the
+        name is looked up in the club's teams. After linking, the matches are synced and the league is loaded
+        immediately. If swiss unihockey cannot be reached, the link is kept, `lastSyncOk` is `false` and the next
+        sync tries again (SUH-09, SUH-13).
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [suTeamId]
-              properties:
-                suTeamId:
-                  type: [integer, 'null']
-                  description: '`null` removes the link'
-                  minimum: 1
-                  examples: [900001]
+            schema: { $ref: '#/components/schemas/SuLinkInput' }
       responses:
-        '200':
-          description: Saved
+        '201':
+          description: Linked
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Team' }
+              schema: { $ref: '#/components/schemas/SuConnection' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/swiss-unihockey/links/{linkId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: linkId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [SwissUnihockey]
+      operationId: removeSuLink
+      summary: Remove a link (SUH-11, admin, coach)
+      description: |
+        Imported match days stay. If the team has no link left in the season, the imported matches of its
+        upcoming match days are marked `missingAtSu`, so that a coach can remove them (SUH-12).
+      responses:
+        '204': { description: Removed }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/swiss-unihockey/sync:
     parameters:
       - $ref: '#/components/parameters/teamId'
     post:
       tags: [SwissUnihockey]
       operationId: syncSu
-      summary: Run the sync now instead of waiting for the daily run (SUH-03, admin)
+      summary: Run the sync now instead of waiting for the daily run (SUH-03, admin, coach)
       description: |
-        Syncs the team's matches in the current season. Matches on the same day in the same hall become
-        one match day (SUH-04). Changed matches are taken over; meeting point, notes, responses and call-up
-        are kept (SUH-05, SUH-06), and all members of the team are notified (BEN-06). Matches that swiss
-        unihockey no longer delivers are marked, not deleted. Manually entered match days stay
-        untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
+        Syncs the team's matches in the current season, from all its links (SUH-11). Matches on the same day in
+        the same hall become one match day (SUH-04); a new match day starts with the usual meeting point of the
+        team (AUF-32). Changed matches are taken over; meeting point, notes, responses and call-up
+        are kept (SUH-05, SUH-06), all members of the team are notified (BEN-06), and coaches and admins see a
+        warning with the values before and after until one of them confirms it (SUH-12). Matches that swiss
+        unihockey no longer delivers, or lists as «Abgesagt», are marked, not deleted. Manually entered match
+        days stay untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
         502 if swiss unihockey is unavailable or delivers something unexpected: then nothing changes (SUH-09).
         The same sync runs daily for all linked teams.
       responses:
@@ -1562,11 +1789,32 @@ paths:
     post:
       tags: [Test]
       operationId: testReset
-      summary: Reset the database to the seed, the clock to default and the simulator
-      description: For the seed see docs/test-data.md. Only profiles dev and test.
+      summary: Reset the database to a data set and the simulators
+      description: |
+        Without `dataset` (or `TEST`): the test data set of docs/test-data.md with the fixed clock and the
+        simulators for swiss unihockey and routing, as all automated tests expect. `CLUB`: the club data set with
+        the real teams, the running clock, live data from swiss unihockey and real routes; the matches of the
+        linked teams are loaded in the background (`GET /api/test/dataset`). Only profiles dev and test.
       security: []
+      parameters:
+        - name: dataset
+          in: query
+          schema: { $ref: '#/components/schemas/DataSet' }
       responses:
         '204': { description: Reset }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/test/dataset:
+    get:
+      tags: [Test]
+      operationId: testGetDataSet
+      summary: Which data set is loaded, whether the outside world is simulated and whether the club data is still loading
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataSetState' }
   /api/test/clock:
     put:
       tags: [Test]
@@ -1738,6 +1986,24 @@ paths:
                   oneOf:
                     - $ref: '#/components/schemas/SuLeague'
                     - type: 'null'
+      responses:
+        '204': { description: Set }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/test/swiss-unihockey/club:
+    put:
+      tags: [Test]
+      operationId: testSetSuClub
+      summary: Set the teams of the club the simulator lists for the link dialog, or an outage (SUH-02)
+      description: |
+        After `POST /api/test/reset` the simulator lists team ID 900001 «Herren KF 3. Liga», 900002 «Damen KF 2.
+        Liga» and 900003 «Junioren B» (docs/test-data.md). `unavailable` makes the list fail (SUH-09); the
+        matches of a team ID are set with `PUT /api/test/swiss-unihockey/matches`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SuClubPreset' }
       responses:
         '204': { description: Set }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -1983,13 +2249,57 @@ components:
     TestPerson:
       type: object
       description: Seed person with key from docs/test-data.md. Only profiles dev and test.
-      required: [loginKey, id, firstName, lastName, admin]
+      required: [loginKey, id, firstName, lastName, admin, teams]
       properties:
         loginKey: { type: string, examples: [petra] }
         id: { type: string, format: uuid }
         firstName: { type: string }
         lastName: { type: string }
         admin: { type: boolean }
+        teams:
+          type: array
+          description: Teams of the current season, by team name
+          items: { $ref: '#/components/schemas/TestPersonTeam' }
+    TestPersonTeam:
+      type: object
+      required: [teamId, teamName, teamRole]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        teamRole: { $ref: '#/components/schemas/TeamRole' }
+    DataSet:
+      type: string
+      description: >-
+        TEST the fixed seed with simulators and a fixed clock; CLUB the club with its real teams, live data from
+        swiss unihockey and the running clock (docs/test-data.md)
+      enum: [TEST, CLUB]
+    DataSetState:
+      type: object
+      required: [dataset, simulated, loading, routing]
+      properties:
+        dataset: { $ref: '#/components/schemas/DataSet' }
+        simulated: { type: boolean, description: swiss unihockey and routing are simulated }
+        loading: { type: boolean, description: The club data is still being loaded from swiss unihockey }
+        routing:
+          type: string
+          description: 'Which service calculates routes: SIMULATOR, GOOGLE, OPEN_ROUTE_SERVICE or OPEN_STREET_MAP'
+    SuClubPreset:
+      type: object
+      properties:
+        teams:
+          type: [array, 'null']
+          description: 'Teams of the club the simulator lists; omitted: they stay as they are'
+          items: { $ref: '#/components/schemas/SuClubTeamInput' }
+        unavailable:
+          type: [boolean, 'null']
+          default: false
+          description: Simulates an outage of the team list (SUH-09)
+    SuClubTeamInput:
+      type: object
+      required: [suTeamId, name]
+      properties:
+        suTeamId: { type: integer, minimum: 1 }
+        name: { type: string, minLength: 1 }
 
     Season:
       type: object
@@ -2021,7 +2331,10 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string, examples: [Team 1] }
-        suTeamId: { type: [integer, 'null'], examples: [900001] }
+        suTeamId:
+          type: [integer, 'null']
+          description: Team ID at swiss unihockey in this season; with several links the first one (SUH-11)
+          examples: [900001]
         myTeamRole:
           oneOf:
             - $ref: '#/components/schemas/TeamRole'
@@ -2044,6 +2357,23 @@ components:
             warningMinimums:
               $ref: '#/components/schemas/WarningMinimums'
               description: Only for coaches and admins (F-16)
+            matchDaySettings:
+              $ref: '#/components/schemas/MatchDaySettings'
+              description: Only for coaches and admins (TML-02)
+    MatchDaySettings:
+      type: object
+      description: >-
+        Match day settings of a team (TML-02, TML-03, AUF-32). Defaults: a match takes 50 minutes, arrival 70
+        minutes before the first match, no usual meeting point.
+      required: [matchDurationMinutes, arrivalLeadMinutes]
+      properties:
+        matchDurationMinutes: { type: integer, format: int32, minimum: 10, maximum: 240, examples: [50] }
+        arrivalLeadMinutes: { type: integer, format: int32, minimum: 0, maximum: 240, examples: [70] }
+        meetingPoint:
+          type: [string, 'null']
+          maxLength: 120
+          description: Usual meeting point; new match days from swiss unihockey start with it
+          examples: [Oberstufenschulhaus Beromünster]
     WarningMinimums:
       type: object
       description: >-
@@ -2060,8 +2390,10 @@ components:
       description: >-
         GOALIES fewer goalies than the minimum («Kein Goalie angemeldet»), FIELD_PLAYERS fewer field players (all
         players outside the goalies, including «Ohne Linie»), LINE a line with at least one but fewer players than
-        the line minimum («Linie 2 nur zu 1»)
-      enum: [GOALIES, FIELD_PLAYERS, LINE]
+        the line minimum («Linie 2 nur zu 1»), MATCH_CHANGED `count` matches changed by swiss unihockey and not
+        confirmed yet, MATCH_MISSING `count` matches swiss unihockey no longer delivers (SUH-12; both belong to
+        the match day, `minimum` is 0)
+      enum: [GOALIES, FIELD_PLAYERS, LINE, MATCH_CHANGED, MATCH_MISSING]
     Warning:
       type: object
       description: >-
@@ -2152,9 +2484,13 @@ components:
         longitude: { type: [number, 'null'] }
     MeetingPoint:
       type: object
-      required: [time, location]
+      description: >-
+        Where and when the team meets (AUF-12). The time can still be open (`null`): match days from swiss
+        unihockey start with the usual meeting point of the team (AUF-32), the timeline suggests a departure
+        (TML-04).
+      required: [location]
       properties:
-        time: { type: string, format: date-time }
+        time: { type: [string, 'null'], format: date-time }
         location: { type: string, examples: [Parkplatz Sporthalle Nord] }
     Counts:
       type: object
@@ -2425,6 +2761,95 @@ components:
           type: boolean
           default: false
           description: swiss unihockey no longer delivers the match. It is not deleted automatically.
+        suChange:
+          description: Unconfirmed change by swiss unihockey (SUH-12); `null` if there is none
+          oneOf:
+            - $ref: '#/components/schemas/SuChange'
+            - type: 'null'
+    SuChange:
+      type: object
+      description: >-
+        What swiss unihockey changed about an imported match since a coach or admin last confirmed it (SUH-12).
+        The change itself is already applied; `changes` holds the values before and after as texts for display.
+      required: [changedAt, changes]
+      properties:
+        changedAt: { type: string, format: date-time }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/SuChangeItem' }
+    SuChangeItem:
+      type: object
+      required: [field, before, after]
+      properties:
+        field: { $ref: '#/components/schemas/SuChangeField' }
+        before: { type: string, examples: ['So 22.11. 09:30'] }
+        after: { type: string, examples: ['So 22.11. 10:15'] }
+    SuChangeField:
+      type: string
+      enum: [START_TIME, VENUE, OPPONENT, HOME_AWAY]
+    Timeline:
+      type: object
+      description: Timeline of a match day (TML). Times that cannot be worked out are missing; `hints` says why.
+      required: [eventId, cancelled, hints, departureSuggested, matchDurationMinutes, arrivalLeadMinutes, coolDownMinutes, canApplySuggestion, items]
+      properties:
+        eventId: { type: string, format: uuid }
+        cancelled: { type: boolean }
+        hints:
+          type: array
+          items: { $ref: '#/components/schemas/TimelineHint' }
+        departure:
+          type: string
+          format: date-time
+          description: 'When the team leaves: the meeting time, otherwise the suggestion'
+        departureSuggested:
+          type: boolean
+          description: The departure is the suggestion; no meeting time is set yet (TML-04)
+        suggestedDeparture:
+          type: string
+          format: date-time
+          description: Arrival target minus driving time, rounded down to five minutes (TML-04)
+        arriveBy:
+          type: string
+          format: date-time
+          description: 'When the team wants to be at the venue: first match minus the arrival lead (TML-03)'
+        driveMinutes: { type: integer, format: int32, description: Driving time from the meeting point to the venue }
+        distanceKm: { type: number, format: double, description: One-way distance }
+        matchDurationMinutes: { type: integer, format: int32 }
+        arrivalLeadMinutes: { type: integer, format: int32 }
+        coolDownMinutes: { type: integer, format: int32, examples: [20] }
+        canApplySuggestion:
+          type: boolean
+          description: Coach or admin can take over the suggestion as meeting time right now
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TimelineItem' }
+    TimelineHint:
+      type: string
+      description: >-
+        NO_MATCHES the match day has no matches yet; MEETING_POINT_MISSING no meeting point, so no departure,
+        arrival or return; DRIVE_TIME_UNKNOWN meeting point and venue are set but there is no driving time (no
+        route found, service unavailable, kilometres entered by hand); ARRIVES_LATE with the set meeting time the
+        team arrives later than its arrival lead wants
+      enum: [NO_MATCHES, MEETING_POINT_MISSING, DRIVE_TIME_UNKNOWN, ARRIVES_LATE]
+    TimelineItem:
+      type: object
+      description: A line of the timeline. `end` and `minutes` only for spans; the match fields only for a match.
+      required: [kind, start]
+      properties:
+        kind: { $ref: '#/components/schemas/TimelineKind' }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        minutes: { type: integer, format: int32 }
+        matchId: { type: string, format: uuid }
+        opponent: { type: string }
+        home: { type: boolean }
+    TimelineKind:
+      type: string
+      description: >-
+        Kind of a line of the timeline: DEPARTURE the team leaves the meeting point (`minutes`: driving time),
+        ARRIVAL at the venue, WARM_UP time before the first match, MATCH, BREAK between two matches, COOL_DOWN
+        after the last match, RETURN approximate return at the meeting point (`minutes`: driving time)
+      enum: [DEPARTURE, ARRIVAL, WARM_UP, MATCH, BREAK, COOL_DOWN, RETURN]
     MatchInput:
       type: object
       required: [opponent, startTime, home]
@@ -2667,6 +3092,67 @@ components:
                   - type: 'null'
                 description: Only where attendance is recorded for her
 
+    SuConnection:
+      type: object
+      description: Links of a team to swiss unihockey in the current season (SUH-02, SUH-11)
+      required: [teamId, teamName, canManage, links]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        canManage: { type: boolean, description: 'Coach or admin: may link, unlink and sync' }
+        links:
+          type: array
+          description: The oldest first; the first one feeds the league page (F-17)
+          items: { $ref: '#/components/schemas/SuLink' }
+    SuLink:
+      type: object
+      required: [id, suTeamId]
+      properties:
+        id: { type: string, format: uuid }
+        suTeamId: { type: integer, format: int32, examples: [428361] }
+        name: { type: [string, 'null'], description: 'Name at swiss unihockey, e.g. «Damen KF 1. Liga»' }
+        lastSyncAt: { type: [string, 'null'], format: date-time, description: 'Time of the last sync; `null`: never synced' }
+        lastSyncOk: { type: [boolean, 'null'], description: '`false`: the last sync failed (SUH-13)' }
+        lastSyncError: { type: [string, 'null'], description: 'German sentence about the failure, for display' }
+    SuLinkInput:
+      type: object
+      required: [suTeamId]
+      properties:
+        suTeamId: { type: integer, format: int32, minimum: 1, examples: [428361] }
+        name:
+          type: [string, 'null']
+          maxLength: 120
+          description: 'Name at swiss unihockey; omitted: looked up in the club''s teams'
+    SuClubTeam:
+      type: object
+      description: A team of the club at swiss unihockey, for the link dialog (SUH-02)
+      required: [suTeamId, name]
+      properties:
+        suTeamId: { type: integer, format: int32 }
+        name: { type: string, examples: [Damen KF 1. Liga] }
+        linkedTeamId: { type: [string, 'null'], format: uuid, description: Team of the app it is linked with this season }
+        linkedTeamName: { type: [string, 'null'] }
+    SuStatus:
+      type: object
+      description: How the connection to swiss unihockey is doing (SUH-13)
+      required: [linkedTeams, failures]
+      properties:
+        linkedTeams: { type: integer, format: int32, description: Teams of the current season with at least one link }
+        lastSyncAt: { type: [string, 'null'], format: date-time, description: Time of the last successful sync of any team }
+        failures:
+          type: array
+          description: Links whose last sync failed, by team name
+          items: { $ref: '#/components/schemas/SuSyncFailure' }
+    SuSyncFailure:
+      type: object
+      required: [teamId, teamName, suTeamId, at, message]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        suTeamId: { type: integer, format: int32 }
+        suTeamName: { type: [string, 'null'] }
+        at: { type: string, format: date-time }
+        message: { type: string }
     SyncResult:
       type: object
       required: [created, changed, missing, unchanged]
@@ -2885,6 +3371,78 @@ components:
       required: [distanceKm]
       properties:
         distanceKm: { type: number, format: double, minimum: 0.1, maximum: 1000 }
+
+    DriverPlan:
+      type: object
+      description: Driver plan of a team for a whole season (DRV-14, DRV-17)
+      required: [teamId, teamName, seasonId, seasonName, canJoin, canManage, matchDays, shares]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        seasonId: { type: string, format: uuid }
+        seasonName: { type: string, examples: [2026/27] }
+        canJoin: { type: boolean, description: The caller is a member of the team and can enter herself as driver }
+        canManage: { type: boolean, description: 'Coach or admin: enters drivers for others' }
+        matchDays:
+          type: array
+          description: Match days of the team in the season, by start
+          items: { $ref: '#/components/schemas/DriverPlanMatchDay' }
+        shares:
+          type: array
+          description: Trips per member of the team, by name (DRV-17)
+          items: { $ref: '#/components/schemas/DriverShare' }
+        members:
+          type: array
+          description: Members of the team, by name; only for coaches and admins
+          items: { $ref: '#/components/schemas/PersonSummary' }
+    DriverPlanMatchDay:
+      type: object
+      required: [eventId, title, start, cancelled, over, ready, missing, changeable, cars, freeSeats]
+      properties:
+        eventId: { type: string, format: uuid }
+        title: { type: string }
+        start: { type: string, format: date-time }
+        venue: { type: string, description: Name of the venue }
+        town: { type: string, description: Town of the venue }
+        cancelled: { type: boolean }
+        over: { type: boolean, description: The match day is over }
+        ready: { type: boolean, description: 'Meeting point and venue are set, so drivers can be entered (DRV-01)' }
+        missing:
+          type: array
+          items:
+            type: string
+            enum: [MEETING_POINT, VENUE]
+        distanceKm: { type: number, format: double, description: 'One-way distance, if a route is known' }
+        durationMinutes: { type: integer, format: int32 }
+        changeable: { type: boolean, description: Drivers can be entered right now by the caller }
+        cars:
+          type: array
+          items: { $ref: '#/components/schemas/Car' }
+        freeSeats: { type: integer, format: int32, description: Free seats in all cars }
+    DriverShare:
+      type: object
+      description: How often a member drives in the season (DRV-17), done and planned
+      required: [person, trips, plannedTrips, kilometres, plannedKilometres]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        trips: { type: integer, format: int32, description: Trips on match days that are over }
+        plannedTrips: { type: integer, format: int32, description: Trips on upcoming match days }
+        kilometres: { type: number, format: double, description: Credited kilometres of the trips that are over }
+        plannedKilometres: { type: number, format: double, description: Kilometres of the planned trips with a known distance }
+    DriverPlanInput:
+      type: object
+      required: [seats, eventIds]
+      properties:
+        driverId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Driver; missing: the caller herself'
+        seats: { type: integer, format: int32, minimum: 1, maximum: 8 }
+        eventIds:
+          type: array
+          minItems: 1
+          maxItems: 60
+          items: { type: string, format: uuid }
 
     DriverSummary:
       type: object

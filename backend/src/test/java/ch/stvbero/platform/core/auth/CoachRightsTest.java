@@ -123,14 +123,14 @@ class CoachRightsTest {
     // ------------------------------------------------------------------ Criterion 4
 
     @Test
-    void k4SeasonsSwissUnihockeyAndAdminFlagStayWithAdmins() {
+    void k4SeasonsLeagueReloadAndAdminFlagStayWithAdmins() {
         String petra = login("petra");
         forbidden(as(petra).body("{\"name\":\"2027/28\",\"startDate\":\"2027-07-01\",\"endDate\":\"2028-06-30\"}")
                 .post("/api/seasons").then());
         forbidden(as(petra).post("/api/seasons/" + SEASON_2025 + "/activate").then());
-        forbidden(as(petra).body("{\"suTeamId\":900002}").put("/api/teams/" + TEAM_2 + "/swiss-unihockey").then());
-        forbidden(as(petra).body("{\"suTeamId\":null}").put("/api/teams/" + TEAM_1 + "/swiss-unihockey").then());
-        forbidden(as(petra).post("/api/teams/" + TEAM_1 + "/swiss-unihockey/sync").then());
+        // Linking and syncing with swiss unihockey is open to coaches since E-84 (see SuLinksTest); reloading
+        // the league by hand stays with the admins
+        forbidden(as(petra).post("/api/teams/" + TEAM_1 + "/league/refresh").then());
         forbidden(as(petra).body("{\"firstName\":\"Petra\",\"lastName\":\"Keller\",\"admin\":true}")
                 .put("/api/persons/" + PETRA).then());
         as(petra).get("/api/me").then().body("admin", equalTo(false));

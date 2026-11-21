@@ -3,8 +3,9 @@ package ch.stvbero.platform.core.driver;
 import java.util.Optional;
 
 /**
- * Calculates the route by car between two places (DRV-06). In profile {@code prod} OpenRouteService
- * ({@link OpenRouteServiceRouting}), in {@code dev} and {@code test} the {@link RoutingSimulator}.
+ * Calculates the route by car between two places (DRV-06): the real service ({@link LiveRouting}: Google Maps,
+ * OpenRouteService or OpenStreetMap, DRV-15) or, while the app simulates, the {@link RoutingSimulator}. Inject
+ * this interface; {@link RoutingSwitch} picks.
  */
 public interface Routing {
 

@@ -170,6 +170,11 @@ public class ResponseService {
                     .sorted(Comparator.comparing(OverviewDto.CoachEntry::person, PersonSummary.ORDER))
                     .forEach(coaches::add);
         }
+        if (withWarnings && !teams.isEmpty()) {
+            // Matches changed by swiss unihockey or no longer delivered (SUH-12)
+            int[] su = EventReader.suWarnings(em, List.of(event.id)).getOrDefault(event.id, new int[2]);
+            warnings.addAll(WarningRules.suWarnings(teams.get(0), su[0], su[1]));
+        }
         return new OverviewDto(event.id, counts(allPlayers, responses), blocks, coaches, warnings);
     }
 

@@ -32,8 +32,17 @@ Status legend: see [README](../../README.md#requirement-status).
 | DRV-12 | Coordinates of the places: venue from its stored coordinates, otherwise from the Google Maps link (`@lat,lon`, `!3d…!4d…`, or `query`/`q`/`ll`/`destination`/`daddr` with «lat,lon»), otherwise the geocoder searches the search text of the link or «name, address». The meeting point is free text and is searched as it is. If a place is not found, there is no route (DRV-07). Short links (`maps.app.goo.gl`) are not followed. | Decided (criteria), Assumption (order, short links) |
 | DRV-13 | Seed: match day 04 with two cars, Petra's car full (Anna, Lea, Mia) and Sara's car with three free seats; Jana responded «dabei» and has no seat ([test-data.md](../test-data.md#event-04-match-day-sun-22112026-team-1)). | Decided |
 
+## Season plan
+
+| ID | Requirement | Status |
+|---|---|---|
+| DRV-14 | The page «Fahrerliste der Saison» (`/teams/:id/fahrerliste`) shows every match day of a team in the season with its cars. Often one person plans the whole season: a form enters one driver for several match days at once («Fahrten einplanen»). Members enter themselves, coaches and admins also others; per match day the rules of DRV-01 and DRV-02 apply. Match days on which the person already drives stay as they are; if one match day refuses, nothing is entered. Drivers can be taken off a match day right on the page. | Decided |
+| DRV-15 | The real routing service is the first one that is configured: Google Maps (Routes API) with `STV_GOOGLE_MAPS_API_KEY`, OpenRouteService with `STV_ORS_API_KEY`, otherwise OpenStreetMap without a key (Nominatim finds places, OSRM calculates the route). So a route is calculated without any configuration. (Replaces the second half of DRV-06: production no longer depends on an OpenRouteService key.) | Decided |
+| DRV-16 | If the meeting point names a venue the app already knows with coordinates (e.g. the home hall delivered by swiss unihockey), those coordinates are used. Otherwise the keyless geocoder searches the text and, if it finds nothing, the text without its first words (down to the town). | Assumption |
+| DRV-17 | The season plan shows how the trips are shared: per member of the team the trips on match days that are over, the planned trips on upcoming ones and the kilometres, so that driving can be spread fairly. | Decided |
+
 ## Notes
 
 - Only kilometres are counted, no money (assumption to confirm from the issue).
-- Configuration for production: `STV_ORS_API_KEY` (required for automatic routes), `STV_ORS_URL` (default `https://api.openrouteservice.org`). Without a key every route counts as unavailable and coaches enter the kilometres by hand.
+- Configuration: none is required. `STV_GOOGLE_MAPS_API_KEY` switches to Google Maps (needs a Google Cloud project with a billing account; the Routes API has a free monthly quota), `STV_ORS_API_KEY` to OpenRouteService. The OpenStreetMap services (`STV_NOMINATIM_URL`, `STV_OSRM_URL`) are free and ask for moderate use and an identifying user agent (`STV_ROUTING_USER_AGENT`); the app asks once per match day (O-64).
 - The routing service is called outside of the database transaction; the result is stored per match day (table `route`).

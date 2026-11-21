@@ -45,6 +45,25 @@ public class Match extends PanacheEntityBase {
     @Column(name = "missing_at_su")
     public boolean missingAtSu;
 
+    /**
+     * swiss unihockey changed this match and no coach or admin has confirmed it yet (SUH-12): time of the last
+     * change. The {@code suPrevious…} fields hold the values before the first unconfirmed change.
+     */
+    @Column(name = "su_changed_at")
+    public Instant suChangedAt;
+
+    @Column(name = "su_previous_start")
+    public Instant suPreviousStart;
+
+    @Column(name = "su_previous_opponent")
+    public String suPreviousOpponent;
+
+    @Column(name = "su_previous_home")
+    public Boolean suPreviousHome;
+
+    @Column(name = "su_previous_venue")
+    public String suPreviousVenue;
+
     public static Match create(Event event) {
         Match match = new Match();
         match.id = UUID.randomUUID();
@@ -59,6 +78,38 @@ public class Match extends PanacheEntityBase {
 
     public MatchDto dto() {
         return new MatchDto(id, opponent, EventReader.time(startTime), home, result, source, suMatchId,
-                missingAtSu);
+                missingAtSu, suChange());
+    }
+
+    /** The unconfirmed change by swiss unihockey, or {@code null} (SUH-12). */
+    public SuChangeDto suChange() {
+        if (suChangedAt == null) {
+            return null;
+        }
+        List<SuChangeDto.Item> changes = MatchRules.suChanges(
+                new MatchRules.SuState(suPreviousStart, suPreviousOpponent, suPreviousHome, suPreviousVenue),
+                new MatchRules.SuState(startTime, opponent, home,
+                        event.location == null ? null : event.location.name));
+        return changes.isEmpty() ? null : new SuChangeDto(EventReader.time(suChangedAt), changes);
+    }
+
+    /** Remembers the values before a change by swiss unihockey, unless an unconfirmed change is already noted. */
+    public void noteSuChange(Instant now, String venueBefore) {
+        if (suChangedAt == null) {
+            suPreviousStart = startTime;
+            suPreviousOpponent = opponent;
+            suPreviousHome = home;
+            suPreviousVenue = venueBefore;
+        }
+        suChangedAt = now;
+    }
+
+    /** A coach or admin has seen the change (SUH-12), or swiss unihockey changed everything back. */
+    public void clearSuChange() {
+        suChangedAt = null;
+        suPreviousStart = null;
+        suPreviousOpponent = null;
+        suPreviousHome = null;
+        suPreviousVenue = null;
     }
 }

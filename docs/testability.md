@@ -102,7 +102,7 @@ These helpers exist only in the Quarkus profiles `dev` and `test`. In the `prod`
 
 | Helper | Purpose | Interface |
 |---|---|---|
-| **Reset seed** | Bring the database into the defined initial state | `POST /api/test/reset` |
+| **Reset seed** | Bring the database into the defined initial state: the test data set with simulators and the fixed clock. `?dataset=CLUB` loads the club data set with live data instead ([test-data.md](test-data.md#data-sets)) | `POST /api/test/reset`, `GET /api/test/dataset` |
 | **Fixed clock** | Set «now» to check response deadlines, late cancellations and reminders | `PUT /api/test/clock`, `DELETE /api/test/clock` |
 | **No current season** | Create the state «no season set as current» (notice `/keine-saison`). Reset restores the seed | `DELETE /api/test/current-season` |
 | **Log in as** | Log in as any seed person without a password | `POST /api/test/login`, page `/dev-login` |
@@ -114,7 +114,7 @@ Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»)
 
 Push in the browser: E2E tests cannot reach a real push service. They replace the browser permission and `PushManager` with an init script (`fakePush` in `e2e/tests/f19-notification-channels.spec.ts`); the service worker stays real, and a push can be dispatched in it with `PushEvent`.
 
-The page `/dev-login` lists all seed persons with team role and team. One click logs in. At the top it clearly shows «Testmodus».
+The page `/dev-login` lists all seed persons grouped by team, coaches first and marked «Coach»; a person in several teams appears in each of them. One click logs in. At the top it clearly shows «Testmodus», which data set is loaded, and buttons to load the other one.
 
 ## Tools
 

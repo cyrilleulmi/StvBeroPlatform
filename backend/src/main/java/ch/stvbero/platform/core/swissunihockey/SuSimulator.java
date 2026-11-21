@@ -3,6 +3,7 @@ package ch.stvbero.platform.core.swissunihockey;
 import ch.stvbero.platform.core.clock.BackendClock;
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Typed;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -11,7 +12,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simulates swiss unihockey in the profiles {@code dev} and {@code test} (docs/test-data.md, simulated
+ * Simulates swiss unihockey while the app simulates ({@code Simulation}: the test data set in the profiles
+ * {@code dev} and {@code test}, docs/test-data.md, simulated
  * swiss unihockey data). After the reset it delivers for team ID {@code 900001} exactly match 01 and 02 of event 04
  * to the sync, and the league «Herren Kleinfeld 3. Liga», «Gruppe 12» with a table of eight teams and ten matches
  * to the league page (F-17). The test support endpoint {@code PUT /api/test/swiss-unihockey/matches} sets other
@@ -21,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * client uses the same match list for both.
  */
 @ApplicationScoped
+@Typed(SuSimulator.class)
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
 public class SuSimulator implements SwissUnihockeySource {
 
@@ -66,10 +69,21 @@ public class SuSimulator implements SwissUnihockeySource {
                     played(5000018, at(2027, 1, 10, 10, 0), "Floorball Seetal", "Team 1", "Seehalle", "Seetal",
                             null)));
 
+    /**
+     * The teams of the club after the reset (docs/test-data.md, simulated swiss unihockey data): the linked
+     * team of Team 1 and two more to choose from in the link dialog (SUH-02).
+     */
+    public static final List<SuClubTeam> SEED_CLUB_TEAMS = List.of(
+            new SuClubTeam(TEAM_1, "Herren KF 3. Liga"),
+            new SuClubTeam(900002, "Damen KF 2. Liga"),
+            new SuClubTeam(900003, "Junioren B"));
+
     private record Data(List<SuMatch> matches, SuLeague league, boolean unavailable) {
     }
 
     private final Map<Integer, Data> teams = new ConcurrentHashMap<>();
+    private volatile List<SuClubTeam> clubTeams = SEED_CLUB_TEAMS;
+    private volatile boolean clubUnavailable;
 
     public SuSimulator() {
         reset();
@@ -79,6 +93,24 @@ public class SuSimulator implements SwissUnihockeySource {
     public final void reset() {
         teams.clear();
         teams.put(TEAM_1, new Data(SEED, SEED_LEAGUE, false));
+        clubTeams = SEED_CLUB_TEAMS;
+        clubUnavailable = false;
+    }
+
+    /** Sets the teams of the club; {@code unavailable} simulates an outage of the team list (SUH-09). */
+    public void setClub(List<SuClubTeam> teams, boolean unavailable) {
+        if (teams != null) {
+            clubTeams = List.copyOf(teams);
+        }
+        clubUnavailable = unavailable;
+    }
+
+    @Override
+    public List<SuClubTeam> clubTeams(int season) {
+        if (clubUnavailable) {
+            throw new SuUnavailable("swiss unihockey not reachable (simulated)");
+        }
+        return clubTeams;
     }
 
     /**

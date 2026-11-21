@@ -68,9 +68,10 @@ class SyncRulesTest {
 
     @Test
     void periodRunsFromFirstStartTimeToLastPlusMatchDuration() {
-        SyncRules.Period period = SyncRules.period(List.of(at(11, 22, 11, 45), at(11, 22, 9, 30)));
+        SyncRules.Period period = SyncRules.period(List.of(at(11, 22, 11, 45), at(11, 22, 9, 30)),
+                java.time.Duration.ofMinutes(50));
         assertEquals(at(11, 22, 9, 30), period.start());
-        assertEquals(at(11, 22, 13, 0), period.end(), "Like event 04 in the seed");
+        assertEquals(at(11, 22, 12, 35), period.end(), "Last start plus the match duration of the team (TML-02)");
     }
 
     @Test

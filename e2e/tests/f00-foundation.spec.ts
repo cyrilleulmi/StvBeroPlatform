@@ -12,14 +12,21 @@ test.describe('Sign-in', () => {
 
     await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden als …');
-    const list = page.getByRole('list', { name: 'Testpersonen' });
-    await expect(list.getByRole('listitem')).toHaveCount(17);
-    for (const name of ['Alex Admin', 'Petra Keller', 'Marc Huber', 'Ruth Meier', 'Anna Muster', 'Vera Studer']) {
-      await expect(list.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
+    // The people are grouped by team (E-85): 17 people, Petra and Lea appear in both of their teams
+    await expect(page.getByRole('listitem')).toHaveCount(19);
+    for (const [key, name] of [
+      ['alex', 'Alex Admin'],
+      ['petra', 'Petra Keller'],
+      ['marc', 'Marc Huber'],
+      ['ruth', 'Ruth Meier'],
+      ['anna', 'Anna Muster'],
+      ['vera', 'Vera Studer'],
+    ]) {
+      await expect(page.getByTestId(`dev-login-person-${key}`).getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
     }
     await checkAccessibility(page);
 
-    await list.getByRole('button', { name: /^Anna Muster/ }).click();
+    await page.getByTestId('dev-login-person-anna').getByRole('button').click();
 
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
@@ -32,7 +39,7 @@ test.describe('Sign-in', () => {
     }
 
     await page.goto('/profil');
-    await page.getByRole('button', { name: /^Petra Keller/ }).click();
+    await page.getByTestId('dev-login-person-petra').getByRole('button').click();
 
     await expect(page).toHaveURL('/profil');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Profil');
@@ -44,7 +51,7 @@ test.describe('Sign-in', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden');
     await checkAccessibility(page);
     await page.getByRole('link', { name: 'Zur Anmeldung im Testmodus' }).click();
-    await page.getByRole('button', { name: /^Lea Graf/ }).click();
+    await page.getByTestId('dev-login-person-lea').getByRole('button').click();
 
     await expect(page).toHaveURL('/teams');
   });

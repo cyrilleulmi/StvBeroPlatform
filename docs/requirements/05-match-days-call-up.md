@@ -21,7 +21,7 @@ The teams play in tournament format: on a match day several matches take place i
 |---|---|---|
 | AUF-10 | The venue can be given with a Google Maps link. | Decided |
 | AUF-11 | The Google Maps link can be pasted by hand. For imported match days it is set automatically (see [06](06-swiss-unihockey.md)). | Accepted |
-| AUF-12 | A match day has a meeting point with time and place. | Accepted |
+| AUF-12 | A match day has a meeting point with time and place. The time can stay open: the timeline then suggests a departure ([TML-04](15-timeline.md)). | Accepted |
 | AUF-13 | A match day has a free text field for notes, e.g. the jersey colour. | Accepted |
 | AUF-14 | Each match of the match day has an opponent, a start time and home or away. | Accepted |
 | AUF-15 | A result can be recorded for each match. | Assumption |
@@ -52,8 +52,15 @@ The teams play in tournament format: on a match day several matches take place i
 | AUF-30 | The call-up screen shows the same warnings as the overview ([ANM-40](04-responses.md#warnings-f-16)), based on the selected players instead of the responses, and updates them while selecting. The texts say «aufgeboten» instead of «angemeldet» («Kein Goalie aufgeboten»). | Accepted, Assumption (wording) |
 | AUF-31 | Publishing a call-up with warnings is allowed. The confirmation dialog repeats the warnings. | Accepted |
 
+## Usual meeting point
+
+| ID | Requirement | Status |
+|---|---|---|
+| AUF-32 | A team can have a usual meeting point («Üblicher Treffpunkt», e.g. the home hall). Match days created by the sync start with it, without a meeting time; coaches change it per match day as before. | Decided |
+
 ## Not part of the core
 
 - Different lines for a single match day: dropped (see [LIN-08](02-lines.md)).
 - Driver list with automatic travel time: built with F-20, see [14 · Driver list](14-driver-list.md). It builds on meeting point and venue.
+- Timeline of the match day: see [15 · Timeline](15-timeline.md).
 - Calling up guest players from other teams: see [Later features](../later-features.md).

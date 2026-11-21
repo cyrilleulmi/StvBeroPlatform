@@ -123,7 +123,7 @@ test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403', async (
   }
 });
 
-test('F-12 K4 RR-04: Seasons, swiss unihockey and the admin flag stay hidden for Petra', async ({ page }) => {
+test('F-12 K4 RR-04: Seasons, reloading the league and the admin flag stay with admins', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/verwaltung');
   await expect(page.getByRole('link', { name: /^Personen/ })).toBeVisible();
@@ -132,7 +132,8 @@ test('F-12 K4 RR-04: Seasons, swiss unihockey and the admin flag stay hidden for
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByLabel('Teamname')).toBeVisible();
-  await expect(page.getByTestId('swiss-unihockey')).toHaveCount(0);
+  // Linking with swiss unihockey is open to coaches since E-84
+  await expect(page.getByTestId('swiss-unihockey')).toBeVisible();
   await page.goto(`/verwaltung/personen/${ANNA}`);
   await expect(page.getByLabel('Vorname')).toHaveValue('Anna');
   await expect(page.getByRole('checkbox', { name: /Admin/ })).toHaveCount(0);
@@ -140,8 +141,7 @@ test('F-12 K4 RR-04: Seasons, swiss unihockey and the admin flag stay hidden for
   for (const response of [
     await page.request.post('/api/seasons', { data: { name: '2027/28', startDate: '2027-07-01', endDate: '2028-06-30' } }),
     await page.request.post(`/api/seasons/${SEASON_2025}/activate`),
-    await page.request.put(`/api/teams/${TEAM_2}/swiss-unihockey`, { data: { suTeamId: 900002 } }),
-    await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`),
+    await page.request.post(`/api/teams/${TEAM_1}/league/refresh`),
     await page.request.put(`/api/persons/${ANNA}`, { data: { firstName: 'Anna', lastName: 'Muster', admin: true } }),
   ]) {
     expect(response.status()).toBe(403);

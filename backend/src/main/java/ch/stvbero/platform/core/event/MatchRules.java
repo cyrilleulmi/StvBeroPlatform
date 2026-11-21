@@ -2,7 +2,14 @@ package ch.stvbero.platform.core.event;
 
 import ch.stvbero.platform.core.error.DomainError;
 
+import ch.stvbero.platform.core.clock.BackendClock;
+
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /** Domain rules for the matches of a match day (AUF-14, AUF-15, SUH-06). No database. */
@@ -73,6 +80,64 @@ public final class MatchRules {
         if (source == MatchSource.SWISS_UNIHOCKEY && !missingAtSu) {
             throw DomainError.conflict("Importiertes Spiel", NOT_DELETABLE, "SUH-06");
         }
+    }
+
+    // ------------------------------------------------------------------ Changes by swiss unihockey (SUH-12)
+
+    public static final String NO_SU_CHANGE = "Dieses Spiel hat keine offene Änderung von swiss unihockey.";
+
+    /** What players need to know about an imported match: when, where, against whom, home or away. */
+    public record SuState(Instant startTime, String opponent, Boolean home, String venue) {
+    }
+
+    /**
+     * The differences between the values before the change and the current ones, as texts for display, in the
+     * order time, venue, opponent, home/away (SUH-12). Empty if swiss unihockey changed everything back.
+     */
+    public static List<SuChangeDto.Item> suChanges(SuState before, SuState now) {
+        List<SuChangeDto.Item> changes = new ArrayList<>();
+        if (before.startTime() != null && !before.startTime().equals(now.startTime())) {
+            changes.add(new SuChangeDto.Item(SuChangeDto.Field.START_TIME, dateTime(before.startTime()),
+                    dateTime(now.startTime())));
+        }
+        if (!norm(before.venue()).equals(norm(now.venue()))) {
+            changes.add(new SuChangeDto.Item(SuChangeDto.Field.VENUE, text(before.venue()), text(now.venue())));
+        }
+        if (before.opponent() != null && !before.opponent().equals(now.opponent())) {
+            changes.add(new SuChangeDto.Item(SuChangeDto.Field.OPPONENT, before.opponent(), now.opponent()));
+        }
+        if (before.home() != null && !before.home().equals(now.home())) {
+            changes.add(new SuChangeDto.Item(SuChangeDto.Field.HOME_AWAY, side(before.home()), side(now.home())));
+        }
+        return changes;
+    }
+
+    /** Only a match with an unconfirmed change can be confirmed (409). */
+    public static void checkHasSuChange(Instant suChangedAt) {
+        if (suChangedAt == null) {
+            throw DomainError.conflict("Keine Änderung offen", NO_SU_CHANGE, "SUH-12");
+        }
+    }
+
+    private static final String[] WEEKDAYS = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
+    private static final DateTimeFormatter DAY_TIME = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
+
+    /** «So 22.11. 09:30» in Swiss time. */
+    static String dateTime(Instant instant) {
+        ZonedDateTime zoned = instant.atZone(BackendClock.ZONE);
+        return WEEKDAYS[zoned.getDayOfWeek().getValue() - 1] + " " + DAY_TIME.format(zoned);
+    }
+
+    private static String side(boolean home) {
+        return home ? "Heimspiel" : "Auswärtsspiel";
+    }
+
+    private static String text(String value) {
+        return value == null || value.isBlank() ? "ohne Angabe" : value.strip();
+    }
+
+    private static String norm(String value) {
+        return value == null ? "" : value.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     /** A cancelled match day accepts no changes to its matches (409, TER-06). */

@@ -1,5 +1,10 @@
 <h1>{{ texts.start.greeting(auth.me()?.firstName ?? '') }}</h1>
 
+<!-- swiss unihockey not reachable at the last sync: coaches and admins are told (SUH-13) -->
+@if (auth.canManage()) {
+  <app-su-status-notice />
+}
+
 <ng-template #counter let-t>
   @if (t.counts; as z) {
     <p class="secondary-text counter" data-testid="event-counter">

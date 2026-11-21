@@ -55,6 +55,9 @@ public class DriverListService {
     Routes routes;
 
     @Inject
+    MatchDayRoutes matchDayRoutes;
+
+    @Inject
     Notifications notifications;
 
     /** Match day with its members and the caller's position. */
@@ -271,14 +274,12 @@ public class DriverListService {
     }
 
     private static List<DriverRules.Missing> missing(Event event) {
-        return DriverRules.missing(event.meetingPointLocation != null && !event.meetingPointLocation.isBlank(),
-                event.location != null && event.location.name != null);
+        return MatchDayRoutes.missing(event);
     }
 
-    /** Meeting point and venue as places of the route (DRV-12). */
-    private static Place[] places(Event event) {
-        return new Place[] {Places.meetingPoint(event.meetingPointLocation), Places.venue(event.location.name,
-                event.location.address, event.location.mapsUrl, event.location.latitude, event.location.longitude)};
+    /** Meeting point and venue as places of the route (DRV-12, DRV-16). */
+    private Place[] places(Event event) {
+        return matchDayRoutes.places(event);
     }
 
     /** Members (any team role) of the participating teams in the season of the match day, with person. */

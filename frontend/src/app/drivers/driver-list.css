@@ -147,3 +147,9 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}

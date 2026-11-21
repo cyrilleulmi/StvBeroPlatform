@@ -13,7 +13,10 @@ import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.error.Problem;
 import ch.stvbero.platform.core.person.Account;
 import ch.stvbero.platform.core.season.Season;
+import ch.stvbero.platform.core.swissunihockey.SuClubTeam;
 import ch.stvbero.platform.core.swissunihockey.SuSimulator;
+import ch.stvbero.platform.core.team.TeamMembership;
+import ch.stvbero.platform.core.team.TeamSeason;
 import ch.stvbero.platform.core.swissunihockey.SuMatchDto;
 import ch.stvbero.platform.core.swissunihockey.SuLeagueDto;
 import ch.stvbero.platform.core.swissunihockey.SuMatch;
@@ -34,6 +37,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -44,7 +48,10 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +70,7 @@ import java.util.stream.Collectors;
 public class TestResource {
 
     @Inject
-    Seed seed;
+    DataSets dataSets;
 
     @Inject
     BackendClock clock;
@@ -131,15 +138,52 @@ public class TestResource {
 
     @POST
     @Path("/reset")
-    @Operation(operationId = "testReset", summary = "Reset the database to the seed, the clock to default and the simulator")
+    @Operation(operationId = "testReset",
+            summary = "Reset the database to a data set and the simulators. Without `dataset`: the test data set "
+                    + "(fixed seed, fixed clock, simulators), as all automated tests expect. `CLUB`: the club with "
+                    + "its real teams, live data from swiss unihockey and the running clock.")
     @APIResponse(responseCode = "204", description = "Reset")
-    public void reset() {
-        deliveries.exclusively(() -> {
-            seed.reset();
-            simulator.reset();
-            deliverySimulator.reset();
-            routingSimulator.reset();
-        });
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public void reset(@QueryParam("dataset") DataSets.DataSet dataset) {
+        dataSets.load(dataset == null ? DataSets.DataSet.TEST : dataset);
+    }
+
+    @GET
+    @Path("/dataset")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testGetDataSet",
+            summary = "Which data set is loaded, whether the outside world is simulated and whether the club data is still loading")
+    @APIResponse(responseCode = "200", description = "OK",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DataSets.State.class)))
+    public DataSets.State dataSet() {
+        return dataSets.state();
+    }
+
+    @Schema(name = "SuClubPreset")
+    public record SuClubPreset(
+            @Schema(description = "Teams of the club the simulator lists; omitted: they stay as they are")
+            List<@Valid @NotNull SuClubTeamInput> teams,
+            @Schema(defaultValue = "false", description = "Simulates an outage of the team list (SUH-09)")
+            Boolean unavailable) {
+    }
+
+    @Schema(name = "SuClubTeamInput")
+    public record SuClubTeamInput(@NotNull @Positive Integer suTeamId, @NotBlank String name) {
+    }
+
+    @PUT
+    @Path("/swiss-unihockey/club")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "testSetSuClub",
+            summary = "Set the teams of the club the simulator lists for the link dialog, or an outage (SUH-02)")
+    @APIResponse(responseCode = "204", description = "Set")
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public void setSuClub(@Valid @NotNull SuClubPreset preset) {
+        simulator.setClub(preset.teams() == null ? null
+                        : preset.teams().stream().map(t -> new SuClubTeam(t.suTeamId(), t.name().strip())).toList(),
+                Boolean.TRUE.equals(preset.unavailable()));
     }
 
     @PUT
@@ -277,9 +321,22 @@ public class TestResource {
     @Operation(operationId = "testListPersons", summary = "Persons with their key for the test mode login (/dev-login)")
     @APIResponse(responseCode = "200", description = "Nach Nachname, dann Vorname",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = TestPerson.class)))
+    @Transactional
     public List<TestPerson> persons() {
+        Map<UUID, List<TestPerson.Membership>> teams = new HashMap<>();
+        Season.current().ifPresent(season -> {
+            Map<UUID, String> names = new HashMap<>();
+            TeamSeason.<TeamSeason>list("season.id", season.id).forEach(ts -> names.put(ts.team.id, ts.name));
+            TeamMembership.<TeamMembership>list("season.id", season.id).forEach(m -> teams
+                    .computeIfAbsent(m.person.id, key -> new ArrayList<>())
+                    .add(new TestPerson.Membership(m.team.id, names.getOrDefault(m.team.id, ""), m.teamRole)));
+        });
+        teams.values().forEach(list -> list.sort(Comparator
+                .comparing(TestPerson.Membership::teamName, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(TestPerson.Membership::teamId)));
         return Account.<Account>find("loginKey is not null order by person.lastName, person.firstName").list().stream()
-                .map(a -> new TestPerson(a.loginKey, a.person.id, a.person.firstName, a.person.lastName, a.person.admin))
+                .map(a -> new TestPerson(a.loginKey, a.person.id, a.person.firstName, a.person.lastName, a.person.admin,
+                        teams.getOrDefault(a.person.id, List.of())))
                 .toList();
     }
 }
