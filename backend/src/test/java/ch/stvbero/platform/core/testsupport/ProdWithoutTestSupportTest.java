@@ -44,9 +44,12 @@ class ProdWithoutTestSupportTest {
     void withoutTestSupportAppTalksToSwissUnihockey() {
         Object source = io.quarkus.arc.ClientProxy.unwrap(io.quarkus.arc.Arc.container()
                 .instance(ch.stvbero.platform.core.swissunihockey.SwissUnihockeySource.class).get());
+        Object current = io.quarkus.arc.ClientProxy.unwrap(
+                ((ch.stvbero.platform.core.swissunihockey.SuSource) source).current());
         org.junit.jupiter.api.Assertions.assertInstanceOf(ch.stvbero.platform.core.swissunihockey.SuApiSource.class,
-                source);
-        org.junit.jupiter.api.Assertions.assertEquals("https://api-v2.swissunihockey.ch/api",
+                current);
+        // The free interface of the official web components (E-83)
+        org.junit.jupiter.api.Assertions.assertEquals("https://wc.swissunihockey.ch",
                 org.eclipse.microprofile.config.ConfigProvider.getConfig()
                         .getValue("stv.swiss-unihockey.url", String.class));
         org.junit.jupiter.api.Assertions.assertTrue(io.quarkus.arc.Arc.container()

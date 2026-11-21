@@ -30,9 +30,14 @@
     <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
   } @else if (team(); as t) {
     @if (!readOnly()) {
-      <a class="button button-secondary team-link" [routerLink]="['/teams', t.id]">{{
-        texts.teamAdmin.viewTeam
-      }}</a>
+      <div class="team-links">
+        <a class="button button-secondary team-link" [routerLink]="['/teams', t.id]">{{
+          texts.teamAdmin.viewTeam
+        }}</a>
+        <a class="button button-secondary team-link" [routerLink]="['/teams', t.id, 'fahrerliste']">{{
+          texts.driverPlan.link
+        }}</a>
+      </div>
     }
     @if (!readOnly()) {
       <form
@@ -68,71 +73,84 @@
       </form>
     }
 
-    <!-- swiss unihockey: admins only (RR-04, E-69) -->
-    @if (!readOnly() && auth.isAdmin()) {
-      <section class="card form" aria-labelledby="su-title" data-testid="swiss-unihockey">
-        <h2 id="su-title">{{ texts.swissUnihockey.title }}</h2>
-        <p class="secondary-text">{{ texts.swissUnihockey.explanation }}</p>
-        <p data-testid="su-status">
-          {{
-            t.suTeamId
-              ? texts.swissUnihockey.linkedWith(t.suTeamId)
-              : texts.swissUnihockey.notLinked
-          }}
-        </p>
-        <form class="form" (submit)="link($event)" novalidate>
+    <!-- swiss unihockey: coaches and admins (SUH-02, E-84) -->
+    @if (!readOnly()) {
+      <app-su-connection [teamId]="t.id" [teamName]="t.name" (changed)="suChanged()" />
+      <!-- How the kinds of events look and behave in this team (VAR) -->
+      <app-event-variants [teamId]="t.id" />
+    }
+
+    <!-- Match day settings: duration of a match, arrival lead, usual meeting point (TML-02, TML-03, AUF-32) -->
+    @if (!readOnly() && t.matchDaySettings) {
+      <form
+        class="card form"
+        (submit)="saveMatchDaySettings($event)"
+        novalidate
+        aria-labelledby="match-day-settings-title"
+        data-testid="match-day-settings"
+      >
+        <h2 id="match-day-settings-title">{{ texts.matchDaySettings.title }}</h2>
+        <p class="secondary-text">{{ texts.matchDaySettings.explanation }}</p>
+        <div class="field-row">
           <div class="field">
-            <label for="su-team-id">{{ texts.swissUnihockey.field }}</label>
+            <label for="match-duration">{{ texts.matchDaySettings.duration }}</label>
             <input
-              id="su-team-id"
+              id="match-duration"
               type="text"
               inputmode="numeric"
-              maxlength="10"
+              maxlength="3"
               autocomplete="off"
-              [value]="suTeamId()"
-              (input)="suTeamId.set($any($event.target).value)"
-              [attr.aria-invalid]="suTeamIdError() ? 'true' : null"
-              [attr.aria-describedby]="
-                suTeamIdError() ? 'su-team-id-help su-team-id-error' : 'su-team-id-help'
-              "
+              [value]="matchDuration()"
+              (input)="matchDuration.set($any($event.target).value)"
+              [attr.aria-invalid]="matchDurationError() ? 'true' : null"
+              [attr.aria-describedby]="matchDurationError() ? 'match-duration-error' : null"
             />
-            <p class="secondary-text" id="su-team-id-help">{{ texts.swissUnihockey.fieldHelp }}</p>
-            @if (suTeamIdError(); as m) {
-              <p class="field-error" id="su-team-id-error">{{ m }}</p>
+            @if (matchDurationError(); as m) {
+              <p class="field-error" id="match-duration-error">{{ m }}</p>
             }
           </div>
-          <div class="su-buttons">
-            <button
-              type="submit"
-              class="button button-secondary button-small"
-              [disabled]="saving()"
-              [attr.aria-busy]="runningAction() === 'link' ? 'true' : null"
-            >
-              {{ texts.swissUnihockey.link }}
-            </button>
-            @if (t.suTeamId) {
-              <button
-                type="button"
-                class="button button-secondary button-small"
-                [disabled]="saving()"
-                [attr.aria-busy]="runningAction() === 'unlink' ? 'true' : null"
-                (click)="unlink()"
-              >
-                {{ texts.swissUnihockey.unlink }}
-              </button>
-              <button
-                type="button"
-                class="button button-primary button-small"
-                [disabled]="saving()"
-                [attr.aria-busy]="runningAction() === 'sync' ? 'true' : null"
-                (click)="sync()"
-              >
-                {{ texts.swissUnihockey.sync }}
-              </button>
+          <div class="field">
+            <label for="arrival-lead">{{ texts.matchDaySettings.lead }}</label>
+            <input
+              id="arrival-lead"
+              type="text"
+              inputmode="numeric"
+              maxlength="3"
+              autocomplete="off"
+              [value]="arrivalLead()"
+              (input)="arrivalLead.set($any($event.target).value)"
+              [attr.aria-invalid]="arrivalLeadError() ? 'true' : null"
+              [attr.aria-describedby]="arrivalLeadError() ? 'arrival-lead-error' : null"
+            />
+            @if (arrivalLeadError(); as m) {
+              <p class="field-error" id="arrival-lead-error">{{ m }}</p>
             }
           </div>
-        </form>
-      </section>
+        </div>
+        <div class="field">
+          <label for="usual-meeting-point">{{ texts.matchDaySettings.meetingPoint }}</label>
+          <input
+            id="usual-meeting-point"
+            type="text"
+            maxlength="120"
+            autocomplete="off"
+            [value]="usualMeetingPoint()"
+            (input)="usualMeetingPoint.set($any($event.target).value)"
+            aria-describedby="usual-meeting-point-help"
+          />
+          <p class="secondary-text" id="usual-meeting-point-help">
+            {{ texts.matchDaySettings.meetingPointHelp }}
+          </p>
+        </div>
+        <button
+          type="submit"
+          class="button button-secondary button-small"
+          [disabled]="saving()"
+          [attr.aria-busy]="runningAction() === 'matchDaySettings' ? 'true' : null"
+        >
+          {{ texts.matchDaySettings.save }}
+        </button>
+      </form>
     }
 
     @for (

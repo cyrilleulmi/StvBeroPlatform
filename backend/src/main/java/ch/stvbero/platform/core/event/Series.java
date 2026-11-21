@@ -73,6 +73,12 @@ public class Series extends PanacheEntityBase {
             inverseJoinColumns = @JoinColumn(name = "team_id"))
     public Set<Team> teams = new LinkedHashSet<>();
 
+    /** Teams invited without obligation («freiwillig», TER-15). A subset of {@link #teams}. */
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.CollectionTable(name = "series_optional_team", joinColumns = @JoinColumn(name = "series_id"))
+    @Column(name = "team_id")
+    public Set<UUID> optionalTeamIds = new LinkedHashSet<>();
+
     @OneToMany(mappedBy = "series", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<SeriesException> exceptions = new ArrayList<>();
 

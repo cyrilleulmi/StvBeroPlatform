@@ -32,8 +32,25 @@ Status legend: see [README](../../README.md#requirement-status).
 | DRV-12 | Coordinates of the places: venue from its stored coordinates, otherwise from the Google Maps link (`@lat,lon`, `!3d…!4d…`, or `query`/`q`/`ll`/`destination`/`daddr` with «lat,lon»), otherwise the geocoder searches the search text of the link or «name, address». The meeting point is free text and is searched as it is. If a place is not found, there is no route (DRV-07). Short links (`maps.app.goo.gl`) are not followed. | Decided (criteria), Assumption (order, short links) |
 | DRV-13 | Seed: match day 04 with two cars, Petra's car full (Anna, Lea, Mia) and Sara's car with three free seats; Jana responded «dabei» and has no seat ([test-data.md](../test-data.md#event-04-match-day-sun-22112026-team-1)). | Decided |
 
+## Season plan
+
+| ID | Requirement | Status |
+|---|---|---|
+| DRV-14 | The page «Fahrerliste der Saison» (`/teams/:id/fahrerliste`) shows every match day of a team in the season with its cars. Often one person plans the whole season: a form enters one driver for several match days at once («Fahrten einplanen»). Members enter themselves, coaches and admins also others; per match day the rules of DRV-01 and DRV-02 apply. Match days on which the person already drives stay as they are; if one match day refuses, nothing is entered. Drivers can be taken off a match day right on the page. | Decided |
+| DRV-15 | The real routing service is the first one that is configured: Google Maps (Routes API) with `STV_GOOGLE_MAPS_API_KEY`, OpenRouteService with `STV_ORS_API_KEY`, otherwise OpenStreetMap without a key (Nominatim finds places, OSRM calculates the route). So a route is calculated without any configuration. (Replaces the second half of DRV-06: production no longer depends on an OpenRouteService key.) | Decided |
+| DRV-16 | If the meeting point names a venue the app already knows with coordinates (e.g. the home hall delivered by swiss unihockey), those coordinates are used. Otherwise the keyless geocoder searches the text and, if it finds nothing, the text without its first words (down to the town). | Assumption |
+| DRV-17 | The season plan shows how the trips are shared: per member of the team the trips on match days that are over, the planned trips on upcoming ones and the kilometres, so that driving can be spread fairly. | Decided |
+
+## Proposal and travelling on one's own
+
+| ID | Requirement | Status |
+|---|---|---|
+| DRV-18 | Every person says whether she can drive and how many places her car usually has: «Kann fahren» (default **yes**) and «Plätze im Auto» including herself, 2 to 9, default **5** (herself and four others). The person changes it in her profile; coaches (of any team) and admins change it for everyone on the page «Fahrerliste der Saison» («Wer kann fahren»). The values are defaults for the proposal and for entering a car; the number of seats of a car on a match day can still be changed (DRV-02). | Decided (per player, default 5), Assumption (default «yes», per person and not per team) |
+| DRV-19 | «Vorschlag erarbeiten»: coaches and admins let the app propose a driver list for a match day. Everyone who needs a seat is seated: the players without a seat (DRV-04) and the coaches who responded «dabei», without those who travel on their own (DRV-20). Cars that are already entered stay and are filled first. Further drivers are chosen among the people who travel anyway and can drive (DRV-18), the one with the fewest trips in the season first (trips that are over plus planned ones, DRV-17), then by name; each brings her usual number of places. As few cars as needed are proposed. The proposal is shown first and changes nothing; «Vorschlag übernehmen» enters it, with the usual notifications (DRV-11). If there are not enough drivers, the proposal says who is left without a seat. | Decided (proposal), Assumption (rules of the proposal) |
+| DRV-20 | «Reist individuell an»: a member marks herself as travelling on her own, in the driver list or with her response ([ANM-13](04-responses.md)); coaches and admins mark others. Such a person is listed under «Reist individuell an», needs no seat (not in «Noch ohne Platz», not in the proposal) and leaves a seat she had. A driver cannot be marked until her car is removed. Whoever enters a car or takes a seat is no longer marked. | Decided |
+
 ## Notes
 
 - Only kilometres are counted, no money (assumption to confirm from the issue).
-- Configuration for production: `STV_ORS_API_KEY` (required for automatic routes), `STV_ORS_URL` (default `https://api.openrouteservice.org`). Without a key every route counts as unavailable and coaches enter the kilometres by hand.
+- Configuration: none is required. `STV_GOOGLE_MAPS_API_KEY` switches to Google Maps (needs a Google Cloud project with a billing account; the Routes API has a free monthly quota), `STV_ORS_API_KEY` to OpenRouteService. The OpenStreetMap services (`STV_NOMINATIM_URL`, `STV_OSRM_URL`) are free and ask for moderate use and an identifying user agent (`STV_ROUTING_USER_AGENT`); the app asks once per match day (O-64).
 - The routing service is called outside of the database transaction; the result is stored per match day (table `route`).

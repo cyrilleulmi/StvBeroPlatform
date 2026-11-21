@@ -42,6 +42,24 @@ Mapping tiles → color:
 - Helper scheduling → `accent-coral` (tile with `accent-coral-soft` background)
 - Resources → `primary`
 
+### Colours of the event variants (VAR-04)
+
+The event list tells the kinds of events apart by colour (TER-14, decided on 21.11.2026: «verwende mehr Farben, um Typen zu unterscheiden»). For this there is a palette of nine colours, each a pair of tokens per theme: `--tag-<name>` (text and date) and `--tag-<name>-soft` (background). A variant stores the name of the colour, never a value, so that every choice works in all three themes.
+
+| Name (UI) | Token | Hell | Düne | GitHub Dark |
+|---|---|---|---|---|
+| «Grün» | `tag-green` | `#1B7045` / `#DCF1E4` | `#1D6B43` / `#DFEEDA` | `#56D364` / `#12261E` |
+| «Türkis» | `tag-teal` | `#0C6A6E` / `#D6EEF0` | `#0C6468` / `#D8EBE6` | `#39C5CF` / `#0F2A2D` |
+| «Blau» | `tag-blue` | `#245C9E` / `#DCE8F8` | `#24578F` / `#DFE6EE` | `#79B8FF` / `#14263D` |
+| «Violett» | `tag-violet` | `#6541AD` / `#E8E0F7` | `#5F3DA3` / `#E9E0EE` | `#C4A0FF` / `#2A1F45` |
+| «Pink» | `tag-pink` | `#9F2E73` / `#F8DCEC` | `#962B6C` / `#F5DDE3` | `#F778BA` / `#3A1A2D` |
+| «Rot» | `tag-red` | `#AA3434` / `#FADEDD` | `#A23030` / `#F6DDD4` | `#FF8F87` / `#3C1F1E` |
+| «Orange» | `tag-orange` | `#96480A` / `#FBE5CF` | `#8C4309` / `#F6E2C6` | `#FFA657` / `#3A2513` |
+| «Gelb» | `tag-yellow` | `#6F5900` / `#F5ECC0` | `#685300` / `#F0E6B8` | `#E3B341` / `#342A10` |
+| «Grau» | `tag-grey` | `#4F5963` / `#E6EAEE` | `#4F554F` / `#E8E3D8` | `#A7B0BA` / `#272D35` |
+
+Each pair reaches at least 4.5:1 for the full colour on its soft background, on `surface` and on `bg`. Use: the date box of an event in the list (`*-soft` background, date in the full colour) and the chip with the name of the variant (`.tag-chip`). The colour is never the only sign: the name of the variant is always next to it. Elements pick their pair with `data-tag="<NAME>"`. The meaning of the response colours stays: «Rot» and «Gelb» of the palette are for kinds of events only, cancellations stay `accent-coral`, «vielleicht» and warnings `accent-mustard`.
+
 ## Shape («weich», soft)
 
 - Cards: radius 22px, 1px border in `border`, no drop shadow
@@ -104,7 +122,7 @@ Decided on 16.11.2026 (E-65 to E-67, NF-08). Reason: the base design was far too
 Rules:
 
 - A theme changes **only the color tokens**. Shape, typography, spacing and layout are the same everywhere.
-- Every theme sets all 14 color tokens. Components use only the tokens, never fixed colors.
+- Every theme sets all 14 color tokens and the 18 tokens of the event variants (`--tag-*`). Components use only the tokens, never fixed colors.
 - The meaning of the tokens stays: `primary` main action and «dabei», `accent-coral` cancellation and «nicht dabei» (reddish), `accent-mustard` «vielleicht» (yellowish), `accent-blue` coaches. `primary` is never red, orange or yellow.
 - Contrast at least 4.5:1 (WCAG AA) for text and accent colors on `bg`, `surface` and the `*-soft` areas, and for `on-primary` on `primary`. The colors of «GitHub Dark» are based on the theme of the same name.
 - «Düne» and «GitHub Dark» apply regardless of the system setting. The choice is stored in the browser (`localStorage`, key `stv-theme`), not in the account. A stored value that no longer exists falls back to «System», without an error. This also applies to the German values from before F-11 (`hell`, `duene`); they are not migrated.

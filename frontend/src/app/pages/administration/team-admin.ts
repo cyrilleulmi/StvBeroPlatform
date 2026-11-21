@@ -12,7 +12,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type {
-  SyncResult,
+  MatchDaySettings,
   TeamRole,
   Person,
   PersonSummary,
@@ -24,6 +24,8 @@ import { AuthService } from '../../core/auth.service';
 import { errorStatus, errorText } from '../../core/error-text';
 import { teamRoleText, name } from '../../core/format';
 import { TEXTS } from '../../core/texts';
+import { SuConnectionSection } from './su-connection';
+import { EventVariantsSection } from './event-variants';
 
 interface Member {
   person: PersonSummary;
@@ -33,13 +35,13 @@ interface Member {
 const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 
 /**
- * Manage a team (admin, PTF-11): rename, add people with a team role (PTF-03, PTF-04),
- * change the team role, remove. `?saison=` selects the season; the archive is read-only (SAI-02).
+ * Manage a team (admin, coach, PTF-11): rename, add people with a team role (PTF-03, PTF-04),
+ * change the team role, remove, link with swiss unihockey (SUH-02) and set the match day settings (TML-02). `?saison=` selects the season; the archive is read-only (SAI-02).
  */
 @Component({
   selector: 'app-team-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, SuConnectionSection, EventVariantsSection],
   templateUrl: './team-admin.html',
   styleUrl: '../page.css',
   styles: `
@@ -47,7 +49,7 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
     form .button {
       justify-self: start;
     }
-    .su-buttons {
+    .team-links {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -86,7 +88,7 @@ export class TeamAdmin {
   protected readonly loading = signal(true);
   /**
    * Which action is running: `rename`, `addMember`, `team-role:<personId>`,
-   * `remove:<personId>`, `link`, `unlink` or `sync`. Only its button carries `aria-busy`, all carry `disabled`.
+   * `remove:<personId>` or `matchDaySettings`. Only its button carries `aria-busy`, all carry `disabled`.
    */
   protected readonly runningAction = signal<string | null>(null);
   protected readonly saving = computed(() => this.runningAction() !== null);
@@ -99,8 +101,11 @@ export class TeamAdmin {
   protected readonly newPerson = signal('');
   protected readonly newTeamRole = signal<TeamRole>('PLAYER');
   protected readonly personError = signal<string | null>(null);
-  protected readonly suTeamId = signal('');
-  protected readonly suTeamIdError = signal<string | null>(null);
+  protected readonly matchDuration = signal('');
+  protected readonly matchDurationError = signal<string | null>(null);
+  protected readonly arrivalLead = signal('');
+  protected readonly arrivalLeadError = signal<string | null>(null);
+  protected readonly usualMeetingPoint = signal('');
 
   /** Coaches and players separately (PTF-07). */
   protected readonly coaches = computed<Member[]>(() =>
@@ -152,7 +157,7 @@ export class TeamAdmin {
       this.seasonData.set(seasons.find((s) => (seasonId ? s.id === seasonId : s.current)) ?? null);
       this.team.set(team);
       this.teamname.set(team.name);
-      this.suTeamId.set(team.suTeamId != null ? String(team.suTeamId) : '');
+      this.setMatchDaySettings(team.matchDaySettings);
       this.people.set(people);
     } catch (e) {
       this.team.set(null);
@@ -256,45 +261,43 @@ export class TeamAdmin {
     });
   }
 
-  /** Link with swiss unihockey (SUH-02). */
-  protected link(domEvent: Event): void {
+  /** After linking, unlinking or syncing: the team (chip, league link) may look different. */
+  protected suChanged(): void {
+    void this.reload().catch(() => undefined);
+  }
+
+  /** Match duration, arrival lead and usual meeting point of the team (TML-02, TML-03, AUF-32). */
+  protected saveMatchDaySettings(domEvent: Event): void {
     domEvent.preventDefault();
-    const input = this.suTeamId().trim();
-    if (!/^[1-9]\d{0,8}$/.test(input)) {
-      this.suTeamIdError.set(TEXTS.swissUnihockey.fieldRequired);
-      return;
-    }
-    this.suTeamIdError.set(null);
-    const id = Number(input);
-    void this.run('link', async () => {
-      await firstValueFrom(
-        this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: id }),
+    const duration = Number(this.matchDuration().trim());
+    const lead = Number(this.arrivalLead().trim());
+    const whole = (text: string) => /^[0-9]{1,3}$/.test(text.trim());
+    this.matchDurationError.set(
+      whole(this.matchDuration()) && duration >= 10 && duration <= 240
+        ? null
+        : TEXTS.matchDaySettings.durationInvalid,
+    );
+    this.arrivalLeadError.set(
+      whole(this.arrivalLead()) && lead >= 0 && lead <= 240 ? null : TEXTS.matchDaySettings.leadInvalid,
+    );
+    if (this.matchDurationError() || this.arrivalLeadError()) return;
+    const input: MatchDaySettings = {
+      matchDurationMinutes: duration,
+      arrivalLeadMinutes: lead,
+      meetingPoint: this.usualMeetingPoint().trim() || null,
+    };
+    void this.run('matchDaySettings', async () => {
+      const saved = await firstValueFrom(
+        this.http.put<MatchDaySettings>(`/api/teams/${this.teamId()}/match-day-settings`, input),
       );
-      return TEXTS.swissUnihockey.linked(id);
+      this.setMatchDaySettings(saved);
+      return TEXTS.matchDaySettings.saved;
     });
   }
 
-  protected unlink(): void {
-    this.suTeamIdError.set(null);
-    void this.run('unlink', async () => {
-      await firstValueFrom(
-        this.http.put(`/api/teams/${this.teamId()}/swiss-unihockey`, { suTeamId: null }),
-      );
-      this.suTeamId.set('');
-      return TEXTS.swissUnihockey.unlinked;
-    });
-  }
-
-  /** Trigger a sync right away (SUH-03). On a failure the backend reports the reason (SUH-09). */
-  protected sync(): void {
-    void this.run('sync', async () => {
-      const outcome = await firstValueFrom(
-        this.http.post<SyncResult>(
-          `/api/teams/${this.teamId()}/swiss-unihockey/sync`,
-          null,
-        ),
-      );
-      return TEXTS.swissUnihockey.synced(outcome);
-    });
+  private setMatchDaySettings(settings: MatchDaySettings | undefined): void {
+    this.matchDuration.set(settings ? String(settings.matchDurationMinutes) : '');
+    this.arrivalLead.set(settings ? String(settings.arrivalLeadMinutes) : '');
+    this.usualMeetingPoint.set(settings?.meetingPoint ?? '');
   }
 }

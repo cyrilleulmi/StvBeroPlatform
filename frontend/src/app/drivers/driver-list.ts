@@ -7,13 +7,14 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
-import type { Car, DriverList, PersonSummary } from '../api/types';
+import type { Car, DriverList, DriverProposal, PersonSummary, ProposedCar } from '../api/types';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
 import { TEXTS } from '../core/texts';
@@ -109,7 +110,22 @@ export function km(value: number | null | undefined): string {
             }
           </div>
 
-          <h3 class="subtitle" id="driver-list-cars">{{ s.cars }}</h3>
+          <div class="subtitle-row">
+            <h3 class="subtitle" id="driver-list-cars">{{ s.cars }}</h3>
+            @if (d.canManage) {
+              <!-- A proposed driver list: who drives, who rides with whom (DRV-19) -->
+              <button
+                type="button"
+                class="button button-secondary button-small"
+                data-testid="driver-proposal"
+                [disabled]="running()"
+                [attr.aria-busy]="busy() === 'propose' ? 'true' : null"
+                (click)="propose()"
+              >
+                {{ texts.proposal.button }}
+              </button>
+            }
+          </div>
           @if (d.cars.length === 0) {
             <p class="empty">{{ s.noCars }}</p>
           } @else {
@@ -240,7 +256,7 @@ export function km(value: number | null | undefined): string {
                 <label for="driver-list-my-seats">{{ s.mySeats }}</label>
                 <select id="driver-list-my-seats" #mySeats [disabled]="running()">
                   @for (n of seatOptions; track n) {
-                    <option [value]="n" [selected]="n === 3">{{ n }}</option>
+                    <option [value]="n" [selected]="n === d.defaultSeats">{{ n }}</option>
                   }
                 </select>
               </div>
@@ -272,7 +288,7 @@ export function km(value: number | null | undefined): string {
                   <label for="driver-list-seats">{{ s.seats }}</label>
                   <select id="driver-list-seats" #driverSeats [disabled]="running()">
                     @for (n of seatOptions; track n) {
-                      <option [value]="n" [selected]="n === 3">{{ n }}</option>
+                      <option [value]="n" [selected]="n === 4">{{ n }}</option>
                     }
                   </select>
                 </div>
@@ -292,12 +308,80 @@ export function km(value: number | null | undefined): string {
           } @else {
             <ul class="list" aria-labelledby="driver-list-without-seat" data-testid="without-seat">
               @for (p of d.withoutSeat; track p.id) {
-                <li class="row" [attr.aria-label]="name(p)">{{ name(p) }}</li>
+                <li class="row without-seat" [attr.aria-label]="name(p)">
+                  <span>{{ name(p) }}</span>
+                  @if (d.canManage && p.id !== meId()) {
+                    <button
+                      type="button"
+                      class="button button-secondary button-small"
+                      [attr.aria-label]="texts.individual.markFor(name(p))"
+                      [disabled]="running()"
+                      (click)="setIndividual(p, true)"
+                    >
+                      {{ texts.individual.mark }}
+                    </button>
+                  }
+                </li>
               }
             </ul>
           }
+
+          <!-- People who travel on their own need no seat (DRV-20) -->
+          @if (d.individual.length > 0 || canMarkSelf(d)) {
+            <h3 class="subtitle" id="driver-list-individual">{{ texts.individual.title }}</h3>
+            @if (d.individual.length > 0) {
+              <ul class="list" aria-labelledby="driver-list-individual" data-testid="individual">
+                @for (p of d.individual; track p.id) {
+                  <li class="row without-seat" [attr.aria-label]="name(p)">
+                    <span>
+                      {{ name(p) }}
+                      @if (p.id === meId()) {
+                        <span class="secondary-text">{{ s.you }}</span>
+                      }
+                    </span>
+                    @if ((p.id === meId() && d.canJoin) || d.canManage) {
+                      <button
+                        type="button"
+                        class="button button-secondary button-small"
+                        [attr.aria-label]="
+                          p.id === meId() ? texts.individual.selfUndo : texts.individual.undoFor(name(p))
+                        "
+                        [disabled]="running()"
+                        (click)="setIndividual(p, false)"
+                      >
+                        {{ texts.individual.undo }}
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            @if (canMarkSelf(d)) {
+              <button
+                type="button"
+                class="button button-secondary button-small individual-self"
+                data-testid="individual-self"
+                [disabled]="running()"
+                [attr.aria-busy]="busy() === 'individual-' + meId() ? 'true' : null"
+                (click)="markSelf()"
+              >
+                {{ texts.individual.self }}
+              </button>
+            }
+          }
         }
-        <a routerLink="/fahrten" class="summary-link" data-testid="driver-summary-link">{{ s.summaryLink }}</a>
+        <div class="links">
+          @if (teamId(); as team) {
+            <!-- Often one person plans the drivers of the whole season (DRV-14) -->
+            <a
+              [routerLink]="['/teams', team, 'fahrerliste']"
+              class="summary-link"
+              data-testid="driver-plan-link"
+              >{{ texts.driverPlan.link }}</a
+            >
+          }
+          <a routerLink="/fahrten" class="summary-link" data-testid="driver-summary-link">{{ s.summaryLink }}</a>
+        </div>
       }
     </section>
 
@@ -345,6 +429,79 @@ export function km(value: number | null | undefined): string {
     </dialog>
 
     <dialog
+      #proposalDialog
+      class="card dialog proposal"
+      aria-modal="true"
+      aria-labelledby="driver-proposal-title"
+      aria-describedby="driver-proposal-text"
+      (close)="proposal.set(null)"
+    >
+      @if (proposal(); as p) {
+        <h2 id="driver-proposal-title">{{ texts.proposal.title }}</h2>
+        <p class="secondary-text" id="driver-proposal-text">{{ texts.proposal.intro }}</p>
+        @if (!p.changes && p.withoutSeat.length === 0) {
+          <p data-testid="proposal-nothing">{{ texts.proposal.nothing }}</p>
+        }
+        @if (p.changes) {
+          <ul class="list proposal-cars" data-testid="proposal-cars" [attr.aria-label]="texts.proposal.title">
+            @for (c of p.cars; track c.driver.id) {
+              <li
+                class="proposal-car"
+                [attr.aria-label]="s.carOf(name(c.driver))"
+                [attr.data-existing]="c.existing"
+              >
+                <p class="row-title">
+                  {{ texts.proposal.drives(name(c.driver), c.seats) }}
+                  <span class="chip" [attr.data-kind]="c.existing ? 'existing' : 'new'">{{
+                    c.existing ? texts.proposal.existingCar : texts.proposal.newCar
+                  }}</span>
+                </p>
+                @if (c.passengers.length === 0) {
+                  <p class="secondary-text">{{ texts.proposal.alone }}</p>
+                } @else {
+                  <ul class="passengers" [attr.aria-label]="s.passengersOf(name(c.driver))">
+                    @for (x of c.passengers; track x.id) {
+                      <li [attr.aria-label]="name(x)">
+                        <span>
+                          {{ name(x) }}
+                          @if (isAdded(c, x)) {
+                            <span class="chip" data-kind="new">{{ texts.proposal.added }}</span>
+                          }
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (p.withoutSeat.length > 0) {
+          <div class="message-notice" data-testid="proposal-without-seat">
+            <p>{{ texts.proposal.withoutSeat(p.withoutSeat.length) }}</p>
+            <p>{{ names(p.withoutSeat) }}</p>
+          </div>
+        }
+        <div class="dialog-buttons">
+          @if (p.changes) {
+            <button
+              type="button"
+              class="button button-primary button-small"
+              [disabled]="running()"
+              [attr.aria-busy]="busy() === 'apply' ? 'true' : null"
+              (click)="applyProposal(p)"
+            >
+              {{ texts.proposal.apply }}
+            </button>
+          }
+          <button type="button" class="button button-secondary button-small" (click)="closeProposal()">
+            {{ texts.proposal.cancel }}
+          </button>
+        </div>
+      }
+    </dialog>
+
+    <dialog
       #removeDialog
       class="card dialog"
       aria-modal="true"
@@ -386,14 +543,20 @@ export class DriverListSection {
   protected readonly has = (v: number | null | undefined): v is number => v !== null && v !== undefined;
 
   readonly eventId = input.required<string>();
+  /** Team of the match day, for the link to its driver plan of the season (DRV-14). */
+  readonly teamId = input<string | null>(null);
   /** ID of the signed-in person. */
   readonly meId = input<string | null>(null);
   /** Coach or admin who may edit the event: hint where meeting point and venue are entered. */
   readonly canEditEvent = input(false);
   /** Changes when the event page reloads (e.g. after a response), so «Ohne Platz» stays current. */
   readonly version = input(0);
+  /** After a change that shows elsewhere on the event page, e.g. «reist individuell an» in the responses. */
+  readonly changed = output<void>();
 
   protected readonly data = signal<DriverList | null>(null);
+  protected readonly proposal = signal<DriverProposal | null>(null);
+  private readonly proposalDialog = viewChild<ElementRef<HTMLDialogElement>>('proposalDialog');
   protected readonly loading = signal(true);
   protected readonly busy = signal<string | null>(null);
   protected readonly running = computed(() => this.busy() !== null);
@@ -572,6 +735,89 @@ export class DriverListSection {
       this.http.delete<DriverList>(this.url(`/cars/${c.id}/passengers/${p.id}`)),
       () => this.s.left(who, name(c.driver)),
     );
+  }
+
+  // ------------------------------------------------------------------ Travelling on one's own (DRV-20)
+
+  /** Member who neither drives nor is marked yet. */
+  protected canMarkSelf(d: DriverList): boolean {
+    const me = this.meId();
+    return d.canJoin && !!me && !this.isDriver(d) && !d.individual.some((p) => p.id === me);
+  }
+
+  protected markSelf(): void {
+    const me = this.meId();
+    if (!me) return;
+    void this.individual(me, true, TEXTS.individual.savedSelf);
+  }
+
+  protected setIndividual(p: PersonSummary, on: boolean): void {
+    const self = p.id === this.meId();
+    const text = on
+      ? self
+        ? TEXTS.individual.savedSelf
+        : TEXTS.individual.saved(name(p))
+      : self
+        ? TEXTS.individual.removedSelf
+        : TEXTS.individual.removed(name(p));
+    void this.individual(p.id, on, text);
+  }
+
+  private async individual(personId: string, on: boolean, text: string): Promise<void> {
+    const url = this.url(`/individual/${personId}`);
+    await this.run(
+      'individual-' + personId,
+      on ? this.http.put<DriverList>(url, {}) : this.http.delete<DriverList>(url),
+      () => text,
+    );
+    this.changed.emit();
+  }
+
+  // ------------------------------------------------------------------ Proposal (DRV-19)
+
+  protected async propose(): Promise<void> {
+    if (this.running()) return;
+    this.busy.set('propose');
+    this.message.set(null);
+    this.error.set(null);
+    try {
+      this.proposal.set(
+        await firstValueFrom(this.http.post<DriverProposal>(this.url('/proposal'), {})),
+      );
+      const dialog = this.proposalDialog()?.nativeElement;
+      if (dialog && !dialog.open) dialog.showModal();
+    } catch (e) {
+      this.error.set(errorText(e));
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected isAdded(c: ProposedCar, p: PersonSummary): boolean {
+    return c.added.some((x) => x.id === p.id);
+  }
+
+  protected names(persons: PersonSummary[]): string {
+    return persons.map((p) => name(p)).join(', ');
+  }
+
+  protected closeProposal(): void {
+    this.proposalDialog()?.nativeElement.close();
+  }
+
+  /** Enters the proposal as it is shown: new cars, and the passengers it adds. */
+  protected async applyProposal(p: DriverProposal): Promise<void> {
+    const cars = p.cars
+      .filter((c) => !c.existing || c.added.length > 0)
+      .map((c) => ({
+        driverId: c.driver.id,
+        seats: c.seats,
+        passengerIds: c.added.map((x) => x.id),
+      }));
+    await this.run('apply', this.http.post<DriverList>(this.url('/proposal/apply'), { cars }), () =>
+      TEXTS.proposal.applied,
+    );
+    this.closeProposal();
   }
 
   protected recalculate(): void {

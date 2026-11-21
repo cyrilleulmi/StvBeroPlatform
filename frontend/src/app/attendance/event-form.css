@@ -103,3 +103,28 @@ textarea {
 .add {
   justify-self: start;
 }
+
+/* TER-15: expected or invited without obligation, per team */
+.participation-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 4px 0;
+}
+
+.participation-row label {
+  font-weight: 600;
+}
+
+.participation-row select {
+  min-height: var(--touch);
+  min-width: 150px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-icon);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 14px/1.2 var(--font);
+}

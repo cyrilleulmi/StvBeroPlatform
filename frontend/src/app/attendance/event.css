@@ -9,6 +9,21 @@
   gap: 4px;
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+/* TER-17: voluntary for the person */
+.optional-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--muted);
+  border-radius: var(--radius-icon);
+}
+
 .facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

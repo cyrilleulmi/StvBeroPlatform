@@ -69,6 +69,14 @@ public class Event extends PanacheEntityBase {
     @Column(name = "meeting_point_location")
     public String meetingPointLocation;
 
+    /** The meeting time was set by the automatic departure, not by hand (TML-09). */
+    @Column(name = "meeting_point_time_auto")
+    public boolean meetingPointTimeAuto;
+
+    /** Variant chosen for this event (VAR-03); {@code null}: the standard variant of its type. */
+    @Column(name = "variant_id")
+    public UUID variantId;
+
     @ManyToOne
     @JoinColumn(name = "series_id")
     public Series series;
@@ -90,6 +98,12 @@ public class Event extends PanacheEntityBase {
             joinColumns = @JoinColumn(name = "event_id"),
             inverseJoinColumns = @JoinColumn(name = "team_id"))
     public Set<Team> teams = new LinkedHashSet<>();
+
+    /** Teams invited without obligation («freiwillig», TER-15). A subset of {@link #teams}. */
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.CollectionTable(name = "event_optional_team", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "team_id")
+    public Set<UUID> optionalTeamIds = new LinkedHashSet<>();
 
     public static Event create() {
         Event event = new Event();

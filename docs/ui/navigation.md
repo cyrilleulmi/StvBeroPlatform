@@ -74,6 +74,7 @@ flowchart LR
 | `/teams/:id` | «Team» | members, coach, admin | Coaches and players separate (PTF-07), players by line (lists with the group name, empty groups are missing). Coaches and admins see the link «Linien einteilen» and, in the current season, «Statistik» (to `/statistik?team=<id>`, F-15) and the section «Warnungen» with the fields «Goalies mindestens», «Feldspielerinnen am Spieltag mindestens», «Feldspielerinnen im Training mindestens», «Pro Linie mindestens» (whole numbers 0–99, error «Bitte eine Zahl von 0 bis 99 eingeben.» at the field) and the button «Mindestzahlen speichern» (feedback «Die Mindestzahlen sind gespeichert.», F-16). In the current season the section «Liga» (F-17): linked teams «Tabelle, kommende Spiele und Resultate von swiss unihockey.» and the link «Liga ansehen» (to `/teams/:id/liga`); other teams «Dieses Team ist nicht mit swiss unihockey verknüpft. Darum gibt es keine Ligadaten.», admins also the link «In der Verwaltung verknüpfen» (to `/verwaltung/teams/:id`). `?saison=<id>` shows another season (archive with notice). Without team membership (and not coach or admin) «Keine Berechtigung» | F-01, F-02, F-12, F-16, F-17 |
 | `/teams/:id/liga` | «Liga» (league) | members, coach, admin | League data from swiss unihockey of the current season, from the cache of the daily sync (never live). Section with «<Liga> · <Gruppe>» as heading, «Stand: Mo 16.11.2026, 04:30», «Die Daten werden jeden Morgen neu geladen.»; admins: button «Neu laden» (feedback «Die Ligadaten sind neu geladen.» as `role="status"`, failure as `role="alert"`). swiss unihockey not reachable at the last attempt: notice «swiss unihockey war am <Datum, Zeit> nicht erreichbar. Angezeigt wird der Stand vom <Datum, Zeit>.»; never loaded: «Es sind noch keine Daten von swiss unihockey geladen.» (after a failed attempt also «Der letzte Versuch am … hat nicht geklappt: swiss unihockey war nicht erreichbar.»). «Tabelle» (`table`, columns «Rang», «Team», «Punkte», «Spiele», «Siege», «Unentschieden», «Niederlagen», «Tore»; on a phone rank, team and points are visible, the rest scrolls inside the card; own team bold with a bar and the chip «Unser Team»). «Kommende Spiele» (next five: date · time, «Heim gegen <Gegner>» / «Auswärts bei <Gegner>», hall and place; a match that belongs to a match day in the app is a link to `/termine/:id` with «Zum Spieltag»). «Letzte Resultate» (last five: date, «<Heim> – <Gast> <Resultat>», chip «Sieg», «Unentschieden» or «Niederlage»). Team not linked: «Dieses Team ist nicht mit swiss unihockey verknüpft. …», admins with «In der Verwaltung verknüpfen». Without team membership (and not coach or admin) «Keine Berechtigung» | F-17 |
 | `/teams/:id/linien` | «Linien» (lines) | coach (any team), admin (other members read-only) | Add, rename, sort («<Linie> nach oben/unten»), delete (dialog, admins only, RR-08) lines, assign players by drag and drop or select field «Linie von <Name>»; saves immediately. Without team membership (and not coach or admin) «Keine Berechtigung». Current season | F-02, F-12 |
+| `/teams/:id/fahrerliste` | «Fahrerliste der Saison» (driver plan of the season, DRV-14) | members of the team, coach, admin | Link back to the team, subtitle «<Team> · Saison 2026/27». Section «Spieltage» with every match day of the season (date, venue, distance, «vorbei»/«abgesagt», «Es fehlt: Treffpunkt.», cars with «<Name> · 2 von 4 Plätzen frei» and «<Name> austragen», link «Zum Spieltag»). Form «Fahrten einplanen»: «Wer fährt» (coaches and admins), «Freie Plätze», checkboxes «An diesen Spieltagen» with «Alle ohne Auto wählen» and «Auswahl leeren», button «Eintragen». Table «Verteilung der Fahrten» (Person, Gefahren, Geplant, Total, Kilometer). `?saison=<id>` shows another season |
 | `/fahrten` | «Fahrten» (trips) | logged in | Link «Zum Profil», subtitle «Saison 2026/27» (`trips-season`), card `trips` with the hint what is credited. Coaches and admins: «Fahrten pro Person», table of the same name (columns «Name», «Fahrten», «Kilometer»; rows `trips-person-<personId>` by name; «1 Fahrt ohne Kilometer» where the distance is missing), empty «In dieser Saison ist noch niemand gefahren.». Everyone else: «Deine Fahrten» with «Fahrten» and «Kilometer» (`dl`). `?saison=<id>` shows another season | F-20 |
 | `/benachrichtigungen` | «Benachrichtigungen» (notifications) | logged in | Own notifications, newest first (list «Benachrichtigungen»): text, time, unread ones with «Neu». A click marks as read and opens `/termine/:id` (BEN-12). Button «Alle als gelesen markieren» (only with unread ones, feedback «Alle sind als gelesen markiert.»). Empty: «Keine Benachrichtigungen.» | F-06 |
 | `/profil` | «Profil» (profile) | logged in | Name, section «Meine Statistik» with the link «Statistik ansehen» (players only, F-15), section «Meine Fahrten» with the link «Fahrten ansehen» (to `/fahrten`, F-20), section «Benachrichtigungen» (F-19): switches «E-Mail» (hint «An <Adresse>», without address disabled with «Für E-Mails braucht es eine E-Mail-Adresse. …») and «Push auf diesem Gerät» (asks for the browser permission; denied: notice «Mitteilungen sind für diese App blockiert» with how to allow it again; iPhone outside the home screen: notice «Auf dem iPhone zuerst zum Home-Bildschirm hinzufügen» with steps; feedback «E-Mails sind ein-/ausgeschaltet.», «Push ist auf diesem Gerät ein-/ausgeschaltet.»), list «Weitere Geräte mit Push» (label, «seit <Datum>», «Entfernen»), section «Kalender abonnieren» (F-18): field «Deine Kalenderadresse» (read-only), «Adresse kopieren» (message «Die Adresse ist kopiert.»), link «Im Kalender öffnen» (`webcal:`), «So gehts» with the disclosures «iPhone», «Android (Google Kalender)», «Outlook», «Adresse erneuern» with the dialog «Adresse erneuern?» («Erneuern», «Abbrechen»; message «Neue Adresse erstellt. Die bisherige funktioniert nicht mehr.»), theme («Hell», «Düne», «GitHub Dark», «System»; NF-08), log out | F-00 |
@@ -86,6 +87,15 @@ flowchart LR
 | `/verwaltung/teams` | «Teams verwalten» (manage teams) | admin, coach | Select «Saison» (`?saison=<id>`), teams of the season, «Team anlegen». Archive read-only. Linked teams with chip «swiss unihockey» (`su-linked-<teamId>`) | F-01, F-07 |
 | `/verwaltung/teams/:id` | «Team verwalten» (manage team) | admin, coach | Link «Team ansehen» (to `/teams/:id`, not in the archive), rename, section «swiss unihockey» (admins only) (field «Team-ID bei swiss unihockey», «Verknüpfen», «Verknüpfung lösen», «Jetzt abgleichen» with result as `role="status"`, failure as `role="alert"`; not in the archive), coaches and players with select «Funktion von <Name>» and «<Name> entfernen» (admins only, RR-08), «Person aufnehmen». `?saison=<id>`; archive read-only | F-01, F-07 |
 | `/verwaltung/saisons` | «Saisons» (seasons) | admin (coaches see «Keine Berechtigung») | Seasons with status (current, archive, planned), «Teams ansehen», «Zur aktuellen Saison machen», form «Neue Saison» with carry-over | F-01 |
+
+Added by the batch «event variants» (E-86 to E-89), on the routes above:
+
+- `/termine`: every entry shows the colour (date box) and the name (chip) of its event variant; events that are voluntary for the person carry the chip «Freiwillig», and the checkbox «Freiwillige Termine anzeigen» hides them (`?freiwillig=aus`).
+- `/termine/:id`: «Meine Antwort» first, then the sections of the event variant in its order, by default «Anmeldungen» (the overview), «Spiele», «Aufgebot» (only where the variant makes a call-up), «Zeitplan», «Fahrerliste», «Aufstellungen», «Präsenz», «Angaben». «Spiele» shows the ranks of the league table; the driver list has «Vorschlag erarbeiten» and «Reist individuell an».
+- `/termine/neu`, `/termine/:id/bearbeiten`, `/serien/:id/bearbeiten`: with several teams the group «Wer wird erwartet?»; for single events the field «Variante» if the first team has variants of its own for the type.
+- `/verwaltung/teams/:id`: section «Terminvarianten» with a dialog per variant.
+- `/teams/:id/linien`: section «Spezialaufstellungen» with a dialog (name, number of places, position and player per place).
+- `/teams/:id/fahrerliste`: section «Wer kann fahren». `/profil`: section «Fahren».
 
 Without permission a screen shows the text «Keine Berechtigung» (`role="alert"`) instead of an empty screen. Without login every route redirects to `/anmelden` (or `/dev-login` in test mode) with `?ziel=<original route>` and returns there after login. The frontend checks whether someone is logged in via `GET /api/session` (always 200), so that no errors appear in the console without login.
 
@@ -114,7 +124,10 @@ Fixed test IDs that tests rely on. Scheme and rules: [testability.md](../testabi
 | `theme-switch` | Switch «Darstellung» in the profile: choice (radio) «Hell», «Düne», «GitHub Dark», «System» |
 | `test-mode-notice` | Banner «Testmodus» (dev/test only) |
 | `tile-<id>` | Tile on the start screen (link), e.g. `tile-anwesenheit` |
-| `dev-login-person-<key>` | Entry of a test person on `/dev-login`, e.g. `dev-login-person-petra` |
+| `dev-login-person-<key>` | Entry of a test person on `/dev-login`, e.g. `dev-login-person-petra`, in the first group she appears in (admins, then teams by name). In her further teams the entry is `dev-login-person-<key>-<teamId>`. `data-role`: `coach`, `admin` or `player` |
+| `dev-login-group-<key>` | Group on `/dev-login` (`section` named after the team): `admins`, a team ID, or `none` (people without a team). Coaches come first and carry the chip «Coach» |
+| `data-set`, `data-set-name`, `data-set-loading` | Card «Datensatz» on `/dev-login` (`data-dataset`: `TEST` or `CLUB`), its name («Testdaten», «Vereinsdaten») and the notice while the club data loads; buttons «Vereinsdaten laden», «Testdaten laden» |
+| `su-status-notice` | Hint on the start page of coaches and admins when the last sync with swiss unihockey failed (SUH-13) |
 | `next-event` | Card «Nächster Termin» on the start screen: next planned event of the own teams (cancelled ones skipped) with link to the event, `event-counter` and `my-response`. Without an event: «Keine kommenden Termine» |
 | `next-practices` | Card «Weitere Trainings» on the start screen (F-13): practices after the next event, so that at least two upcoming practices are visible in total (one more if the next event is a practice, otherwise two). Cancelled practices are skipped. Missing when there is none |
 | `start-practice-<id>` | Entry in `next-practices` (`li`, name e.g. «Training Do 19.11. 19:00») with link to the event, teams, `event-counter` and `my-response` |
@@ -139,7 +152,11 @@ Fixed test IDs that tests rely on. Scheme and rules: [testability.md](../testabi
 | `season-<seasonId>` | Entry in `/verwaltung/saisons` (`li` with the season name as `aria-label`) |
 | `season-status` | Status of a season: «aktuell», «Archiv», «geplant» |
 | `swiss-unihockey` | Section «swiss unihockey» in `/verwaltung/teams/:id` (`section`, name «swiss unihockey») |
-| `su-status` | «Verknüpft mit Team-ID <ID>.» or «Nicht verknüpft.» |
+| `su-status` | «Nicht verknüpft.» while the team has no link |
+| `su-links`, `su-link-<suTeamId>`, `su-link-sync` | List of the links, one link (`data-sync`: `ok`, `failed`, `never`) and its text «Letzter Abgleich: …» |
+| `su-dialog`, `su-club-error` | Dialog «<Team> mit swiss unihockey verknüpfen» (select «Team bei swiss unihockey», switch «Team-ID von Hand eingeben») and the message when the teams of the club cannot be loaded |
+| `match-day-settings` | Form «Spieltage» in `/verwaltung/teams/:id`: «Dauer eines Spiels (Minuten)», «Ankunft vor dem ersten Spiel (Minuten)», «Üblicher Treffpunkt» |
+| `team-driver-plan`, `team-driver-plan-link` | Section «Fahrerliste der Saison» on `/teams/:id` and its link |
 | `su-linked-<teamId>` | Chip «swiss unihockey» next to a linked team in `/verwaltung/teams` |
 
 Success messages have `role="status"`, errors `role="alert"`. In «Person aufnehmen», people already in the team are marked with «(schon im Team)» and cannot be selected (PTF-04).
@@ -263,8 +280,37 @@ Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 | `car-seats` | Chip «<n> von <m> Plätzen frei» or «voll» inside a car |
 | `without-seat` | List «Ohne Platz»; `without-seat-empty` for «Alle haben einen Platz.» |
 | `driver-summary-link` | Link «Fahrten der Saison» to `/fahrten` |
+| `driver-plan-link` | Link «Fahrerliste der Saison» to `/teams/:id/fahrerliste` |
+| `driver-plan-season`, `driver-plan-match-days`, `driver-plan-form`, `driver-plan-shares` | Subtitle, list of match days, form «Fahrten einplanen» and table «Verteilung der Fahrten» in `/teams/:id/fahrerliste` |
+| `plan-match-day-<eventId>` | Match day in the season plan (`data-state`: `upcoming`, `over`, `cancelled`), with `plan-venue`, `plan-missing`, `plan-no-cars` |
+| `plan-car-<personId>` | Car of a driver in the season plan (`data-free`: free seats) |
+| `plan-choice-<eventId>` | Checkbox of a match day in «Fahrten einplanen» |
+| `plan-share-<personId>` | Row of a person in «Verteilung der Fahrten» (`data-total`, cells `data-column`: `done`, `planned`, `total`, `kilometres`) |
+| `timeline`, `timeline-items`, `timeline-settings`, `timeline-hint`, `timeline-suggestion` | Section «Zeitplan» in `/termine/:id` (match days only), its list (items with `data-kind`: `DEPARTURE`, `ARRIVAL`, `WARM_UP`, `MATCH`, `BREAK`, `COOL_DOWN`, `RETURN`; `data-suggested` on a suggested departure), the sentence with match duration and arrival lead, a hint (`data-hint`) and the suggested departure next to a set meeting time |
+| `match-su-change`, `match-missing` | On a match in `/termine/:id`: what swiss unihockey changed, with before and after (items with `data-field`), and «swiss unihockey liefert dieses Spiel nicht mehr.»; button «Gesehen» for coaches and admins (SUH-12) |
 | `my-trips-link` | Link «Fahrten ansehen» in `/profil` |
 | `trips`, `trips-season`, `trips-person-<personId>` | Card, subtitle and row (or `dl`) in `/fahrten` |
+
+### Event variants, special line-ups and the rest of the batch «event variants»
+
+| Test ID | Element |
+|---|---|
+| `event-variant` | Chip with the name of the event variant on an entry of `/termine` and under the title of `/termine/:id`; `data-tag` is the colour (`GREEN`, `TEAL`, `BLUE`, `VIOLET`, `PINK`, `RED`, `ORANGE`, `YELLOW`, `GREY`). The entry itself carries `data-variant` (kind) and `data-participation` |
+| `event-optional` | Chip «Freiwillig» on an entry of `/termine`; on `/termine/:id` the note «Für dich freiwillig …» above the own response (TER-17) |
+| `optional-filter`, `optional-hidden` | Checkbox «Freiwillige Termine anzeigen» in `/termine` (`?freiwillig=aus` hides them) and the line «<n> freiwillige Termine sind ausgeblendet.» |
+| `overview-team-optional` | Chip «freiwillig» next to an invited team in the overview |
+| `travels-individually` | Checkbox «Ich reise individuell an …» under the own response on a match day (only with «dabei»); `overview-individual` is the chip «reist individuell an» of a person in the overview (ANM-13) |
+| `participation` | Group «Wer wird erwartet?» in the event form with one select «Teilnahme <Team>» per chosen team (several teams, not a match day) |
+| `event-variants` | Section «Terminvarianten» in `/verwaltung/teams/:id`; entries `variant-<KIND>` for the standard variants and `variant-<id>` for the team's own (`data-color`, `data-call-up`), `variant-summary`, button `variant-add` |
+| `variant-call-up`, `variant-auto-departure`, `variant-sections` | In the dialog of a variant: checkboxes «Aufgebot machen» and «Abfahrtszeit automatisch setzen» (match days only), list of the sections (items with `data-section`, `data-shown`; checkbox «<Abschnitt> anzeigen», buttons «<Abschnitt> nach oben/unten») |
+| `standing`, `opponent-rank` | In the section «Spiele» of a match day: «2. Rang von 8 · <Liga> · Tabelle ansehen» and per match «Gegner: 1. Rang» (AUF-34); `call-up-ranks` is the card «Tabelle» on `/termine/:id/aufgebot` |
+| `departure-auto` | Chip «automatisch gesetzt» on the departure of the timeline (TML-09) |
+| `driver-proposal` | Button «Vorschlag erarbeiten» in the driver list (coaches, admins); in the dialog `proposal-cars` (items «Auto von <Name>», `data-existing`), `proposal-without-seat`, `proposal-nothing` |
+| `individual`, `individual-self` | List «Reist individuell an» in the driver list and the button «Ich reise individuell an» |
+| `my-driving`, `my-can-drive` | Section «Fahren» in `/profil` with the checkbox «Kann fahren» and the field «Plätze im Auto (mit dir)» |
+| `driver-plan-drivers`, `plan-driver-<personId>` | Section «Wer kann fahren» in `/teams/:id/fahrerliste` and its rows (`data-can-drive`) |
+| `special-lineups`, `special-lineup-<id>`, `special-lineup-add` | Section «Spezialaufstellungen» in `/teams/:id/linien`, one line-up, button «Aufstellung hinzufügen» |
+| `event-lineups` | Section «Aufstellungen» of a match day; places with `data-gap` and `data-empty` (LIN-16) |
 
 ### Lines
 

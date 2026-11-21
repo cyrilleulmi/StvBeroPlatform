@@ -74,7 +74,15 @@ interface Target {
           [attr.aria-labelledby]="'overview-team-title-' + block.team.id"
         >
           <div class="team-header">
-            <h3 [id]="'overview-team-title-' + block.team.id">{{ block.team.name }}</h3>
+            <h3 [id]="'overview-team-title-' + block.team.id">
+              {{ block.team.name }}
+              @if (block.optional) {
+                <!-- Invited without obligation: only those who responded are counted (TER-16) -->
+                <span class="chip" data-kind="optional" data-testid="overview-team-optional">{{
+                  texts.participation.teamChip
+                }}</span>
+              }
+            </h3>
             <p
               class="counter"
               [attr.data-testid]="'overview-team-' + block.team.id + '-counter'"
@@ -170,6 +178,11 @@ interface Target {
           @if (e.response.lateCancellation) {
             <span class="chip" data-kind="late-cancellation">{{ a.lateCancellation }}</span>
           }
+          @if (e.response.travelsIndividually) {
+            <span class="chip" data-kind="individual" data-testid="overview-individual">{{
+              texts.individual.short
+            }}</span>
+          }
           @if (e.response.comment; as k) {
             <span class="secondary-text comment">«{{ k }}»</span>
           }
@@ -250,6 +263,7 @@ interface Target {
 export class OverviewSection {
   private readonly responses = inject(ResponseService);
   protected readonly t = TEXTS.overview;
+  protected readonly texts = TEXTS;
   protected readonly a = TEXTS.response;
   protected readonly icon = RESPONSE_ICON;
   protected readonly key = responseKey;

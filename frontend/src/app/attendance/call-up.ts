@@ -51,6 +51,32 @@ import { Warnings } from './warnings';
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
       } @else if (callUp(); as a) {
+        <!-- Current ranks of the league table, to decide the call-up (AUF-34) -->
+        @if (event(); as ev) {
+          @if (ev.standing || hasRanks()) {
+            <section class="card ranks" aria-labelledby="call-up-ranks-title" data-testid="call-up-ranks">
+              <h2 id="call-up-ranks-title" class="section-title">{{ texts.standings.title }}</h2>
+              @if (ev.standing; as st) {
+                <p data-testid="standing">
+                  <strong>{{ texts.standings.own(st.rank, st.teams) }}</strong>
+                  @if (st.league) {
+                    · {{ texts.standings.league(st.league, st.group) }}
+                  }
+                </p>
+              }
+              <ul class="list" aria-labelledby="call-up-ranks-title">
+                @for (m of ev.matches ?? []; track m.id) {
+                  <li class="row rank-row">
+                    <span>{{ time(m.startTime) }} · {{ m.opponent }}</span>
+                    @if (m.opponentRank; as rank) {
+                      <span class="secondary-text">{{ texts.standings.opponent(rank) }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        }
         <section class="card state" aria-labelledby="call-up-state-title">
           <h2 id="call-up-state-title" class="section-title">{{ texts.matchDay.callUp }}</h2>
           <p class="status-row">
@@ -199,6 +225,10 @@ export class CallUpPage {
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
   protected readonly teamName = computed(() => this.event()?.teams[0]?.name ?? '');
+  /** At least one opponent has a rank in the league table (AUF-34). */
+  protected readonly hasRanks = computed(() =>
+    (this.event()?.matches ?? []).some((m) => m.opponentRank != null),
+  );
 
   /** Planned and not past (TER-06); `canEdit` is true for coaches and admins exactly then. */
   protected readonly editable = computed(() => this.event()?.canEdit === true);

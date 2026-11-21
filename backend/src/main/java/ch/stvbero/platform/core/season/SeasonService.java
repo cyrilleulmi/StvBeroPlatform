@@ -73,6 +73,7 @@ public class SeasonService {
             copies.put(membership, copy);
         }
         LineService.carryOver(source, target, copies);
+        ch.stvbero.platform.core.lineup.SpecialLineupService.carryOver(em, source, target, java.time.Instant.now());
     }
 
     /** Makes the season the current one. There is always exactly one current season (SAI-03). */

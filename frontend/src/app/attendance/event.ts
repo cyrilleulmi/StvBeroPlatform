@@ -11,7 +11,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { EventDetail as EventData, Overview as OverviewData } from '../api/types';
+import type {
+  EventDetail as EventData,
+  EventSection,
+  Overview as OverviewData,
+} from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { errorStatus, errorText } from '../core/error-text';
 import { FeedbackService } from '../core/feedback.service';
@@ -19,24 +23,55 @@ import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
 import { MatchDay } from './match-day';
 import { DriverListSection } from '../drivers/driver-list';
+import { TimelineSection } from '../drivers/timeline';
+import { EventLineupsSection } from './event-lineups';
 import { OverviewSection } from './overview';
 import { yearOf, eventDate, clockTime } from './time';
+
+/** Sections of a match day if the variant names none; «Anmeldungen» first (VAR-07). */
+const DEFAULT_SECTIONS: EventSection[] = [
+  'RESPONSES',
+  'MATCHES',
+  'CALL_UP',
+  'TIMELINE',
+  'DRIVER_LIST',
+  'LINEUPS',
+  'ATTENDANCE',
+  'DETAILS',
+];
 
 /**
  * Event (`/termine/:eventId`): details, status (cancelled with reason, rescheduled), for coaches the
  * link to edit (TER-04, TER-06), the own response and the overview by team and line (F-04, ANM).
- * For match days also call-up and matches (F-05, AUF) and the driver list (F-20, DRV).
+ * For match days also call-up and matches (F-05, AUF), the timeline (TML), the driver list (F-20, DRV)
+ * and the special line-ups (LIN-16). Which sections are shown and in which order is set by the event
+ * variant of the team (VAR-07); the own response always stays on top.
  */
 @Component({
   selector: 'app-event',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MyResponse, MatchDay, DriverListSection, OverviewSection],
+  imports: [
+    RouterLink,
+    MyResponse,
+    MatchDay,
+    TimelineSection,
+    DriverListSection,
+    EventLineupsSection,
+    OverviewSection,
+  ],
   template: `
     <div class="header">
       <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
       <h1>{{ event()?.title ?? texts.events.title }}</h1>
       @if (event(); as t) {
         <p class="secondary-text">{{ date(t.start) }} · {{ period() }} · {{ teams() }}</p>
+        @if (t.variant; as v) {
+          <p class="chips">
+            <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{
+              v.name
+            }}</span>
+          </p>
+        }
       }
     </div>
     @if (success(); as message) {
@@ -64,129 +99,208 @@ import { yearOf, eventDate, clockTime } from './time';
             <h2 id="event-my-response" class="section-title">
               {{ texts.response.myResponse }}
             </h2>
+            @if (t.myParticipation === 'OPTIONAL') {
+              <p class="optional-note" data-testid="event-optional">
+                <strong>{{ texts.participation.forYou }}.</strong>
+                {{ texts.participation.forYouText }}
+              </p>
+            }
             <app-my-response
               [eventId]="t.id"
               [response]="t.myResponse"
               [name]="texts.response.myResponse"
               [locked]="lock()"
               [details]="true"
+              [travel]="t.type === 'MATCH_DAY'"
               (changed)="reload()"
             />
           </section>
         }
-        @if (t.myAttendance; as a) {
-          <section class="card my-attendance" aria-labelledby="event-my-attendance" data-testid="my-attendance" [attr.data-attendance]="a">
-            <h2 id="event-my-attendance" class="section-title">{{ texts.attendanceCheck.yourAttendance }}</h2>
-            <p>{{ texts.attendanceCheck.yourAttendanceText(texts.attendanceCheck.status[a]) }}</p>
-          </section>
-        }
-        @if (attendanceSection(); as s) {
-          <section class="card attendance" aria-labelledby="event-attendance" data-testid="attendance-section">
-            <h2 id="event-attendance" class="section-title">{{ texts.attendanceCheck.section }}</h2>
-            @if (s === 'open') {
-              <p data-testid="attendance-recorded" [attr.data-recorded]="t.attendanceRecorded === true">
-                {{ t.attendanceRecorded ? texts.attendanceCheck.recorded : texts.attendanceCheck.notRecorded }}
-              </p>
-              <a
-                class="button button-primary button-small"
-                data-testid="attendance-record"
-                [routerLink]="['/termine', t.id, 'praesenz']"
-                >{{ t.attendanceRecorded ? texts.attendanceCheck.correct : texts.attendanceCheck.record }}</a
-              >
-            } @else {
-              <p class="secondary-text">{{ texts.attendanceCheck.beforeStart }}</p>
+        @for (section of sections(); track section) {
+          @switch (section) {
+            @case ('RESPONSES') {
+              @if (overview(); as u) {
+                <app-overview
+                  [eventId]="t.id"
+                  [data]="u"
+                  [coachIn]="coachIn()"
+                  [allTeams]="auth.canManage()"
+                  [meId]="auth.me()?.id ?? null"
+                  [responsesOpen]="!lock()"
+                  (changed)="reload()"
+                />
+              }
             }
-          </section>
-        }
-        @if (t.type === 'MATCH_DAY') {
-          <app-match-day
-            [event]="t"
-            [canCallUp]="coachOrAdmin()"
-            [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
-            (changed)="reload()"
-          />
-          <app-driver-list
-            [eventId]="t.id"
-            [meId]="auth.me()?.id ?? null"
-            [canEditEvent]="!!t.canEdit"
-            [version]="version()"
-          />
-        }
-        <section class="card" aria-labelledby="event-details">
-          <h2 id="event-details" class="section-title">{{ texts.events.details }}</h2>
-          <dl class="facts">
-            <dt>{{ texts.events.date }}</dt>
-            <dd>{{ date(t.start) }}</dd>
-            <dt>{{ texts.events.time }}</dt>
-            <dd>{{ period() }}</dd>
-            <dt>{{ texts.events.teams }}</dt>
-            <dd>{{ teams() }}</dd>
-            @if (t.location) {
-              <dt>{{ texts.events.location }}</dt>
-              <dd>
-                {{ t.location.name }}
-                @if (t.location.address) {
-                  , {{ t.location.address }}
-                }
-                @if (t.location.mapsUrl) {
-                  <br />
+            @case ('MATCHES') {
+              @if (t.type === 'MATCH_DAY') {
+                <app-match-day
+                  part="matches"
+                  [event]="t"
+                  [canEnterResult]="coachOrAdmin() && t.status !== 'CANCELLED'"
+                  [canConfirm]="!!t.canEdit"
+                  (changed)="reload()"
+                />
+              }
+            }
+            @case ('CALL_UP') {
+              <!-- Only where the variant makes a call-up (VAR-06) -->
+              @if (t.type === 'MATCH_DAY' && t.variant?.callUp) {
+                <app-match-day part="callUp" [event]="t" [canCallUp]="coachOrAdmin()" />
+              }
+            }
+            @case ('TIMELINE') {
+              @if (t.type === 'MATCH_DAY') {
+                <app-timeline
+                  [eventId]="t.id"
+                  [team]="t.teams[0]?.name ?? ''"
+                  [version]="version()"
+                  (changed)="reload()"
+                />
+              }
+            }
+            @case ('DRIVER_LIST') {
+              @if (t.type === 'MATCH_DAY') {
+                <app-driver-list
+                  [eventId]="t.id"
+                  [teamId]="t.teams[0]?.id ?? null"
+                  [meId]="auth.me()?.id ?? null"
+                  [canEditEvent]="!!t.canEdit"
+                  [version]="version()"
+                  (changed)="reload()"
+                />
+              }
+            }
+            @case ('LINEUPS') {
+              @if (t.type === 'MATCH_DAY') {
+                <app-event-lineups
+                  [eventId]="t.id"
+                  [teamId]="t.teams[0]?.id ?? null"
+                  [canEdit]="coachOrAdmin()"
+                  [version]="version()"
+                />
+              }
+            }
+            @case ('ATTENDANCE') {
+              @if (t.myAttendance; as a) {
+                <section
+                  class="card my-attendance"
+                  aria-labelledby="event-my-attendance"
+                  data-testid="my-attendance"
+                  [attr.data-attendance]="a"
+                >
+                  <h2 id="event-my-attendance" class="section-title">
+                    {{ texts.attendanceCheck.yourAttendance }}
+                  </h2>
+                  <p>{{ texts.attendanceCheck.yourAttendanceText(texts.attendanceCheck.status[a]) }}</p>
+                </section>
+              }
+              @if (attendanceSection(); as s) {
+                <section
+                  class="card attendance"
+                  aria-labelledby="event-attendance"
+                  data-testid="attendance-section"
+                >
+                  <h2 id="event-attendance" class="section-title">
+                    {{ texts.attendanceCheck.section }}
+                  </h2>
+                  @if (s === 'open') {
+                    <p
+                      data-testid="attendance-recorded"
+                      [attr.data-recorded]="t.attendanceRecorded === true"
+                    >
+                      {{
+                        t.attendanceRecorded
+                          ? texts.attendanceCheck.recorded
+                          : texts.attendanceCheck.notRecorded
+                      }}
+                    </p>
+                    <a
+                      class="button button-primary button-small"
+                      data-testid="attendance-record"
+                      [routerLink]="['/termine', t.id, 'praesenz']"
+                      >{{
+                        t.attendanceRecorded
+                          ? texts.attendanceCheck.correct
+                          : texts.attendanceCheck.record
+                      }}</a
+                    >
+                  } @else {
+                    <p class="secondary-text">{{ texts.attendanceCheck.beforeStart }}</p>
+                  }
+                </section>
+              }
+            }
+            @case ('DETAILS') {
+              <section class="card" aria-labelledby="event-details">
+                <h2 id="event-details" class="section-title">{{ texts.events.details }}</h2>
+                <dl class="facts">
+                  <dt>{{ texts.events.date }}</dt>
+                  <dd>{{ date(t.start) }}</dd>
+                  <dt>{{ texts.events.time }}</dt>
+                  <dd>{{ period() }}</dd>
+                  <dt>{{ texts.events.teams }}</dt>
+                  <dd>{{ teams() }}</dd>
+                  @if (t.location) {
+                    <dt>{{ texts.events.location }}</dt>
+                    <dd>
+                      {{ t.location.name }}
+                      @if (t.location.address) {
+                        , {{ t.location.address }}
+                      }
+                      @if (t.location.mapsUrl) {
+                        <br />
+                        <a
+                          [href]="t.location.mapsUrl"
+                          target="_blank"
+                          rel="noopener"
+                          data-testid="venue-map"
+                          >{{ texts.events.openMap }}</a
+                        >
+                      }
+                    </dd>
+                  }
+                  @if (t.meetingPoint; as mp) {
+                    <dt>{{ texts.events.meetingPoint }}</dt>
+                    <dd data-testid="meeting-point">
+                      {{ mp.time ? clockTime(mp.time) : texts.events.meetingPointTimeOpen }} ·
+                      {{ mp.location }}
+                    </dd>
+                  }
+                  <dt>{{ texts.events.responseDeadline }}</dt>
+                  <dd data-testid="response-deadline">
+                    {{
+                      texts.events.responseDeadlineText(
+                        date(t.responseDeadline),
+                        clockTime(t.responseDeadline),
+                        t.responseDeadlineHours ?? 24
+                      )
+                    }}
+                  </dd>
+                  @if (t.notes) {
+                    <dt>{{ texts.events.notes }}</dt>
+                    <dd class="notes">{{ t.notes }}</dd>
+                  }
+                  @if (t.seriesId) {
+                    <dt>{{ texts.events.series }}</dt>
+                    <dd>
+                      @if (t.canEdit) {
+                        <a [routerLink]="['/serien', t.seriesId]">{{ texts.events.viewSeries }}</a>
+                      } @else {
+                        {{ texts.events.partOfSeries }}
+                      }
+                    </dd>
+                  }
+                </dl>
+                @if (t.canEdit) {
                   <a
-                    [href]="t.location.mapsUrl"
-                    target="_blank"
-                    rel="noopener"
-                    data-testid="venue-map"
-                    >{{ texts.events.openMap }}</a
+                    class="button button-secondary button-small edit"
+                    [routerLink]="['/termine', t.id, 'bearbeiten']"
+                    >{{ texts.events.edit }}</a
                   >
                 }
-              </dd>
+              </section>
             }
-            @if (t.meetingPoint; as mp) {
-              <dt>{{ texts.events.meetingPoint }}</dt>
-              <dd data-testid="meeting-point">{{ clockTime(mp.time) }} · {{ mp.location }}</dd>
-            }
-            <dt>{{ texts.events.responseDeadline }}</dt>
-            <dd data-testid="response-deadline">
-              {{
-                texts.events.responseDeadlineText(
-                  date(t.responseDeadline),
-                  clockTime(t.responseDeadline),
-                  t.responseDeadlineHours ?? 24
-                )
-              }}
-            </dd>
-            @if (t.notes) {
-              <dt>{{ texts.events.notes }}</dt>
-              <dd class="notes">{{ t.notes }}</dd>
-            }
-            @if (t.seriesId) {
-              <dt>{{ texts.events.series }}</dt>
-              <dd>
-                @if (t.canEdit) {
-                  <a [routerLink]="['/serien', t.seriesId]">{{ texts.events.viewSeries }}</a>
-                } @else {
-                  {{ texts.events.partOfSeries }}
-                }
-              </dd>
-            }
-          </dl>
-          @if (t.canEdit) {
-            <a
-              class="button button-secondary button-small edit"
-              [routerLink]="['/termine', t.id, 'bearbeiten']"
-              >{{ texts.events.edit }}</a
-            >
           }
-        </section>
-        @if (overview(); as u) {
-          <app-overview
-            [eventId]="t.id"
-            [data]="u"
-            [coachIn]="coachIn()"
-            [allTeams]="auth.canManage()"
-            [meId]="auth.me()?.id ?? null"
-            [responsesOpen]="!lock()"
-            (changed)="reload()"
-          />
         }
       }
     </div>
@@ -216,6 +330,13 @@ export class EventPage {
   protected readonly period = computed(() => {
     const t = this.event();
     return t ? TEXTS.events.period(clockTime(t.start), clockTime(t.end)) : '';
+  });
+
+  /** Sections in the order of the event variant (VAR-07); «Angaben» is always among them. */
+  protected readonly sections = computed<EventSection[]>(() => {
+    const sections = [...(this.event()?.variant?.sections ?? DEFAULT_SECTIONS)];
+    if (!sections.includes('DETAILS')) sections.push('DETAILS');
+    return sections;
   });
 
   /** Member of an involved team: can respond for themselves (ANM-01). */
@@ -255,9 +376,16 @@ export class EventPage {
     return null;
   });
 
-  protected readonly teams = computed(() =>
-    TEXTS.events.joinTeams((this.event()?.teams ?? []).map((t) => t.name)),
-  );
+  /** Teams of the event; the ones invited without obligation are named as such (TER-17). */
+  protected readonly teams = computed(() => {
+    const t = this.event();
+    const optional = t?.optionalTeamIds ?? [];
+    return TEXTS.events.joinTeams(
+      (t?.teams ?? []).map((x) =>
+        optional.includes(x.id) ? TEXTS.participation.optionalTeam(x.name) : x.name,
+      ),
+    );
+  });
 
   constructor() {
     this.success.set(this.feedback.take());

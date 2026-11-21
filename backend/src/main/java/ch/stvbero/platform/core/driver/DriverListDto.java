@@ -24,7 +24,9 @@ public record DriverListDto(
         @Schema(description = "The call-up is published: «without seat» counts the called-up players (DRV-04)") boolean callUpPublished,
         List<CarDto> cars,
         @Schema(description = "Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04)") List<PersonSummary> withoutSeat,
-        @Schema(description = "Members of the teams of the match day, by name; only for coaches and admins") List<PersonSummary> members) {
+        @Schema(description = "Members of the teams of the match day, by name; only for coaches and admins") List<PersonSummary> members,
+        @Schema(description = "People who travel on their own and need no seat, by name (DRV-20)") List<PersonSummary> individual,
+        @Schema(description = "Seats for passengers the caller usually offers: her places minus herself (DRV-18)") int defaultSeats) {
 
     /** A car with its driver and passengers (DRV-02, DRV-03). */
     @Schema(name = "Car")

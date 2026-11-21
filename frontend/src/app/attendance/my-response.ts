@@ -56,6 +56,19 @@ type Choice = ResponseInput['status'];
       @if (locked(); as text) {
         <p class="secondary-text" [id]="id('lock')">{{ text }}</p>
       }
+      <!-- Match days: «dabei» and travelling on one's own, so that no seat is planned (ANM-13) -->
+      @if (travel() && current().status === 'ATTENDING' && !locked()) {
+        <label class="travel">
+          <input
+            type="checkbox"
+            data-testid="travels-individually"
+            [checked]="!!current().travelsIndividually"
+            [disabled]="running() !== null"
+            (change)="setTravel($any($event.target).checked)"
+          />
+          {{ travelTexts.checkbox }}
+        </label>
+      }
       @if (details()) {
         @if (current().comment; as k) {
           <p class="secondary-text comment">{{ texts.yourComment(k) }}</p>
@@ -190,6 +203,9 @@ export class MyResponse {
   readonly locked = input<string | null>(null);
   /** Show own comment, «eingetragen von» and «kurzfristig» (detail of an event). */
   readonly details = input(false);
+  /** Match day: offer «Ich reise individuell an» with «dabei» (ANM-13). */
+  readonly travel = input(false);
+  protected readonly travelTexts = TEXTS.individual;
 
   /** After every save, so that the page reloads counters and overview. */
   readonly changed = output<EventResponse>();
@@ -262,6 +278,15 @@ export class MyResponse {
     dialog.close();
   }
 
+  /** «Ich reise individuell an»: saved with the response «dabei» (ANM-13). */
+  protected async setTravel(on: boolean): Promise<void> {
+    if (this.locked() || this.running()) return;
+    const saved = await this.save({ status: 'ATTENDING', travelsIndividually: on }, false, true);
+    if (saved) {
+      this.message.set(on ? TEXTS.individual.savedSelf : TEXTS.individual.removedSelf);
+    }
+  }
+
   protected onDialogClose(): void {
     this.commentError.set(null);
   }
@@ -276,7 +301,7 @@ export class MyResponse {
   }
 
   /** Saves and reports the result. Errors on the comment appear at the field (ANM-04). */
-  private async save(input: ResponseInput, reasonOnly = false): Promise<boolean> {
+  private async save(input: ResponseInput, reasonOnly = false, quiet = false): Promise<boolean> {
     this.running.set(input.status);
     this.message.set(null);
     this.error.set(null);
@@ -284,11 +309,13 @@ export class MyResponse {
     try {
       const updated = await this.responses.set(this.eventId(), input);
       this.current.set(updated);
-      this.message.set(
-        reasonOnly
-          ? TEXTS.response.reasonSaved
-          : TEXTS.response.saved(TEXTS.response.status[updated.status as ResponseStatus]),
-      );
+      if (!quiet) {
+        this.message.set(
+          reasonOnly
+            ? TEXTS.response.reasonSaved
+            : TEXTS.response.saved(TEXTS.response.status[updated.status as ResponseStatus]),
+        );
+      }
       this.changed.emit(updated);
       return true;
     } catch (e) {

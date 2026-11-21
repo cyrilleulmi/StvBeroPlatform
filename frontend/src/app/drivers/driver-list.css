@@ -147,3 +147,71 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+/* DRV-19, DRV-20: proposal and travelling on one's own */
+.subtitle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.subtitle-row .subtitle {
+  margin: 0;
+}
+
+.without-seat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.individual-self {
+  justify-self: start;
+}
+
+.dialog.proposal {
+  width: min(560px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+}
+
+.dialog.proposal:not([open]) {
+  display: none;
+}
+
+.proposal-cars {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.proposal-car {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-icon);
+}
+
+.proposal-car p {
+  margin: 0;
+}
+
+.chip[data-kind='new'] {
+  background: var(--primary-soft);
+}
+
+.chip[data-kind='existing'] {
+  background: var(--border);
+}

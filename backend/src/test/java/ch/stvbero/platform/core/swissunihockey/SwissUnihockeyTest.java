@@ -15,6 +15,7 @@ import static ch.stvbero.platform.core.auth.AuthTest.login;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -69,7 +70,14 @@ class SwissUnihockeyTest {
 
     private static ValidatableResponse link(String session, String team, String suTeamId) {
         return given().cookie("stv_session", session).contentType(ContentType.JSON)
-                .body("{\"suTeamId\":" + suTeamId + "}").put("/api/teams/" + team + "/swiss-unihockey").then();
+                .body("{\"suTeamId\":" + suTeamId + "}").post("/api/teams/" + team + "/swiss-unihockey/links").then();
+    }
+
+    private static void unlinkAll(String session, String team) {
+        List<String> links = given().cookie("stv_session", session).get("/api/teams/" + team + "/swiss-unihockey")
+                .then().statusCode(200).extract().jsonPath().getList("links.id");
+        links.forEach(link -> given().cookie("stv_session", session)
+                .delete("/api/teams/" + team + "/swiss-unihockey/links/" + link).then().statusCode(204));
     }
 
     private static JsonPath event(String id) {
@@ -88,8 +96,11 @@ class SwissUnihockeyTest {
     @Test
     void suh02AdminLinksTeamAndTriggersSync() {
         String alex = login("alex");
-        link(alex, TEAM_2, "900002").statusCode(200)
-                .body("id", equalTo(TEAM_2)).body("name", equalTo("Team 2")).body("suTeamId", equalTo(900002));
+        link(alex, TEAM_2, "900002").statusCode(201)
+                .body("teamId", equalTo(TEAM_2)).body("teamName", equalTo("Team 2"))
+                .body("links.suTeamId", contains(900002))
+                // The name comes from the teams of the club; linking syncs right away (SUH-02)
+                .body("links[0].name", equalTo("Damen KF 2. Liga")).body("links[0].lastSyncOk", equalTo(true));
         given().cookie("stv_session", alex).get("/api/teams/" + TEAM_2).then().body("suTeamId", equalTo(900002));
 
         presetSimulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000001,"
@@ -97,15 +108,21 @@ class SwissUnihockeyTest {
                 + "\"hall\":\"Turnhalle Weid\",\"location\":\"Beispielstadt\"}]}");
         sync(alex, TEAM_2).statusCode(200).body("created", equalTo(1)).body("affectedEvents", hasSize(1));
 
-        link(alex, TEAM_2, "null").statusCode(200).body("suTeamId", nullValue());
+        unlinkAll(alex, TEAM_2);
+        given().cookie("stv_session", alex).get("/api/teams/" + TEAM_2).then().body("suTeamId", nullValue());
         sync(alex, TEAM_2).statusCode(409).body("rule", equalTo("SUH-02"));
     }
 
     @Test
-    void suh02OnlyAdmins() {
+    void suh02CoachesAndAdminsOnly() {
+        // Players may not link or sync (RR-07)
+        String anna = login("anna");
+        link(anna, TEAM_1, "900009").statusCode(403);
+        sync(anna, TEAM_1).statusCode(403);
+        // Coaches of any team may (E-84)
         String petra = login("petra");
-        link(petra, TEAM_1, "900009").statusCode(403);
-        sync(petra, TEAM_1).statusCode(403);
+        link(petra, TEAM_2, "900002").statusCode(201);
+        sync(petra, TEAM_1).statusCode(200);
         given().post("/api/teams/" + TEAM_1 + "/swiss-unihockey/sync").then().statusCode(401);
     }
 
@@ -114,7 +131,7 @@ class SwissUnihockeyTest {
         String alex = login("alex");
         link(alex, TEAM_2, "900001").statusCode(409).body("rule", equalTo("SUH-02"));
         link(alex, TEAM_2, "0").statusCode(400).body("fields[0].field", equalTo("suTeamId"));
-        link(alex, TEAM_1, "900001").statusCode(200);
+        link(alex, TEAM_1, "900001").statusCode(409).body("detail", containsString("Team 1"));
         link(alex, "10000000-0000-4000-8000-000000000999", "900005").statusCode(404);
         sync(alex, "10000000-0000-4000-8000-000000000999").statusCode(404);
     }
@@ -123,7 +140,8 @@ class SwissUnihockeyTest {
 
     @Test
     void inTestProfileAppTalksToTheSimulator() {
-        assertInstanceOf(SuSimulator.class, io.quarkus.arc.ClientProxy.unwrap(source));
+        Object current = ((SuSource) io.quarkus.arc.ClientProxy.unwrap(source)).current();
+        assertInstanceOf(SuSimulator.class, io.quarkus.arc.ClientProxy.unwrap(current));
     }
 
     @Test
@@ -168,7 +186,8 @@ class SwissUnihockeyTest {
         assertEquals("https://www.google.com/maps/search/?api=1&query=Sporthalle+Nord+Beromünster"
                 .replace("ü", "%C3%BC"), tournament.getString("location.mapsUrl"));
         assertEquals("2026-12-06T10:00:00+01:00", tournament.getString("start"));
-        assertEquals("2026-12-06T13:45:00+01:00", tournament.getString("end"));
+        // End: last start plus the match duration of the team, 50 minutes by default (TML-02)
+        assertEquals("2026-12-06T13:20:00+01:00", tournament.getString("end"));
 
         JsonPath otherHall = event(events.get(1));
         assertThat(otherHall.getList("matches.opponent"), contains("UHC Fünf"));
@@ -191,7 +210,7 @@ class SwissUnihockeyTest {
                 .body("affectedEvents", contains(T04));
         JsonPath matchDay = event(T04);
         assertThat(matchDay.getList("matches.opponent"), contains("UHC Musterdorf", "Unihockey Beispielstadt", "UHC Drei"));
-        assertEquals("2026-11-22T15:15:00+01:00", matchDay.getString("end"));
+        assertEquals("2026-11-22T14:50:00+01:00", matchDay.getString("end"));
     }
 
     // ------------------------------------------------------------------ Criterion 4: S12 (SUH-05, SUH-06, BEN-06)
@@ -217,7 +236,7 @@ class SwissUnihockeyTest {
         assertEquals(before.getString("meetingPoint.location"), after.getString("meetingPoint.location"));
         assertEquals("Weisse Trikots mitnehmen", after.getString("notes"));
         assertEquals(before.getString("start"), after.getString("start"));
-        assertEquals("2026-11-22T13:30:00+01:00", after.getString("end"));
+        assertEquals("2026-11-22T13:05:00+01:00", after.getString("end"));
         assertEquals(before.getMap("counts"), after.getMap("counts"), "Responses stay");
         assertEquals(callUpBefore, given().cookie("stv_session", alex).get("/api/events/" + T04 + "/call-up")
                 .then().extract().jsonPath().getList("groups"), "Call-up stays");
@@ -382,7 +401,7 @@ class SwissUnihockeyTest {
     @Test
     void suh03DailyJobSyncsAllLinkedTeams() {
         String alex = login("alex");
-        link(alex, TEAM_2, "900002").statusCode(200);
+        link(alex, TEAM_2, "900002").statusCode(201);
         presetSimulator("{\"suTeamId\":900002,\"unavailable\":true,\"matches\":[]}");
         presetSimulator("{\"suTeamId\":900001,\"matches\":[" + MATCH_01_SU + "," + match02("12:15") + "]}");
 
@@ -396,7 +415,7 @@ class SwissUnihockeyTest {
     @Test
     void suh10ManuallyCreatedMatchDaysStayUntouched() {
         String alex = login("alex");
-        link(alex, TEAM_2, "900002").statusCode(200);
+        link(alex, TEAM_2, "900002").statusCode(201);
         JsonPath before = event(T05);
         // swiss unihockey delivers a match for Team 2 on the same day in the same hall as the manual event 05
         presetSimulator("{\"suTeamId\":900002,\"matches\":[{\"suMatchId\":6000005,"

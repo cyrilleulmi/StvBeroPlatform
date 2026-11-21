@@ -14,6 +14,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
@@ -65,7 +67,14 @@ public class Reminders {
             Map<UUID, ResponseService.Stored> stored = responses.responses(event.id);
             String text = NotificationRules.reminderText(EventNotifications.label(event),
                     EventRules.responseDeadline(event.start, event.responseDeadlineHours));
+            // People whose teams are all invited without obligation are not reminded (TER-15, BEN-01)
+            Set<UUID> expected = new HashSet<>();
+            responses.members(event).stream().filter(m -> !event.optionalTeamIds.contains(m.team.id))
+                    .forEach(m -> expected.add(m.person.id));
             for (UUID person : EventNotifications.members(event)) {
+                if (!expected.contains(person)) {
+                    continue;
+                }
                 ResponseService.Stored response = stored.get(person);
                 if (response != null && response.status() != ResponseStatus.PENDING) {
                     continue;

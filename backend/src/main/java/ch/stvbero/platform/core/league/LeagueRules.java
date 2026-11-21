@@ -65,7 +65,7 @@ public final class LeagueRules {
                 .toList();
     }
 
-    static String norm(String name) {
+    public static String norm(String name) {
         return name == null ? "" : name.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 }

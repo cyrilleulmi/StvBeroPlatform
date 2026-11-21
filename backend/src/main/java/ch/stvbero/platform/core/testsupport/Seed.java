@@ -26,8 +26,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The fixed starting point from docs/test-data.md. Only in the profiles dev and test.
- * On start and on {@code POST /api/test/reset} the database is emptied and filled again.
+ * The fixed starting point from docs/test-data.md: the test data set. Only in the profiles dev and test.
+ * {@code POST /api/test/reset} empties the database and fills it again; on start {@link DataSets} decides between
+ * this data set and the club data set ({@link ClubSeed}).
  */
 @ApplicationScoped
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
@@ -331,10 +332,6 @@ public class Seed {
     @Inject
     LeagueService league;
 
-    void onStart(@Observes StartupEvent event) {
-        reset();
-    }
-
     /** Empties all tables (except the Flyway history), fills in the seed and sets the clock to the default. */
     @Transactional
     public void reset() {
@@ -366,16 +363,30 @@ public class Seed {
             em.createNativeQuery("insert into team (id) values (?)")
                     .setParameter(1, teamId(t.nr()))
                     .executeUpdate();
-            if (t.suTeamId() != null) {
-                em.createNativeQuery("update team set su_team_id = ? where id = ?")
-                        .setParameter(1, t.suTeamId()).setParameter(2, teamId(t.nr()))
-                        .executeUpdate();
-            }
         }
         for (int[] ts : TEAM_SEASONS) {
             em.createNativeQuery("insert into team_season (team_id, season_id, name) values (?, ?, ?)")
                     .setParameter(1, teamId(ts[0])).setParameter(2, seasonId(ts[1])).setParameter(3, teamName(ts[0]))
                     .executeUpdate();
+        }
+        // Standard event variants (VAR-01). The teams of the test data set make a call-up (VAR-11), so that the
+        // call-up can be tested; a new team does not.
+        em.createNativeQuery(ch.stvbero.platform.core.variant.VariantRules.ENSURE_STANDARD_SQL).executeUpdate();
+        em.createNativeQuery("update event_variant set call_up = true where event_type = 'MATCH_DAY'").executeUpdate();
+        // Link to swiss unihockey in the current season (SUH-11), last synced by the daily run at 04:30
+        for (SeedTeam t : TEAMS) {
+            if (t.suTeamId() != null) {
+                em.createNativeQuery("""
+                                insert into su_link (id, team_id, season_id, su_team_id, su_team_name, created_at,
+                                                     last_sync_at, last_sync_ok)
+                                values (?, ?, ?, ?, ?, ?, ?, true)""")
+                        .setParameter(1, suLinkId(t.nr())).setParameter(2, teamId(t.nr()))
+                        .setParameter(3, seasonId(2)).setParameter(4, t.suTeamId())
+                        .setParameter(5, SuSimulator.SEED_CLUB_TEAMS.get(0).name())
+                        .setParameter(6, zurich(SEASONS.get(1).startDate().atStartOfDay()))
+                        .setParameter(7, zurich(LEAGUE_LOADED_AT))
+                        .executeUpdate();
+            }
         }
         for (SeedGroup g : GROUPS) {
             em.createNativeQuery("insert into line_group (id, team_id, season_id, type, name, sort_order) values (?, ?, ?, ?, ?, "
@@ -639,6 +650,11 @@ public class Seed {
 
     public static UUID carId(int nr) {
         return id("b", nr);
+    }
+
+    /** Link of a team to swiss unihockey in the current season (SUH-11): the number of the team. */
+    public static UUID suLinkId(int nr) {
+        return id("c", nr);
     }
 
     public static UUID accountId(int nr) {

@@ -69,6 +69,17 @@ interface Month {
           >{{ texts.events.past }}</a
         >
       </nav>
+      @if (optionalCount() > 0 || !showOptional()) {
+        <label class="check optional-filter">
+          <input
+            type="checkbox"
+            data-testid="optional-filter"
+            [checked]="showOptional()"
+            (change)="toggleOptional($any($event.target).checked)"
+          />
+          {{ texts.participation.filter }}
+        </label>
+      }
       @if (myTeams().length > 1 || team()) {
         <div class="field">
           <label for="events-team">{{ texts.events.team }}</label>
@@ -96,9 +107,15 @@ interface Month {
       </h2>
       @if (loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
-      } @else if (events().length === 0) {
+      } @else if (shown().length === 0) {
         <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
+        @if (hiddenCount(); as n) {
+          <p class="secondary-text" data-testid="optional-hidden">{{ texts.participation.hidden(n) }}</p>
+        }
       } @else {
+        @if (hiddenCount(); as n) {
+          <p class="secondary-text" data-testid="optional-hidden">{{ texts.participation.hidden(n) }}</p>
+        }
         @for (m of months(); track m.key) {
           <h3 class="month" [id]="'month-' + m.key">{{ m.name }}</h3>
           <ul class="list" [attr.aria-labelledby]="'month-' + m.key">
@@ -108,9 +125,11 @@ interface Month {
                 [attr.data-testid]="'event-card-' + t.id"
                 [attr.aria-label]="cardName(t)"
                 [attr.data-status]="t.status"
+                [attr.data-variant]="t.variant?.kind"
+                [attr.data-participation]="t.myParticipation ?? null"
               >
                 <a class="row-link event" [routerLink]="['/termine', t.id]">
-                  <span class="date" aria-hidden="true">
+                  <span class="date" aria-hidden="true" [attr.data-tag]="t.variant?.color">
                     <span class="weekday">{{ date(t.start).slice(0, 2) }}</span>
                     <span class="day">{{ date(t.start).slice(3, 9) }}</span>
                   </span>
@@ -122,6 +141,19 @@ interface Month {
                       {{ period(t) }} · {{ teams(t) }}
                       @if (t.location) {
                         · {{ t.location.name }}
+                      }
+                    </span>
+                    <span class="status-row">
+                      <!-- Kind of event by name and colour (VAR-05, TER-14) -->
+                      @if (t.variant; as v) {
+                        <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{
+                          v.name
+                        }}</span>
+                      }
+                      @if (t.myParticipation === 'OPTIONAL') {
+                        <span class="chip" data-kind="optional" data-testid="event-optional">{{
+                          texts.participation.optional
+                        }}</span>
                       }
                     </span>
                     @if (t.status === 'CANCELLED') {
@@ -216,7 +248,23 @@ export class Events {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
+  /** Query `?freiwillig=aus`: hide the events that are voluntary for the person (TER-17). */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?freiwillig=` is part of the browser URL and stays German (NF-40)
+  readonly optional = input<string | undefined>(undefined, { alias: 'freiwillig' });
+
   protected readonly past = computed(() => this.view() === 'vergangen');
+  protected readonly showOptional = computed(() => this.optional() !== 'aus');
+
+  /** Events that are voluntary for the logged-in person (TER-15). */
+  protected readonly optionalCount = computed(
+    () => this.events().filter((t) => t.myParticipation === 'OPTIONAL').length,
+  );
+  protected readonly hiddenCount = computed(() => (this.showOptional() ? 0 : this.optionalCount()));
+  protected readonly shown = computed(() =>
+    this.showOptional()
+      ? this.events()
+      : this.events().filter((t) => t.myParticipation !== 'OPTIONAL'),
+  );
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
   /** All teams of the current season, only loaded for coaches and admins (RR-03, E-69). */
@@ -253,7 +301,7 @@ export class Events {
   /** Events grouped by month, in the order of the API. */
   protected readonly months = computed<Month[]>(() => {
     const months: Month[] = [];
-    for (const t of this.events()) {
+    for (const t of this.shown()) {
       const key = monthKey(t.start);
       let m = months.at(-1);
       if (!m || m.key !== key) {
@@ -293,8 +341,21 @@ export class Events {
     return TEXTS.events.period(clockTime(t.start), clockTime(t.end));
   }
 
+  /** Teams of the event; the ones invited without obligation are named as such (TER-17). */
   protected teams(t: EventSummary): string {
-    return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
+    const optional = t.optionalTeamIds ?? [];
+    return TEXTS.events.joinTeams(
+      t.teams.map((x) =>
+        optional.includes(x.id) ? TEXTS.participation.optionalTeam(x.name) : x.name,
+      ),
+    );
+  }
+
+  protected toggleOptional(show: boolean): void {
+    void this.router.navigate(['/termine'], {
+      queryParams: { freiwillig: show ? null : 'aus' },
+      queryParamsHandling: 'merge',
+    });
   }
 
   /**
