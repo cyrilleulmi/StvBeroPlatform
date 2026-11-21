@@ -171,6 +171,55 @@
       }
     </fieldset>
 
+    <!-- Several teams: who is expected, who is invited without obligation (TER-15) -->
+    @if (participationChoice()) {
+      <fieldset
+        class="group participation"
+        data-testid="participation"
+        [attr.aria-describedby]="
+          participationError() ? 'event-participation-error' : 'event-participation-hint'
+        "
+      >
+        <legend>{{ texts.participation.legend }}</legend>
+        <p class="secondary-text" id="event-participation-hint">{{ texts.participation.hint }}</p>
+        @for (t of chosenTeams(); track t.id) {
+          <div class="participation-row">
+            <label [for]="'event-participation-' + t.id">{{ t.name }}</label>
+            <select
+              [id]="'event-participation-' + t.id"
+              [attr.aria-label]="texts.participation.teamLabel(t.name)"
+              (change)="setParticipation(t.id, $any($event.target).value === 'OPTIONAL')"
+            >
+              <option value="EXPECTED" [selected]="!values().optionalTeamIds.includes(t.id)">
+                {{ texts.participation.expected }}
+              </option>
+              <option value="OPTIONAL" [selected]="values().optionalTeamIds.includes(t.id)">
+                {{ texts.participation.voluntary }}
+              </option>
+            </select>
+          </div>
+        }
+        @if (participationError(); as m) {
+          <p class="field-error" id="event-participation-error" role="alert">{{ m }}</p>
+        }
+      </fieldset>
+    }
+
+    <!-- The team's own variants of this kind of event (VAR-03) -->
+    @if (ownVariants().length > 0) {
+      <div class="field">
+        <label for="event-variant">{{ texts.variants.field }}</label>
+        <select id="event-variant" (change)="selectVariant($any($event.target).value)">
+          <option value="" [selected]="!values().variantId">
+            {{ texts.variants.fieldDefault(standardVariant()) }}
+          </option>
+          @for (v of ownVariants(); track v.id) {
+            <option [value]="v.id" [selected]="values().variantId === v.id">{{ v.name }}</option>
+          }
+        </select>
+      </div>
+    }
+
     <div class="field">
       <label for="event-location">{{
         matchDay() ? texts.eventForm.venue : texts.eventForm.location

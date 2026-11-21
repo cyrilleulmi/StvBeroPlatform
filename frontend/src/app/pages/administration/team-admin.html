@@ -76,6 +76,8 @@
     <!-- swiss unihockey: coaches and admins (SUH-02, E-84) -->
     @if (!readOnly()) {
       <app-su-connection [teamId]="t.id" [teamName]="t.name" (changed)="suChanged()" />
+      <!-- How the kinds of events look and behave in this team (VAR) -->
+      <app-event-variants [teamId]="t.id" />
     }
 
     <!-- Match day settings: duration of a match, arrival lead, usual meeting point (TML-02, TML-03, AUF-32) -->

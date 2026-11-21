@@ -29,7 +29,7 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
-    @if (event().myCallUp || canCallUp()) {
+    @if (part() !== 'matches' && (event().myCallUp || canCallUp())) {
       <section class="card call-up" aria-labelledby="match-day-call-up-title">
         <h2 id="match-day-call-up-title" class="section-title">{{ s.callUp }}</h2>
         @if (event().myCallUp; as mine) {
@@ -49,8 +49,20 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
       </section>
     }
 
+    @if (part() !== 'callUp') {
     <section class="card matches" aria-labelledby="match-day-matches-title">
       <h2 id="match-day-matches-title" class="section-title">{{ s.matches }}</h2>
+      <!-- Rank of the own team in the league table last loaded (AUF-34) -->
+      @if (event().standing; as st) {
+        <p class="standing" data-testid="standing">
+          <strong>{{ texts.standings.own(st.rank, st.teams) }}</strong>
+          @if (st.league) {
+            · {{ texts.standings.league(st.league, st.group) }}
+          }
+          ·
+          <a [routerLink]="['/teams', st.teamId, 'liga']">{{ texts.standings.toLeague }}</a>
+        </p>
+      }
       @if (message(); as m) {
         <p class="message-success" role="status">{{ m }}</p>
       }
@@ -66,7 +78,12 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
               <span class="start-time">{{ time(m.startTime) }}</span>
               <span class="match-text">
                 <span class="pairing">{{ pairing(m) }}</span>
-                <span class="secondary-text">{{ m.home ? s.home : s.away }}</span>
+                <span class="secondary-text"
+                  >{{ m.home ? s.home : s.away }}
+                  @if (m.opponentRank; as rank) {
+                    · <span data-testid="opponent-rank">{{ texts.standings.opponent(rank) }}</span>
+                  }
+                </span>
                 @if (m.result) {
                   <span class="result">{{ s.result(m.result) }}</span>
                 }
@@ -118,6 +135,7 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
         </ol>
       }
     </section>
+    }
 
     <dialog
       #dialog
@@ -180,6 +198,11 @@ export class MatchDay {
   protected readonly time = clockTime;
 
   readonly event = input.required<EventDetail>();
+  /**
+   * Which part to show: the call-up, the matches, or both. The event page places them as separate
+   * sections in the order of the event variant (VAR-07).
+   */
+  readonly part = input<'callUp' | 'matches' | 'both'>('both');
   /** Coach of the team or admin: state of the call-up and link to it (RR-03). */
   readonly canCallUp = input(false);
   /** Coach of the team or admin, match day not cancelled: enter results (AUF-15). */

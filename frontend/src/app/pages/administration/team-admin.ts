@@ -25,6 +25,7 @@ import { errorStatus, errorText } from '../../core/error-text';
 import { teamRoleText, name } from '../../core/format';
 import { TEXTS } from '../../core/texts';
 import { SuConnectionSection } from './su-connection';
+import { EventVariantsSection } from './event-variants';
 
 interface Member {
   person: PersonSummary;
@@ -40,7 +41,7 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 @Component({
   selector: 'app-team-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SuConnectionSection],
+  imports: [RouterLink, SuConnectionSection, EventVariantsSection],
   templateUrl: './team-admin.html',
   styleUrl: '../page.css',
   styles: `

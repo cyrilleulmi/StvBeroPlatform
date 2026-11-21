@@ -83,12 +83,26 @@
   width: 56px;
   padding: 6px 0;
   border-radius: var(--radius-icon);
-  background: var(--primary-soft);
+  /* The colour of the event variant (VAR-05); the name is on the chip next to it */
+  background: var(--tag-soft, var(--primary-soft));
   line-height: 1.2;
+}
+
+.date[data-tag] .weekday,
+.date[data-tag] .day {
+  color: var(--tag);
 }
 
 li[data-status='CANCELLED'] .date {
   background: var(--coral-soft);
+}
+
+li[data-status='CANCELLED'] .date .weekday {
+  color: var(--muted);
+}
+
+li[data-status='CANCELLED'] .date .day {
+  color: var(--text);
 }
 
 .weekday {
@@ -131,6 +145,32 @@ li[data-status='CANCELLED'] .date {
 
 .chip[data-kind='rescheduled'] {
   background: var(--mustard-soft);
+}
+
+/* TER-17: voluntary for the person, as an outlined chip so that it differs from the kinds of events */
+.chip[data-kind='optional'] {
+  background: transparent;
+  border: 1.5px dashed var(--muted);
+  color: var(--muted);
+  padding: 0.5px 9px;
+}
+
+li[data-participation='OPTIONAL'] .row-title {
+  font-weight: 600;
+}
+
+.optional-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  font-weight: 600;
+}
+
+.optional-filter input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
 }
 
 /* F-04: own response directly in the card (ANM-08) */

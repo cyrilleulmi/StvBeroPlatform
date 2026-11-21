@@ -188,3 +188,16 @@
   accent-color: var(--primary);
   flex: none;
 }
+
+/* TER-16: a team invited without obligation; ANM-13: travels on her own */
+.chip[data-kind='optional'] {
+  background: transparent;
+  border: 1.5px dashed var(--muted);
+  color: var(--muted);
+  padding: 0.5px 9px;
+  vertical-align: middle;
+}
+
+.chip[data-kind='individual'] {
+  background: var(--blue-soft);
+}
