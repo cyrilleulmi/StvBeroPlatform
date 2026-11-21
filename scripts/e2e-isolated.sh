@@ -85,6 +85,7 @@ echo "Building the backend for the E2E tests …"
   -Dquarkus.package.output-directory=e2e-app)
 echo "Starting backend on :$BACKEND_PORT (database $DB, test data set) …"
 (cd "$ROOT/backend" && STV_SIMULATION=true STV_DB_URL="jdbc:postgresql://localhost:$PGPORT/$DB" \
+  STV_APP_URL="http://localhost:$FRONTEND_PORT" \
   exec java -Dquarkus.http.port="$BACKEND_PORT" -jar target/e2e-app/quarkus-run.jar) \
   >"$LOGS/e2e-backend.log" 2>&1 &
 PIDS+=($!)
