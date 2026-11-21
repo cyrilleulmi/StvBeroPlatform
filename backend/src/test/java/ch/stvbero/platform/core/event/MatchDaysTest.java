@@ -386,4 +386,29 @@ class MatchDaysTest {
         JsonPath json = event(login("alex"), T04).statusCode(200).extract().jsonPath();
         assertThat(json.getList("teams.id"), containsInAnyOrder(TEAM_1));
     }
+
+    // ------------------------------------------------------------------ Table ranks (AUF-34)
+
+    @Test
+    void auf34MatchDayShowsTheRanksOfTheLeagueTable() {
+        // League of Team 1 in the seed: UHC Musterdorf 1st, Team 1 2nd, Unihockey Beispielstadt 3rd of 8
+        event(login("anna"), T04).statusCode(200)
+                .body("standing.rank", equalTo(2)).body("standing.teams", equalTo(8))
+                .body("standing.league", equalTo("Herren Kleinfeld 3. Liga")).body("standing.group", equalTo("Gruppe 12"))
+                .body("standing.teamId", equalTo(TEAM_1))
+                .body("matches.opponentRank", org.hamcrest.Matchers.contains(1, 3));
+    }
+
+    @Test
+    void auf34WithoutLeagueDataThereAreNoRanks() {
+        // Team 2 is not linked with swiss unihockey
+        event(login("marc"), T05).statusCode(200).body("standing", org.hamcrest.Matchers.nullValue())
+                .body("matches[0].opponentRank", org.hamcrest.Matchers.nullValue());
+        // An opponent that is not in the table has no rank
+        String petra = login("petra");
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"opponent\":\"UHC Unbekannt\",\"startTime\":\"2026-11-22T13:00:00+01:00\",\"home\":true}")
+                .post("/api/events/" + T04 + "/matches").then().statusCode(201);
+        event(petra, T04).body("matches.opponentRank", org.hamcrest.Matchers.contains(1, 3, null));
+    }
 }

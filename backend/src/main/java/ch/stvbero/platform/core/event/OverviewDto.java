@@ -22,7 +22,9 @@ public record OverviewDto(UUID eventId, CountsDto total, List<TeamBlock> teams, 
     }
 
     @Schema(name = "OverviewTeam")
-    public record TeamBlock(TeamName team, CountsDto counts, List<Group> groups) {
+    public record TeamBlock(TeamName team, CountsDto counts, List<Group> groups,
+                            @Schema(description = "The team is invited without obligation: players without a response are not counted as pending (TER-15)")
+                            boolean optional) {
     }
 
     @Schema(name = "OverviewGroupType")

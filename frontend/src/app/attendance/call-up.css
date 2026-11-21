@@ -117,3 +117,20 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* AUF-34: ranks of the league table */
+.ranks {
+  display: grid;
+  gap: 8px;
+}
+
+.ranks p {
+  margin: 0;
+}
+
+.rank-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+}

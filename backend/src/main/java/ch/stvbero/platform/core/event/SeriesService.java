@@ -168,6 +168,9 @@ public class SeriesService {
         }
         s.teams.clear();
         s.teams.addAll(teams);
+        List<UUID> optional = Participation.check(teams.stream().map(team -> team.id).toList(), input.optionalTeamIds());
+        s.optionalTeamIds.retainAll(optional);
+        s.optionalTeamIds.addAll(optional);
     }
 
     /** New event of the series on this day. */
@@ -191,6 +194,8 @@ public class SeriesService {
         event.attendanceCheck = s.attendanceCheck;
         event.teams.clear();
         event.teams.addAll(s.teams);
+        event.optionalTeamIds.retainAll(s.optionalTeamIds);
+        event.optionalTeamIds.addAll(s.optionalTeamIds);
     }
 
     /**

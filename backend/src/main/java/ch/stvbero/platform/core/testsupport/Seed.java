@@ -369,6 +369,10 @@ public class Seed {
                     .setParameter(1, teamId(ts[0])).setParameter(2, seasonId(ts[1])).setParameter(3, teamName(ts[0]))
                     .executeUpdate();
         }
+        // Standard event variants (VAR-01). The teams of the test data set make a call-up (VAR-11), so that the
+        // call-up can be tested; a new team does not.
+        em.createNativeQuery(ch.stvbero.platform.core.variant.VariantRules.ENSURE_STANDARD_SQL).executeUpdate();
+        em.createNativeQuery("update event_variant set call_up = true where event_type = 'MATCH_DAY'").executeUpdate();
         // Link to swiss unihockey in the current season (SUH-11), last synced by the daily run at 04:30
         for (SeedTeam t : TEAMS) {
             if (t.suTeamId() != null) {

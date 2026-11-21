@@ -24,6 +24,8 @@ interface Line {
   title: string;
   detail: string | null;
   suggested: boolean;
+  /** Departure set by the automatic departure of the event variant (TML-09). */
+  auto: boolean;
 }
 
 /**
@@ -76,6 +78,11 @@ interface Line {
                       {{ line.title }}
                       @if (line.suggested) {
                         <span class="chip" data-kind="suggested">{{ s.suggested }}</span>
+                      }
+                      @if (line.auto) {
+                        <span class="chip" data-kind="suggested" data-testid="departure-auto">{{
+                          s.auto
+                        }}</span>
                       }
                     </span>
                     @if (line.detail) {
@@ -293,6 +300,7 @@ export class TimelineSection {
         title,
         detail,
         suggested: item.kind === 'DEPARTURE' && t.departureSuggested,
+        auto: item.kind === 'DEPARTURE' && t.departureAuto,
       };
     });
   });

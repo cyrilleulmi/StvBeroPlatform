@@ -30,6 +30,11 @@
   }}</a>
 </section>
 
+@if (auth.me(); as me) {
+  <!-- Can drive, and the places of the car: for the proposed driver list (DRV-18) -->
+  <app-my-driving [personId]="me.id" />
+}
+
 <app-notification-settings />
 
 <app-calendar-subscription />

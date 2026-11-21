@@ -27,6 +27,11 @@ Status legend: see [README](../../README.md#requirement-status).
 | Respond on behalf | – | ✓ | ✓ |
 | Create, edit, move, cancel events and series, add series exceptions | – | ✓ | ✓ |
 | Manage lines (create, rename, reorder, assign) | – | ✓ | ✓ |
+| Manage special line-ups: create, change, delete (LIN-15) | – | ✓ | ✓ |
+| Manage event variants of a team: add, change, delete the team's own (VAR-10) | – | ✓ | ✓ |
+| Propose and apply a driver list, mark others as travelling on their own (DRV-19, DRV-20) | – | ✓ | ✓ |
+| Change whether one can drive and the places of the car: oneself (DRV-18) | ✓ | ✓ | ✓ |
+| Change the driving settings of others (DRV-18) | – | ✓ | ✓ |
 | Create and publish the call-up, enter results, add and remove matches | – | ✓ | ✓ |
 | See teams, players and team memberships of all teams | – | ✓ | ✓ |
 | Create and edit people (without the admin flag) | – | ✓ | ✓ |

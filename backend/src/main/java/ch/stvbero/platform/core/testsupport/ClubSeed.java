@@ -119,15 +119,27 @@ public class ClubSeed {
     private record Player(int nr, int team, int index, String firstName, String lastName) {
     }
 
-    /** Practice series: teams train once or twice a week; series 1 and 4 are shared by two teams. */
-    private record ClubSeries(int nr, DayOfWeek day, LocalTime start, LocalTime end, List<Integer> teams) {
+    /**
+     * Practice series: teams train once or twice a week; series 1 and 4 are shared by two teams. {@code optional}:
+     * teams that are invited without obligation («freiwillig», TER-15).
+     */
+    private record ClubSeries(int nr, DayOfWeek day, LocalTime start, LocalTime end, List<Integer> teams,
+                              List<Integer> optional) {
+
+        ClubSeries(int nr, DayOfWeek day, LocalTime start, LocalTime end, List<Integer> teams) {
+            this(nr, day, start, end, teams, List.of());
+        }
     }
+
+    /** Series whose next practice invites its second team without obligation, as a single changed event (TER-15). */
+    private static final int ONE_OPTIONAL_PRACTICE = 1;
 
     private static final List<ClubSeries> SERIES = List.of(
             new ClubSeries(1, DayOfWeek.TUESDAY, LocalTime.of(20, 0), LocalTime.of(21, 30), List.of(1, 2)),
             new ClubSeries(2, DayOfWeek.THURSDAY, LocalTime.of(20, 0), LocalTime.of(21, 30), List.of(1)),
             new ClubSeries(3, DayOfWeek.MONDAY, LocalTime.of(19, 30), LocalTime.of(21, 0), List.of(3)),
-            new ClubSeries(4, DayOfWeek.WEDNESDAY, LocalTime.of(19, 0), LocalTime.of(20, 30), List.of(3, 4)),
+            // Thursday: the first women's team is expected, the second one is welcome to join
+            new ClubSeries(4, DayOfWeek.THURSDAY, LocalTime.of(19, 0), LocalTime.of(20, 30), List.of(3, 4), List.of(4)),
             new ClubSeries(5, DayOfWeek.MONDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), List.of(5)),
             new ClubSeries(6, DayOfWeek.TUESDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), List.of(6)),
             new ClubSeries(7, DayOfWeek.WEDNESDAY, LocalTime.of(17, 30), LocalTime.of(19, 0), List.of(7)),
@@ -213,6 +225,10 @@ public class ClubSeed {
                         team.name(), now);
             }
         }
+        // Standard event variants (VAR-01). Only the first men's team makes a call-up, all others work with the
+        // responses alone (VAR-11).
+        em.createNativeQuery(ch.stvbero.platform.core.variant.VariantRules.ENSURE_STANDARD_SQL).executeUpdate();
+        sql("update event_variant set call_up = true where event_type = 'MATCH_DAY' and team_id = ?", Seed.teamId(1));
         // Archive 2025/26: the two first teams existed already; the women played one league lower and were linked
         // with another team at swiss unihockey (the link changes from season to season, SUH-11).
         sql("insert into team_season (team_id, season_id, name) values (?, ?, ?)", Seed.teamId(1), Seed.seasonId(1),
@@ -246,6 +262,30 @@ public class ClubSeed {
         // Two players of the first men's team help out in the second one
         membership(101, 2, 2, "PLAYER", null);
         membership(102, 2, 2, "PLAYER", null);
+
+        // Driving (DRV-18): juniors do not drive; two adults have a bigger and a smaller car than the default of 5
+        for (ClubTeam team : TEAMS) {
+            if (!team.adults()) {
+                sql("""
+                        update person set can_drive = false where id in (
+                            select person_id from team_membership where team_id = ? and team_role = 'PLAYER')""",
+                        Seed.teamId(team.nr()));
+            }
+        }
+        sql("update person set car_seats = 7 where id = ?", Seed.personId(103));
+        sql("update person set car_seats = 4 where id = ?", Seed.personId(304));
+        sql("update person set can_drive = false where id = ?", Seed.personId(305));
+
+        // Special line-ups (LIN-13): power play and penalty kill of the two first teams (small field: 3 against 2)
+        for (int team : new int[] {1, 3}) {
+            int base = team * 100;
+            specialLineup(team * 10 + 1, team, 1, "Überzahl 1", new String[] {"Center", "Flügel links", "Flügel rechts"},
+                    new Integer[] {base + 1, base + 2, base + 3});
+            specialLineup(team * 10 + 2, team, 2, "Überzahl 2", new String[] {"Center", "Flügel links", "Flügel rechts"},
+                    new Integer[] {base + 5, base + 6, null});
+            specialLineup(team * 10 + 3, team, 3, "Unterzahl", new String[] {null, null},
+                    new Integer[] {base + 4, base + 7});
+        }
 
         Map<Integer, List<Integer>> teamPlayers = new LinkedHashMap<>();
         players.forEach(p -> teamPlayers.computeIfAbsent(p.team(), k -> new ArrayList<>()).add(p.nr()));
@@ -313,6 +353,21 @@ public class ClubSeed {
                 Seed.groupId(nr), Seed.teamId(team), Seed.seasonId(season), type, name);
     }
 
+    /** A special line-up in the current season; {@code null} leaves a place empty or without a label. */
+    private void specialLineup(int nr, int team, int order, String name, String[] labels, Integer[] persons) {
+        UUID id = UUID.nameUUIDFromBytes(("lineup-" + nr).getBytes());
+        sql("insert into special_lineup (id, team_id, season_id, name, sort_order, created_at) values (?, ?, ?, ?, ?, ?)",
+                id, Seed.teamId(team), Seed.seasonId(2), name, order, clock.now());
+        for (int i = 0; i < labels.length; i++) {
+            em.createNativeQuery("""
+                            insert into special_lineup_place (lineup_id, position, label, person_id)
+                            values (?, ?, cast(? as varchar), cast(? as uuid))""")
+                    .setParameter(1, id).setParameter(2, i + 1).setParameter(3, labels[i])
+                    .setParameter(4, persons[i] == null ? null : Seed.personId(persons[i]).toString())
+                    .executeUpdate();
+        }
+    }
+
     private void membership(int person, int team, int season, String teamRole, Integer group) {
         UUID id = UUID.nameUUIDFromBytes(("tz-" + person + "-" + team + "-" + season).getBytes());
         sql("""
@@ -344,6 +399,10 @@ public class ClubSeed {
             for (int team : s.teams()) {
                 sql("insert into series_team (series_id, team_id) values (?, ?)", series, Seed.teamId(team));
             }
+            for (int team : s.optional()) {
+                sql("insert into series_optional_team (series_id, team_id) values (?, ?)", series, Seed.teamId(team));
+            }
+            boolean oneOptionalDone = false;
             sql("insert into series_exception (id, series_id, start_date, end_date, reason) values (?, ?, ?, ?, ?)",
                     UUID.nameUUIDFromBytes(("ausnahme-" + s.nr()).getBytes()), series, breakStart, breakEnd,
                     "Weihnachtsferien");
@@ -365,11 +424,31 @@ public class ClubSeed {
                 for (int team : s.teams()) {
                     sql("insert into event_team (event_id, team_id) values (?, ?)", event, Seed.teamId(team));
                 }
+                List<Integer> optional = new ArrayList<>(s.optional());
+                if (s.nr() == ONE_OPTIONAL_PRACTICE && !past && !oneOptionalDone) {
+                    // The next practice of the men: the second team is welcome, changed for this one event only
+                    oneOptionalDone = true;
+                    optional.add(s.teams().get(1));
+                    sql("update event set individually_changed = true where id = ?", event);
+                }
+                for (int team : optional) {
+                    sql("insert into event_optional_team (event_id, team_id) values (?, ?)", event, Seed.teamId(team));
+                }
                 if (day.isBefore(today.minusDays(28)) && !recorded || day.isAfter(today.plusDays(14))) {
                     continue;
                 }
                 Set<Integer> people = new java.util.LinkedHashSet<>(coaches);
-                s.teams().forEach(team -> people.addAll(teamPlayers.get(team)));
+                for (int team : s.teams()) {
+                    List<Integer> ofTeam = teamPlayers.get(team);
+                    if (optional.contains(team)) {
+                        // Of a team that is only invited, a few respond
+                        for (int i = 0; i < ofTeam.size(); i += 4) {
+                            people.add(ofTeam.get(i));
+                        }
+                    } else {
+                        people.addAll(ofTeam);
+                    }
+                }
                 Instant respondedAt = start.minusSeconds(3L * 24 * 3600).isBefore(now)
                         ? start.minusSeconds(3L * 24 * 3600) : now.minusSeconds(3600);
                 for (int person : people) {

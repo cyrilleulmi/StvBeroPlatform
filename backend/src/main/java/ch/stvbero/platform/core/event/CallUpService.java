@@ -8,6 +8,8 @@ import ch.stvbero.platform.core.team.GroupType;
 import ch.stvbero.platform.core.team.Team;
 import ch.stvbero.platform.core.team.TeamMembership;
 import ch.stvbero.platform.core.clock.BackendClock;
+import ch.stvbero.platform.core.variant.VariantRules;
+import ch.stvbero.platform.core.variant.Variants;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -47,6 +49,7 @@ public class CallUpService {
         Event event = EventService.find(eventId);
         checkCanEdit(user, event);
         CallUpRules.checkMatchDay(event.type);
+        VariantRules.checkCallUp(Variants.of(event).callUp);
         return dto(event, CallUp.findById(event.id));
     }
 
@@ -60,6 +63,7 @@ public class CallUpService {
         Event event = EventService.find(eventId);
         checkCanEdit(user, event);
         CallUpRules.checkMatchDay(event.type);
+        VariantRules.checkCallUp(Variants.of(event).callUp);
         EventRules.checkChangeable(event.status, event.end, clock.now());
         event.season.checkWritable();
         Set<UUID> selection = new LinkedHashSet<>(input.personIds());
@@ -83,6 +87,7 @@ public class CallUpService {
         Event event = EventService.find(eventId);
         checkCanEdit(user, event);
         CallUpRules.checkMatchDay(event.type);
+        VariantRules.checkCallUp(Variants.of(event).callUp);
         EventRules.checkChangeable(event.status, event.end, clock.now());
         event.season.checkWritable();
         CallUp callUp = locked(event.id);

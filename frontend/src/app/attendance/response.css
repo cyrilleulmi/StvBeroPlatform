@@ -93,3 +93,19 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ANM-13: «Ich reise individuell an» under the buttons */
+.travel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  font-weight: 600;
+}
+
+.travel input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: var(--primary);
+}

@@ -37,6 +37,14 @@
   font-weight: 600;
 }
 
+.standing {
+  overflow-wrap: anywhere;
+}
+
+.standing a {
+  font-weight: 700;
+}
+
 .match {
   display: flex;
   flex-wrap: wrap;

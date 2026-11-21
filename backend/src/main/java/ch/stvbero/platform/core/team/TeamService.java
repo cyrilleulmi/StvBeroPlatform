@@ -107,6 +107,10 @@ public class TeamService {
         team.id = UUID.randomUUID();
         team.persist();
         team.addToSeason(season, input.name().strip());
+        // The four standard event variants exist from the start (VAR-01)
+        team.getEntityManager().flush();
+        team.getEntityManager().createNativeQuery(ch.stvbero.platform.core.variant.VariantRules.ENSURE_STANDARD_SQL)
+                .executeUpdate();
         return TeamDto.of(team.in(season).orElseThrow(), null);
     }
 

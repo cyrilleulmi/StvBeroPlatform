@@ -31,5 +31,7 @@ public record SeriesInput(
         @Valid LocationDto location,
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
-        Boolean attendanceCheck) {
+        Boolean attendanceCheck,
+        @Schema(nullable = true, description = "Teams of the series that are invited without obligation (TER-15); at least one team stays expected")
+        List<@NotNull UUID> optionalTeamIds) {
 }

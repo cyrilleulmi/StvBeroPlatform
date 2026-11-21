@@ -18,6 +18,9 @@ import java.util.UUID;
 /** Rules of the driver list (DRV). Pure, without database, so that they can be unit tested. */
 public final class DriverRules {
 
+    static final String DRIVER_IS_INDIVIDUAL = "ist als Fahrerin oder Fahrer eingetragen. Zuerst das Auto entfernen.";
+    public static final String NOTHING_TO_PROPOSE = "Der Vorschlag ändert nichts: Alle haben schon einen Platz.";
+
     public static final int MIN_SEATS = 1;
     public static final int MAX_SEATS = 8;
     public static final String SEATS_TEXT = "Bitte eine Zahl von 1 bis 8 eingeben.";
@@ -129,6 +132,13 @@ public final class DriverRules {
         if (seats < passengers) {
             throw DomainError.ruleViolation("seats", "Zu wenig Plätze", "Im Auto sitzen schon " + passengers
                     + (passengers == 1 ? " Person" : " Personen") + ". Weniger Plätze gehen nicht.", "DRV-03");
+        }
+    }
+
+    /** A driver cannot travel on her own until her car is removed (DRV-20). */
+    public static void checkNotDrivingForIndividual(boolean isDriver, String name) {
+        if (isDriver) {
+            throw DomainError.conflict("Fährt selbst", name + " " + DRIVER_IS_INDIVIDUAL, "DRV-20");
         }
     }
 
@@ -247,6 +257,14 @@ public final class DriverRules {
 
     public static String ownCarRemovedText(String event) {
         return "Dein Auto ist am " + event + " nicht mehr in der Fahrerliste.";
+    }
+
+    public static String individualText(String event) {
+        return "Du bist am " + event + " als «reist individuell an» eingetragen. Du brauchst keinen Platz in der Fahrerliste.";
+    }
+
+    public static String individualRemovedText(String event) {
+        return "Du bist am " + event + " nicht mehr als «reist individuell an» eingetragen.";
     }
 
     public static String seatsChangedText(String event, int seats) {

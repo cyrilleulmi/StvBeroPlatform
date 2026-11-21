@@ -24,6 +24,7 @@ import type {
   EventInput,
   EventType,
   MeetingPoint,
+  EventVariant,
 } from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { fieldErrorsOf, errorRule, errorStatus, errorText } from '../core/error-text';
@@ -54,6 +55,10 @@ interface FormValues {
   validFrom: string;
   validUntil: string;
   teamIds: string[];
+  /** Teams invited without obligation («freiwillig», TER-15). */
+  optionalTeamIds: string[];
+  /** Chosen event variant; empty: the standard variant of the type (VAR-03). */
+  variantId: string;
   location: string;
   mapsUrl: string;
   notes: string;
@@ -88,6 +93,8 @@ const EMPTY: FormValues = {
   validFrom: '',
   validUntil: '',
   teamIds: [],
+  optionalTeamIds: [],
+  variantId: '',
   location: '',
   mapsUrl: '',
   notes: '',
@@ -229,6 +236,34 @@ export class EventForm {
     return ['PRACTICE', 'OTHER'];
   });
 
+  /** Variants of the first chosen team (by name), loaded when the choice of teams changes (VAR-03). */
+  protected readonly variants = signal<EventVariant[]>([]);
+  private variantsOf: string | null = null;
+
+  /** Chosen teams in the order they are shown. */
+  protected readonly chosenTeams = computed(() =>
+    this.teams().filter((t) => this.values().teamIds.includes(t.id)),
+  );
+
+  /** Several teams: each one is expected or invited without obligation (TER-15). Not for match days. */
+  protected readonly participationChoice = computed(
+    () => !this.matchDay() && this.values().teamIds.length > 1 && this.chosenTeams().length > 1,
+  );
+
+  /** The team's own variants that fit the type; the field «Variante» appears if there is one (VAR-03). */
+  protected readonly ownVariants = computed(() =>
+    this.asSeries()
+      ? []
+      : this.variants().filter((v) => !v.standard && v.eventType === this.values().type),
+  );
+
+  /** Name of the standard variant of the type, for the first entry of the field «Variante». */
+  protected readonly standardVariant = computed(
+    () =>
+      this.variants().find((v) => v.standard && v.kind === this.values().type)?.name ??
+      TEXTS.events.type[this.values().type],
+  );
+
   /** Teams of the series or event in which the person is not a member. They are kept. */
   protected readonly moreTeams = computed(() => {
     const visible = new Set(this.teams().map((t) => t.id));
@@ -247,6 +282,56 @@ export class EventForm {
       const seriesId = this.seriesId();
       untracked(() => void this.load(eventId, seriesId));
     });
+    effect(() => {
+      const first = this.chosenTeams()[0]?.id ?? null;
+      untracked(() => void this.loadVariants(first));
+    });
+  }
+
+  /** Variants of the first chosen team; a chosen variant of another team is dropped. */
+  private async loadVariants(teamId: string | null): Promise<void> {
+    if (teamId === this.variantsOf) return;
+    this.variantsOf = teamId;
+    if (!teamId) {
+      this.variants.set([]);
+      return;
+    }
+    try {
+      const variants = await firstValueFrom(
+        this.http.get<EventVariant[]>(`/api/teams/${teamId}/event-variants`),
+      );
+      if (this.variantsOf !== teamId) return;
+      this.variants.set(variants);
+      const chosen = this.values().variantId;
+      if (chosen && !variants.some((v) => v.id === chosen)) this.set('variantId', '');
+    } catch {
+      // Without the variants the form still works: the standard variant applies
+      this.variants.set([]);
+    }
+  }
+
+  /** Choosing a variant for a new event fills in its defaults (VAR-09). */
+  protected selectVariant(id: string): void {
+    this.set('variantId', id);
+    const variant = this.variants().find((v) => v.id === id);
+    if (variant && this.mode() === 'new') {
+      this.set('responseDeadline', String(variant.responseDeadlineHours));
+      this.set('attendanceCheck', variant.attendanceCheck);
+    }
+  }
+
+  protected setParticipation(teamId: string, optional: boolean): void {
+    const ids = this.values().optionalTeamIds.filter((id) => id !== teamId);
+    this.set('optionalTeamIds', optional ? [...ids, teamId] : ids);
+    this.participationError.set(null);
+  }
+
+  protected readonly participationError = signal<string | null>(null);
+
+  /** The teams invited without obligation among the chosen ones; none for a match day. */
+  private optionalTeams(): string[] {
+    const w = this.values();
+    return this.matchDay() ? [] : w.optionalTeamIds.filter((id) => w.teamIds.includes(id));
   }
 
   protected set<F extends Field>(field: F, value: FormValues[F]): void {
@@ -316,6 +401,7 @@ export class EventForm {
   protected toggleTeam(teamId: string, checked: boolean): void {
     const ids = this.values().teamIds.filter((id) => id !== teamId);
     this.set('teamIds', checked ? [...ids, teamId] : ids);
+    this.participationError.set(null);
   }
 
   protected selectKind(kind: 'single' | 'series'): void {
@@ -455,6 +541,10 @@ export class EventForm {
       responseDeadlineHours: Number(w.responseDeadline),
       meetingPoint: this.matchDay() ? this.meetingPoint() : (before?.meetingPoint ?? null),
       attendanceCheck: w.attendanceCheck,
+      variantId: this.variants().some((v) => v.id === w.variantId && v.eventType === w.type)
+        ? w.variantId
+        : null,
+      optionalTeamIds: this.optionalTeams(),
     };
   }
 
@@ -526,6 +616,7 @@ export class EventForm {
       location: this.location(this.series()?.location ?? null, false),
       responseDeadlineHours: Number(w.responseDeadline),
       attendanceCheck: w.attendanceCheck,
+      optionalTeamIds: this.optionalTeams(),
     };
   }
 
@@ -559,6 +650,11 @@ export class EventForm {
     if (!w.end) f.end = required('eine Zeit');
     else if (w.start && w.end <= w.start) f.end = TEXTS.eventForm.endAfterStart;
     if (w.teamIds.length === 0) f.teamIds = TEXTS.eventForm.teamRequired;
+    const optional = this.optionalTeams();
+    if (optional.length > 0 && optional.length >= w.teamIds.length) {
+      this.participationError.set(TEXTS.participation.oneExpected);
+      f.optionalTeamIds = TEXTS.participation.oneExpected;
+    }
     if (!this.asSeries() && w.mapsUrl.trim()) {
       if (!w.location.trim()) f.location = required('den Ort');
       if (!/^https:\/\/\S+$/.test(w.mapsUrl.trim())) f.mapsUrl = TEXTS.eventForm.mapsUrlFormat;
@@ -637,6 +733,9 @@ export class EventForm {
           start: b.time,
           end: inputParts(t.end).time,
           teamIds: t.teams.map((x) => x.id),
+          optionalTeamIds: t.optionalTeamIds ?? [],
+          // Only a variant of the team's own is a choice; the standard one is the empty entry
+          variantId: t.variant && !t.variant.standard ? t.variant.id : '',
           location: t.location?.name ?? '',
           mapsUrl: t.location?.mapsUrl ?? '',
           notes: t.notes ?? '',
@@ -670,6 +769,7 @@ export class EventForm {
           validFrom: s.validFrom,
           validUntil: s.validUntil,
           teamIds: s.teamIds,
+          optionalTeamIds: s.optionalTeamIds ?? [],
           location: s.location?.name ?? '',
           responseDeadline: String(s.responseDeadlineHours ?? 24),
           attendanceCheck: s.attendanceCheck ?? false,

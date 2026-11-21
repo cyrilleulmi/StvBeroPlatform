@@ -20,6 +20,7 @@ public record TimelineDto(
         @Schema(description = "Why parts of the timeline are missing, or what to look at") List<Hint> hints,
         @Schema(description = "When the team leaves: the meeting time, otherwise the suggestion") OffsetDateTime departure,
         @Schema(description = "The departure is the suggestion; no meeting time is set yet (TML-04)") boolean departureSuggested,
+        @Schema(description = "The meeting time was set by the automatic departure, not by hand (TML-09)") boolean departureAuto,
         @Schema(description = "Arrival target minus driving time, rounded down to five minutes (TML-04)") OffsetDateTime suggestedDeparture,
         @Schema(description = "When the team wants to be at the venue: first match minus the arrival lead (TML-03)") OffsetDateTime arriveBy,
         @Schema(description = "Driving time from the meeting point to the venue") Integer driveMinutes,

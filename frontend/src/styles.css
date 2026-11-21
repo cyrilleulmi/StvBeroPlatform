@@ -26,6 +26,25 @@
   --page-margin: 20px;
   --section-gap: 18px;
   --touch: 44px;
+  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+  --tag-green: #1b7045;
+  --tag-green-soft: #dcf1e4;
+  --tag-teal: #0c6a6e;
+  --tag-teal-soft: #d6eef0;
+  --tag-blue: #245c9e;
+  --tag-blue-soft: #dce8f8;
+  --tag-violet: #6541ad;
+  --tag-violet-soft: #e8e0f7;
+  --tag-pink: #9f2e73;
+  --tag-pink-soft: #f8dcec;
+  --tag-red: #aa3434;
+  --tag-red-soft: #fadedd;
+  --tag-orange: #96480a;
+  --tag-orange-soft: #fbe5cf;
+  --tag-yellow: #6f5900;
+  --tag-yellow-soft: #f5ecc0;
+  --tag-grey: #4f5963;
+  --tag-grey-soft: #e6eaee;
   color-scheme: light;
 }
 
@@ -44,6 +63,25 @@
   --mustard-soft: #ede4d1;
   --blue: #5b4fa8;
   --blue-soft: #e8e2e9;
+  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+  --tag-green: #1d6b43;
+  --tag-green-soft: #dfeeda;
+  --tag-teal: #0c6468;
+  --tag-teal-soft: #d8ebe6;
+  --tag-blue: #24578f;
+  --tag-blue-soft: #dfe6ee;
+  --tag-violet: #5f3da3;
+  --tag-violet-soft: #e9e0ee;
+  --tag-pink: #962b6c;
+  --tag-pink-soft: #f5dde3;
+  --tag-red: #a23030;
+  --tag-red-soft: #f6ddd4;
+  --tag-orange: #8c4309;
+  --tag-orange-soft: #f6e2c6;
+  --tag-yellow: #685300;
+  --tag-yellow-soft: #f0e6b8;
+  --tag-grey: #4f554f;
+  --tag-grey-soft: #e8e3d8;
   color-scheme: light;
 }
 
@@ -62,6 +100,25 @@
   --mustard-soft: #342e1f;
   --blue: #bc8cff;
   --blue-soft: #2d2741;
+  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+  --tag-green: #56d364;
+  --tag-green-soft: #12261e;
+  --tag-teal: #39c5cf;
+  --tag-teal-soft: #0f2a2d;
+  --tag-blue: #79b8ff;
+  --tag-blue-soft: #14263d;
+  --tag-violet: #c4a0ff;
+  --tag-violet-soft: #2a1f45;
+  --tag-pink: #f778ba;
+  --tag-pink-soft: #3a1a2d;
+  --tag-red: #ff8f87;
+  --tag-red-soft: #3c1f1e;
+  --tag-orange: #ffa657;
+  --tag-orange-soft: #3a2513;
+  --tag-yellow: #e3b341;
+  --tag-yellow-soft: #342a10;
+  --tag-grey: #a7b0ba;
+  --tag-grey-soft: #272d35;
   color-scheme: dark;
 }
 
@@ -82,6 +139,25 @@
     --mustard-soft: #342e1f;
     --blue: #bc8cff;
     --blue-soft: #2d2741;
+    /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+    --tag-green: #56d364;
+    --tag-green-soft: #12261e;
+    --tag-teal: #39c5cf;
+    --tag-teal-soft: #0f2a2d;
+    --tag-blue: #79b8ff;
+    --tag-blue-soft: #14263d;
+    --tag-violet: #c4a0ff;
+    --tag-violet-soft: #2a1f45;
+    --tag-pink: #f778ba;
+    --tag-pink-soft: #3a1a2d;
+    --tag-red: #ff8f87;
+    --tag-red-soft: #3c1f1e;
+    --tag-orange: #ffa657;
+    --tag-orange-soft: #3a2513;
+    --tag-yellow: #e3b341;
+    --tag-yellow-soft: #342a10;
+    --tag-grey: #a7b0ba;
+    --tag-grey-soft: #272d35;
     color-scheme: dark;
   }
 }
@@ -410,4 +486,65 @@ a {
     scroll-padding-top: calc(76px + env(safe-area-inset-top));
     scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
+}
+
+/* Event variants (VAR-04, VAR-05): `data-tag` picks the colour pair; `.tag-chip` and `.tag-dot` use it. */
+[data-tag='GREEN'] {
+  --tag: var(--tag-green);
+  --tag-soft: var(--tag-green-soft);
+}
+[data-tag='TEAL'] {
+  --tag: var(--tag-teal);
+  --tag-soft: var(--tag-teal-soft);
+}
+[data-tag='BLUE'] {
+  --tag: var(--tag-blue);
+  --tag-soft: var(--tag-blue-soft);
+}
+[data-tag='VIOLET'] {
+  --tag: var(--tag-violet);
+  --tag-soft: var(--tag-violet-soft);
+}
+[data-tag='PINK'] {
+  --tag: var(--tag-pink);
+  --tag-soft: var(--tag-pink-soft);
+}
+[data-tag='RED'] {
+  --tag: var(--tag-red);
+  --tag-soft: var(--tag-red-soft);
+}
+[data-tag='ORANGE'] {
+  --tag: var(--tag-orange);
+  --tag-soft: var(--tag-orange-soft);
+}
+[data-tag='YELLOW'] {
+  --tag: var(--tag-yellow);
+  --tag-soft: var(--tag-yellow-soft);
+}
+[data-tag='GREY'] {
+  --tag: var(--tag-grey);
+  --tag-soft: var(--tag-grey-soft);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--tag-soft, var(--primary-soft));
+  color: var(--tag, var(--text));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.tag-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tag, var(--primary));
+  flex: none;
 }

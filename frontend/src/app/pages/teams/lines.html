@@ -47,6 +47,9 @@
       <ng-container *ngTemplateOutlet="groupTemplate; context: { $implicit: g }" />
     }
   </div>
+
+  <!-- Line-ups for special situations such as power play and penalty kill (LIN-13) -->
+  <app-special-lineups [teamId]="teamId()" />
 }
 
 <ng-template #groupTemplate let-g>

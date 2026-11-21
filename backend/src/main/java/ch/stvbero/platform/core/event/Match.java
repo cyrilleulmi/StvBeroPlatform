@@ -77,8 +77,13 @@ public class Match extends PanacheEntityBase {
     }
 
     public MatchDto dto() {
+        return dto(null);
+    }
+
+    /** With the rank of the opponent in the league table, if known (AUF-34). */
+    public MatchDto dto(Integer opponentRank) {
         return new MatchDto(id, opponent, EventReader.time(startTime), home, result, source, suMatchId,
-                missingAtSu, suChange());
+                missingAtSu, suChange(), opponentRank);
     }
 
     /** The unconfirmed change by swiss unihockey, or {@code null} (SUH-12). */

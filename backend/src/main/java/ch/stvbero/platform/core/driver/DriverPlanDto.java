@@ -25,7 +25,15 @@ public record DriverPlanDto(
         @Schema(description = "Coach or admin: enters drivers for others") boolean canManage,
         @Schema(description = "Match days of the team in the season, by start") List<MatchDay> matchDays,
         @Schema(description = "Trips per member of the team, by name (DRV-17)") List<Share> shares,
-        @Schema(description = "Members of the team, by name; only for coaches and admins") List<PersonSummary> members) {
+        @Schema(description = "Members of the team, by name; only for coaches and admins") List<PersonSummary> members,
+        @Schema(description = "Who can drive and with how many places, by name (DRV-18)") List<Driver> drivers) {
+
+    /** A member of the team with her driving settings (DRV-18). */
+    @Schema(name = "DriverSetting")
+    public record Driver(PersonSummary person, boolean canDrive,
+                         @Schema(description = "Places in her car, herself included") int carSeats,
+                         @Schema(description = "The caller may change this entry: herself, or everyone as coach or admin") boolean canChange) {
+    }
 
     /** A match day in the plan. */
     @Schema(name = "DriverPlanMatchDay")
