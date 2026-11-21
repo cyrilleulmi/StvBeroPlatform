@@ -30,15 +30,15 @@
   min-height: 112px;
   padding: 14px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-tile);
   color: var(--text);
   text-decoration: none;
 }
 
 .tile-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .icon-field {
@@ -83,9 +83,30 @@
 }
 
 .event-title {
-  font-size: 18px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
   overflow-wrap: anywhere;
+}
+
+/* On the scoreboard the secondary text is lighter; a little more air between the blocks. */
+.board.next {
+  gap: 14px;
+  padding: 20px 18px 18px;
+}
+
+.board .event-link {
+  gap: 4px;
+}
+
+.board .secondary-text {
+  font-size: 14px;
+}
+
+.practices .event-title {
+  font-size: 24px;
 }
 
 /* F-13: next practices and link to all events */

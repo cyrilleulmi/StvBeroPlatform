@@ -54,14 +54,19 @@
   min-width: 0;
 }
 
+/* Start time set like the scoreboard digits */
 .start-time {
   flex: none;
-  min-width: 52px;
+  min-width: 64px;
   padding: 6px 8px;
   border-radius: var(--radius-icon);
-  background: var(--primary-soft);
-  color: var(--text);
-  font-weight: 800;
+  background: var(--board);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
@@ -78,7 +83,11 @@
 }
 
 .result {
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .secondary-text {

@@ -19,6 +19,7 @@ import type {
 import { NgTemplateOutlet } from '@angular/common';
 import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
+import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 import { Warnings } from './warnings';
@@ -38,22 +39,16 @@ interface Target {
 @Component({
   selector: 'app-overview',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, NgTemplateOutlet, Warnings],
+  imports: [Icon, NgTemplateOutlet, Warnings, Scoreboard],
   template: `
     <section class="card overview" data-testid="overview" aria-labelledby="overview-title">
       <h2 id="overview-title" class="section-title">{{ t.title }}</h2>
-      <p class="counter total" data-testid="overview-total">
+      <div class="total board" data-testid="overview-total">
         <span class="counter-name">{{ t.total }}</span>
-        <span class="numbers">
-          <span data-counter="attending">{{ t.attending(data().total.attending) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="declined">{{ t.declined(data().total.declined) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="maybe">{{ t.maybe(data().total.maybe) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="pending">{{ t.pending(data().total.pending) }}</span>
-        </span>
-      </p>
+        <p class="scoreboard numbers">
+          <app-scoreboard [counts]="data().total" />
+        </p>
+      </div>
 
       @if (data().warnings; as w) {
         <!-- Only coaches and admins get warnings from the API (F-16) -->

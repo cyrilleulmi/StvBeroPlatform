@@ -220,9 +220,7 @@ import { TEXTS } from '../../core/texts';
     .group-title {
       margin: 12px 0 0;
       font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-weight: 600;
       color: var(--muted);
     }
   `,

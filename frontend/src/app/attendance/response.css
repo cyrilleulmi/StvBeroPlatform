@@ -9,6 +9,7 @@
   margin: 0;
 }
 
+/* Decisions are filled, options are outlined: the chosen response is a solid block in its colour. */
 .buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -20,15 +21,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: var(--touch);
+  gap: 6px;
+  min-height: 48px;
   min-width: 0;
   padding: 4px 6px;
   border: 1.5px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: transparent;
+  border-radius: var(--radius-control);
+  background: var(--surface);
   color: var(--text);
-  font: 700 13px/1.15 var(--font);
+  font: 600 14px/1.15 var(--font);
   text-align: center;
   cursor: pointer;
 }
@@ -44,8 +45,9 @@
 }
 
 .response-button[aria-pressed='true'][data-kind='declined'] {
-  background: var(--coral-soft);
+  background: var(--coral);
   border-color: var(--coral);
+  color: var(--on-coral);
 }
 
 .response-button[aria-pressed='true'][data-kind='maybe'] {

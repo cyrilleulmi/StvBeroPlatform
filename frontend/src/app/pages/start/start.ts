@@ -9,6 +9,7 @@ import { yearOf, eventDate, clockTime } from '../../attendance/time';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
+import { Scoreboard } from '../../core/scoreboard';
 import { SuStatusNotice } from '../../core/su-status-notice';
 import { TEXTS } from '../../core/texts';
 import { startEvents } from './start-events';
@@ -21,7 +22,7 @@ import { startEvents } from './start-events';
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse, SuStatusNotice],
+  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse, SuStatusNotice, Scoreboard],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
