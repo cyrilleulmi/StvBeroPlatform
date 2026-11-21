@@ -2,11 +2,13 @@ package ch.stvbero.platform.core.driver;
 
 import ch.stvbero.platform.core.auth.CurrentUser;
 import ch.stvbero.platform.core.clock.BackendClock;
+import ch.stvbero.platform.core.variant.Variants;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.event.CallUp;
 import ch.stvbero.platform.core.event.Event;
 import ch.stvbero.platform.core.event.EventRules;
 import ch.stvbero.platform.core.event.EventStatus;
+import ch.stvbero.platform.core.event.EventType;
 import ch.stvbero.platform.core.event.NotificationRules;
 import ch.stvbero.platform.core.notification.Message;
 import ch.stvbero.platform.core.notification.NotificationType;
@@ -122,6 +124,7 @@ public class DriverListService {
         DriverRules.checkSeats(input.seats(), 0);
         List<Message> messages = new ArrayList<>();
         String label = label(c.event());
+        clearIndividual(eventId, driver);
         Optional<Car> seat = seatOf(eventId, driver);
         if (seat.isPresent()) {
             deletePassenger(seat.get().id(), driver);
@@ -187,6 +190,7 @@ public class DriverListService {
             return;
         }
         DriverRules.checkFreeSeat(car.seats(), passengers(carId).size());
+        clearIndividual(eventId, personId);
         String label = label(c.event());
         String passenger = name(person);
         List<Message> messages = new ArrayList<>();
@@ -220,6 +224,193 @@ public class DriverListService {
         notify(messages, user, personId,
                 DriverRules.seatRemovedText(name(Person.findById(car.driver())), label), eventId);
         notifications.send(messages);
+    }
+
+    // ------------------------------------------------------------------ Travelling on one's own (DRV-20)
+
+    /**
+     * Mark a person as travelling on her own, or take the mark away: for oneself every member, for others coaches
+     * and admins. She leaves a seat she had; a driver must remove her car first.
+     */
+    @Transactional
+    public void setIndividual(CurrentUser user, UUID eventId, UUID personId, boolean individual) {
+        Context c = writable(user, eventId);
+        DriverRules.checkCanActFor(user.personId(), personId, c.member(), c.canManage());
+        Person person = person(personId, "personId");
+        DriverRules.checkMember(c.isMember(personId), "personId");
+        List<Message> messages = new ArrayList<>();
+        if (individual) {
+            DriverRules.checkNotDrivingForIndividual(carOf(eventId, personId).isPresent(), name(person));
+            if (mark(c.event(), user, person, messages)) {
+                notify(messages, user, personId, DriverRules.individualText(label(c.event())), eventId);
+            }
+        } else if (clearIndividual(eventId, personId)) {
+            notify(messages, user, personId, DriverRules.individualRemovedText(label(c.event())), eventId);
+        }
+        notifications.send(messages);
+    }
+
+    /**
+     * The mark that comes with a response (ANM-13): «dabei» with «Ich reise individuell an» sets it, any other
+     * response removes it. {@code wanted == null} leaves a «dabei» as it is. Someone who drives stays a driver.
+     * Works without meeting point and venue, unlike the driver list itself.
+     */
+    @Transactional
+    public void individualFromResponse(CurrentUser user, Event event, UUID personId, boolean attending, Boolean wanted) {
+        if (event.type != EventType.MATCH_DAY) {
+            return;
+        }
+        if (!attending || Boolean.FALSE.equals(wanted)) {
+            clearIndividual(event.id, personId);
+            return;
+        }
+        if (Boolean.TRUE.equals(wanted) && carOf(event.id, personId).isEmpty()) {
+            List<Message> messages = new ArrayList<>();
+            mark(event, user, Person.findById(personId), messages);
+            notifications.send(messages);
+        }
+    }
+
+    /** People of the match day who travel on their own. */
+    public Set<UUID> individual(UUID eventId) {
+        @SuppressWarnings("unchecked")
+        List<UUID> rows = em.createNativeQuery("select person_id from individual_travel where event_id = ?")
+                .setParameter(1, eventId).getResultList();
+        return new HashSet<>(rows);
+    }
+
+    /** Sets the mark and frees the seat the person had. {@code false} if she was marked already. */
+    private boolean mark(Event event, CurrentUser user, Person person, List<Message> messages) {
+        Optional<Car> seat = seatOf(event.id, person.id);
+        if (seat.isPresent()) {
+            deletePassenger(seat.get().id(), person.id);
+            notify(messages, user, seat.get().driver(), DriverRules.passengerLeftText(name(person), label(event)), event.id);
+        }
+        return em.createNativeQuery("""
+                        insert into individual_travel (event_id, person_id, created_at) values (?, ?, ?)
+                        on conflict do nothing""")
+                .setParameter(1, event.id).setParameter(2, person.id).setParameter(3, clock.now())
+                .executeUpdate() > 0;
+    }
+
+    private boolean clearIndividual(UUID eventId, UUID personId) {
+        return em.createNativeQuery("delete from individual_travel where event_id = ? and person_id = ?")
+                .setParameter(1, eventId).setParameter(2, personId).executeUpdate() > 0;
+    }
+
+    // ------------------------------------------------------------------ Proposal (DRV-19)
+
+    /** A proposed driver list for the match day; changes nothing. Coaches and admins. */
+    @Transactional
+    public DriverProposalDto propose(CurrentUser user, UUID eventId) {
+        Context c = writable(user, eventId);
+        if (!c.canManage()) {
+            throw DomainError.forbidden();
+        }
+        Event event = c.event();
+        Map<UUID, Person> persons = new HashMap<>();
+        c.members().forEach(m -> persons.put(m.person.id, m.person));
+        java.util.function.Function<UUID, PersonSummary> summary = id -> PersonSummary.of(
+                persons.computeIfAbsent(id, key -> Person.findById(key)));
+
+        List<Car> cars = cars(event.id).stream()
+                .sorted(Comparator.comparing(car -> summary.apply(car.driver()), PersonSummary.ORDER)).toList();
+        Set<UUID> seated = new HashSet<>();
+        List<DriverProposalRules.ExistingCar> existing = new ArrayList<>();
+        for (Car car : cars) {
+            List<UUID> passengers = passengers(car.id()).stream()
+                    .sorted(Comparator.comparing(summary, PersonSummary.ORDER)).toList();
+            seated.add(car.driver());
+            seated.addAll(passengers);
+            existing.add(new DriverProposalRules.ExistingCar(car.driver(), car.seats(), passengers));
+        }
+        Map<UUID, Integer> trips = tripsInSeason(event);
+        List<DriverProposalRules.Traveller> travellers = needSeat(c, seated).stream()
+                .sorted(Comparator.comparing(summary, PersonSummary.ORDER))
+                .map(id -> {
+                    Person person = persons.get(id);
+                    return new DriverProposalRules.Traveller(id, person.canDrive,
+                            DriverProposalRules.freeSeats(person.carSeats), trips.getOrDefault(id, 0));
+                }).toList();
+
+        DriverProposalRules.Proposal proposal = DriverProposalRules.propose(existing, travellers);
+        return new DriverProposalDto(event.id,
+                proposal.cars().stream().map(car -> new DriverProposalDto.Car(summary.apply(car.driver()), car.seats(),
+                        car.existing(), car.passengers().stream().map(summary).toList(),
+                        car.added().stream().map(summary).toList())).toList(),
+                proposal.withoutSeat().stream().map(summary).toList(), proposal.changesSomething());
+    }
+
+    /**
+     * Enters a proposal as it was shown (DRV-19): new cars with their passengers, and passengers added to cars
+     * that exist. Every rule of the driver list applies; if one entry refuses, nothing is entered. The people
+     * affected are notified as usual (DRV-11).
+     */
+    @Transactional
+    public void applyProposal(CurrentUser user, UUID eventId, DriverProposalDto.Input input) {
+        Context c = writable(user, eventId);
+        if (!c.canManage()) {
+            throw DomainError.forbidden();
+        }
+        for (DriverProposalDto.CarEntry entry : input.cars()) {
+            if (carOf(eventId, entry.driverId()).isEmpty()) {
+                addCar(user, eventId, new CarInput(entry.driverId(), entry.seats()));
+            }
+            UUID carId = carOf(eventId, entry.driverId()).orElseThrow().id();
+            for (UUID passenger : entry.passengerIds()) {
+                addPassenger(user, eventId, carId, passenger);
+            }
+        }
+    }
+
+    /**
+     * Who needs a seat (DRV-19): the players without a seat (DRV-04) and the coaches who responded «dabei»,
+     * without those who travel on their own (DRV-20).
+     */
+    private Set<UUID> needSeat(Context c, Set<UUID> seated) {
+        Event event = c.event();
+        Set<UUID> individual = individual(event.id);
+        Set<UUID> result = new LinkedHashSet<>(playersWithoutSeat(c, seated, individual));
+        Set<UUID> attending = attending(event.id);
+        c.members().stream().filter(m -> m.teamRole == TeamRole.COACH).map(m -> m.person.id)
+                .filter(attending::contains).filter(id -> !seated.contains(id) && !individual.contains(id))
+                .forEach(result::add);
+        return result;
+    }
+
+    /** DRV-04, without those who travel on their own. */
+    private List<UUID> playersWithoutSeat(Context c, Set<UUID> seated, Set<UUID> individual) {
+        Event event = c.event();
+        // Without a call-up in the variant, the responses decide who needs a seat (VAR-06, DRV-04)
+        CallUp callUp = Variants.of(event).callUp ? CallUp.findById(event.id) : null;
+        boolean published = callUp != null && callUp.publishedAt != null;
+        Set<UUID> players = new LinkedHashSet<>();
+        c.members().stream().filter(m -> m.teamRole == TeamRole.PLAYER).forEach(m -> players.add(m.person.id));
+        List<UUID> attendingPlayers = attending(event.id).stream().filter(players::contains).toList();
+        Set<UUID> taken = new HashSet<>(seated);
+        taken.addAll(individual);
+        return DriverRules.withoutSeat(published, published ? callUp.personIds : Set.of(), attendingPlayers, taken);
+    }
+
+    private Set<UUID> attending(UUID eventId) {
+        @SuppressWarnings("unchecked")
+        List<UUID> rows = em.createNativeQuery(
+                        "select person_id from response where event_id = ? and status = 'ATTENDING'")
+                .setParameter(1, eventId).getResultList();
+        return new LinkedHashSet<>(rows);
+    }
+
+    /** Trips per driver in the season of the match day, without this match day and cancelled ones (DRV-17). */
+    private Map<UUID, Integer> tripsInSeason(Event event) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em.createNativeQuery("""
+                        select c.driver_id, count(*) from car c join event e on e.id = c.event_id
+                        where e.season_id = ? and e.status <> 'CANCELLED' and e.id <> ?
+                        group by c.driver_id""")
+                .setParameter(1, event.season.id).setParameter(2, event.id).getResultList();
+        Map<UUID, Integer> trips = new HashMap<>();
+        rows.forEach(row -> trips.put((UUID) row[0], ((Number) row[1]).intValue()));
+        return trips;
     }
 
     // ------------------------------------------------------------------ Route
@@ -397,18 +588,13 @@ public class DriverListService {
         }
         cars.sort(Comparator.comparing(DriverListDto.CarDto::driver, PersonSummary.ORDER));
 
-        CallUp callUp = CallUp.findById(event.id);
+        CallUp callUp = Variants.of(event).callUp ? CallUp.findById(event.id) : null;
         boolean published = callUp != null && callUp.publishedAt != null;
-        Set<UUID> players = new LinkedHashSet<>();
-        c.members().stream().filter(m -> m.teamRole == TeamRole.PLAYER).forEach(m -> players.add(m.person.id));
-        @SuppressWarnings("unchecked")
-        List<UUID> attending = em.createNativeQuery(
-                        "select person_id from response where event_id = ? and status = 'ATTENDING'")
-                .setParameter(1, event.id).getResultList();
-        List<UUID> attendingPlayers = attending.stream().filter(players::contains).toList();
-        List<PersonSummary> withoutSeat = DriverRules.withoutSeat(published,
-                        published ? callUp.personIds : Set.of(), attendingPlayers, seated)
+        Set<UUID> individualIds = individual(event.id);
+        List<PersonSummary> withoutSeat = playersWithoutSeat(c, seated, individualIds)
                 .stream().map(person).sorted(PersonSummary.ORDER).toList();
+        List<PersonSummary> individual = individualIds.stream().map(person).sorted(PersonSummary.ORDER).toList();
+        Person me = Person.findById(user.personId());
 
         boolean changeable = c.missing().isEmpty() && !cancelled && !event.season.isArchived()
                 && (event.end.isAfter(clock.now()) || c.canManage());
@@ -416,7 +602,8 @@ public class DriverListService {
                 ? c.members().stream().map(m -> person.apply(m.person.id)).distinct().sorted(PersonSummary.ORDER).toList()
                 : null;
         return new DriverListDto(event.id, c.missing().isEmpty(), c.missing(), route, cancelled,
-                changeable && c.member(), changeable && c.canManage(), published, cars, withoutSeat, members);
+                changeable && c.member(), changeable && c.canManage(), published, cars, withoutSeat, members,
+                individual, DriverProposalRules.freeSeats(me == null ? DrivingDto.DEFAULT_CAR_SEATS : me.carSeats));
     }
 
     /** Match days of the season with at least one car. */

@@ -387,6 +387,13 @@ public class SuSync {
         setLocation(matchDay, first);
         // The team usually meets at the same place (AUF-32); the time stays open until a coach sets it.
         matchDay.meetingPointLocation = team.meetingPointLocation;
+        // New match days start with the defaults of the variant «swiss unihockey Spieltag» (VAR-09)
+        ch.stvbero.platform.core.variant.EventVariant.<ch.stvbero.platform.core.variant.EventVariant>find(
+                        "teamId = ?1 and kind = ?2", team.id, ch.stvbero.platform.core.variant.VariantKind.SU_MATCH_DAY)
+                .firstResultOptional().ifPresent(variant -> {
+                    matchDay.responseDeadlineHours = variant.responseDeadlineHours;
+                    matchDay.attendanceCheck = variant.attendanceCheck;
+                });
         matchDay.teams.add(team);
         matchDay.persist();
         return matchDay;

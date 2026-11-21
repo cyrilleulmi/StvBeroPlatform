@@ -102,22 +102,108 @@ class TimelineTest {
                 .body("meetingPoint.location", equalTo("Parkplatz Sporthalle Nord"));
     }
 
+    /** Switches the automatic departure of the variant «Spieltag» of Team 1 on or off (VAR-08). */
+    private static void autoDeparture(String session, boolean on) {
+        String variant = ch.stvbero.platform.core.variant.VariantRules.standardId(java.util.UUID.fromString(TEAM_1),
+                ch.stvbero.platform.core.variant.VariantKind.MATCH_DAY).toString();
+        given().cookie("stv_session", session).contentType(ContentType.JSON)
+                .body("{\"name\":\"Spieltag\",\"color\":\"VIOLET\",\"autoDeparture\":" + on + "}")
+                .put("/api/teams/" + TEAM_1 + "/event-variants/" + variant).then().statusCode(200)
+                .body("autoDeparture", equalTo(on));
+    }
+
+    private static void addMatch(String session, String matchDay, String time) {
+        given().cookie("stv_session", session).contentType(ContentType.JSON)
+                .body("{\"opponent\":\"UHC Drei\",\"startTime\":\"2026-12-06T" + time + ":00+01:00\",\"home\":false}")
+                .post("/api/events/" + matchDay + "/matches").then().statusCode(201);
+    }
+
     @Test
     void tml04WithoutMeetingTimeTheTimelineShowsTheSuggestion() {
         String petra = login("petra");
+        // Without the automatic departure the meeting time stays open until a coach sets it
+        autoDeparture(petra, false);
         // Meeting point without a time, as on match days created by the sync (AUF-32)
         String matchDay = createMatchDay(petra, "Parkplatz Sporthalle Nord");
-        given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body("{\"opponent\":\"UHC Drei\",\"startTime\":\"2026-12-06T10:00:00+01:00\",\"home\":false}")
-                .post("/api/events/" + matchDay + "/matches").then().statusCode(201);
+        addMatch(petra, matchDay, "10:00");
         given().cookie("stv_session", petra).get("/api/events/" + matchDay).then()
                 .body("meetingPoint.time", nullValue()).body("meetingPoint.location", equalTo("Parkplatz Sporthalle Nord"));
 
         // 10:00 - 70 - 26 = 08:24, rounded down to 08:20
         timeline(petra, matchDay).statusCode(200)
                 .body("departure", equalTo("2026-12-06T08:20:00+01:00")).body("departureSuggested", equalTo(true))
+                .body("departureAuto", equalTo(false))
                 .body("canApplySuggestion", equalTo(true)).body("hints", empty())
                 .body("items.kind", contains("DEPARTURE", "ARRIVAL", "WARM_UP", "MATCH", "COOL_DOWN", "RETURN"));
+    }
+
+    @Test
+    void tml09TheMeetingTimeFollowsTheSuggestedDepartureByItself() {
+        String petra = login("petra");
+        String matchDay = createMatchDay(petra, "Parkplatz Sporthalle Nord");
+        // Without a first match there is nothing to set yet
+        given().cookie("stv_session", petra).get("/api/events/" + matchDay).then()
+                .body("meetingPoint.time", nullValue()).body("variant.autoDeparture", equalTo(true));
+
+        addMatch(petra, matchDay, "10:00");
+        // 10:00 - 70 - 26 = 08:24, rounded down to 08:20: set by itself, for everyone
+        given().cookie("stv_session", login("anna")).get("/api/events/" + matchDay).then().statusCode(200)
+                .body("meetingPoint.time", equalTo("2026-12-06T08:20:00+01:00"));
+        timeline(petra, matchDay).statusCode(200)
+                .body("departure", equalTo("2026-12-06T08:20:00+01:00")).body("departureSuggested", equalTo(false))
+                .body("departureAuto", equalTo(true)).body("canApplySuggestion", equalTo(false));
+
+        // An earlier match moves the meeting time along
+        addMatch(petra, matchDay, "09:00");
+        timeline(petra, matchDay).body("departure", equalTo("2026-12-06T07:20:00+01:00"))
+                .body("departureAuto", equalTo(true));
+        // Nobody is notified about an automatic time
+        given().cookie("stv_session", login("anna")).get("/api/notifications").then()
+                .body("findAll { it.eventId == '" + matchDay + "' }", empty());
+    }
+
+    @Test
+    void tml09ATimeEnteredByHandIsNeverOverwritten() {
+        String petra = login("petra");
+        String matchDay = createMatchDay(petra, "Parkplatz Sporthalle Nord");
+        addMatch(petra, matchDay, "10:00");
+        String body = """
+                {"type":"MATCH_DAY","title":"Spieltag","start":"2026-12-06T10:00:00+01:00","end":"2026-12-06T14:00:00+01:00",
+                 "teamIds":["%s"],"location":{"name":"Sporthalle Seefeld"},
+                 "meetingPoint":{"time":%s,"location":"Parkplatz Sporthalle Nord"}}""";
+
+        given().cookie("stv_session", petra).get("/api/events/" + matchDay).then()
+                .body("meetingPoint.time", equalTo("2026-12-06T08:20:00+01:00"));
+        // Saving the form with the automatic time unchanged keeps it automatic
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body(body.formatted(TEAM_1, "\"2026-12-06T08:20:00+01:00\""))
+                .put("/api/events/" + matchDay).then().statusCode(200);
+        timeline(petra, matchDay).body("departureAuto", equalTo(true));
+
+        // A coach enters 08:00 by hand: it stays, also when a match is added
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body(body.formatted(TEAM_1, "\"2026-12-06T08:00:00+01:00\""))
+                .put("/api/events/" + matchDay).then().statusCode(200)
+                .body("meetingPoint.time", equalTo("2026-12-06T08:00:00+01:00"));
+        addMatch(petra, matchDay, "09:00");
+        timeline(petra, matchDay).body("departure", equalTo("2026-12-06T08:00:00+01:00"))
+                .body("departureAuto", equalTo(false)).body("suggestedDeparture", equalTo("2026-12-06T07:20:00+01:00"))
+                .body("canApplySuggestion", equalTo(true));
+
+        // Emptying the time hands it back to the automatic
+        given().cookie("stv_session", petra).contentType(ContentType.JSON).body(body.formatted(TEAM_1, "null"))
+                .put("/api/events/" + matchDay).then().statusCode(200)
+                .body("meetingPoint.time", equalTo("2026-12-06T07:20:00+01:00"));
+        timeline(petra, matchDay).body("departureAuto", equalTo(true));
+    }
+
+    @Test
+    void tml09TakingOverTheSuggestionHandsTheTimeBackToTheAutomatic() {
+        String petra = login("petra");
+        // Match day 04 is «swiss unihockey Spieltag» with 08:00 entered by hand; the suggestion is 07:50
+        timeline(petra, T04).body("departureAuto", equalTo(false)).body("canApplySuggestion", equalTo(true));
+        apply(petra, T04).statusCode(200).body("departure", equalTo("2026-11-22T07:50:00+01:00"))
+                .body("departureAuto", equalTo(true));
     }
 
     @Test

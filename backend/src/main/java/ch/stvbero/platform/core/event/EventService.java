@@ -5,6 +5,8 @@ import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.season.Season;
 import ch.stvbero.platform.core.team.TeamRole;
 import ch.stvbero.platform.core.team.Team;
+import ch.stvbero.platform.core.variant.EventVariant;
+import ch.stvbero.platform.core.variant.VariantRules;
 import ch.stvbero.platform.core.team.TeamMembership;
 import ch.stvbero.platform.core.clock.BackendClock;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -224,6 +226,17 @@ public class EventService {
                 && !event.isOver(clock.now()) && !event.season.isArchived();
     }
 
+    /** The chosen variant fits the type and belongs to one of the teams (VAR-03); {@code null} stays {@code null}. */
+    private static UUID variant(UUID variantId, EventType type, Set<Team> teams) {
+        if (variantId == null) {
+            return null;
+        }
+        EventVariant variant = EventVariant.<EventVariant>findByIdOptional(variantId)
+                .orElseThrow(() -> DomainError.invalidField("variantId", "Diese Terminvariante gibt es nicht."));
+        VariantRules.checkFits(variant.eventType, type, teams.stream().anyMatch(team -> team.id.equals(variant.teamId)));
+        return variant.id;
+    }
+
     private void checkInput(EventType type, Instant start, Instant end, Set<Team> teams, Season season) {
         EventRules.checkTime(start, end);
         EventRules.checkNotOver(end, clock.now());
@@ -239,13 +252,22 @@ public class EventService {
         event.location = Location.of(input.location());
         event.notes = EventRules.blankToNull(input.notes());
         event.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
-        event.meetingPointTime = input.meetingPoint() == null || input.meetingPoint().time() == null ? null
+        Instant meetingTime = input.meetingPoint() == null || input.meetingPoint().time() == null ? null
                 : input.meetingPoint().time().toInstant();
+        // A time that differs from the one set automatically was entered by hand and stays (TML-09)
+        if (meetingTime == null || !meetingTime.equals(event.meetingPointTime)) {
+            event.meetingPointTimeAuto = false;
+        }
+        event.meetingPointTime = meetingTime;
         event.meetingPointLocation = input.meetingPoint() == null ? null : input.meetingPoint().location().strip();
+        event.variantId = variant(input.variantId(), input.type(), teams);
         if (input.attendanceCheck() != null) {
             event.attendanceCheck = input.attendanceCheck();
         }
         event.teams.clear();
         event.teams.addAll(teams);
+        List<UUID> optional = Participation.check(teams.stream().map(team -> team.id).toList(), input.optionalTeamIds());
+        event.optionalTeamIds.retainAll(optional);
+        event.optionalTeamIds.addAll(optional);
     }
 }

@@ -346,6 +346,92 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/event-variants:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [Teams]
+      operationId: listEventVariants
+      summary: "Event variants of a team: the four standard ones, then the team's own (VAR-01, VAR-02)"
+      description: |
+        Members of the team, coaches and admins. An event variant says how a kind of event looks and behaves in
+        the team: name, colour, call-up or responses only, the sections of the event page and their order,
+        automatic departure and the defaults for new events. Every team has the standard variants `PRACTICE`,
+        `MATCH_DAY`, `SU_MATCH_DAY` (match days from the sync) and `OTHER`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EventVariant' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Teams]
+      operationId: createEventVariant
+      summary: "Add an event variant of the team's own (VAR-02, admin, coach)"
+      description: |
+        `eventType` is required and stays. At most 12 variants per team (409, rule VAR-02). The name is unique in
+        the team (422, rule VAR-02). Sections must fit the event type and include `DETAILS` (400).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventVariantInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventVariant' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/teams/{teamId}/event-variants/{variantId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: variantId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Teams]
+      operationId: updateEventVariant
+      summary: Change name, colour, call-up, sections and defaults of an event variant (VAR-04 to VAR-09, admin, coach)
+      description: |
+        `eventType` is ignored: the type of a variant stays. Fields left out keep their value. The change applies
+        to all events of the variant at once (VAR-10). `callUp` only has an effect for match day variants.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventVariantInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventVariant' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [Teams]
+      operationId: deleteEventVariant
+      summary: "Delete an event variant of the team's own (VAR-02, admin, coach)"
+      description: |
+        Its events stay and fall back to the standard variant of their type. A standard variant cannot be deleted
+        (409, rule VAR-01).
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/teams/{teamId}/members:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -523,6 +609,86 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
 
   # ---------------------------------------------------------------- Persons
+  /api/teams/{teamId}/special-lineups:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    get:
+      tags: [Lines]
+      operationId: getSpecialLineups
+      summary: Special line-ups of a team in the current season, with the players that can be set (LIN-13)
+      description: |
+        Members of the team, coaches and admins. Special line-ups are named line-ups for situations such as power
+        play («Überzahl») and penalty kill («Unterzahl»), with a free number of places. They do not replace the
+        lines. A place whose player is no longer a player of the team is delivered empty.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpecialLineups' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Lines]
+      operationId: createSpecialLineup
+      summary: Create a special line-up with its places (LIN-13 to LIN-15, admin, coach)
+      description: |
+        1 to 10 places, each with an optional label and at most one player of the team. A player at most once per
+        line-up, or not a player of the team: 422 (rule LIN-14). Name already used in the team: 422 (rule LIN-13).
+        More than 12 line-ups, or an archived season: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpecialLineupInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpecialLineup' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/teams/{teamId}/special-lineups/{lineupId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: lineupId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Lines]
+      operationId: updateSpecialLineup
+      summary: Change name, number of places, labels and players of a special line-up (LIN-15, admin, coach)
+      description: The places of the request replace the existing ones. Same rules as `createSpecialLineup`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpecialLineupInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpecialLineup' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [Lines]
+      operationId: deleteSpecialLineup
+      summary: Delete a special line-up (LIN-15, admin, coach)
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/persons:
     get:
       tags: [Persons]
@@ -597,6 +763,43 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/persons/{personId}/driving:
+    parameters:
+      - $ref: '#/components/parameters/personId'
+    get:
+      tags: [DriverList]
+      operationId: getDriving
+      summary: Whether a person can drive and the places of her car (DRV-18)
+      description: The person herself, coaches and admins. Defaults are «can drive» and 5 places.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Driving' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [DriverList]
+      operationId: setDriving
+      summary: Change whether a person can drive and the places of her car (DRV-18)
+      description: |
+        The person herself, coaches and admins. `carSeats` counts the driver: 5 places are the driver and four
+        others. The values are the defaults for the proposal (DRV-19) and for entering a car.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Driving' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Driving' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   # ---------------------------------------------------------------- Events
   /api/events:
@@ -1019,6 +1222,26 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/special-lineups:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Lines]
+      operationId: getEventLineups
+      summary: Special line-ups of the team of a match day with the responses of the players (LIN-16)
+      description: |
+        Everyone who may see the match day. Every place with its player, her response and, with a published
+        call-up, whether she is called up. `gap` marks a place whose player is not coming: she declined, or the
+        call-up is published and she is not called up. Not a match day: 409 (rule LIN-16).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventLineups' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/events/{eventId}/call-up:
     parameters:
       - $ref: '#/components/parameters/eventId'
@@ -1319,6 +1542,93 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/individual/{personId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/personId'
+    put:
+      tags: [DriverList]
+      operationId: setIndividualTravel
+      summary: 'Mark a person as travelling on her own: oneself, or someone else as coach or admin (DRV-20)'
+      description: |
+        The person needs no seat: she is listed under `individual`, not under `withoutSeat`, and leaves a seat she
+        had. A driver cannot be marked until her car is removed (409, rule DRV-20). Not a member of a team of the
+        match day: 422 (rule DRV-02). Same 409 cases as `addCar`. The same mark is set with a response
+        (`travelsIndividually`, ANM-13).
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [DriverList]
+      operationId: removeIndividualTravel
+      summary: The person no longer travels on her own (DRV-20)
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/events/{eventId}/driver-list/proposal:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [DriverList]
+      operationId: proposeDriverList
+      summary: 'Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, coach)'
+      description: |
+        Only coaches and admins (otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
+        responded «dabei», without those who travel on their own (DRV-20). Existing cars stay and are filled
+        first. Further drivers are chosen among these people if they can drive (DRV-18), the one with the fewest
+        trips in the season first, then by name; each brings her usual places minus herself. Only as many cars as
+        needed are proposed. `withoutSeat` lists who is left over if there are not enough drivers. Same 409 cases
+        as `addCar`.
+      responses:
+        '200':
+          description: The proposal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProposal' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/proposal/apply:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [DriverList]
+      operationId: applyDriverProposal
+      summary: Enter a proposed driver list (DRV-19, coach)
+      description: |
+        Only coaches and admins (otherwise 403). Per entry: the car of the driver is created with `seats` if she
+        has none, then the passengers are put into it. Every rule of the driver list applies (DRV-02, DRV-03); if
+        one entry is refused, nothing is entered. The people affected are notified as usual (DRV-11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverProposalInput' }
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
   /api/driver-summary:
     get:
       tags: [DriverList]
@@ -2470,6 +2780,95 @@ components:
           type: array
           items: { $ref: '#/components/schemas/PersonSummary' }
 
+    SpecialLineup:
+      type: object
+      description: >-
+        A special line-up of a team (LIN-13, LIN-14): a named line-up for a situation such as power play or penalty
+        kill, with a free number of places
+      required: [id, name, places]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: [Überzahl 1] }
+        places:
+          type: array
+          items: { $ref: '#/components/schemas/SpecialLineupPlace' }
+    SpecialLineupPlace:
+      type: object
+      required: [position]
+      properties:
+        position: { type: integer, format: int32, minimum: 1 }
+        label: { type: string, examples: [Center] }
+        person:
+          $ref: '#/components/schemas/PersonSummary'
+          description: Missing while the place is empty
+    SpecialLineups:
+      type: object
+      description: The special line-ups of a team in the current season (LIN-15)
+      required: [teamId, canEdit, lineups, players]
+      properties:
+        teamId: { type: string, format: uuid }
+        canEdit: { type: boolean, description: 'The caller may create, change and delete line-ups (coach, admin)' }
+        lineups:
+          type: array
+          description: In the order they were created
+          items: { $ref: '#/components/schemas/SpecialLineup' }
+        players:
+          type: array
+          description: Players of the team, by name
+          items: { $ref: '#/components/schemas/PersonSummary' }
+    SpecialLineupInput:
+      type: object
+      required: [name, places]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        places:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: { $ref: '#/components/schemas/SpecialLineupPlaceInput' }
+    SpecialLineupPlaceInput:
+      type: object
+      properties:
+        label: { type: [string, 'null'], maxLength: 30 }
+        personId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Player of the team; missing: the place stays empty'
+    EventLineups:
+      type: object
+      description: The special line-ups of the team of a match day, with the responses of the players (LIN-16)
+      required: [eventId, lineups]
+      properties:
+        eventId: { type: string, format: uuid }
+        lineups:
+          type: array
+          items: { $ref: '#/components/schemas/EventLineup' }
+    EventLineup:
+      type: object
+      required: [id, name, places]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        places:
+          type: array
+          items: { $ref: '#/components/schemas/EventLineupPlace' }
+    EventLineupPlace:
+      type: object
+      required: [position, gap]
+      properties:
+        position: { type: integer, format: int32 }
+        label: { type: string }
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        response:
+          $ref: '#/components/schemas/ResponseStatus'
+          description: Response of the player to the match day; missing for an empty place
+        calledUp:
+          type: boolean
+          description: 'With a published call-up: whether she is called up; otherwise missing'
+        gap:
+          type: boolean
+          description: 'The player is not coming: declined, or not called up (LIN-16)'
+
     Location:
       type: object
       required: [name]
@@ -2533,6 +2932,16 @@ components:
           description: >-
             Only for coaches and admins (F-16): number of warnings from the responses, as in the overview. 0 for
             past, cancelled and other events
+        variant:
+          $ref: '#/components/schemas/EventVariant'
+          description: 'The event variant that applies to the event: name and colour for the list (VAR-03, VAR-05)'
+        optionalTeamIds:
+          type: array
+          description: Teams invited without obligation (TER-15)
+          items: { type: string, format: uuid }
+        myParticipation:
+          $ref: '#/components/schemas/Participation'
+          description: How the caller takes part; missing if she is in no team of the event (TER-15)
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
@@ -2550,12 +2959,14 @@ components:
               items: { $ref: '#/components/schemas/Match' }
             callUpStatus:
               $ref: '#/components/schemas/CallUpStatus'
-              description: Only for MATCH_DAY. Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23).
+              description: >-
+                Only for MATCH_DAY whose variant makes a call-up (VAR-06). Anyone who is not a coach of the team or
+                an admin sees NONE before publishing (AUF-23).
             myCallUp:
               oneOf:
                 - $ref: '#/components/schemas/MyCallUp'
                 - type: 'null'
-              description: Only for MATCH_DAY and team role PLAYER
+              description: Only for MATCH_DAY whose variant makes a call-up (VAR-06), and team role PLAYER
             canEdit: { type: boolean, description: For showing coach actions }
             attendanceCheck: { type: boolean, description: 'Switch «Präsenz erfassen» (PRS-01)' }
             attendanceRecorded:
@@ -2569,6 +2980,11 @@ components:
                 - $ref: '#/components/schemas/AttendanceStatus'
                 - type: 'null'
               description: Own recorded attendance; only for team role PLAYER, with the check on and a recorded value (PRS-06)
+            standing:
+              oneOf:
+                - $ref: '#/components/schemas/Standing'
+                - type: 'null'
+              description: Only for MATCH_DAY. Rank of the own team in the league table last loaded (AUF-34)
     EventInput:
       type: object
       required: [type, title, start, end, teamIds]
@@ -2595,6 +3011,101 @@ components:
         attendanceCheck:
           type: boolean
           description: 'Switch «Präsenz erfassen» (PRS-01). Missing: off for a new event, unchanged for an existing one.'
+        variantId:
+          type: [string, 'null']
+          format: uuid
+          description: >-
+            Event variant of one of the teams that fits the type (VAR-03), otherwise 400. Missing or `null`: the
+            standard variant of the type
+        optionalTeamIds:
+          type: [array, 'null']
+          uniqueItems: true
+          description: >-
+            Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
+            they like, are not reminded and do not count as «offen». At least one team stays expected (400)
+          items: { type: string, format: uuid }
+
+    Participation:
+      type: string
+      description: >-
+        How a person takes part in an event (TER-15): EXPECTED if she belongs to a team that is expected, OPTIONAL
+        if all her teams of the event are invited without obligation
+      enum: [EXPECTED, OPTIONAL]
+    VariantKind:
+      type: string
+      description: One of the four standard variants every team has, or a variant of the team's own (VAR-01, VAR-02)
+      enum: [PRACTICE, MATCH_DAY, SU_MATCH_DAY, OTHER, CUSTOM]
+    VariantColor:
+      type: string
+      description: >-
+        Fixed palette (VAR-04). In the frontend each value is a pair of design tokens per theme
+        (`--tag-<name>`, `--tag-<name>-soft`)
+      enum: [GREEN, TEAL, BLUE, VIOLET, PINK, RED, ORANGE, YELLOW, GREY]
+    EventSection:
+      type: string
+      description: >-
+        Section of the event page (VAR-07): RESPONSES «Anmeldungen», MATCHES «Spiele», CALL_UP «Aufgebot»,
+        TIMELINE «Zeitplan», DRIVER_LIST «Fahrerliste», LINEUPS «Aufstellungen», ATTENDANCE «Präsenz», DETAILS
+        «Details». Practices and other events have RESPONSES, ATTENDANCE and DETAILS
+      enum: [RESPONSES, MATCHES, CALL_UP, TIMELINE, DRIVER_LIST, LINEUPS, ATTENDANCE, DETAILS]
+    EventVariant:
+      type: object
+      description: How a kind of event looks and behaves in a team (VAR)
+      required: [id, teamId, kind, eventType, name, color, callUp, autoDeparture, responseDeadlineHours, attendanceCheck, sections, standard]
+      properties:
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/VariantKind' }
+        eventType: { $ref: '#/components/schemas/EventType' }
+        name: { type: string, examples: [Training] }
+        color: { $ref: '#/components/schemas/VariantColor' }
+        callUp:
+          type: boolean
+          description: A call-up is made (VAR-06); only has an effect for match days. Default false
+        autoDeparture:
+          type: boolean
+          description: The meeting time follows the suggested departure (VAR-08, TML-09); only for match days. Default true
+        responseDeadlineHours:
+          type: integer
+          format: int32
+          description: Default response deadline of new events, in hours (VAR-09)
+        attendanceCheck:
+          type: boolean
+          description: Default of the attendance check of new events (VAR-09)
+        sections:
+          type: array
+          description: Sections of the event page, in the order they are shown (VAR-07)
+          items: { $ref: '#/components/schemas/EventSection' }
+        standard:
+          type: boolean
+          description: 'One of the four standard variants: cannot be deleted (VAR-01)'
+    EventVariantInput:
+      type: object
+      required: [name, color]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        eventType:
+          $ref: '#/components/schemas/EventType'
+          description: Required for a new variant, ignored when changing one
+        color: { $ref: '#/components/schemas/VariantColor' }
+        callUp: { type: [boolean, 'null'] }
+        autoDeparture: { type: [boolean, 'null'] }
+        responseDeadlineHours: { type: [integer, 'null'], format: int32, minimum: 0, maximum: 336 }
+        attendanceCheck: { type: [boolean, 'null'] }
+        sections:
+          type: [array, 'null']
+          description: 'Shown sections in their order; must fit the event type and include DETAILS. Missing: unchanged, or the defaults for a new variant'
+          items: { $ref: '#/components/schemas/EventSection' }
+    Standing:
+      type: object
+      description: Rank of the own team in the league table last loaded (AUF-34, F-17)
+      required: [teamId, rank, teams]
+      properties:
+        teamId: { type: string, format: uuid }
+        rank: { type: integer, format: int32 }
+        teams: { type: integer, format: int32, description: Number of teams in the table }
+        league: { type: string, examples: [Herren KF 3. Liga] }
+        group: { type: string, examples: [Gruppe 2] }
 
     Series:
       allOf:
@@ -2639,6 +3150,13 @@ components:
         attendanceCheck:
           type: boolean
           description: 'Switch «Präsenz erfassen» for all events of the series (PRS-01). Missing: off for a new series, unchanged for an existing one.'
+        optionalTeamIds:
+          type: [array, 'null']
+          uniqueItems: true
+          description: >-
+            Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
+            they like, are not reminded and do not count as «offen». At least one team stays expected (400)
+          items: { type: string, format: uuid }
     SeriesException:
       type: object
       required: [startDate, endDate, reason]
@@ -2665,6 +3183,9 @@ components:
           type: boolean
           default: false
           description: Changed to `DECLINED` or `MAYBE` after the response deadline (ANM-10)
+        travelsIndividually:
+          type: boolean
+          description: The person travels to the match day on her own and needs no seat (ANM-13); missing if not
     ResponseInput:
       type: object
       required: [status]
@@ -2676,6 +3197,11 @@ components:
           type: [string, 'null']
           maxLength: 200
           description: Required for MAYBE (ANM-04), optional for DECLINED (ANM-05)
+        travelsIndividually:
+          type: [boolean, 'null']
+          description: >-
+            Match days: with ATTENDING, `true` marks the person as travelling on her own, `false` removes the mark
+            (ANM-13, DRV-20). Missing: unchanged. Any other status removes the mark
 
     Overview:
       type: object
@@ -2712,8 +3238,13 @@ components:
               response: { $ref: '#/components/schemas/Response' }
     OverviewTeam:
       type: object
-      required: [team, counts, groups]
+      required: [team, counts, groups, optional]
       properties:
+        optional:
+          type: boolean
+          description: >-
+            The team is invited without obligation: players without a response are not counted as pending, and the
+            team has no warnings (TER-15)
         team:
           type: object
           required: [id, name]
@@ -2766,6 +3297,10 @@ components:
           oneOf:
             - $ref: '#/components/schemas/SuChange'
             - type: 'null'
+        opponentRank:
+          type: [integer, 'null']
+          format: int32
+          description: Rank of the opponent in the league table last loaded (AUF-34); `null` if unknown
     SuChange:
       type: object
       description: >-
@@ -2790,7 +3325,7 @@ components:
     Timeline:
       type: object
       description: Timeline of a match day (TML). Times that cannot be worked out are missing; `hints` says why.
-      required: [eventId, cancelled, hints, departureSuggested, matchDurationMinutes, arrivalLeadMinutes, coolDownMinutes, canApplySuggestion, items]
+      required: [eventId, cancelled, hints, departureSuggested, departureAuto, matchDurationMinutes, arrivalLeadMinutes, coolDownMinutes, canApplySuggestion, items]
       properties:
         eventId: { type: string, format: uuid }
         cancelled: { type: boolean }
@@ -2804,6 +3339,9 @@ components:
         departureSuggested:
           type: boolean
           description: The departure is the suggestion; no meeting time is set yet (TML-04)
+        departureAuto:
+          type: boolean
+          description: The meeting time was set by the automatic departure, not by hand (TML-09)
         suggestedDeparture:
           type: string
           format: date-time
@@ -3274,7 +3812,7 @@ components:
     DriverList:
       type: object
       description: Driver list of a match day (DRV-01 to DRV-10)
-      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat]
+      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat, individual, defaultSeats]
       properties:
         eventId: { type: string, format: uuid }
         ready:
@@ -3311,6 +3849,14 @@ components:
           type: array
           description: Members of the teams of the match day, by name; only for coaches and admins
           items: { $ref: '#/components/schemas/PersonSummary' }
+        individual:
+          type: array
+          description: People who travel on their own and need no seat, by name (DRV-20)
+          items: { $ref: '#/components/schemas/PersonSummary' }
+        defaultSeats:
+          type: integer
+          format: int32
+          description: 'Seats for passengers the caller usually offers: her places minus herself (DRV-18)'
 
     Car:
       type: object
@@ -3375,7 +3921,7 @@ components:
     DriverPlan:
       type: object
       description: Driver plan of a team for a whole season (DRV-14, DRV-17)
-      required: [teamId, teamName, seasonId, seasonName, canJoin, canManage, matchDays, shares]
+      required: [teamId, teamName, seasonId, seasonName, canJoin, canManage, matchDays, shares, drivers]
       properties:
         teamId: { type: string, format: uuid }
         teamName: { type: string }
@@ -3395,6 +3941,10 @@ components:
           type: array
           description: Members of the team, by name; only for coaches and admins
           items: { $ref: '#/components/schemas/PersonSummary' }
+        drivers:
+          type: array
+          description: Who can drive and with how many places, by name (DRV-18)
+          items: { $ref: '#/components/schemas/DriverSetting' }
     DriverPlanMatchDay:
       type: object
       required: [eventId, title, start, cancelled, over, ready, missing, changeable, cars, freeSeats]
@@ -3444,6 +3994,75 @@ components:
           maxItems: 60
           items: { type: string, format: uuid }
 
+    Driving:
+      type: object
+      description: Whether a person can drive, and the places of her car including herself (DRV-18)
+      required: [canDrive, carSeats]
+      properties:
+        canDrive: { type: boolean, default: true }
+        carSeats: { type: integer, format: int32, minimum: 2, maximum: 9, default: 5 }
+    DriverSetting:
+      type: object
+      description: A member of the team with her driving settings (DRV-18)
+      required: [person, canDrive, carSeats, canChange]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        canDrive: { type: boolean }
+        carSeats: { type: integer, format: int32, description: 'Places in her car, herself included' }
+        canChange:
+          type: boolean
+          description: 'The caller may change this entry: herself, or everyone as coach or admin'
+    DriverProposal:
+      type: object
+      description: Proposed driver list of a match day (DRV-19). Nothing is changed until it is applied
+      required: [eventId, cars, withoutSeat, changes]
+      properties:
+        eventId: { type: string, format: uuid }
+        cars:
+          type: array
+          description: 'All cars after the proposal: the existing ones first, then the proposed ones'
+          items: { $ref: '#/components/schemas/ProposedCar' }
+        withoutSeat:
+          type: array
+          description: People left without a seat because there are not enough drivers, by name
+          items: { $ref: '#/components/schemas/PersonSummary' }
+        changes:
+          type: boolean
+          description: The proposal adds a car or a passenger; otherwise there is nothing to apply
+    ProposedCar:
+      type: object
+      required: [driver, seats, existing, passengers, added]
+      properties:
+        driver: { $ref: '#/components/schemas/PersonSummary' }
+        seats: { type: integer, format: int32, description: Seats for passengers }
+        existing: { type: boolean, description: The car is already in the driver list }
+        passengers:
+          type: array
+          description: Everyone in the car after the proposal, by name
+          items: { $ref: '#/components/schemas/PersonSummary' }
+        added:
+          type: array
+          description: The passengers the proposal adds, by name
+          items: { $ref: '#/components/schemas/PersonSummary' }
+    DriverProposalInput:
+      type: object
+      required: [cars]
+      properties:
+        cars:
+          type: array
+          maxItems: 40
+          items: { $ref: '#/components/schemas/DriverProposalCar' }
+    DriverProposalCar:
+      type: object
+      description: 'A car to enter or to fill: the driver, her seats (for a new car) and the passengers to add'
+      required: [driverId, seats, passengerIds]
+      properties:
+        driverId: { type: string, format: uuid }
+        seats: { type: integer, format: int32, minimum: 1, maximum: 8 }
+        passengerIds:
+          type: array
+          maxItems: 8
+          items: { type: string, format: uuid }
     DriverSummary:
       type: object
       description: Trips and credited kilometres per person in a season (DRV-09)

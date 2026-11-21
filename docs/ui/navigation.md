@@ -299,7 +299,7 @@ Counter elements carry `data-counter="attending|declined|maybe|pending"`.
 | `event-optional` | Chip «Freiwillig» on an entry of `/termine`; on `/termine/:id` the note «Für dich freiwillig …» above the own response (TER-17) |
 | `optional-filter`, `optional-hidden` | Checkbox «Freiwillige Termine anzeigen» in `/termine` (`?freiwillig=aus` hides them) and the line «<n> freiwillige Termine sind ausgeblendet.» |
 | `overview-team-optional` | Chip «freiwillig» next to an invited team in the overview |
-| `travels-individually` | Checkbox «Ich reise individuell an …» under the own response on a match day (only with «dabei»); in the overview the chip «reist individuell an» of a person (ANM-13) |
+| `travels-individually` | Checkbox «Ich reise individuell an …» under the own response on a match day (only with «dabei»); `overview-individual` is the chip «reist individuell an» of a person in the overview (ANM-13) |
 | `participation` | Group «Wer wird erwartet?» in the event form with one select «Teilnahme <Team>» per chosen team (several teams, not a match day) |
 | `event-variants` | Section «Terminvarianten» in `/verwaltung/teams/:id`; entries `variant-<KIND>` for the standard variants and `variant-<id>` for the team's own (`data-color`, `data-call-up`), `variant-summary`, button `variant-add` |
 | `variant-call-up`, `variant-auto-departure`, `variant-sections` | In the dialog of a variant: checkboxes «Aufgebot machen» and «Abfahrtszeit automatisch setzen» (match days only), list of the sections (items with `data-section`, `data-shown`; checkbox «<Abschnitt> anzeigen», buttons «<Abschnitt> nach oben/unten») |

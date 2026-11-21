@@ -47,6 +47,9 @@ public class ResponseService {
     @Inject
     EventNotifications notifications;
 
+    @Inject
+    ch.stvbero.platform.core.driver.DriverListService drivers;
+
     /** Stored response, as it is in the table. */
     record Stored(ResponseStatus status, String comment, Instant changedAt, UUID enteredBy,
                        boolean lateCancellation) {
@@ -104,8 +107,12 @@ public class ResponseService {
                 .executeUpdate();
         notifications.responseChanged(user, event, members, respondent,
                 previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation);
+        // «Ich reise individuell an» comes with «dabei» and goes with every other response (ANM-13)
+        drivers.individualFromResponse(user, event, respondent, newStatus == ResponseStatus.ATTENDING,
+                input.travelsIndividually());
         return new ResponseDto(newStatus, comment, EventReader.time(now),
-                enteredBy == null ? null : PersonSummary.of(Person.findById(enteredBy)), lateCancellation);
+                enteredBy == null ? null : PersonSummary.of(Person.findById(enteredBy)), lateCancellation,
+                drivers.individual(event.id).contains(respondent) ? Boolean.TRUE : null);
     }
 
     // ------------------------------------------------------------------ Read
@@ -120,11 +127,15 @@ public class ResponseService {
         Map<UUID, Stored> responses = responses(event.id);
         Map<UUID, PersonSummary> persons = new HashMap<>();
         members.forEach(m -> persons.put(m.person.id, PersonSummary.of(m.person)));
+        // Who travels on her own (ANM-13), visible to everyone who sees the responses
+        Set<UUID> individual = event.type == EventType.MATCH_DAY ? drivers.individual(event.id) : Set.of();
 
         List<OverviewDto.TeamName> teams = teamNames(event);
         List<OverviewDto.TeamBlock> blocks = new ArrayList<>();
         List<OverviewDto.CoachEntry> coaches = new ArrayList<>();
         Set<UUID> allPlayers = new LinkedHashSet<>();
+        Set<UUID> expectedPlayers = new LinkedHashSet<>();
+        Set<UUID> invitedPlayers = new LinkedHashSet<>();
         // Warnings only for coaches and admins (missing for players), empty if they do not apply (F-16)
         List<WarningDto> warnings = WarningRules.visible(user.allTeams()) ? new ArrayList<>() : null;
         boolean withWarnings = warnings != null
@@ -139,7 +150,8 @@ public class ResponseService {
             List<OverviewDto.Entry> noLine = new ArrayList<>();
             for (TeamMembership m : players) {
                 OverviewDto.Entry entry = new OverviewDto.Entry(persons.get(m.person.id),
-                        response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons));
+                        response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons,
+                                individual.contains(m.person.id)));
                 if (m.groups.isEmpty()) {
                     noLine.add(entry);
                 } else {
@@ -157,8 +169,17 @@ public class ResponseService {
             if (!noLine.isEmpty()) {
                 groups.add(new OverviewDto.Group(null, OverviewDto.Type.NO_LINE, NO_LINE, sorted(noLine)));
             }
-            blocks.add(new OverviewDto.TeamBlock(team, counts(players.stream().map(m -> m.person.id).toList(), responses), groups));
-            if (withWarnings) {
+            boolean optional = event.optionalTeamIds.contains(team.id());
+            List<UUID> playerIds = players.stream().map(m -> m.person.id).toList();
+            // In a team invited without obligation only those who responded count (TER-15)
+            blocks.add(new OverviewDto.TeamBlock(team, counts(optional ? responded(playerIds, responses) : playerIds,
+                    responses), groups, optional));
+            if (optional) {
+                players.forEach(m -> invitedPlayers.add(m.person.id));
+            } else {
+                players.forEach(m -> expectedPlayers.add(m.person.id));
+            }
+            if (withWarnings && !optional) {
                 Team entity = event.teams.stream().filter(t -> t.id.equals(team.id())).findFirst().orElseThrow();
                 warnings.addAll(WarningRules.warnings(event.type, team, entity.minimums(),
                         warningPlayers(players, p -> isAttending(responses.get(p)))));
@@ -166,7 +187,8 @@ public class ResponseService {
 
             inTeam.stream().filter(m -> m.teamRole == TeamRole.COACH)
                     .map(m -> new OverviewDto.CoachEntry(persons.get(m.person.id), team,
-                            response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons)))
+                            response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons,
+                                    individual.contains(m.person.id))))
                     .sorted(Comparator.comparing(OverviewDto.CoachEntry::person, PersonSummary.ORDER))
                     .forEach(coaches::add);
         }
@@ -175,7 +197,15 @@ public class ResponseService {
             int[] su = EventReader.suWarnings(em, List.of(event.id)).getOrDefault(event.id, new int[2]);
             warnings.addAll(WarningRules.suWarnings(teams.get(0), su[0], su[1]));
         }
-        return new OverviewDto(event.id, counts(allPlayers, responses), blocks, coaches, warnings);
+        Set<UUID> counted = new LinkedHashSet<>(expectedPlayers);
+        counted.addAll(responded(invitedPlayers, responses));
+        return new OverviewDto(event.id, counts(counted, responses), blocks, coaches, warnings);
+    }
+
+    /** Of these people, the ones who gave a response. */
+    private static List<UUID> responded(java.util.Collection<UUID> persons, Map<UUID, Stored> responses) {
+        return persons.stream().filter(p -> responses.containsKey(p)
+                && responses.get(p).status() != ResponseStatus.PENDING).toList();
     }
 
     /** Players of a team for the warnings (F-16), with their groups and whether they count. */
@@ -254,6 +284,12 @@ public class ResponseService {
 
     /** Response for display. Without permission the comment is left out (ANM-07). */
     static ResponseDto response(Stored stored, boolean withComment, Map<UUID, PersonSummary> persons) {
+        return response(stored, withComment, persons, false);
+    }
+
+    /** As above; {@code individual}: the person travels to the match day on her own (ANM-13). */
+    static ResponseDto response(Stored stored, boolean withComment, Map<UUID, PersonSummary> persons,
+                                boolean individual) {
         if (stored == null) {
             return ResponseDto.PENDING;
         }
@@ -263,7 +299,7 @@ public class ResponseService {
                     id -> Person.<Person>findByIdOptional(id).map(PersonSummary::of).orElse(null));
         }
         return new ResponseDto(stored.status(), withComment ? stored.comment() : null, EventReader.time(stored.changedAt()),
-                enteredBy, stored.lateCancellation());
+                enteredBy, stored.lateCancellation(), individual ? Boolean.TRUE : null);
     }
 
     private static List<OverviewDto.Entry> sorted(List<OverviewDto.Entry> entries) {

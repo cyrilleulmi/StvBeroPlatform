@@ -35,7 +35,9 @@ public class EventNotifications {
      */
     void responseChanged(CurrentUser user, Event event, List<TeamMembership> members, UUID personId,
                           ResponseStatus previousStatus, ResponseStatus newStatus, boolean lateCancellation) {
-        CallUp callUp = event.type == EventType.MATCH_DAY ? CallUp.findById(event.id) : null;
+        // A call-up only counts where the variant of the match day makes one (VAR-06)
+        CallUp callUp = event.type == EventType.MATCH_DAY && ch.stvbero.platform.core.variant.Variants.of(event).callUp
+                ? CallUp.findById(event.id) : null;
         boolean calledUp = callUp != null && callUp.personIds.contains(personId);
         NotificationType type;
         boolean published = callUp != null && callUp.publishedAt != null;

@@ -56,7 +56,7 @@ public class DriverPlanService {
     DriverListService drivers;
 
     private record Context(Team team, Season season, List<TeamMembership> members, boolean member,
-                           boolean canManage) {
+                           boolean canManage, UUID caller) {
     }
 
     private record Car(UUID id, UUID eventId, UUID driver, int seats) {
@@ -124,7 +124,7 @@ public class DriverPlanService {
         if (!user.allTeams() && !member) {
             throw DomainError.forbidden();
         }
-        return new Context(team, season, members, member, user.allTeams());
+        return new Context(team, season, members, member, user.allTeams(), user.personId());
     }
 
     private List<Event> matchDays(Context c) {
@@ -217,7 +217,13 @@ public class DriverPlanService {
         List<PersonSummary> members = c.canManage()
                 ? c.members().stream().map(m -> person.apply(m.person.id)).distinct().sorted(PersonSummary.ORDER).toList()
                 : null;
+        Map<UUID, Person> entities = new HashMap<>();
+        c.members().forEach(m -> entities.put(m.person.id, m.person));
+        List<DriverPlanDto.Driver> drivers = entities.values().stream()
+                .map(p -> new DriverPlanDto.Driver(PersonSummary.of(p), p.canDrive, p.carSeats,
+                        c.canManage() || p.id.equals(c.caller())))
+                .sorted(Comparator.comparing(DriverPlanDto.Driver::person, PersonSummary.ORDER)).toList();
         return new DriverPlanDto(c.team().id, c.team().nameIn(c.season()), c.season().id, c.season().name,
-                c.member() && writable, c.canManage() && writable, matchDays, shares, members);
+                c.member() && writable, c.canManage() && writable, matchDays, shares, members, drivers);
     }
 }

@@ -6,6 +6,8 @@ import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.event.Event;
 import ch.stvbero.platform.core.event.EventRules;
 import ch.stvbero.platform.core.event.EventStatus;
+import ch.stvbero.platform.core.event.EventType;
+import ch.stvbero.platform.core.variant.Variants;
 import ch.stvbero.platform.core.event.Match;
 import ch.stvbero.platform.core.team.TeamMembership;
 import ch.stvbero.platform.core.team.TeamRole;
@@ -31,6 +33,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class TimelineService {
 
+    private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(TimelineService.class);
+
     static final String NO_SUGGESTION = "Für diesen Spieltag gibt es im Moment keinen Vorschlag für die Abfahrt.";
 
     @Inject
@@ -51,6 +55,7 @@ public class TimelineService {
     /** The timeline. Calculates the route first if needed (DRV-05), outside of a transaction. */
     public TimelineDto get(CurrentUser user, UUID eventId) {
         ensureRoute(user, eventId);
+        autoDeparture(eventId);
         return QuarkusTransaction.requiringNew().call(() -> dto(context(user, eventId)));
     }
 
@@ -72,8 +77,49 @@ public class TimelineService {
                 throw DomainError.conflict("Kein Vorschlag", NO_SUGGESTION, "TML-04");
             }
             c.event().meetingPointTime = plan.suggestedDeparture();
+            // With the automatic on, the time keeps following the suggestion from now on (TML-09)
+            c.event().meetingPointTimeAuto = Variants.of(c.event()).autoDeparture;
             return dto(c);
         });
+    }
+
+    /**
+     * Automatic departure (TML-09, VAR-08): while nobody has entered a meeting time by hand, the meeting time of a
+     * match day is the suggested departure. Calculates the route first if needed. Never fails: without a route or
+     * a first match the time simply stays as it is.
+     */
+    public void autoDeparture(UUID eventId) {
+        try {
+            Optional<Place[]> places = QuarkusTransaction.requiringNew().call(() -> {
+                Event event = Event.findById(eventId);
+                return event != null && autoApplies(event)
+                        ? Optional.of(matchDayRoutes.places(event)) : Optional.<Place[]>empty();
+            });
+            if (places.isEmpty()) {
+                return;
+            }
+            routes.ensure(eventId, places.get()[0], places.get()[1]);
+            QuarkusTransaction.requiringNew().run(() -> {
+                Event event = Event.findById(eventId);
+                if (event == null || !autoApplies(event)) {
+                    return;
+                }
+                Instant suggestion = plan(event).suggestedDeparture();
+                if (suggestion != null && !suggestion.equals(event.meetingPointTime)) {
+                    event.meetingPointTime = suggestion;
+                    event.meetingPointTimeAuto = true;
+                }
+            });
+        } catch (RuntimeException e) {
+            LOG.debugf(e, "Automatic departure of event %s not set", eventId);
+        }
+    }
+
+    private boolean autoApplies(Event event) {
+        return event.type == EventType.MATCH_DAY && event.status == EventStatus.PLANNED
+                && event.end.isAfter(clock.now()) && !event.season.isArchived()
+                && (event.meetingPointTime == null || event.meetingPointTimeAuto)
+                && MatchDayRoutes.missing(event).isEmpty() && Variants.of(event).autoDeparture;
     }
 
     private void ensureRoute(CurrentUser user, UUID eventId) {
@@ -142,7 +188,8 @@ public class TimelineService {
                 && !event.season.isArchived() && plan.suggestedDeparture() != null
                 && !plan.suggestedDeparture().equals(event.meetingPointTime);
         return new TimelineDto(event.id, event.status == EventStatus.CANCELLED, hints, time(plan.departure()),
-                plan.departureSuggested(), time(plan.suggestedDeparture()), time(plan.arriveBy()),
+                plan.departureSuggested(), event.meetingPointTime != null && event.meetingPointTimeAuto,
+                time(plan.suggestedDeparture()), time(plan.arriveBy()),
                 drive == null ? null : (int) drive.toMinutes(),
                 route.map(Routes.Stored::distanceMeters).map(DriverRules::kilometres).orElse(null),
                 matchDuration(event), arrivalLead(event), (int) TimelineRules.COOL_DOWN.toMinutes(), canApply,

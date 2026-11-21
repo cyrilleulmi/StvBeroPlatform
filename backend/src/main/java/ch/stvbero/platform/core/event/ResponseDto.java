@@ -13,7 +13,9 @@ import java.time.OffsetDateTime;
 @Schema(name = "Response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ResponseDto(ResponseStatus status, String comment, OffsetDateTime changedAt,
-                         PersonSummary enteredBy, boolean lateCancellation) {
+                         PersonSummary enteredBy, boolean lateCancellation,
+                         @Schema(description = "Travels to the match day on her own (ANM-13); missing if not")
+                         Boolean travelsIndividually) {
 
-    public static final ResponseDto PENDING = new ResponseDto(ResponseStatus.PENDING, null, null, null, false);
+    public static final ResponseDto PENDING = new ResponseDto(ResponseStatus.PENDING, null, null, null, false, null);
 }

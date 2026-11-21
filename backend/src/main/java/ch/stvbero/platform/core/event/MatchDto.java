@@ -11,5 +11,8 @@ public record MatchDto(UUID id, String opponent, OffsetDateTime startTime, boole
                        MatchSource source, Integer suMatchId, boolean missingAtSu,
                        @Schema(nullable = true, description = "Unconfirmed change by swiss unihockey (SUH-12); "
                                + "`null` if there is none")
-                       SuChangeDto suChange) {
+                       SuChangeDto suChange,
+                       @Schema(nullable = true, description = "Rank of the opponent in the league table last loaded "
+                               + "(AUF-34); `null` if unknown")
+                       Integer opponentRank) {
 }

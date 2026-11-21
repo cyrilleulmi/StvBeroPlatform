@@ -15,7 +15,8 @@ import java.util.UUID;
 
 /**
  * Create or change a single event (TER-04, TER-10, TER-11). Without {@code attendanceCheck} a new event has the
- * check off and a changed event keeps its value (PRS-01).
+ * check off and a changed event keeps its value (PRS-01). Without {@code variantId} the standard variant of the
+ * type applies (VAR-03).
  */
 @Schema(name = "EventInput")
 public record EventInput(
@@ -29,5 +30,9 @@ public record EventInput(
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
         @Valid MeetingPointDto meetingPoint,
-        Boolean attendanceCheck) {
+        Boolean attendanceCheck,
+        @Schema(nullable = true, description = "Event variant of one of the teams (VAR-03); without it the standard variant of the type")
+        UUID variantId,
+        @Schema(nullable = true, description = "Teams of the event that are invited without obligation (TER-15); at least one team stays expected")
+        List<@NotNull UUID> optionalTeamIds) {
 }
