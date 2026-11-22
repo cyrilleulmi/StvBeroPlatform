@@ -16,6 +16,7 @@ import { clockTime, eventDate, yearOf } from '../attendance/time';
 import { AuthService } from '../core/auth.service';
 import { errorStatus, errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
+import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
 
 /**
@@ -81,7 +82,7 @@ import { TEXTS } from '../core/texts';
                   <p class="secondary-text" data-testid="plan-venue">
                     {{ venue(m) }}
                     @if (m.distanceKm !== undefined && m.distanceKm !== null) {
-                      · {{ t.distance(m.distanceKm.toFixed(1), m.durationMinutes ?? null) }}
+                      · {{ t.distance(km(m.distanceKm), m.durationMinutes ?? null) }}
                     }
                   </p>
                   @if (!m.ready) {
@@ -153,6 +154,8 @@ import { TEXTS } from '../core/texts';
                 <div class="field">
                   <label for="plan-seats">{{ t.seats }}</label>
                   <input
+                    spellcheck="false"
+                    name="plan-seats"
                     id="plan-seats"
                     type="text"
                     inputmode="numeric"
@@ -515,6 +518,7 @@ export class DriverPlanPage {
   private readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
   protected readonly t = TEXTS.driverPlan;
+  protected readonly km = formatDecimal;
   protected readonly name = name;
 
   /** Route `/teams/:teamId/fahrerliste` */
@@ -676,7 +680,11 @@ export class DriverPlanPage {
     this.seatsError.set(/^[1-8]$/.test(this.seats().trim()) ? null : this.t.seatsInvalid);
     const eventIds = this.selected();
     this.selectionError.set(eventIds.length === 0 ? this.t.noneSelected : null);
-    if (this.seatsError() || this.selectionError()) return;
+    if (this.seatsError()) {
+      document.getElementById('plan-seats')?.focus();
+      return;
+    }
+    if (this.selectionError()) return;
     const driverId = this.driver();
     const who =
       (plan.members ?? []).find((p) => p.id === driverId) ??

@@ -218,6 +218,7 @@ interface Target {
           <div class="field">
             <label for="on-behalf-comment">{{ a.commentOptional }}</label>
             <input
+              name="on-behalf-comment"
               id="on-behalf-comment"
               type="text"
               maxlength="200"

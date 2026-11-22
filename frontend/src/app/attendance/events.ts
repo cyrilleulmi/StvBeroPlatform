@@ -72,6 +72,7 @@ interface Month {
       @if (optionalCount() > 0 || !showOptional()) {
         <label class="check optional-filter">
           <input
+            name="optional-filter"
             type="checkbox"
             data-testid="optional-filter"
             [checked]="showOptional()"

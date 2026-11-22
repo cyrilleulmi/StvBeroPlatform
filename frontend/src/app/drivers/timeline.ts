@@ -15,6 +15,7 @@ import type { Timeline, TimelineItem } from '../api/types';
 import { clockTime } from '../attendance/time';
 import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
+import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
 
 interface Line {
@@ -53,7 +54,7 @@ interface Line {
           <p class="secondary-text" data-testid="timeline-settings">
             {{ s.settings(t.matchDurationMinutes, t.arrivalLeadMinutes) }}
             @if (t.distanceKm !== undefined && t.driveMinutes !== undefined) {
-              {{ s.route(t.distanceKm.toFixed(1), t.driveMinutes) }}.
+              {{ s.route(km(t.distanceKm), t.driveMinutes) }}.
             }
           </p>
           @for (hint of hints(); track hint.key) {
@@ -239,6 +240,7 @@ export class TimelineSection {
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.timeline;
+  protected readonly km = formatDecimal;
   protected readonly time = clockTime;
 
   readonly eventId = input.required<string>();

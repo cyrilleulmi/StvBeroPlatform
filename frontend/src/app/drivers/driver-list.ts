@@ -17,13 +17,14 @@ import { Observable, firstValueFrom } from 'rxjs';
 import type { Car, DriverList, DriverProposal, PersonSummary, ProposedCar } from '../api/types';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
+import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
 
 const SEAT_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /** «23.4» */
 export function km(value: number | null | undefined): string {
-  return (value ?? 0).toFixed(1);
+  return formatDecimal(value ?? 0);
 }
 
 /**
@@ -398,6 +399,8 @@ export function km(value: number | null | undefined): string {
         <div class="field">
           <label for="driver-km-field">{{ s.kmField }}</label>
           <input
+            spellcheck="false"
+            name="driver-km-field"
             #kmField
             id="driver-km-field"
             type="text"
@@ -828,7 +831,8 @@ export class DriverListSection {
 
   protected openKm(): void {
     const r = this.data()?.route;
-    this.kmValue.set(r?.distanceKm != null ? km(r.distanceKm) : '');
+    // Plain digits in the field, so that the value parses back (no thousands separator).
+    this.kmValue.set(r?.distanceKm != null ? r.distanceKm.toFixed(1) : '');
     this.kmError.set(null);
     const dialog = this.kmDialog()?.nativeElement;
     if (dialog && !dialog.open) dialog.showModal();

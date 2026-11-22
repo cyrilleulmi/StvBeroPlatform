@@ -156,6 +156,8 @@ import { TEXTS } from '../../core/texts';
                   <div class="field">
                     <label [for]="'minimum-' + f.key">{{ f.label }}</label>
                     <input
+                      spellcheck="false"
+                      [name]="'minimum-' + f.key"
                       [id]="'minimum-' + f.key"
                       type="number"
                       inputmode="numeric"

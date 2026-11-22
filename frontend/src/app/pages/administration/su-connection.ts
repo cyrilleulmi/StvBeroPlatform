@@ -152,6 +152,8 @@ import { TEXTS } from '../../core/texts';
             <div class="field">
               <label for="su-team-id">{{ s.field }}</label>
               <input
+                spellcheck="false"
+                name="su-team-id"
                 #idField
                 id="su-team-id"
                 type="text"

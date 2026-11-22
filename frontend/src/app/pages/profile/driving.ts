@@ -34,6 +34,7 @@ import { TEXTS } from '../../core/texts';
         <form class="form" (submit)="save($event)" novalidate>
           <label class="checkbox">
             <input
+              name="my-can-drive"
               type="checkbox"
               data-testid="my-can-drive"
               [checked]="canDrive()"
@@ -45,6 +46,8 @@ import { TEXTS } from '../../core/texts';
             <div class="field seats">
               <label for="my-car-seats">{{ s.seats }}</label>
               <input
+                spellcheck="false"
+                name="my-car-seats"
                 id="my-car-seats"
                 type="number"
                 inputmode="numeric"

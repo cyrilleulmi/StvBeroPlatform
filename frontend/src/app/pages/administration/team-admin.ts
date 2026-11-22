@@ -195,6 +195,7 @@ export class TeamAdmin {
     const newName = this.teamname().trim();
     if (!newName) {
       this.teamnameError.set(TEXTS.teamAdmin.nameRequired);
+      document.getElementById('team-name')?.focus();
       return;
     }
     this.teamnameError.set(null);
@@ -215,6 +216,7 @@ export class TeamAdmin {
     const personId = this.newPerson();
     if (!personId) {
       this.personError.set(TEXTS.teamAdmin.personRequired);
+      document.getElementById('add-member-person')?.focus();
       return;
     }
     this.personError.set(null);
@@ -280,7 +282,10 @@ export class TeamAdmin {
     this.arrivalLeadError.set(
       whole(this.arrivalLead()) && lead >= 0 && lead <= 240 ? null : TEXTS.matchDaySettings.leadInvalid,
     );
-    if (this.matchDurationError() || this.arrivalLeadError()) return;
+    if (this.matchDurationError() || this.arrivalLeadError()) {
+      document.getElementById(this.matchDurationError() ? 'match-duration' : 'arrival-lead')?.focus();
+      return;
+    }
     const input: MatchDaySettings = {
       matchDurationMinutes: duration,
       arrivalLeadMinutes: lead,

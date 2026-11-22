@@ -151,6 +151,7 @@ function sectionsOf(type: EventType): EventSection[] {
         <div class="field">
           <label for="variant-name">{{ s.name }}</label>
           <input
+            name="variant-name"
             #nameField
             id="variant-name"
             type="text"
@@ -199,6 +200,7 @@ function sectionsOf(type: EventType): EventSection[] {
           <div class="switches">
             <label class="checkbox">
               <input
+                name="variant-call-up"
                 type="checkbox"
                 data-testid="variant-call-up"
                 [checked]="callUp()"
@@ -210,6 +212,7 @@ function sectionsOf(type: EventType): EventSection[] {
             <p class="secondary-text hint" id="variant-call-up-hint">{{ s.callUpHint }}</p>
             <label class="checkbox">
               <input
+                name="variant-auto-departure"
                 type="checkbox"
                 data-testid="variant-auto-departure"
                 [checked]="autoDeparture()"
@@ -224,6 +227,8 @@ function sectionsOf(type: EventType): EventSection[] {
         <div class="field deadline">
           <label for="variant-deadline">{{ s.responseDeadline }}</label>
           <input
+            spellcheck="false"
+            name="variant-deadline"
             id="variant-deadline"
             type="number"
             inputmode="numeric"

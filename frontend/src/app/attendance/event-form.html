@@ -58,6 +58,7 @@
       <div class="field">
         <label for="event-title">{{ texts.eventForm.title }}</label>
         <input
+          name="event-title"
           id="event-title"
           type="text"
           maxlength="80"
@@ -88,6 +89,7 @@
       <div class="field">
         <label for="event-date">{{ texts.eventForm.date }}</label>
         <input
+          name="event-date"
           id="event-date"
           type="date"
           [value]="values().date"
@@ -106,6 +108,7 @@
         <div class="field">
           <label [for]="'event-' + f.field">{{ f.label }}</label>
           <input
+            [name]="'event-' + f.field"
             [id]="'event-' + f.field"
             type="time"
             [value]="values()[f.field]"
@@ -126,6 +129,7 @@
           <div class="field">
             <label [for]="'event-' + f.field">{{ f.label }}</label>
             <input
+              [name]="'event-' + f.field"
               [id]="'event-' + f.field"
               type="date"
               [value]="values()[f.field]"
@@ -155,6 +159,7 @@
       @for (t of teams(); track t.id; let first = $first) {
         <label class="checkbox">
           <input
+            name="event-teamIds"
             type="checkbox"
             [id]="first ? 'event-teamIds' : null"
             [checked]="values().teamIds.includes(t.id)"
@@ -225,6 +230,7 @@
         matchDay() ? texts.eventForm.venue : texts.eventForm.location
       }}</label>
       <input
+        name="event-location"
         id="event-location"
         type="text"
         maxlength="120"
@@ -243,6 +249,8 @@
       <div class="field">
         <label for="event-mapsUrl">{{ texts.eventForm.mapsUrl }}</label>
         <input
+          spellcheck="false"
+          name="event-mapsUrl"
           id="event-mapsUrl"
           type="url"
           inputmode="url"
@@ -269,6 +277,7 @@
           <div class="field">
             <label for="event-meetingPointTime">{{ texts.eventForm.meetingPointTime }}</label>
             <input
+              name="event-meetingPointTime"
               id="event-meetingPointTime"
               type="time"
               [value]="values().meetingPointTime"
@@ -283,6 +292,7 @@
           <div class="field">
             <label for="event-meetingPointLocation">{{ texts.eventForm.meetingPointLocation }}</label>
             <input
+              name="event-meetingPointLocation"
               id="event-meetingPointLocation"
               type="text"
               maxlength="120"
@@ -327,6 +337,7 @@
               <div class="field">
                 <label [for]="'match-' + z.key + '-opponent'">{{ texts.eventForm.opponent }}</label>
                 <input
+                  [name]="'match-' + z.key + '-opponent'"
                   [id]="'match-' + z.key + '-opponent'"
                   type="text"
                   maxlength="80"
@@ -346,6 +357,7 @@
                     texts.eventForm.startTime
                   }}</label>
                   <input
+                    [name]="'match-' + z.key + '-time'"
                     [id]="'match-' + z.key + '-time'"
                     type="time"
                     [value]="z.time"
@@ -410,6 +422,8 @@
     <div class="field">
       <label for="event-responseDeadline">{{ texts.eventForm.responseDeadline }}</label>
       <input
+        spellcheck="false"
+        name="event-responseDeadline"
         id="event-responseDeadline"
         type="number"
         min="0"
@@ -434,6 +448,7 @@
     <div class="field">
       <label class="checkbox">
         <input
+          name="event-attendanceCheck"
           id="event-attendanceCheck"
           type="checkbox"
           data-testid="event-attendance-check"
@@ -490,6 +505,7 @@
     <div class="field">
       <label for="event-reason">{{ texts.eventForm.reason }}</label>
       <input
+        name="event-reason"
         #reasonField
         id="event-reason"
         type="text"

@@ -19,6 +19,8 @@ import { TEXTS } from '../core/texts';
 import { clockTime } from './time';
 
 const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
+/** The number pad of a phone has no colon (iOS), so «5.3», «5,3» or «5-3» count as «5:3». */
+const RESULT_SEPARATOR = /^(\d{1,2})[.,\-–](\d{1,2})$/;
 
 /**
  * Part of a match day in the event detail: own call-up status, or for coaches the state with a link to
@@ -154,8 +156,10 @@ const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
             <input
               #resultField
               id="result-field"
+              name="result"
               type="text"
-              inputmode="numeric"
+              inputmode="decimal"
+              spellcheck="false"
               maxlength="5"
               autocomplete="off"
               [value]="result()"
@@ -273,7 +277,7 @@ export class MatchDay {
     domEvent.preventDefault();
     const m = this.target();
     if (!m || this.running()) return;
-    const value = this.result().replace(/\s/g, '');
+    const value = this.result().replace(/\s/g, '').replace(RESULT_SEPARATOR, '$1:$2');
     if (value && !RESULT_PATTERN.test(value)) {
       this.resultError.set(this.s.resultFormat);
       this.resultField()?.nativeElement.focus();

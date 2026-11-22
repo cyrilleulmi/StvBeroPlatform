@@ -64,6 +64,7 @@
       <div class="field">
         <label [for]="'season-' + f.field">{{ f.label }}</label>
         <input
+          [name]="'season-' + f.field"
           [id]="'season-' + f.field"
           [type]="f.type"
           autocomplete="off"

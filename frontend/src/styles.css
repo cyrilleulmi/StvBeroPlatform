@@ -321,6 +321,41 @@ h1,
 h2,
 h3 {
   font-variant-numeric: tabular-nums;
+  /* No lone word on the last line of a title (Web Interface Guidelines, typography) */
+  text-wrap: balance;
+}
+
+/* ---- Web Interface Guidelines: touch, dialogs, native controls ---- */
+
+/* No double-tap zoom delay on controls; the tap shows a soft tint of the theme instead of the
+   browser's grey box. */
+a,
+button,
+input,
+select,
+textarea,
+label,
+summary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* Scrolling inside a dialog does not scroll the page behind it. */
+dialog {
+  overscroll-behavior: contain;
+}
+
+/* Native selects outside a `.field` keep the theme colours (Windows dark mode draws its own). */
+select {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Desktop: the page does not rubber-band; phones keep pull-to-refresh. */
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
 }
 
 a {
@@ -594,6 +629,55 @@ a {
 .button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Hover makes a control more prominent than at rest. Only on pointers that hover: on touch a tap
+   would leave the state stuck. */
+@media (hover: hover) {
+  .button-primary:not(:disabled):hover {
+    background: color-mix(in srgb, var(--primary) 84%, var(--text));
+  }
+
+  .button-secondary:not(:disabled):hover {
+    border-color: var(--text);
+    background: color-mix(in srgb, var(--primary-soft) 55%, var(--surface));
+  }
+
+  .button-destructive:not(:disabled):hover {
+    border-color: var(--coral);
+    background: var(--coral-soft);
+  }
+
+  .row-link:hover .row-title,
+  .back:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .row-link:hover app-icon {
+    color: var(--text);
+  }
+}
+
+/* Busy (aria-busy while the request runs): a small spinner before the label. The button keeps its
+   label and native `disabled`; with reduced motion there is no spinner, the dimmed button says enough. */
+@media (prefers-reduced-motion: no-preference) {
+  .button[aria-busy='true']::before {
+    content: '';
+    flex: none;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: button-busy 0.7s linear infinite;
+  }
+}
+
+@keyframes button-busy {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .list {

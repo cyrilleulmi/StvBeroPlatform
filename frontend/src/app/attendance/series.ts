@@ -102,6 +102,7 @@ type ExceptionField = 'from' | 'until' | 'reason';
                   <div class="field">
                     <label [for]="'exception-' + f.field">{{ f.label }}</label>
                     <input
+                      [name]="'exception-' + f.field"
                       [id]="'exception-' + f.field"
                       type="date"
                       [value]="newException()[f.field]"
@@ -120,6 +121,7 @@ type ExceptionField = 'from' | 'until' | 'reason';
               <div class="field">
                 <label for="exception-reason">{{ texts.series.reason }}</label>
                 <input
+                  name="exception-reason"
                   id="exception-reason"
                   type="text"
                   maxlength="200"
