@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { TEXTS } from './texts';
 
 export interface ResponseCounts {
@@ -20,9 +20,9 @@ const KEYS: Key[] = ['attending', 'declined', 'maybe', 'pending'];
 @Component({
   selector: 'app-scoreboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { style: 'display: contents' },
+  host: { style: 'display: contents', '[class.live]': 'live()' },
   template: `
-    @for (c of cells(); track c.key; let last = $last) {
+    @for (c of cells(); track c.key + ':' + c.count; let last = $last) {
       <span class="score" [attr.data-counter]="c.key"
         ><b class="score-number">{{ c.count }}</b><span class="score-label">{{ c.label }}</span></span
       >
@@ -34,6 +34,16 @@ const KEYS: Key[] = ['attending', 'declined', 'maybe', 'pending'];
 })
 export class Scoreboard {
   readonly counts = input.required<ResponseCounts>();
+
+  /**
+   * Set after the first render. Only then does a changed count enter with motion (styles.css,
+   * emil-design-eng): the digit cell is tracked by key and count, so a new count is a new element.
+   */
+  protected readonly live = signal(false);
+
+  constructor() {
+    afterNextRender(() => this.live.set(true));
+  }
 
   protected readonly cells = computed(() =>
     KEYS.map((key) => {

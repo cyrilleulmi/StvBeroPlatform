@@ -279,6 +279,20 @@
   }
 }
 
+/* Motion tokens (emil-design-eng): strong custom curves and short durations, the same in every theme.
+   The reduced-motion rule further down switches every transition and animation off. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-press: 160ms;
+  --duration-color: 150ms;
+  --duration-enter: 200ms;
+  --duration-exit: 150ms;
+  /* A dimmed or busy state only shows when the server takes longer than this (no flicker on fast saves) */
+  --delay-busy: 200ms;
+  /* Press tint under list rows, derived from the theme text so it works in all five themes */
+  --tint-press: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
 *,
 *::before,
 *::after {
@@ -631,9 +645,76 @@ a {
   cursor: default;
 }
 
+/* ---- Interaction layer (emil-design-eng) ----
+   Only transform, opacity and colours move. A press scales to 0.97 in 160ms with a strong ease-out;
+   colours change in 150ms `ease`; nothing keyboard-initiated (focus ring, navigation) animates.
+   With prefers-reduced-motion the global rule above switches all of it off. */
+button,
+.button,
+.switch a,
+.tile {
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color var(--duration-color) ease,
+    border-color var(--duration-color) ease,
+    color var(--duration-color) ease,
+    opacity var(--duration-color) ease;
+}
+
+/* With reduced motion the control does not shrink at all (not even as an instant step). */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  a.button:active,
+  .switch a:active {
+    transform: scale(0.97);
+  }
+
+  /* Tiles are larger, so they give a little less */
+  .tile:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Disabled while a request runs: dim only when the server takes longer than 200ms, so a fast save
+   never flickers. The way back starts at once (the transition of the target state applies). */
+button:disabled,
+.button:disabled {
+  transition-delay: 0s, 0s, 0s, 0s, var(--delay-busy);
+}
+
+/* Rows that lead somewhere: a soft surface appears under the row while it is pressed. It replaces the
+   tap highlight there, so the two do not stack. */
+.row-link,
+.event-link {
+  position: relative;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.row-link::before,
+.event-link::before {
+  content: '';
+  position: absolute;
+  inset: 0 -8px;
+  z-index: -1;
+  border-radius: var(--radius-icon);
+  background: var(--tint-press);
+  opacity: 0;
+  transition: opacity var(--duration-color) ease;
+}
+
+.row-link:active::before,
+.event-link:active::before {
+  opacity: 1;
+}
+
 /* Hover makes a control more prominent than at rest. Only on pointers that hover: on touch a tap
    would leave the state stuck. */
 @media (hover: hover) {
+  .tile:hover {
+    border-color: var(--control-border);
+  }
+
   .button-primary:not(:disabled):hover {
     background: color-mix(in srgb, var(--primary) 84%, var(--text));
   }
@@ -670,13 +751,22 @@ a {
     border: 2px solid currentColor;
     border-right-color: transparent;
     border-radius: 50%;
-    animation: button-busy 0.7s linear infinite;
+    /* Fades in together with the delayed dimming, so a fast save shows no spinner flash */
+    animation:
+      appear var(--duration-color) ease var(--delay-busy) both,
+      button-busy 0.7s linear infinite;
   }
 }
 
 @keyframes button-busy {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
   }
 }
 
@@ -846,4 +936,93 @@ a {
   border-radius: 50%;
   background: var(--tag, var(--primary));
   flex: none;
+}
+
+/* ---- Entering and leaving (emil-design-eng) ---- */
+
+/* Dialogs are modal, so they stay centred: enter in 200ms from scale(0.96) and transparent, leave faster
+   (150ms). `display` and `overlay` stay until the exit has ended, so `close()` can fade out too. */
+dialog.dialog {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity var(--duration-exit) var(--ease-out),
+    transform var(--duration-exit) var(--ease-out),
+    overlay var(--duration-exit) allow-discrete,
+    display var(--duration-exit) allow-discrete;
+}
+
+dialog.dialog[open] {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--duration-enter);
+}
+
+@starting-style {
+  dialog.dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+dialog.dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--duration-exit) ease,
+    overlay var(--duration-exit) allow-discrete,
+    display var(--duration-exit) allow-discrete;
+}
+
+dialog.dialog[open]::backdrop {
+  opacity: 1;
+  transition-duration: var(--duration-enter);
+}
+
+@starting-style {
+  dialog.dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Saved, error and notice messages arrive instead of popping in: 200ms, 4px from above. */
+.message-success[role='status'],
+.message-error[role='alert'],
+.message-notice[role='status'],
+.feedback[role='status'] {
+  transition:
+    opacity var(--duration-enter) var(--ease-out),
+    transform var(--duration-enter) var(--ease-out);
+}
+
+@starting-style {
+  .message-success[role='status'],
+  .message-error[role='alert'],
+  .message-notice[role='status'],
+  .feedback[role='status'] {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* «Lädt …» only shows when loading takes longer than 300ms: a fast load goes straight to the content
+   without a flash of the loading text. */
+[aria-busy='true'] > .empty,
+.empty[aria-busy='true'] {
+  animation: appear var(--duration-color) ease 300ms both;
+}
+
+/* Scoreboard: when a count changes while the page is open (after a response), the new digit drops into
+   place like a card on a hall scoreboard, 200ms, 6px. Not on the first render: `app-scoreboard` gets
+   `live` only after it has been drawn once, so a page visit itself never moves. */
+app-scoreboard.live .score-number {
+  transition:
+    opacity var(--duration-enter) var(--ease-out),
+    transform var(--duration-enter) var(--ease-out);
+}
+
+@starting-style {
+  app-scoreboard.live .score-number {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
