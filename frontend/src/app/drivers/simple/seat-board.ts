@@ -335,12 +335,14 @@ export class SeatBoard {
 
   protected async enter(car: Car): Promise<void> {
     const p = this.active();
-    if (p && (await this.store.seat(this.matchDay().eventId, car.id, p))) this.selected.set(null);
+    this.selected.set(null);
+    if (p) await this.store.seat(this.matchDay().eventId, car.id, p);
   }
 
   protected async leave(car: Car): Promise<void> {
     const p = this.active();
-    if (p && (await this.store.unseat(this.matchDay().eventId, car.id, p))) this.selected.set(null);
+    this.selected.set(null);
+    if (p) await this.store.unseat(this.matchDay().eventId, car.id, p);
   }
 
   protected async fill(): Promise<void> {
