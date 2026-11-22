@@ -16,7 +16,7 @@ import { TEXTS } from '../../core/texts';
       >
         −
       </button>
-      <output class="value" [attr.data-testid]="testId()">{{ value() }}</output>
+      <span class="value" [attr.data-testid]="testId()">{{ value() }}</span>
       <button
         type="button"
         class="step"

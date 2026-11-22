@@ -432,7 +432,7 @@ export const TEXTS = {
     myTrips: (n: number) => (n === 1 ? 'Du fährst 1-mal' : `Du fährst ${n}-mal`),
     myTripsNone: 'Du bist im Moment an keinem Spieltag als Fahrerin oder Fahrer eingeteilt.',
     cannot: 'Ich kann nicht fahren',
-    cannotFor: (day: string) => `Ich kann am ${day} nicht fahren`,
+    cannotFor: (day: string) => `Ich kann nicht fahren am ${day}`,
     board: {
       cars: 'Autos',
       carOf: (driver: string) => `Auto von ${driver}`,
@@ -465,7 +465,7 @@ export const TEXTS = {
       edit: 'Anpassen',
       done: 'Fertig',
       editText: 'Wer kann fahren, und wie viele Plätze hat das Auto (mit Fahrerin oder Fahrer)?',
-      drives: 'fährt',
+      drives: 'kann fahren',
       places: 'Plätze',
       trips: (n: number) => (n === 1 ? '1 Fahrt' : `${n} Fahrten`),
       km: (km: string) => `${km} km`,
