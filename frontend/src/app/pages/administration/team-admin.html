@@ -49,6 +49,7 @@
         <div class="field">
           <label for="team-name">{{ texts.teamAdmin.teamnameField }}</label>
           <input
+            name="team-name"
             id="team-name"
             type="text"
             maxlength="60"
@@ -95,6 +96,8 @@
           <div class="field">
             <label for="match-duration">{{ texts.matchDaySettings.duration }}</label>
             <input
+              spellcheck="false"
+              name="match-duration"
               id="match-duration"
               type="text"
               inputmode="numeric"
@@ -112,6 +115,8 @@
           <div class="field">
             <label for="arrival-lead">{{ texts.matchDaySettings.lead }}</label>
             <input
+              spellcheck="false"
+              name="arrival-lead"
               id="arrival-lead"
               type="text"
               inputmode="numeric"
@@ -130,6 +135,7 @@
         <div class="field">
           <label for="usual-meeting-point">{{ texts.matchDaySettings.meetingPoint }}</label>
           <input
+            name="usual-meeting-point"
             id="usual-meeting-point"
             type="text"
             maxlength="120"

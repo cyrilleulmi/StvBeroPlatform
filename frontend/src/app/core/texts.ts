@@ -1,3 +1,5 @@
+import { formatDecimal } from './number';
+
 /**
  * Texts of the user interface in one place, so that tests and documentation use the same words
  * (docs/testability.md, rule 2).
@@ -13,6 +15,7 @@ export const TEXTS = {
     administration: 'Verwaltung',
     notifications: 'Benachrichtigungen',
     unread: 'ungelesen',
+    skipToContent: 'Zum Inhalt springen',
   },
   notifications: {
     title: 'Benachrichtigungen',
@@ -219,9 +222,9 @@ export const TEXTS = {
     route: 'Strecke',
     routeFromTo: (from: string, to: string) => `${from} → ${to}`,
     distance: (km: string, minutes: number | null | undefined) =>
-      minutes ? `${km} km · etwa ${minutes} Min. Fahrzeit` : `${km} km`,
+      minutes ? `${km}\ km · etwa ${minutes}\ Min. Fahrzeit` : `${km}\ km`,
     manual: 'von Hand erfasst',
-    credit: (km: string) => `Gutschrift pro Auto: ${km} km (hin und zurück)`,
+    credit: (km: string) => `Gutschrift pro Auto: ${km}\ km (hin und zurück)`,
     unavailable:
       'Die Strecke lässt sich gerade nicht berechnen, der Routendienst ist nicht erreichbar. Die Fahrerliste funktioniert trotzdem, nur ohne Kilometer.',
     notFound:
@@ -242,7 +245,7 @@ export const TEXTS = {
     seatsFree: (free: number, seats: number) =>
       `${free} von ${seats} ${seats === 1 ? 'Platz' : 'Plätzen'} frei`,
     full: 'voll',
-    carCredit: (km: string) => `Gutschrift ${km} km`,
+    carCredit: (km: string) => `Gutschrift ${km}\ km`,
     passengersOf: (driver: string) => `Mitfahrende bei ${driver}`,
     noPassengers: 'Noch niemand fährt mit.',
     you: '(du)',
@@ -294,7 +297,7 @@ export const TEXTS = {
     name: 'Name',
     trips: 'Fahrten',
     kilometres: 'Kilometer',
-    km: (km: string) => `${km} km`,
+    km: (km: string) => `${km}\ km`,
     withoutDistance: (n: number) => `${n} ${n === 1 ? 'Fahrt' : 'Fahrten'} ohne Kilometer`,
     nobody: 'In dieser Saison ist noch niemand gefahren.',
     mine: 'Deine Fahrten',
@@ -309,7 +312,7 @@ export const TEXTS = {
     listName: 'Zeitplan des Spieltags',
     settings: (duration: number, lead: number) =>
       `Ein Spiel dauert ${duration} Minuten. Ankunft ${lead} Minuten vor dem ersten Spiel.`,
-    route: (km: string, minutes: number) => `${km} km, etwa ${minutes} Min. Fahrt pro Weg`,
+    route: (km: string, minutes: number) => `${km}\ km, etwa ${minutes}\ Min. Fahrt pro Weg`,
     kind: {
       DEPARTURE: 'Abfahrt',
       ARRIVAL: 'Ankunft',
@@ -320,8 +323,8 @@ export const TEXTS = {
       RETURN: 'Rückkehr (ungefähr)',
     },
     match: (n: number, pairing: string) => `Spiel ${n}: ${pairing}`,
-    minutes: (n: number) => `${n} Min.`,
-    drive: (n: number) => `${n} Min. Fahrt`,
+    minutes: (n: number) => `${n}\ Min.`,
+    drive: (n: number) => `${n}\ Min. Fahrt`,
     span: (from: string, until: string) => `${from}–${until}`,
     suggested: 'Vorschlag',
     auto: 'automatisch gesetzt',
@@ -357,7 +360,7 @@ export const TEXTS = {
       free === 0 ? `${driver} · voll` : `${driver} · ${free} von ${seats} Plätzen frei`,
     passengers: (names: string) => `Mit: ${names}`,
     distance: (km: string, minutes: number | null) =>
-      minutes === null ? `${km} km` : `${km} km · ${minutes} Min.`,
+      minutes === null ? `${km}\ km` : `${km}\ km · ${minutes}\ Min.`,
     openPlan: 'Fahrerliste öffnen',
     open: 'Zum Spieltag',
     openFor: (label: string) => `Zum Spieltag ${label}`,
@@ -386,7 +389,7 @@ export const TEXTS = {
     planned: 'Geplant',
     total: 'Total',
     kilometres: 'Kilometer',
-    km: (km: number) => km.toFixed(1),
+    km: (km: number) => formatDecimal(km),
   },
   callUp: {
     title: 'Aufgebot',
@@ -720,8 +723,7 @@ export const TEXTS = {
     title: 'Profil',
     theme: 'Darstellung',
     light: 'Hell',
-    dune: 'Düne',
-    githubDark: 'GitHub Dark',
+    dark: 'Dunkel',
     system: 'System',
     logout: 'Abmelden',
   },

@@ -73,7 +73,7 @@ const MAX_PLACES = 10;
                       </button>
                       <button
                         type="button"
-                        class="button button-secondary button-small"
+                        class="button button-secondary button-small button-destructive"
                         [attr.aria-label]="s.removeFor(l.name)"
                         [disabled]="running()"
                         (click)="remove(l)"

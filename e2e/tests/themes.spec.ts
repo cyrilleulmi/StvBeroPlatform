@@ -1,15 +1,14 @@
 import { checkAccessibility, documentRoot, expect, login, reset, test } from './helpers';
 
 /**
- * Themes (NF-08, E-67): the profile offers Hell, Düne, GitHub Dark and System.
- * Düne and GitHub Dark apply regardless of the system setting, survive a reload
+ * Themes (NF-08, E-90): the profile offers Hell, Dunkel and System. Dunkel applies regardless of the
+ * system setting, survives a reload
  * and pass the accessibility check (contrast). Hell and System are checked by
  * f00-foundation.spec.ts. Plan: e2e/plans/themes.md
  */
 
 const THEMES = [
-  { name: 'Düne', id: 'dune', color: 'rgb(243, 236, 225)', system: 'dark' },
-  { name: 'GitHub Dark', id: 'github-dark', color: 'rgb(13, 17, 23)', system: 'light' },
+  { name: 'Dunkel', id: 'dark', color: 'rgb(20, 24, 29)', system: 'light' },
 ] as const;
 const EVENT_01 = '/termine/40000000-0000-4000-8000-000000000001';
 
@@ -20,13 +19,13 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('NF-08: The switch offers exactly Hell, Düne, GitHub Dark and System', async ({ page }) => {
+test('NF-08: The switch offers exactly Hell, Dunkel and System', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/profil');
 
   const themeSwitch = page.getByTestId('theme-switch');
-  await expect(themeSwitch.getByRole('radio')).toHaveCount(4);
-  for (const name of ['Hell', 'Düne', 'GitHub Dark', 'System']) {
+  await expect(themeSwitch.getByRole('radio')).toHaveCount(3);
+  for (const name of ['Hell', 'Dunkel', 'System']) {
     await expect(themeSwitch.getByRole('radio', { name, exact: true })).toBeVisible();
   }
 });
@@ -71,13 +70,13 @@ test('NF-08: A stored theme that no longer exists falls back to «System»', asy
   await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
 });
 
-test('NF-40 E-68: An old German stored theme (hell, duene) loads the app with «System» and no console errors', async ({ page }) => {
+test('NF-40 E-68 E-90: An old stored theme (hell, duene, dune, github-dark) loads the app with «System» and no console errors', async ({ page }) => {
   // No migration (E-68): old values from before F-11 fall back to «System».
   // The console check of the `test` fixture fails the test on any console error.
   await page.emulateMedia({ colorScheme: 'light' });
   await login(page, 'anna');
   await page.goto('/profil');
-  for (const oldValue of ['hell', 'duene']) {
+  for (const oldValue of ['hell', 'duene', 'dune', 'github-dark']) {
     // Reload so the inline script in index.html and the theme service read the old value on start.
     await page.evaluate((value) => localStorage.setItem('stv-theme', value), oldValue);
     await page.reload();

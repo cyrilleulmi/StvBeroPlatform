@@ -36,6 +36,8 @@ import { TEXTS } from '../../core/texts';
       <div class="field">
         <label for="people-search">{{ texts.people.search }}</label>
         <input
+          spellcheck="false"
+          name="people-search"
           id="people-search"
           type="search"
           autocomplete="off"

@@ -30,6 +30,7 @@ import { TEXTS } from '../core/texts';
       <div class="field">
         <label for="statistics-from">{{ t.from }}</label>
         <input
+          name="statistics-from"
           id="statistics-from"
           type="date"
           [value]="from()"
@@ -41,6 +42,7 @@ import { TEXTS } from '../core/texts';
       <div class="field">
         <label for="statistics-to">{{ t.to }}</label>
         <input
+          name="statistics-to"
           id="statistics-to"
           type="date"
           [value]="to()"

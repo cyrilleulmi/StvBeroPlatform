@@ -116,7 +116,7 @@ function sectionsOf(type: EventType): EventSection[] {
                 @if (!v.standard) {
                   <button
                     type="button"
-                    class="button button-secondary button-small"
+                    class="button button-secondary button-small button-destructive"
                     [attr.aria-label]="s.removeFor(v.name)"
                     [disabled]="running()"
                     (click)="remove(v)"
@@ -151,6 +151,7 @@ function sectionsOf(type: EventType): EventSection[] {
         <div class="field">
           <label for="variant-name">{{ s.name }}</label>
           <input
+            name="variant-name"
             #nameField
             id="variant-name"
             type="text"
@@ -199,6 +200,7 @@ function sectionsOf(type: EventType): EventSection[] {
           <div class="switches">
             <label class="checkbox">
               <input
+                name="variant-call-up"
                 type="checkbox"
                 data-testid="variant-call-up"
                 [checked]="callUp()"
@@ -210,6 +212,7 @@ function sectionsOf(type: EventType): EventSection[] {
             <p class="secondary-text hint" id="variant-call-up-hint">{{ s.callUpHint }}</p>
             <label class="checkbox">
               <input
+                name="variant-auto-departure"
                 type="checkbox"
                 data-testid="variant-auto-departure"
                 [checked]="autoDeparture()"
@@ -224,6 +227,8 @@ function sectionsOf(type: EventType): EventSection[] {
         <div class="field deadline">
           <label for="variant-deadline">{{ s.responseDeadline }}</label>
           <input
+            spellcheck="false"
+            name="variant-deadline"
             id="variant-deadline"
             type="number"
             inputmode="numeric"
@@ -403,7 +408,7 @@ function sectionsOf(type: EventType): EventSection[] {
       gap: 6px;
       min-height: var(--touch);
       padding: 0 12px;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid var(--control-border);
       border-radius: var(--radius-pill);
       font-weight: 600;
       cursor: pointer;

@@ -64,7 +64,9 @@ const DEFAULT_SECTIONS: EventSection[] = [
       <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
       <h1>{{ event()?.title ?? texts.events.title }}</h1>
       @if (event(); as t) {
-        <p class="secondary-text">{{ date(t.start) }} · {{ period() }} · {{ teams() }}</p>
+        <p class="secondary-text">
+          <span class="when">{{ date(t.start) }} · {{ period() }}</span> · {{ teams() }}
+        </p>
         @if (t.variant; as v) {
           <p class="chips">
             <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{

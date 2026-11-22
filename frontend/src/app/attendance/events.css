@@ -37,11 +37,11 @@
 
 .switch {
   display: inline-flex;
-  padding: 4px;
-  gap: 4px;
-  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--radius-control);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--control-border);
 }
 
 .switch a {
@@ -49,23 +49,36 @@
   align-items: center;
   min-height: 40px;
   padding: 0 18px;
-  border-radius: var(--radius-pill);
+  border-radius: 7px;
   color: var(--text);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .switch a[aria-current='page'] {
-  background: var(--primary-soft);
+  background: var(--text);
+  color: var(--surface);
 }
 
+/* The month as a heading with a court line to the edge: the line marks where the month begins. */
 .month {
-  margin: 16px 0 4px;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 6px;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 21px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.month::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 2px;
+  background: var(--text);
 }
 
 .month:first-of-type {
@@ -76,16 +89,24 @@
   align-items: center;
 }
 
+/* The date box sits on the first line of the entry, like a scoreboard tile above its row */
+.event .date {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* The date box: the colour of the event variant (VAR-05) as a court line along the bottom, like the
+   different sports' lines on a hall floor. The name of the variant is on the chip next to it. */
 .date {
   display: grid;
   justify-items: center;
   flex: none;
   width: 56px;
-  padding: 6px 0;
-  border-radius: var(--radius-icon);
-  /* The colour of the event variant (VAR-05); the name is on the chip next to it */
+  padding: 6px 0 5px;
+  border-radius: var(--radius-icon) var(--radius-icon) 0 0;
   background: var(--tag-soft, var(--primary-soft));
-  line-height: 1.2;
+  border-bottom: 4px solid var(--tag, var(--primary));
+  line-height: 1.1;
 }
 
 .date[data-tag] .weekday,
@@ -95,6 +116,7 @@
 
 li[data-status='CANCELLED'] .date {
   background: var(--coral-soft);
+  border-bottom-color: var(--coral);
 }
 
 li[data-status='CANCELLED'] .date .weekday {
@@ -107,13 +129,16 @@ li[data-status='CANCELLED'] .date .day {
 
 .weekday {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--muted);
 }
 
 .day {
-  font-size: 15px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .content {
@@ -131,12 +156,31 @@ li[data-status='CANCELLED'] .date .day {
   text-decoration: line-through;
 }
 
+/* Time and place in ink: they decide whether one can come. The time in tabular figures. */
+.when-where {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.when {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .status-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  margin-top: 2px;
+  gap: 4px 6px;
+  margin: 2px 0;
+}
+
+.status-row:empty {
+  display: none;
 }
 
 .chip[data-kind='cancelled'] {
@@ -155,8 +199,16 @@ li[data-status='CANCELLED'] .date .day {
   padding: 0.5px 9px;
 }
 
+.event .row-title {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
 li[data-participation='OPTIONAL'] .row-title {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .optional-filter {
@@ -176,8 +228,12 @@ li[data-participation='OPTIONAL'] .row-title {
 /* F-04: own response directly in the card (ANM-08) */
 .event-entry {
   display: grid;
-  gap: 4px;
-  padding-bottom: 12px;
+  gap: 2px;
+  padding-bottom: 14px;
+}
+
+.event-entry + .event-entry {
+  padding-top: 6px;
 }
 
 .card-response {
@@ -185,10 +241,31 @@ li[data-participation='OPTIONAL'] .row-title {
   padding-left: 68px;
 }
 
+/* Phone: the text gets the width. A narrower date box, and no chevron: the whole entry is the link
+   and its big title already reads as one. */
 @media (max-width: 479px) {
   .card-response {
     padding-left: 0;
   }
+
+  .event.row-link {
+    gap: 10px;
+  }
+
+  .event .date {
+    width: 48px;
+  }
+
+  .event > app-icon {
+    display: none;
+  }
+}
+
+/* The counts in the scoreboard's condensed DIN, so the four of them fit on one line of a phone */
+.counter {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 15px;
 }
 
 .counter span {

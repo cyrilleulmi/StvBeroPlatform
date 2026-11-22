@@ -125,6 +125,7 @@
         <div class="field">
           <label [for]="'name-' + g.id">{{ texts.lines.nameOf(g.name) }}</label>
           <input
+            [name]="'name-' + g.id"
             [id]="'name-' + g.id"
             type="text"
             maxlength="30"

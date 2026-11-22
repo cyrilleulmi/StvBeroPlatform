@@ -41,6 +41,7 @@ export function attendanceKey(status: AttendanceStatus): string {
 @Component({
   selector: 'app-attendance-check',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:beforeunload)': 'warnUnsaved($event)' },
   imports: [RouterLink, Icon],
   template: `
     <div class="header">
@@ -227,6 +228,11 @@ export class AttendanceCheckPage {
     const before = this.saved();
     return this.persons().some((id) => now[id] !== before[id]);
   });
+
+  /** Closing or reloading the tab with unsaved choices asks first (the browser shows its own text). */
+  protected warnUnsaved(domEvent: BeforeUnloadEvent): void {
+    if (this.dirty()) domEvent.preventDefault();
+  }
 
   protected readonly summary = computed(() => {
     const c = this.choices();

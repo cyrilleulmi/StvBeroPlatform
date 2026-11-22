@@ -15,6 +15,34 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Skip link (WCAG 2.4.1): the first stop of the keyboard, hidden until it has focus. */
+.skip-link {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  left: -999px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 12px;
+}
+
+/* The content only takes focus from code (route change, skip link); it is a landmark, not a
+   control, so it shows no ring. The page title right below it shows where the reader is. */
+.content:focus {
+  outline: none;
+}
+
 .content {
   /* Space at the top for the header bar with the bell (notifications), so that it covers no content. */
   padding: calc(84px + env(safe-area-inset-top)) var(--page-margin) calc(96px + env(safe-area-inset-bottom));
@@ -107,8 +135,7 @@ a.bell {
   padding: 0;
   border-radius: var(--radius-pill);
   background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  border: 1.5px solid var(--control-border);
   color: var(--text);
 }
 
@@ -139,10 +166,29 @@ a.bell .counter {
   letter-spacing: normal;
 }
 
+/* The active entry is marked by a court line in `primary` (top on mobile, left on desktop), not a tinted pill. */
+a {
+  position: relative;
+}
+
 a.active {
-  background: var(--primary-soft);
   color: var(--primary);
   font-weight: 700;
+}
+
+a.active::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 18%;
+  right: 18%;
+  height: 4px;
+  border-radius: 0 0 3px 3px;
+  background: var(--primary);
+}
+
+a.bell.active::before {
+  display: none;
 }
 
 /* Text in `text` instead of `primary`: primary on primary-soft only reaches 3.97:1 in light mode (WCAG AA 4.5:1). */
@@ -171,10 +217,13 @@ a.active span {
 
   .brand {
     display: block;
-    margin: 0 0 24px 12px;
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--primary);
+    margin: 0 0 24px 14px;
+    font-family: var(--font-display);
+    font-stretch: var(--display-stretch);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
   }
 
   ul {
@@ -220,9 +269,22 @@ a.active span {
     color: var(--muted);
   }
 
+  a.active::before {
+    top: 8px;
+    bottom: 8px;
+    left: -16px;
+    right: auto;
+    width: 4px;
+    height: auto;
+    border-radius: 0 3px 3px 0;
+  }
+
   a.bell.active {
-    background: var(--primary-soft);
     color: var(--primary);
+  }
+
+  a.bell.active::before {
+    display: block;
   }
 
   .bell-text {

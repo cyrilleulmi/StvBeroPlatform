@@ -1,4 +1,5 @@
 import type { EventType, PlayerStatistics, StatisticsAverage } from '../api/types';
+import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
 
 /** Event type in the browser URL (`?art=`), German (NF-40): «training», «spieltag». */
@@ -56,7 +57,7 @@ export function percent(value: number | null | undefined): string {
 
 /** Average always with one decimal as in Switzerland, e.g. «24.1», «22.0» (STA-05). */
 export function decimal(value: number): string {
-  return value.toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return formatDecimal(value);
 }
 
 /** Columns of the table in display order (STA-03, STA-04). */

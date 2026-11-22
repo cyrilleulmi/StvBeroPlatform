@@ -318,9 +318,13 @@ function outcome(m: LeagueMatch): Outcome | null {
       text-decoration: none;
       min-height: var(--touch);
     }
-    .match-link:hover .what,
     .match-link:focus-visible .what {
       text-decoration: underline;
+    }
+    @media (hover: hover) {
+      .match-link:hover .what {
+        text-decoration: underline;
+      }
     }
     .when {
       font-size: 13px;

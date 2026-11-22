@@ -36,6 +36,7 @@ import { TEXTS } from '../../core/texts';
         <div class="field">
           <label for="calendar-url">{{ texts.address }}</label>
           <input
+            name="calendar-url"
             #urlField
             id="calendar-url"
             type="text"

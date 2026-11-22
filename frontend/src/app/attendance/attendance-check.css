@@ -7,10 +7,8 @@
 .group-title {
   margin: 0;
   padding: 0 0 4px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
 }
 
@@ -59,7 +57,7 @@
   min-height: var(--touch);
   min-width: 0;
   padding: 4px 6px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--control-border);
   border-radius: var(--radius-pill);
   font: 700 13px/1.15 var(--font);
   text-align: center;

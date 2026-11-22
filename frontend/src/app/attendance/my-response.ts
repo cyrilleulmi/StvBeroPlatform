@@ -48,7 +48,7 @@ type Choice = ResponseInput['status'];
             [disabled]="!!locked() || running() !== null"
             (click)="choose(w)"
           >
-            <app-icon [name]="icon[w]" [size]="18" />
+            <app-icon [name]="icon[w]" [size]="16" />
             {{ texts.button[w] }}
           </button>
         }
@@ -60,6 +60,7 @@ type Choice = ResponseInput['status'];
       @if (travel() && current().status === 'ATTENDING' && !locked()) {
         <label class="travel">
           <input
+            name="travels-individually"
             type="checkbox"
             data-testid="travels-individually"
             [checked]="!!current().travelsIndividually"
@@ -102,6 +103,7 @@ type Choice = ResponseInput['status'];
         <div class="field">
           <label [for]="id('comment')">{{ texts.comment }}</label>
           <input
+            [name]="id('comment')"
             #commentField
             type="text"
             maxlength="200"
@@ -151,6 +153,7 @@ type Choice = ResponseInput['status'];
         <div class="field">
           <label [for]="id('reason')">{{ texts.reason }}</label>
           <input
+            [name]="id('reason')"
             #reasonField
             type="text"
             maxlength="200"
