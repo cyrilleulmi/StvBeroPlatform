@@ -1,15 +1,17 @@
 import { checkAccessibility, documentRoot, expect, login, reset, test } from './helpers';
 
 /**
- * Themes (NF-08, E-67): the profile offers Hell, Düne, GitHub Dark and System.
- * Düne and GitHub Dark apply regardless of the system setting, survive a reload
+ * Themes (NF-08, E-67): the profile offers Hell, Düne, three dark themes (Schiefer, Anthrazit,
+ * Nachtblau, Sporthalle PoC) and System. Düne and the dark themes apply regardless of the system setting, survive a reload
  * and pass the accessibility check (contrast). Hell and System are checked by
  * f00-foundation.spec.ts. Plan: e2e/plans/themes.md
  */
 
 const THEMES = [
   { name: 'Düne', id: 'dune', color: 'rgb(243, 236, 225)', system: 'dark' },
-  { name: 'GitHub Dark', id: 'github-dark', color: 'rgb(13, 17, 23)', system: 'light' },
+  { name: 'Schiefer', id: 'slate', color: 'rgb(20, 24, 29)', system: 'light' },
+  { name: 'Anthrazit', id: 'anthracite', color: 'rgb(22, 22, 22)', system: 'light' },
+  { name: 'Nachtblau', id: 'night-blue', color: 'rgb(15, 21, 36)', system: 'light' },
 ] as const;
 const EVENT_01 = '/termine/40000000-0000-4000-8000-000000000001';
 
@@ -20,13 +22,13 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('NF-08: The switch offers exactly Hell, Düne, GitHub Dark and System', async ({ page }) => {
+test('NF-08: The switch offers exactly Hell, Düne, Schiefer, Anthrazit, Nachtblau and System', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/profil');
 
   const themeSwitch = page.getByTestId('theme-switch');
-  await expect(themeSwitch.getByRole('radio')).toHaveCount(4);
-  for (const name of ['Hell', 'Düne', 'GitHub Dark', 'System']) {
+  await expect(themeSwitch.getByRole('radio')).toHaveCount(6);
+  for (const name of ['Hell', 'Düne', 'Schiefer', 'Anthrazit', 'Nachtblau', 'System']) {
     await expect(themeSwitch.getByRole('radio', { name, exact: true })).toBeVisible();
   }
 });

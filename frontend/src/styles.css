@@ -19,8 +19,9 @@
   --mustard-soft: #f3e7b8;
   --blue: #6a3da8;
   --blue-soft: #eae2f6;
-  /* The scoreboard (Anzeigetafel): the one dark element in a light theme */
-  --board: #15202b;
+  /* The scoreboard (Anzeigetafel): a panel tinted in the primary colour, framed by a court line */
+  --board: #dfe5f6;
+  --board-border: #b9c5ea;
   --radius-card: 14px;
   --radius-tile: 14px;
   --radius-control: 10px;
@@ -70,7 +71,8 @@
   --coral: #ad442d;
   --on-coral: #ffffff;
   --coral-soft: #f4e1d7;
-  --board: #33291f;
+  --board: #ede3d2;
+  --board-border: #d4c2a2;
   --mustard: #7c5e00;
   --mustard-soft: #ede4d1;
   --blue: #5b4fa8;
@@ -97,83 +99,174 @@
   color-scheme: light;
 }
 
-[data-theme='github-dark'] {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --text: #e6edf3;
-  --muted: #9198a1;
-  --border: #30363d;
-  --primary: #58a6ff;
-  --on-primary: #0c1724;
-  --primary-soft: #1b2c41;
-  --coral: #ff7b72;
-  --on-coral: #2a0c0a;
-  --coral-soft: #392427;
-  --board: #21262d;
-  --mustard: #e3b341;
-  --mustard-soft: #342e1f;
-  --blue: #bc8cff;
-  --blue-soft: #2d2741;
+/* Dark themes (Sporthalle PoC): muted colours, no neon. Three candidates to choose from; every
+   text colour reaches 4.5:1 on bg, surface, board and its soft background. */
+/* «Schiefer»: cool slate, the night version of the ultramarine of Hell */
+[data-theme='slate'] {
+  --bg: #14181d;
+  --surface: #1c2128;
+  --text: #e3e7ec;
+  --muted: #9ba4ae;
+  --border: #353d47;
+  --primary: #93a7de;
+  --on-primary: #111a33;
+  --primary-soft: #252e47;
+  --coral: #dc8f86;
+  --on-coral: #2b1210;
+  --coral-soft: #3a2729;
+  --mustard: #d0b26a;
+  --mustard-soft: #332d1f;
+  --blue: #b6a3d9;
+  --blue-soft: #2c2839;
+  /* The scoreboard: a raised panel of the same night colours */
+  --board: #232a35;
+  --board-border: #3b4658;
   /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
-  --tag-green: #56d364;
-  --tag-green-soft: #12261e;
-  --tag-teal: #39c5cf;
-  --tag-teal-soft: #0f2a2d;
-  --tag-blue: #79b8ff;
-  --tag-blue-soft: #14263d;
-  --tag-violet: #c4a0ff;
-  --tag-violet-soft: #2a1f45;
-  --tag-pink: #f778ba;
-  --tag-pink-soft: #3a1a2d;
-  --tag-red: #ff8f87;
-  --tag-red-soft: #3c1f1e;
-  --tag-orange: #ffa657;
-  --tag-orange-soft: #3a2513;
-  --tag-yellow: #e3b341;
-  --tag-yellow-soft: #342a10;
-  --tag-grey: #a7b0ba;
-  --tag-grey-soft: #272d35;
+  --tag-green: #86bf96;
+  --tag-green-soft: #1c2a22;
+  --tag-teal: #79b9ba;
+  --tag-teal-soft: #1a2a2c;
+  --tag-blue: #92b2db;
+  --tag-blue-soft: #1c2737;
+  --tag-violet: #b3a0da;
+  --tag-violet-soft: #272338;
+  --tag-pink: #d596b9;
+  --tag-pink-soft: #33222c;
+  --tag-red: #dc8f88;
+  --tag-red-soft: #352324;
+  --tag-orange: #d6a272;
+  --tag-orange-soft: #33281d;
+  --tag-yellow: #cdb46a;
+  --tag-yellow-soft: #302b1b;
+  --tag-grey: #a9b1ba;
+  --tag-grey-soft: #262b32;
+  color-scheme: dark;
+}
+
+/* «Anthrazit»: neutral, slightly warm grey */
+[data-theme='anthracite'] {
+  --bg: #161616;
+  --surface: #202020;
+  --text: #e7e4df;
+  --muted: #a39e96;
+  --border: #3a3936;
+  --primary: #a3b3d3;
+  --on-primary: #151b2a;
+  --primary-soft: #2a2e38;
+  --coral: #d4917f;
+  --on-coral: #2a120c;
+  --coral-soft: #3a2a25;
+  --mustard: #cdb172;
+  --mustard-soft: #332e22;
+  --blue: #b8a8cc;
+  --blue-soft: #2d2a33;
+  /* The scoreboard: a raised panel of the same night colours */
+  --board: #2a2a29;
+  --board-border: #45433f;
+  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+  --tag-green: #8fbe98;
+  --tag-green-soft: #212a23;
+  --tag-teal: #86b8b6;
+  --tag-teal-soft: #1f2a29;
+  --tag-blue: #9db3d2;
+  --tag-blue-soft: #222833;
+  --tag-violet: #b7a6d4;
+  --tag-violet-soft: #2a2633;
+  --tag-pink: #d29db6;
+  --tag-pink-soft: #33272c;
+  --tag-red: #d79388;
+  --tag-red-soft: #352826;
+  --tag-orange: #d4a678;
+  --tag-orange-soft: #342b21;
+  --tag-yellow: #cbb575;
+  --tag-yellow-soft: #312d20;
+  --tag-grey: #aeaaa4;
+  --tag-grey-soft: #2a2927;
+  color-scheme: dark;
+}
+
+/* «Nachtblau»: the hall at night, deep blue */
+[data-theme='night-blue'] {
+  --bg: #0f1524;
+  --surface: #161e31;
+  --text: #e2e7f1;
+  --muted: #9aa4ba;
+  --border: #2c3750;
+  --primary: #98acea;
+  --on-primary: #0f1834;
+  --primary-soft: #232f52;
+  --coral: #e2978e;
+  --on-coral: #2c1110;
+  --coral-soft: #3a2633;
+  --mustard: #d5b76e;
+  --mustard-soft: #2f2c27;
+  --blue: #bba8e6;
+  --blue-soft: #2a2748;
+  /* The scoreboard: a raised panel of the same night colours */
+  --board: #1e2842;
+  --board-border: #34436a;
+  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
+  --tag-green: #87c29b;
+  --tag-green-soft: #18292a;
+  --tag-teal: #7cbcc2;
+  --tag-teal-soft: #162a33;
+  --tag-blue: #95b5e4;
+  --tag-blue-soft: #19284a;
+  --tag-violet: #b7a4e4;
+  --tag-violet-soft: #252448;
+  --tag-pink: #d99ac1;
+  --tag-pink-soft: #2e2139;
+  --tag-red: #e09189;
+  --tag-red-soft: #33222e;
+  --tag-orange: #daa675;
+  --tag-orange-soft: #2f2a2c;
+  --tag-yellow: #d1b86e;
+  --tag-yellow-soft: #2b2b28;
+  --tag-grey: #aab2c2;
+  --tag-grey-soft: #222a3c;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  /* «System» in a dark environment: same values as [data-theme='github-dark']. */
+  /* «System» in a dark environment: same values as [data-theme='slate']. */
   :root:not([data-theme]) {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --text: #e6edf3;
-    --muted: #9198a1;
-    --border: #30363d;
-    --primary: #58a6ff;
-    --on-primary: #0c1724;
-    --primary-soft: #1b2c41;
-    --coral: #ff7b72;
-    --on-coral: #2a0c0a;
-    --coral-soft: #392427;
-    --board: #21262d;
-    --mustard: #e3b341;
-    --mustard-soft: #342e1f;
-    --blue: #bc8cff;
-    --blue-soft: #2d2741;
+    --bg: #14181d;
+    --surface: #1c2128;
+    --text: #e3e7ec;
+    --muted: #9ba4ae;
+    --border: #353d47;
+    --primary: #93a7de;
+    --on-primary: #111a33;
+    --primary-soft: #252e47;
+    --coral: #dc8f86;
+    --on-coral: #2b1210;
+    --coral-soft: #3a2729;
+    --mustard: #d0b26a;
+    --mustard-soft: #332d1f;
+    --blue: #b6a3d9;
+    --blue-soft: #2c2839;
+    /* The scoreboard: a raised panel of the same night colours */
+    --board: #232a35;
+    --board-border: #3b4658;
     /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
-    --tag-green: #56d364;
-    --tag-green-soft: #12261e;
-    --tag-teal: #39c5cf;
-    --tag-teal-soft: #0f2a2d;
-    --tag-blue: #79b8ff;
-    --tag-blue-soft: #14263d;
-    --tag-violet: #c4a0ff;
-    --tag-violet-soft: #2a1f45;
-    --tag-pink: #f778ba;
-    --tag-pink-soft: #3a1a2d;
-    --tag-red: #ff8f87;
-    --tag-red-soft: #3c1f1e;
-    --tag-orange: #ffa657;
-    --tag-orange-soft: #3a2513;
-    --tag-yellow: #e3b341;
-    --tag-yellow-soft: #342a10;
-    --tag-grey: #a7b0ba;
-    --tag-grey-soft: #272d35;
+    --tag-green: #86bf96;
+    --tag-green-soft: #1c2a22;
+    --tag-teal: #79b9ba;
+    --tag-teal-soft: #1a2a2c;
+    --tag-blue: #92b2db;
+    --tag-blue-soft: #1c2737;
+    --tag-violet: #b3a0da;
+    --tag-violet-soft: #272338;
+    --tag-pink: #d596b9;
+    --tag-pink-soft: #33222c;
+    --tag-red: #dc8f88;
+    --tag-red-soft: #352324;
+    --tag-orange: #d6a272;
+    --tag-orange-soft: #33281d;
+    --tag-yellow: #cdb46a;
+    --tag-yellow-soft: #302b1b;
+    --tag-grey: #a9b1ba;
+    --tag-grey-soft: #262b32;
     color-scheme: dark;
   }
 }
@@ -254,27 +347,16 @@ a {
   padding: 18px;
 }
 
-/* The scoreboard (Anzeigetafel): a dark board that re-scopes the colour tokens, so that every control
-   inside (response buttons, links, chips) keeps working and stays contrast-safe. The same values in all
-   themes; only the board colour itself follows the theme. */
+/* The scoreboard (Anzeigetafel): a tinted panel with a primary court line along the top. It stands out
+   from the white cards without leaving the theme; text and controls keep the theme colours (each theme
+   checks them for 4.5:1 on --board). */
 .board {
   --surface: var(--board);
-  --text: #ffffff;
-  --muted: #b3bfcb;
-  --border: #3d4a58;
-  --primary: #9db8ff;
-  --on-primary: #0b1530;
-  --primary-soft: #26375e;
-  --coral: #ff9a90;
-  --on-coral: #2a0c0a;
-  --coral-soft: #4d2522;
-  --mustard: #ebc75e;
-  --mustard-soft: #42361a;
-  --blue: #cdb0ff;
-  --blue-soft: #35294d;
+  --border: var(--board-border);
   background: var(--board);
   color: var(--text);
-  border-color: var(--board);
+  border-color: var(--board-border);
+  border-top: 4px solid var(--primary);
 }
 
 /* The digits of the scoreboard: one column per response, number above its word. The separators stay
