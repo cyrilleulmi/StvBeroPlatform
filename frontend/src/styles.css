@@ -1,9 +1,9 @@
-/* Design tokens (docs/design-principles.md). Colors only through these variables.
-   Three themes (NF-08): Hell («Salbei frisch»), Düne, GitHub Dark. «System» sets no
-   data-theme: a light environment then uses Hell, a dark one GitHub Dark. */
+/* Design tokens of the design «Sporthalle» (docs/design-principles.md). Colors only through these variables.
+   Two themes (NF-08): Hell and Dunkel. «System» sets no data-theme: a light environment then uses Hell,
+   a dark one Dunkel. */
 :root,
 [data-theme='light'] {
-  /* «Hell» (frontend-design PoC «Halle»): hall floor, white boards, ink, court-line paint */
+  /* «Hell»: hall floor, white boards, ink, court-line paint */
   --bg: #e9edf0;
   --surface: #ffffff;
   --text: #15202b;
@@ -62,51 +62,9 @@
   color-scheme: light;
 }
 
-[data-theme='dune'] {
-  --bg: #f3ece1;
-  --surface: #fffaf3;
-  --text: #33291f;
-  --muted: #6c5d4a;
-  --border: #dccdb6;
-  --control-border: #8b7c68;
-  --primary: #2b5f75;
-  --on-primary: #ffffff;
-  --primary-soft: #dfe6e6;
-  --coral: #ad442d;
-  --on-coral: #ffffff;
-  --coral-soft: #f4e1d7;
-  --board: #ede3d2;
-  --board-border: #d4c2a2;
-  --mustard: #7c5e00;
-  --mustard-soft: #ede4d1;
-  --blue: #5b4fa8;
-  --blue-soft: #e8e2e9;
-  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
-  --tag-green: #1d6b43;
-  --tag-green-soft: #dfeeda;
-  --tag-teal: #0c6468;
-  --tag-teal-soft: #d8ebe6;
-  --tag-blue: #24578f;
-  --tag-blue-soft: #dfe6ee;
-  --tag-violet: #5f3da3;
-  --tag-violet-soft: #e9e0ee;
-  --tag-pink: #962b6c;
-  --tag-pink-soft: #f5dde3;
-  --tag-red: #a23030;
-  --tag-red-soft: #f6ddd4;
-  --tag-orange: #8c4309;
-  --tag-orange-soft: #f6e2c6;
-  --tag-yellow: #685300;
-  --tag-yellow-soft: #f0e6b8;
-  --tag-grey: #4f554f;
-  --tag-grey-soft: #e8e3d8;
-  color-scheme: light;
-}
-
-/* Dark themes (Sporthalle PoC): muted colours, no neon. Three candidates to choose from; every
+/* «Dunkel»: cool slate, the night version of the ultramarine of Hell. Muted colours, no neon; every
    text colour reaches 4.5:1 on bg, surface, board and its soft background. */
-/* «Schiefer»: cool slate, the night version of the ultramarine of Hell */
-[data-theme='slate'] {
+[data-theme='dark'] {
   --bg: #14181d;
   --surface: #1c2128;
   --text: #e3e7ec;
@@ -148,94 +106,8 @@
   color-scheme: dark;
 }
 
-/* «Anthrazit»: neutral, slightly warm grey */
-[data-theme='anthracite'] {
-  --bg: #161616;
-  --surface: #202020;
-  --text: #e7e4df;
-  --muted: #a39e96;
-  --border: #3a3936;
-  --control-border: #7d7a73;
-  --primary: #a3b3d3;
-  --on-primary: #151b2a;
-  --primary-soft: #2a2e38;
-  --coral: #d4917f;
-  --on-coral: #2a120c;
-  --coral-soft: #3a2a25;
-  --mustard: #cdb172;
-  --mustard-soft: #332e22;
-  --blue: #b8a8cc;
-  --blue-soft: #2d2a33;
-  /* The scoreboard: a raised panel of the same night colours */
-  --board: #2a2a29;
-  --board-border: #45433f;
-  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
-  --tag-green: #8fbe98;
-  --tag-green-soft: #212a23;
-  --tag-teal: #86b8b6;
-  --tag-teal-soft: #1f2a29;
-  --tag-blue: #9db3d2;
-  --tag-blue-soft: #222833;
-  --tag-violet: #b7a6d4;
-  --tag-violet-soft: #2a2633;
-  --tag-pink: #d29db6;
-  --tag-pink-soft: #33272c;
-  --tag-red: #d79388;
-  --tag-red-soft: #352826;
-  --tag-orange: #d4a678;
-  --tag-orange-soft: #342b21;
-  --tag-yellow: #cbb575;
-  --tag-yellow-soft: #312d20;
-  --tag-grey: #aeaaa4;
-  --tag-grey-soft: #2a2927;
-  color-scheme: dark;
-}
-
-/* «Nachtblau»: the hall at night, deep blue */
-[data-theme='night-blue'] {
-  --bg: #0f1524;
-  --surface: #161e31;
-  --text: #e2e7f1;
-  --muted: #9aa4ba;
-  --border: #2c3750;
-  --control-border: #727d94;
-  --primary: #98acea;
-  --on-primary: #0f1834;
-  --primary-soft: #232f52;
-  --coral: #e2978e;
-  --on-coral: #2c1110;
-  --coral-soft: #3a2633;
-  --mustard: #d5b76e;
-  --mustard-soft: #2f2c27;
-  --blue: #bba8e6;
-  --blue-soft: #2a2748;
-  /* The scoreboard: a raised panel of the same night colours */
-  --board: #1e2842;
-  --board-border: #34436a;
-  /* Colours of the event variants (VAR-04): text colour and soft background, at least 4.5:1 */
-  --tag-green: #87c29b;
-  --tag-green-soft: #18292a;
-  --tag-teal: #7cbcc2;
-  --tag-teal-soft: #162a33;
-  --tag-blue: #95b5e4;
-  --tag-blue-soft: #19284a;
-  --tag-violet: #b7a4e4;
-  --tag-violet-soft: #252448;
-  --tag-pink: #d99ac1;
-  --tag-pink-soft: #2e2139;
-  --tag-red: #e09189;
-  --tag-red-soft: #33222e;
-  --tag-orange: #daa675;
-  --tag-orange-soft: #2f2a2c;
-  --tag-yellow: #d1b86e;
-  --tag-yellow-soft: #2b2b28;
-  --tag-grey: #aab2c2;
-  --tag-grey-soft: #222a3c;
-  color-scheme: dark;
-}
-
 @media (prefers-color-scheme: dark) {
-  /* «System» in a dark environment: same values as [data-theme='slate']. */
+  /* «System» in a dark environment: same values as [data-theme='dark']. */
   :root:not([data-theme]) {
     --bg: #14181d;
     --surface: #1c2128;

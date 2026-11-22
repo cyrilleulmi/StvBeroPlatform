@@ -48,10 +48,7 @@ export class Profile {
 
   protected readonly options: Option[] = [
     { value: 'light', text: TEXTS.profile.light, preview: 'light' },
-    { value: 'dune', text: TEXTS.profile.dune, preview: 'dune' },
-    { value: 'slate', text: TEXTS.profile.slate, preview: 'slate' },
-    { value: 'anthracite', text: TEXTS.profile.anthracite, preview: 'anthracite' },
-    { value: 'night-blue', text: TEXTS.profile.nightBlue, preview: 'night-blue' },
+    { value: 'dark', text: TEXTS.profile.dark, preview: 'dark' },
     { value: 'system', text: TEXTS.profile.system, preview: null },
   ];
 

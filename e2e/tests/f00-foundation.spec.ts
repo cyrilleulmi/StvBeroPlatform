@@ -167,12 +167,12 @@ test.describe('Navigation', () => {
 
 test.describe('Design', () => {
   const LIGHT = 'rgb(233, 237, 240)';
-  /** Background of Schiefer: the dark theme, also with «System» in the dark (E-67, Sporthalle PoC). */
+  /** Background of Dunkel: the dark theme, also with «System» in the dark (E-90). */
   const DARK = 'rgb(20, 24, 29)';
   const background = (page: import('@playwright/test').Page) =>
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  test('F-00 K6 NF-06 NF-07: Switch Hell/Schiefer/System, the choice stays after reload', async ({ page }) => {
+  test('F-00 K6 NF-06 NF-07: Switch Hell/Dunkel/System, the choice stays after reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await login(page, 'anna');
     await page.goto('/profil');
@@ -182,14 +182,14 @@ test.describe('Design', () => {
     await expect(themeSwitch.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(await background(page)).toBe(LIGHT);
 
-    await themeSwitch.getByRole('radio', { name: 'Schiefer' }).check();
-    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'slate');
+    await themeSwitch.getByRole('radio', { name: 'Dunkel' }).check();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'dark');
     expect(await background(page)).toBe(DARK);
     await checkAccessibility(page);
 
     await page.reload();
-    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'Schiefer' })).toBeChecked();
-    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'slate');
+    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'Dunkel' })).toBeChecked();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'dark');
     expect(await background(page)).toBe(DARK);
 
     await page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell' }).check();

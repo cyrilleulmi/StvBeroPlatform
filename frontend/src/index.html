@@ -16,7 +16,7 @@
       // Unknown values (e.g. the former German «hell» or «duene») fall back to «System».
       try {
         var t = localStorage.getItem('stv-theme');
-        if (t === 'light' || t === 'dune' || t === 'slate' || t === 'anthracite' || t === 'night-blue') {
+        if (t === 'light' || t === 'dark') {
           document.documentElement.setAttribute('data-theme', t);
         }
       } catch (e) {}

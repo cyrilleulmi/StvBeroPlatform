@@ -1,22 +1,19 @@
 import { Injectable, signal } from '@angular/core';
 
-export type ThemeMode = 'light' | 'dune' | 'slate' | 'anthracite' | 'night-blue' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 const STORAGE_KEY = 'stv-theme';
 /** Value of `data-theme` per choice. «System» sets none and follows `prefers-color-scheme`. */
 const ATTRIBUTE: Record<ThemeMode, string | null> = {
   light: 'light',
-  dune: 'dune',
-  slate: 'slate',
-  anthracite: 'anthracite',
-  'night-blue': 'night-blue',
+  dark: 'dark',
   system: null,
 };
 
 /**
- * Theme (NF-06, NF-08): Hell, Düne, one of three dark themes (Schiefer, Anthrazit, Nachtblau) or System. The choice stays stored in the browser.
- * «System» shows Hell in a light environment and Schiefer in a dark one. A stored «github-dark» from
- * before the Sporthalle PoC falls back to «System».
+ * Theme (NF-06, NF-08): Hell, Dunkel or System. The choice stays stored in the browser.
+ * «System» shows Hell in a light environment and Dunkel in a dark one. A stored theme that no longer
+ * exists («dune», «github-dark», E-90) falls back to «System».
  * The inline script in index.html applies the choice before the start.
  */
 @Injectable({ providedIn: 'root' })
@@ -43,11 +40,11 @@ export class ThemeService {
     } else {
       html.removeAttribute('data-theme');
     }
-    const ownColor = mode !== 'light' && mode !== 'system';
+    const ownColor = mode === 'dark';
     this.setHeadColor(ownColor ? getComputedStyle(html).getPropertyValue('--bg') : null);
   }
 
-  /** Color of the browser or status bar: for Düne and the dark themes their background. */
+  /** Color of the browser or status bar: for Dunkel its background. */
   private setHeadColor(color: string | null): void {
     this.headColors ??= new Map(
       Array.from(document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')).map(
