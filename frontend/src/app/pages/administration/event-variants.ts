@@ -116,7 +116,7 @@ function sectionsOf(type: EventType): EventSection[] {
                 @if (!v.standard) {
                   <button
                     type="button"
-                    class="button button-secondary button-small"
+                    class="button button-secondary button-small button-destructive"
                     [attr.aria-label]="s.removeFor(v.name)"
                     [disabled]="running()"
                     (click)="remove(v)"
@@ -403,7 +403,7 @@ function sectionsOf(type: EventType): EventSection[] {
       gap: 6px;
       min-height: var(--touch);
       padding: 0 12px;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid var(--control-border);
       border-radius: var(--radius-pill);
       font-weight: 600;
       cursor: pointer;

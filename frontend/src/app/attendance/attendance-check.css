@@ -57,7 +57,7 @@
   min-height: var(--touch);
   min-width: 0;
   padding: 4px 6px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--control-border);
   border-radius: var(--radius-pill);
   font: 700 13px/1.15 var(--font);
   text-align: center;

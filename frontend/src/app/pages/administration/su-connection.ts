@@ -230,7 +230,7 @@ import { TEXTS } from '../../core/texts';
     select {
       min-height: var(--touch);
       padding: 0 12px;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid var(--control-border);
       border-radius: var(--radius-icon);
       background: var(--surface);
       color: var(--text);

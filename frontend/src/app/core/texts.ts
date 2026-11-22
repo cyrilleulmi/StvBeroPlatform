@@ -13,6 +13,7 @@ export const TEXTS = {
     administration: 'Verwaltung',
     notifications: 'Benachrichtigungen',
     unread: 'ungelesen',
+    skipToContent: 'Zum Inhalt springen',
   },
   notifications: {
     title: 'Benachrichtigungen',

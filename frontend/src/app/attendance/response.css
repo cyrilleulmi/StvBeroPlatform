@@ -25,7 +25,7 @@
   min-height: 48px;
   min-width: 0;
   padding: 4px 2px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--control-border);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
@@ -36,8 +36,11 @@
   cursor: pointer;
 }
 
-.response-button:not(:disabled):hover {
-  border-color: var(--muted);
+/* Hover only on pointers that hover: on touch a tap would leave it stuck. */
+@media (hover: hover) {
+  .response-button:not(:disabled):hover {
+    border-color: var(--muted);
+  }
 }
 
 .response-button app-icon {

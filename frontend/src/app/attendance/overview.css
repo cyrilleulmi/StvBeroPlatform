@@ -160,10 +160,13 @@
   cursor: pointer;
 }
 
-.icon-button:not(:disabled):hover {
-  border-color: var(--border);
-  background: var(--primary-soft);
-  color: var(--primary);
+/* Hover only on pointers that hover: on touch a tap would leave the pencil framed. */
+@media (hover: hover) {
+  .icon-button:not(:disabled):hover {
+    border-color: var(--border);
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
 }
 
 .icon-button:disabled {

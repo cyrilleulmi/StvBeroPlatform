@@ -41,7 +41,7 @@
   gap: 3px;
   border-radius: var(--radius-control);
   background: var(--surface);
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--control-border);
 }
 
 .switch a {
