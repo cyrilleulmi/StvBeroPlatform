@@ -165,6 +165,43 @@ public class DriverListResource {
         return drivers.get(auth.person(), eventId);
     }
 
+    @PUT
+    @Path("/route/duration")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setRouteDuration", summary = "Overwrite the driving time by hand (DRV-21, coach)")
+    @APIResponse(responseCode = "200", description = "The driver list after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverListDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverListDto setDuration(@PathParam("eventId") UUID eventId, @Valid @NotNull DurationInput input) {
+        drivers.setDuration(auth.person(), eventId, input.minutes());
+        return drivers.get(auth.person(), eventId);
+    }
+
+    @DELETE
+    @Path("/route/duration")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "clearRouteDuration", summary = "Use the calculated driving time again (DRV-21, coach)")
+    @APIResponse(responseCode = "200", description = "The driver list after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverListDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverListDto clearDuration(@PathParam("eventId") UUID eventId) {
+        drivers.setDuration(auth.person(), eventId, null);
+        return drivers.get(auth.person(), eventId);
+    }
+
     @POST
     @Path("/route/recalculate")
     @Produces(MediaType.APPLICATION_JSON)

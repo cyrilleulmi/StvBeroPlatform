@@ -4,6 +4,7 @@ import ch.stvbero.platform.core.person.PersonSummary;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +38,15 @@ public record DriverListDto(
     /** Route from the meeting point to the venue (DRV-05, DRV-07). */
     @Schema(name = "Route")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record RouteDto(RouteStatus status, String from, String to, Double distanceKm, Integer durationMinutes,
-                           @Schema(description = "Credit per driver: twice the distance; missing without distance") Double creditKm) {
+    public record RouteDto(RouteStatus status, String from, String to, Double distanceKm,
+                           @Schema(description = "Driving time in use: overwritten by hand, otherwise calculated (DRV-21)") Integer durationMinutes,
+                           @Schema(description = "Credit per driver: twice the distance; missing without distance") Double creditKm,
+                           @Schema(description = "Driving time as calculated by the service (DRV-22)") Integer calculatedMinutes,
+                           @Schema(description = "The driving time was overwritten by hand (DRV-21)") boolean durationManual,
+                           @Schema(description = "Who overwrote the driving time") PersonSummary durationChangedBy,
+                           @Schema(description = "When the driving time was overwritten") OffsetDateTime durationChangedAt,
+                           @Schema(description = "Service that calculated the route; missing for kilometres entered by hand (DRV-22)") RouteProvider provider,
+                           @Schema(description = "When the route was calculated or entered (DRV-22)") OffsetDateTime calculatedAt,
+                           @Schema(description = "Day and time of departure were taken into account (traffic); the services the app uses calculate without (DRV-22)") boolean departureTimeUsed) {
     }
 }

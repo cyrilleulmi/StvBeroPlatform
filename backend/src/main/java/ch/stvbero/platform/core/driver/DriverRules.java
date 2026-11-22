@@ -25,6 +25,8 @@ public final class DriverRules {
     public static final int MAX_SEATS = 8;
     public static final String SEATS_TEXT = "Bitte eine Zahl von 1 bis 8 eingeben.";
     public static final String DISTANCE_TEXT = "Bitte eine Zahl von 0.1 bis 1000 eingeben.";
+    /** Overwritten driving time (DRV-21). */
+    public static final String DURATION_TEXT = "Bitte eine Zahl von 1 bis 600 Minuten eingeben.";
     /** An unavailable routing service is asked again on the next view after this time (DRV-07). */
     public static final Duration RETRY_AFTER = Duration.ofMinutes(10);
 
@@ -269,5 +271,81 @@ public final class DriverRules {
 
     public static String seatsChangedText(String event, int seats) {
         return "Dein Auto hat am " + event + " jetzt " + seats + (seats == 1 ? " Platz." : " Plätze.");
+    }
+
+    // ------------------------------------------------------------------ Swaps (DRV-25)
+
+    public static String swapRequestText(String requester, String event, String partnerEvent) {
+        return requester + " fragt, ob du die Fahrt am " + event + " übernimmst"
+                + (partnerEvent == null ? "." : ". Im Tausch fährt " + requester + " für dich am " + dot(partnerEvent))
+                + " Antworte in der Fahrerliste.";
+    }
+
+    public static String swapDoneText(String other, String event, String partnerEvent) {
+        return partnerEvent == null
+                ? "Du fährst neu am " + event + " statt " + other + "."
+                : "Getauscht mit " + other + ": du fährst neu am " + event + ", " + other + " am " + dot(partnerEvent);
+    }
+
+    public static String swapAcceptedText(String partner, String event) {
+        return partner + " hat den Tausch angenommen und fährt am " + dot(event);
+    }
+
+    public static String swapDeclinedText(String partner, String event) {
+        return partner + " übernimmt die Fahrt am " + event + " nicht.";
+    }
+
+    public static String swapWithdrawnText(String requester, String event) {
+        return requester + " hat die Anfrage für die Fahrt am " + event + " zurückgezogen.";
+    }
+
+    // ------------------------------------------------------------------ History (DRV-26)
+
+    public static String historyCarAdded(String driver, String event) {
+        return "Eingetragen: " + driver + " fährt am " + dot(event);
+    }
+
+    public static String historyCarRemoved(String driver, String event) {
+        return "Ausgetragen: " + driver + " fährt nicht mehr am " + dot(event);
+    }
+
+    public static String historySwapped(String requester, String partner, String event, String partnerEvent) {
+        return "Getauscht: " + requester + " hat mit " + partner + " getauscht. " + partner + " fährt am " + event
+                + ", " + requester + " am " + dot(partnerEvent);
+    }
+
+    public static String historyTakenOver(String requester, String partner, String event) {
+        return "Übernommen: " + partner + " fährt am " + event + " statt " + requester + ".";
+    }
+
+    public static String historySwapRequested(String requester, String partner, String event, String partnerEvent) {
+        return "Tausch angefragt: " + requester + " fragt " + partner + " für die Fahrt am " + event
+                + (partnerEvent == null ? (event.endsWith(".") ? "" : ".") : " (im Tausch gegen " + partnerEvent + ").");
+    }
+
+    public static String historySwapDeclined(String requester, String partner, String event) {
+        return "Tausch abgelehnt: " + partner + " übernimmt die Fahrt von " + requester + " am " + event + " nicht.";
+    }
+
+    public static String historySwapWithdrawn(String requester, String partner, String event) {
+        return "Tausch zurückgezogen: " + requester + " fragt " + partner + " nicht mehr für die Fahrt am " + dot(event);
+    }
+
+    public static String historyTripAdded(String driver, String title, String date, double km) {
+        return "Weitere Fahrt: " + driver + ", «" + title + "» am " + date + ", " + kmText(km) + " pro Weg.";
+    }
+
+    public static String historyTripRemoved(String driver, String title, String date) {
+        return "Weitere Fahrt entfernt: " + driver + ", «" + title + "» am " + date + ".";
+    }
+
+    /** Ends a sentence with a point, unless the text already ends with one («So 22.11.»). */
+    static String dot(String text) {
+        return text.endsWith(".") ? text : text + ".";
+    }
+
+    /** «23.4 km» */
+    static String kmText(double km) {
+        return String.format(java.util.Locale.ROOT, "%.1f km", km);
     }
 }

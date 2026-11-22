@@ -332,6 +332,9 @@ public class Seed {
     @Inject
     LeagueService league;
 
+    @Inject
+    ch.stvbero.platform.core.driver.DriverPlanHistory driverPlanHistory;
+
     /** Empties all tables (except the Flyway history), fills in the seed and sets the clock to the default. */
     @Transactional
     public void reset() {
@@ -566,6 +569,8 @@ public class Seed {
                     .setParameter(1, carId(car.nr())).setParameter(2, eventId(car.event()))
                     .setParameter(3, personId(car.driver())).setParameter(4, car.seats())
                     .setParameter(5, zurich(RESPONDED_AT)).executeUpdate();
+            em.flush();
+            driverPlanHistory.seedCarAdded(eventId(car.event()), personId(car.driver()), zurich(RESPONDED_AT));
             for (int person : car.passengers()) {
                 em.createNativeQuery("""
                                 insert into car_passenger (car_id, event_id, person_id, added_at) values (?, ?, ?, ?)""")

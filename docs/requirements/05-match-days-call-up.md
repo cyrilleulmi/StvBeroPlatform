@@ -48,6 +48,7 @@ A team decides per [event variant](16-event-variants.md) whether its match days 
 | AUF-28 | Coaches respond to the match day, are listed in the coach block and are not part of the call-up. | Accepted |
 | AUF-33 | A call-up is only made where the event variant of the match day says so ([VAR-06](16-event-variants.md)). Default: no call-up, the responses are enough («nur An- und Abmeldungen»). Without a call-up AUF-21 to AUF-31 do not apply to the match day. | Decided |
 | AUF-34 | The match day shows the current ranks of the league table next to its matches: the rank of the own team with the number of teams and the league («3. Rang von 10 · Herren KF 3. Liga Gruppe 2», linked to the league page), and per match the rank of the opponent («Gegner: 5. Rang»). The call-up screen shows the same lines above the selection. The ranks come from the league data last loaded (F-17), for teams linked with swiss unihockey; an opponent that is not in the table has no rank. | Decided (ranks at the call-up), Assumption (also without a call-up, wording) |
+| AUF-35 | The start page always shows the next match day of the own teams in a card «Nächster Spieltag», with the counters and the own response, also when the next event is a practice. If the next event is itself the match day, it is shown only once (as «Nächster Termin»). Cancelled match days are skipped. | Decided |
 
 ## Warnings in the call-up (F-16)
 

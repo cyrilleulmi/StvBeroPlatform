@@ -1523,6 +1523,45 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/{eventId}/driver-list/route/duration:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    put:
+      tags: [DriverList]
+      operationId: setRouteDuration
+      summary: Overwrite the driving time by hand (DRV-21, coach)
+      description: |
+        Only coaches and admins (otherwise 403). 1 to 600 minutes (400). The time is used everywhere instead of the
+        calculated one (driver list, season plan, timeline) and stays when the route is recalculated; it is dropped
+        when meeting point or venue change. Same 409 cases as `addCar`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DurationInput' }
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [DriverList]
+      operationId: clearRouteDuration
+      summary: Use the calculated driving time again (DRV-21, coach)
+      responses:
+        '200':
+          description: The driver list after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/events/{eventId}/driver-list/route/recalculate:
     parameters:
       - $ref: '#/components/parameters/eventId'
@@ -1709,6 +1748,157 @@ paths:
         '422': { $ref: '#/components/responses/RuleViolation' }
 
   # ---------------------------------------------------------------- Statistics
+  /api/teams/{teamId}/driver-plan/swaps:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [DriverList]
+      operationId: startDriverSwap
+      summary: 'Give the trip of a match day to another member, as a takeover or against her trip on another match day: ask first or enter directly (DRV-25)'
+      description: |
+        The driver herself (without `driverId`), coaches and admins for any driver (otherwise 403). `partnerId` must
+        be another member of the team, `eventId` and `partnerEventId` match days of the team in the season (400).
+        409 (rule DRV-25) if the driver does not drive on `eventId`, the partner already drives there, the partner
+        does not drive on `partnerEventId` or the driver already drives there; also the 409 cases of `addCar`, and
+        when a request for this trip is already open. `direct: true` carries it out right away: only the driver of
+        the cars changes, the new driver leaves her seat and her mark «individual» on that match day; the partner is
+        notified. `direct: false` asks the partner (notification `DRIVER_LIST_CHANGED`).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverSwapInput' }
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/swaps/{swapId}/accept:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: swapId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [DriverList]
+      operationId: acceptDriverSwap
+      summary: Accept a swap request, it is carried out (DRV-25)
+      description: 'The partner, coaches and admins (otherwise 403). 409 if the cars no longer fit the request (rule DRV-25). 404 if the request is no longer open.'
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/swaps/{swapId}/decline:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: swapId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [DriverList]
+      operationId: declineDriverSwap
+      summary: Decline a swap request (DRV-25)
+      description: 'The partner, coaches and admins (otherwise 403). The requester is notified.'
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/swaps/{swapId}/withdraw:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: swapId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [DriverList]
+      operationId: withdrawDriverSwap
+      summary: Withdraw an own swap request (DRV-25)
+      description: 'The requester, coaches and admins (otherwise 403). The partner is notified.'
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/trips:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [DriverList]
+      operationId: addExtraTrip
+      summary: Add a trip without an event in the app (DRV-28)
+      description: |
+        Members add their own trips (without `driverId`), coaches and admins also for others (otherwise 403); the
+        driver must be a member of the team (400). The return trip is credited (twice `distanceKm`).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExtraTripInput' }
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/trips/{tripId}:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - name: tripId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [DriverList]
+      operationId: removeExtraTrip
+      summary: Remove another trip (DRV-28)
+      description: The driver, whoever added it, coaches and admins (otherwise 403).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/statistics:
     get:
       tags: [Statistics]
@@ -3879,7 +4069,7 @@ components:
     Route:
       type: object
       description: Route from the meeting point to the venue (DRV-05, DRV-07)
-      required: [status, from, to]
+      required: [status, from, to, durationManual, calculatedAt, departureTimeUsed]
       properties:
         status:
           type: string
@@ -3887,12 +4077,28 @@ components:
         from: { type: string, examples: [Parkplatz Sporthalle Nord] }
         to: { type: string, examples: [Sporthalle Seefeld] }
         distanceKm: { type: number, format: double, examples: [23.4] }
-        durationMinutes: { type: integer, format: int32, examples: [26] }
+        durationMinutes:
+          type: integer
+          format: int32
+          description: 'Driving time in use: overwritten by hand, otherwise calculated (DRV-21)'
+          examples: [26]
         creditKm:
           type: number
           format: double
           description: 'Credit per driver: twice the distance; missing without distance'
           examples: [46.8]
+        calculatedMinutes: { type: integer, format: int32, description: Driving time as calculated by the service (DRV-22) }
+        durationManual: { type: boolean, description: The driving time was overwritten by hand (DRV-21) }
+        durationChangedBy: { $ref: '#/components/schemas/PersonSummary' }
+        durationChangedAt: { type: string, format: date-time, description: When the driving time was overwritten }
+        provider:
+          type: string
+          description: Service that calculated the route; missing for kilometres entered by hand (DRV-22)
+          enum: [GOOGLE_MAPS, OPEN_ROUTE_SERVICE, OPEN_STREET_MAP, SIMULATOR]
+        calculatedAt: { type: string, format: date-time, description: When the route was calculated or entered (DRV-22) }
+        departureTimeUsed:
+          type: boolean
+          description: Day and time of departure were taken into account (traffic); the services the app uses calculate without (DRV-22)
 
     CarInput:
       type: object
@@ -3918,10 +4124,17 @@ components:
       properties:
         distanceKm: { type: number, format: double, minimum: 0.1, maximum: 1000 }
 
+    DurationInput:
+      type: object
+      description: Driving time of the one-way route overwritten by hand (DRV-21)
+      required: [minutes]
+      properties:
+        minutes: { type: integer, format: int32, minimum: 1, maximum: 600 }
+
     DriverPlan:
       type: object
       description: Driver plan of a team for a whole season (DRV-14, DRV-17)
-      required: [teamId, teamName, seasonId, seasonName, canJoin, canManage, matchDays, shares, drivers]
+      required: [teamId, teamName, seasonId, seasonName, canJoin, canManage, matchDays, shares, drivers, totals, swaps, extraTrips, history]
       properties:
         teamId: { type: string, format: uuid }
         teamName: { type: string }
@@ -3945,6 +4158,97 @@ components:
           type: array
           description: Who can drive and with how many places, by name (DRV-18)
           items: { $ref: '#/components/schemas/DriverSetting' }
+        totals: { $ref: '#/components/schemas/DriverPlanTotals' }
+        swaps:
+          type: array
+          description: 'Open swap requests the caller sees: her own and those to her; coaches and admins all (DRV-25)'
+          items: { $ref: '#/components/schemas/DriverSwap' }
+        extraTrips:
+          type: array
+          description: Other trips of the team in the season, by date (DRV-28)
+          items: { $ref: '#/components/schemas/ExtraTrip' }
+        history:
+          type: array
+          description: Changes of the plan, newest first, at most 100 (DRV-26)
+          items: { $ref: '#/components/schemas/DriverPlanHistoryEntry' }
+    DriverPlanTotals:
+      type: object
+      description: Sum of all shares (DRV-27)
+      required: [trips, plannedTrips, kilometres, plannedKilometres]
+      properties:
+        trips: { type: integer, format: int32 }
+        plannedTrips: { type: integer, format: int32 }
+        kilometres: { type: number, format: double }
+        plannedKilometres: { type: number, format: double }
+    DriverSwap:
+      type: object
+      description: An open request to take over or swap a trip (DRV-25)
+      required: [id, eventId, eventLabel, requester, partner, createdAt, canAnswer, canWithdraw]
+      properties:
+        id: { type: string, format: uuid }
+        eventId: { type: string, format: uuid, description: Match day whose trip is given away }
+        eventLabel: { type: string, examples: [Spieltag So 22.11.] }
+        requester: { $ref: '#/components/schemas/PersonSummary' }
+        partner: { $ref: '#/components/schemas/PersonSummary' }
+        partnerEventId: { type: string, format: uuid, description: 'Match day of the partner trip in return; missing: takeover' }
+        partnerEventLabel: { type: string }
+        createdAt: { type: string, format: date-time }
+        canAnswer: { type: boolean, description: 'The caller may accept or decline (the partner, coaches, admins)' }
+        canWithdraw: { type: boolean, description: 'The caller may withdraw (the requester, coaches, admins)' }
+    ExtraTrip:
+      type: object
+      description: A trip without an event in the app (DRV-28)
+      required: [id, date, title, driver, distanceKm, creditKm, over, canRemove]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        title: { type: string, examples: [Turnier Tenero] }
+        driver: { $ref: '#/components/schemas/PersonSummary' }
+        distanceKm: { type: number, format: double, description: Kilometres one way }
+        creditKm: { type: number, format: double, description: 'Credited kilometres: there and back' }
+        over: { type: boolean, description: The date has passed }
+        canRemove: { type: boolean, description: 'The caller may remove it: the driver, who added it, coaches, admins' }
+    DriverPlanHistoryEntry:
+      type: object
+      description: One change of the plan (DRV-26)
+      required: [id, kind, text, at]
+      properties:
+        id: { type: string, format: uuid }
+        eventId: { type: string, format: uuid, description: Match day it concerns; missing for other trips }
+        kind:
+          type: string
+          enum: [CAR_ADDED, CAR_REMOVED, SWAPPED, TAKEN_OVER, SWAP_REQUESTED, SWAP_DECLINED, SWAP_WITHDRAWN, TRIP_ADDED, TRIP_REMOVED]
+        text: { type: string, description: German sentence for display }
+        by: { $ref: '#/components/schemas/PersonSummary' }
+        at: { type: string, format: date-time }
+    DriverSwapInput:
+      type: object
+      description: Give away the trip of a match day (DRV-25)
+      required: [eventId, partnerId, direct]
+      properties:
+        eventId: { type: string, format: uuid }
+        driverId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Driver who gives the trip away; missing: the caller herself'
+        partnerId: { type: string, format: uuid }
+        partnerEventId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Match day on which the partner drives and the driver takes over in return; missing: takeover'
+        direct: { type: boolean, description: '`true`: enter right away; `false`: ask the partner first' }
+    ExtraTripInput:
+      type: object
+      description: Add another trip (DRV-28)
+      required: [date, title, distanceKm]
+      properties:
+        date: { type: string, format: date }
+        title: { type: string, minLength: 1, maxLength: 80 }
+        driverId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Driver; missing: the caller herself'
+        distanceKm: { type: number, format: double, minimum: 0.1, maximum: 2000 }
     DriverPlanMatchDay:
       type: object
       required: [eventId, title, start, cancelled, over, ready, missing, changeable, cars, freeSeats]
