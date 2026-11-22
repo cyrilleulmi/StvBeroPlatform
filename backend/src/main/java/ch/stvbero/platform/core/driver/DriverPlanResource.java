@@ -242,4 +242,26 @@ public class DriverPlanResource {
                                     @Valid @NotNull DriverPlanDto.DistributeInput input) {
         return plan.distribute(auth.person(), teamId, season, input.replace());
     }
+
+    @POST
+    @Path("/match-days/{eventId}/next")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "nextDriver",
+            summary = "The next driver in line takes a trip of a match day: one more car, or instead of a driver "
+                    + "who cannot drive (DRV-31)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Nobody is left who can drive, or the match day cannot be changed (DRV-31)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto next(@PathParam("teamId") UUID teamId, @PathParam("eventId") UUID eventId,
+                              @QueryParam("season") UUID season, @Valid @NotNull DriverPlanDto.NextInput input) {
+        return plan.next(auth.person(), teamId, season, eventId, input.replaces());
+    }
 }

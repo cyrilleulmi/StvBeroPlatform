@@ -438,19 +438,7 @@ public class DriverPlanService {
                 toFill.add(new DriverDistributionRules.Day(day.eventId(), day.expected(), day.places(),
                         day.distanceKm() == null ? null : DriverRules.meters(day.distanceKm()), unavailable));
             }
-            Map<UUID, DriverPlanDto.Share> shares = new HashMap<>();
-            plan.shares().forEach(share -> shares.put(share.person().id(), share));
-            List<DriverDistributionRules.Driver> candidates = plan.drivers().stream()
-                    .filter(DriverPlanDto.Driver::canDrive)
-                    .map(d -> {
-                        DriverPlanDto.Share share = shares.get(d.person().id());
-                        int trips = share == null ? 0 : share.trips() + share.plannedTrips();
-                        double km = share == null ? 0 : share.kilometres() + share.plannedKilometres();
-                        return new DriverDistributionRules.Driver(d.person().id(), d.carSeats(), trips,
-                                Math.round(km * 1000));
-                    }).toList();
-
-            for (DriverDistributionRules.Assignment a : DriverDistributionRules.distribute(toFill, candidates)) {
+            for (DriverDistributionRules.Assignment a : DriverDistributionRules.distribute(toFill, candidates(plan))) {
                 Person driver = persons.get(a.driver());
                 drivers.enterCar(byId.get(a.event()), user.personId(), driver,
                         DriverProposalRules.freeSeats(driver.carSeats));
@@ -474,6 +462,60 @@ public class DriverPlanService {
                                 .map(e -> NotificationRules.label("", e.start).strip()).toList())));
             }
             notifications.send(messages);
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /** Everyone who can drive (DRV-18) with her trips in the season, by name. */
+    private static List<DriverDistributionRules.Driver> candidates(DriverPlanDto plan) {
+        Map<UUID, DriverPlanDto.Share> shares = new HashMap<>();
+        plan.shares().forEach(share -> shares.put(share.person().id(), share));
+        return plan.drivers().stream().filter(DriverPlanDto.Driver::canDrive)
+                .map(d -> {
+                    DriverPlanDto.Share share = shares.get(d.person().id());
+                    int trips = share == null ? 0 : share.trips() + share.plannedTrips();
+                    double km = share == null ? 0 : share.kilometres() + share.plannedKilometres();
+                    return new DriverDistributionRules.Driver(d.person().id(), d.carSeats(), trips,
+                            Math.round(km * 1000));
+                }).toList();
+    }
+
+    /**
+     * The next driver in line takes a trip of a match day (DRV-31). Without {@code replaces} one more car is
+     * entered (coaches and admins). With {@code replaces} that driver hands her car over, with its seats and
+     * passengers: the driver herself, coaches and admins. The next in line is the member who can drive with the
+     * fewest trips in the season who neither drives on that match day nor responded «nicht dabei».
+     */
+    public DriverPlanDto next(CurrentUser user, UUID teamId, UUID seasonId, UUID eventId, UUID replaces) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = writableContext(user, teamId, seasonId);
+            if (!c.canManage() && (replaces == null || !replaces.equals(user.personId()))) {
+                throw DomainError.forbidden();
+            }
+            Set<UUID> matchDays = matchDayIds(c);
+            if (!matchDays.contains(eventId)) {
+                throw DomainError.notFound("Diesen Spieltag gibt es in diesem Team nicht.");
+            }
+            em.createNativeQuery("select id from event where id = ? for update").setParameter(1, eventId).getResultList();
+            DriverPlanDto plan = dto(c);
+            DriverPlanDto.MatchDay day = plan.matchDays().stream().filter(m -> m.eventId().equals(eventId))
+                    .findFirst().orElseThrow();
+            Set<UUID> unavailable = new HashSet<>(declined(Set.of(eventId)).getOrDefault(eventId, Set.of()));
+            day.cars().forEach(car -> unavailable.add(car.driver().id()));
+            if (replaces != null && day.cars().stream().noneMatch(car -> car.driver().id().equals(replaces))) {
+                throw DomainError.conflict("Fährt nicht", "Diese Person fährt an diesem Spieltag nicht.", "DRV-31");
+            }
+            UUID next = DriverDistributionRules.next(candidates(plan), unavailable)
+                    .orElseThrow(() -> DomainError.conflict("Niemand frei",
+                            "Es ist niemand mehr frei, der fahren kann.", "DRV-31"));
+            if (replaces != null) {
+                swaps.start(user, c.team().id, c.season().id, memberIds(c), matchDays,
+                        new DriverPlanDto.SwapInput(eventId, replaces, next, null, true));
+            } else {
+                Person driver = c.members().stream().map(m -> m.person).filter(p -> p.id.equals(next)).findFirst()
+                        .orElseThrow();
+                drivers.addCar(user, eventId, new CarInput(next, DriverProposalRules.freeSeats(driver.carSeats)));
+            }
         });
         return get(user, teamId, seasonId);
     }

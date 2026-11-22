@@ -101,6 +101,15 @@ public final class DriverDistributionRules {
         return result;
     }
 
+    /**
+     * The next driver in line for one match day (DRV-31): the fewest trips, then fewer kilometres, then the order
+     * of the list. Empty if nobody is left.
+     */
+    public static java.util.Optional<UUID> next(List<Driver> drivers, Set<UUID> unavailable) {
+        List<Assignment> one = distribute(List.of(new Day(null, 1, 0, null, unavailable)), drivers);
+        return one.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(one.get(0).driver());
+    }
+
     /** Places of all cars of a match day: the seats for passengers plus the drivers. */
     public static int places(List<Integer> seatsPerCar) {
         return seatsPerCar.stream().mapToInt(seats -> seats + 1).sum();

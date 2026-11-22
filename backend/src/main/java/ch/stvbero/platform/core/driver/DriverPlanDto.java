@@ -47,6 +47,12 @@ public record DriverPlanDto(
             @Min(value = 1, message = EXPECTED_TEXT) @Max(value = 60, message = EXPECTED_TEXT) Integer expected) {
     }
 
+    /** Request: the next driver in line takes a trip (DRV-31). */
+    @Schema(name = "DriverPlanNextInput")
+    public record NextInput(
+            @Schema(description = "Driver who hands her trip over; missing: one more car is entered") UUID replaces) {
+    }
+
     /** Request: share the trips of the upcoming match days fairly (DRV-30). */
     @Schema(name = "DriverPlanDistributeInput")
     public record DistributeInput(

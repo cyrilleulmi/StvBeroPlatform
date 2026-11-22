@@ -1799,6 +1799,38 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/driver-plan/match-days/{eventId}/next:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [DriverList]
+      operationId: nextDriver
+      summary: The next driver in line takes a trip of a match day (DRV-31)
+      description: |
+        The next in line is the member who can drive (DRV-18) with the fewest trips in the season, then with fewer
+        kilometres, then by name, who neither drives on that match day nor responded «nicht dabei». Without
+        `replaces` she is entered with one more car (coaches and admins). With `replaces` that driver hands her
+        car over with its seats and passengers, like a direct takeover (DRV-25): the driver herself, coaches and
+        admins. 409 if nobody is left, if `replaces` does not drive on the match day, or if the match day cannot be
+        changed.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverPlanNextInput' }
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/teams/{teamId}/driver-plan/distribute:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -4087,7 +4119,7 @@ components:
     DriverList:
       type: object
       description: Driver list of a match day (DRV-01 to DRV-10)
-      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat, individual, defaultSeats]
+      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat, individual, defaultSeats, needSeat]
       properties:
         eventId: { type: string, format: uuid }
         ready:
@@ -4132,6 +4164,10 @@ components:
           type: integer
           format: int32
           description: 'Seats for passengers the caller usually offers: her places minus herself (DRV-18)'
+        needSeat:
+          type: array
+          description: 'Everyone who still needs a seat, by name: the players without a seat and the coaches who responded «dabei» (DRV-19)'
+          items: { $ref: '#/components/schemas/PersonSummary' }
 
     Car:
       type: object
@@ -4268,6 +4304,14 @@ components:
           format: int32
           minimum: 1
           maximum: 60
+    DriverPlanNextInput:
+      type: object
+      description: The next driver in line takes a trip (DRV-31)
+      properties:
+        replaces:
+          type: [string, 'null']
+          format: uuid
+          description: 'Driver who hands her trip over; missing: one more car is entered'
     DriverPlanDistributeInput:
       type: object
       description: Share the trips of the upcoming match days fairly (DRV-30)

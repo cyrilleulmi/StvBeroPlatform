@@ -155,4 +155,33 @@ class DriverPlanSimpleTest {
                 .statusCode(200).extract().jsonPath().getList("findAll { it.type == 'DRIVER_LIST_CHANGED' }.text");
         assertEquals(1, texts.stream().filter(t -> t.startsWith("Die Fahrten der Saison wurden verteilt.")).count());
     }
+
+    @Test
+    void drv31NextInLineTakesOverOrAddsACar() {
+        String petra = login("petra");
+        // One more car in December: the first by name who has no trip yet
+        JsonPath json = given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{}")
+                .post(PLAN + "/match-days/" + december + "/next").then().statusCode(200).extract().jsonPath();
+        List<String> first = drivers(json, december);
+        assertEquals(1, first.size());
+        assertFalse(List.of("Petra", "Sara").contains(first.get(0)));
+
+        // Sara cannot drive on match day 04: the next in line takes her car, nobody who already drives there
+        String sara = json.getString("matchDays.find { it.eventId == '" + T04 + "' }.cars.find { it.driver.firstName == 'Sara' }.driver.id");
+        json = given().cookie("stv_session", login("sara")).contentType(ContentType.JSON)
+                .body("{\"replaces\":\"" + sara + "\"}")
+                .post(PLAN + "/match-days/" + T04 + "/next").then().statusCode(200).extract().jsonPath();
+        List<String> day04 = drivers(json, T04);
+        assertEquals(2, day04.size());
+        assertTrue(day04.contains("Petra"));
+        assertFalse(day04.contains("Sara"));
+
+        // A player cannot hand over somebody else's trip or add a car
+        String petraId = json.getString("matchDays.find { it.eventId == '" + T04 + "' }.cars.find { it.driver.firstName == 'Petra' }.driver.id");
+        given().cookie("stv_session", login("anna")).contentType(ContentType.JSON)
+                .body("{\"replaces\":\"" + petraId + "\"}")
+                .post(PLAN + "/match-days/" + T04 + "/next").then().statusCode(403);
+        given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body("{}")
+                .post(PLAN + "/match-days/" + december + "/next").then().statusCode(403);
+    }
 }

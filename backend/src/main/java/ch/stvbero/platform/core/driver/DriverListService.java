@@ -648,7 +648,8 @@ public class DriverListService {
                 : null;
         return new DriverListDto(event.id, c.missing().isEmpty(), c.missing(), route, cancelled,
                 changeable && c.member(), changeable && c.canManage(), published, cars, withoutSeat, members,
-                individual, DriverProposalRules.freeSeats(me == null ? DrivingDto.DEFAULT_CAR_SEATS : me.carSeats));
+                individual, DriverProposalRules.freeSeats(me == null ? DrivingDto.DEFAULT_CAR_SEATS : me.carSeats),
+                needSeat(c, seated).stream().map(person).sorted(PersonSummary.ORDER).toList());
     }
 
     /** The route with how its driving time came about (DRV-21, DRV-22). */
