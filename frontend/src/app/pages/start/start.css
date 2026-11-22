@@ -91,6 +91,20 @@
   overflow-wrap: anywhere;
 }
 
+/* Day, time and place in ink (they decide whether one can come); the teams stay quiet. */
+.when-where {
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.place {
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
 /* On the scoreboard the secondary text is lighter; a little more air between the blocks. */
 .board.next {
   gap: 14px;

@@ -156,12 +156,31 @@ li[data-status='CANCELLED'] .date .day {
   text-decoration: line-through;
 }
 
+/* Time and place in ink: they decide whether one can come. The time in tabular figures. */
+.when-where {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.when {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .status-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  margin-top: 2px;
+  gap: 4px 6px;
+  margin: 2px 0;
+}
+
+.status-row:empty {
+  display: none;
 }
 
 .chip[data-kind='cancelled'] {
@@ -209,8 +228,12 @@ li[data-participation='OPTIONAL'] .row-title {
 /* F-04: own response directly in the card (ANM-08) */
 .event-entry {
   display: grid;
-  gap: 4px;
-  padding-bottom: 12px;
+  gap: 2px;
+  padding-bottom: 14px;
+}
+
+.event-entry + .event-entry {
+  padding-top: 6px;
 }
 
 .card-response {
@@ -218,10 +241,31 @@ li[data-participation='OPTIONAL'] .row-title {
   padding-left: 68px;
 }
 
+/* Phone: the text gets the width. A narrower date box, and no chevron: the whole entry is the link
+   and its big title already reads as one. */
 @media (max-width: 479px) {
   .card-response {
     padding-left: 0;
   }
+
+  .event.row-link {
+    gap: 10px;
+  }
+
+  .event .date {
+    width: 48px;
+  }
+
+  .event > app-icon {
+    display: none;
+  }
+}
+
+/* The counts in the scoreboard's condensed DIN, so the four of them fit on one line of a phone */
+.counter {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 15px;
 }
 
 .counter span {

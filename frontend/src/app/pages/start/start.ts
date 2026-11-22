@@ -55,9 +55,14 @@ export class Start implements OnInit {
     }
   }
 
-  /** «Training Di 17.11. 18:30–20:00 · Team 1 + Team 2» */
-  protected description(t: EventSummary): string {
-    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))} · ${TEXTS.events.joinTeams(t.teams.map((x) => x.name))}`;
+  /** «Di 17.11. · 18:30–20:00»: day and time lead, the teams follow on their own quiet line. */
+  protected when(t: EventSummary): string {
+    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))}`;
+  }
+
+  /** «Team 1 + Team 2» */
+  protected teamNames(t: EventSummary): string {
+    return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
   }
 
   protected cardName(t: EventSummary): string {

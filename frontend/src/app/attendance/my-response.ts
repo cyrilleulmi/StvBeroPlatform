@@ -48,7 +48,7 @@ type Choice = ResponseInput['status'];
             [disabled]="!!locked() || running() !== null"
             (click)="choose(w)"
           >
-            <app-icon [name]="icon[w]" [size]="18" />
+            <app-icon [name]="icon[w]" [size]="16" />
             {{ texts.button[w] }}
           </button>
         }

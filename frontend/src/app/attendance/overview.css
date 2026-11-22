@@ -151,11 +151,19 @@
   flex: none;
   width: var(--touch);
   height: var(--touch);
-  border: 1.5px solid var(--border);
+  /* A quiet tool next to each name: no frame at rest, so the names and their responses lead.
+     The full 44 px target stays; hover and focus show the frame. */
+  border: 1.5px solid transparent;
   border-radius: var(--radius-control);
   background: transparent;
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
+}
+
+.icon-button:not(:disabled):hover {
+  border-color: var(--border);
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 
 .icon-button:disabled {

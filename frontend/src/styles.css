@@ -377,7 +377,7 @@ a {
   display: grid;
   align-content: start;
   gap: 0;
-  padding: 2px 0 2px 10px;
+  padding: 2px 0 2px 8px;
   border-left: 2px solid var(--border);
   min-width: 0;
 }
@@ -396,12 +396,15 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+/* The word under the digit in the same condensed DIN, so «nicht dabei» stays on one line on a phone */
 .score-label {
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--muted);
   overflow-wrap: anywhere;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .score[data-counter='attending'] .score-number {

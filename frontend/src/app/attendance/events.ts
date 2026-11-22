@@ -137,14 +137,16 @@ interface Month {
                     <span class="row-title" [class.struck-through]="t.status === 'CANCELLED'">
                       {{ t.title }}
                     </span>
-                    <span class="secondary-text">
-                      {{ period(t) }} · {{ teams(t) }}
+                    <!-- When and where lead (they decide whether one can come), the teams follow quietly -->
+                    <span class="when-where">
+                      <span class="when">{{ period(t) }}</span>
                       @if (t.location) {
                         · {{ t.location.name }}
                       }
                     </span>
+                    <span class="secondary-text">{{ teams(t) }}</span>
+                    <!-- One row of markers: kind of event (VAR-05, TER-14), voluntary, status, warnings -->
                     <span class="status-row">
-                      <!-- Kind of event by name and colour (VAR-05, TER-14) -->
                       @if (t.variant; as v) {
                         <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{
                           v.name
@@ -155,38 +157,35 @@ interface Month {
                           texts.participation.optional
                         }}</span>
                       }
-                    </span>
-                    @if (t.status === 'CANCELLED') {
-                      <span class="status-row">
+                      @if (t.status === 'CANCELLED') {
                         <span class="chip" data-kind="cancelled" data-testid="event-status">{{
                           texts.events.cancelled
                         }}</span>
-                        @if (t.cancellationReason) {
-                          <span class="secondary-text">{{ t.cancellationReason }}</span>
+                      } @else {
+                        @if (t.rescheduled) {
+                          <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
+                            texts.events.rescheduled
+                          }}</span>
                         }
-                      </span>
-                    } @else {
-                      @if (t.rescheduled || t.warningCount) {
-                        <span class="status-row">
-                          @if (t.rescheduled) {
-                            <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
-                              texts.events.rescheduled
-                            }}</span>
-                          }
-                          <!-- Only coaches and admins get a warning count from the API (F-16) -->
-                          @if (t.warningCount; as n) {
-                            <span
-                              class="chip warning-chip"
-                              data-kind="warning"
-                              data-testid="event-warnings"
-                              [attr.data-warning-count]="n"
-                            >
-                              <app-icon name="triangle-alert" [size]="14" />
-                              {{ texts.warnings.count(n) }}
-                            </span>
-                          }
-                        </span>
+                        <!-- Only coaches and admins get a warning count from the API (F-16) -->
+                        @if (t.warningCount; as n) {
+                          <span
+                            class="chip warning-chip"
+                            data-kind="warning"
+                            data-testid="event-warnings"
+                            [attr.data-warning-count]="n"
+                          >
+                            <app-icon name="triangle-alert" [size]="14" />
+                            {{ texts.warnings.count(n) }}
+                          </span>
+                        }
                       }
+                    </span>
+                    @if (t.status === 'CANCELLED') {
+                      @if (t.cancellationReason) {
+                        <span class="secondary-text">{{ t.cancellationReason }}</span>
+                      }
+                    } @else {
                       @if (t.counts; as z) {
                         <span class="secondary-text counter" data-testid="event-counter">
                           <span data-counter="attending">{{

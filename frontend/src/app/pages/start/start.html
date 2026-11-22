@@ -28,10 +28,11 @@
     } @else if (next(); as t) {
       <a class="event-link" [routerLink]="['/termine', t.id]">
         <span class="event-title">{{ t.title }}</span>
-        <span class="secondary-text">{{ description(t) }}</span>
+        <span class="when-where">{{ when(t) }}</span>
         @if (t.location) {
-          <span class="secondary-text">{{ t.location.name }}</span>
+          <span class="place">{{ t.location.name }}</span>
         }
+        <span class="secondary-text">{{ teamNames(t) }}</span>
       </a>
       <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
       <app-my-response
@@ -57,10 +58,11 @@
           >
             <a class="event-link" [routerLink]="['/termine', t.id]">
               <span class="event-title">{{ t.title }}</span>
-              <span class="secondary-text">{{ description(t) }}</span>
+              <span class="when-where">{{ when(t) }}</span>
               @if (t.location) {
-                <span class="secondary-text">{{ t.location.name }}</span>
+                <span class="place">{{ t.location.name }}</span>
               }
+              <span class="secondary-text">{{ teamNames(t) }}</span>
             </a>
             <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
             <app-my-response

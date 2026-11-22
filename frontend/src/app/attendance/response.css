@@ -21,17 +21,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   min-height: 48px;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 4px 2px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
-  font: 600 14px/1.15 var(--font);
+  /* The condensed DIN of the headings: «Nicht dabei» stays on one line in a third of a phone */
+  font: 600 15px/1.1 var(--font-display);
+  font-stretch: var(--display-stretch);
   text-align: center;
   cursor: pointer;
+}
+
+.response-button:not(:disabled):hover {
+  border-color: var(--muted);
 }
 
 .response-button app-icon {
