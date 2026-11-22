@@ -70,6 +70,13 @@ async function createMatchDay(page: Page, day: string): Promise<string> {
   return id;
 }
 
+/** Drivers, passengers and the proposal are on the season page, in the opened match day (DRV-23, DRV-24). */
+async function openEditor(page: Page, eventId: string): Promise<void> {
+  await page.goto(`/teams/${TEAM_1}/fahrerliste`);
+  await page.getByTestId(`plan-edit-${eventId}`).click();
+  await expect(page.getByTestId(`plan-editor-${eventId}`).getByTestId('driver-list')).toBeVisible();
+}
+
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
@@ -299,7 +306,7 @@ test('AUF-34: the match day and the call-up show the ranks of the league table',
 
 test('DRV-19: a coach lets the app propose the driver list and takes the proposal over', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   await expect(page.getByTestId('without-seat')).toContainText('Jana Wyss');
 
   await driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' }).click();
@@ -346,7 +353,7 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
   await checkAccessibility(page);
 
   // Seven places are the driver and six others
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   await expect(driverList(page).getByLabel('Freie Plätze in deinem Auto')).toHaveValue('6');
 
   await login(page, 'petra');

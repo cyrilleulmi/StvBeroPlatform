@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Car, DriverPlan, DriverPlanMatchDay, DriverSetting } from '../api/types';
 import { clockTime, eventDate, yearOf } from '../attendance/time';
@@ -18,6 +18,11 @@ import { errorStatus, errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
 import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
+import { dateTime } from '../core/format';
+import { Icon } from '../core/icon';
+import { DriverListSection } from './driver-list';
+import { PlanSwaps } from './plan-swaps';
+import { PlanTrips } from './plan-trips';
 
 /**
  * Driver plan of a team for a whole season (`/teams/:teamId/fahrerliste`, DRV-14, DRV-17): every match day with
@@ -27,7 +32,7 @@ import { TEXTS } from '../core/texts';
 @Component({
   selector: 'app-driver-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icon, DriverListSection, PlanSwaps, PlanTrips],
   template: `
     <div class="header">
       <a class="back" [routerLink]="['/teams', teamId()]">{{ data()?.teamName ?? texts.teams.title }}</a>
@@ -36,6 +41,16 @@ import { TEXTS } from '../core/texts';
         <p class="secondary-text" data-testid="driver-plan-season">
           {{ d.teamName }} · {{ texts.teamAdmin.season }} {{ d.seasonName }}
         </p>
+      }
+      @if (myTeams().length > 1) {
+        <div class="field team-switch">
+          <label for="plan-team">{{ t.team }}</label>
+          <select id="plan-team" name="plan-team" (change)="switchTeam($any($event.target).value)">
+            @for (x of myTeams(); track x.id) {
+              <option [value]="x.id" [selected]="x.id === teamId()">{{ x.name }}</option>
+            }
+          </select>
+        </div>
       }
     </div>
     @if (success(); as m) {
@@ -78,6 +93,19 @@ import { TEXTS } from '../core/texts';
                       [attr.aria-label]="t.openFor(label(m))"
                       >{{ t.open }}</a
                     >
+                    @if (m.ready && !m.cancelled) {
+                      <button
+                        type="button"
+                        class="button button-secondary button-small edit"
+                        [attr.data-testid]="'plan-edit-' + m.eventId"
+                        [attr.aria-expanded]="isEditing(m.eventId)"
+                        [attr.aria-label]="isEditing(m.eventId) ? t.closeEdit : t.editFor(label(m))"
+                        (click)="toggleEdit(m.eventId)"
+                      >
+                        <app-icon [name]="isEditing(m.eventId) ? 'chevron-up' : 'pencil'" [size]="16" />
+                        {{ isEditing(m.eventId) ? t.closeEdit : t.edit }}
+                      </button>
+                    }
                   </div>
                   <p class="secondary-text" data-testid="plan-venue">
                     {{ venue(m) }}
@@ -118,6 +146,18 @@ import { TEXTS } from '../core/texts';
                         </li>
                       }
                     </ul>
+                  }
+                  @if (isEditing(m.eventId)) {
+                    <!-- Drivers, passengers and the proposal of one match day (DRV-24) -->
+                    <div class="edit-panel" [attr.data-testid]="'plan-editor-' + m.eventId">
+                      <app-driver-list
+                        [eventId]="m.eventId"
+                        [teamId]="null"
+                        [meId]="meId()"
+                        [manage]="true"
+                        (changed)="refresh()"
+                      />
+                    </div>
                   }
                 </li>
               }
@@ -217,6 +257,10 @@ import { TEXTS } from '../core/texts';
           </form>
         }
 
+        <app-plan-swaps [plan]="d" [params]="params()" (updated)="apply($event)" />
+
+        <app-plan-trips [plan]="d" [params]="params()" (updated)="apply($event)" />
+
         <section class="card" aria-labelledby="plan-shares-title" data-testid="driver-plan-shares">
           <h2 id="plan-shares-title" class="section-title">{{ t.shares }}</h2>
           <p class="secondary-text">{{ t.sharesText }}</p>
@@ -250,6 +294,17 @@ import { TEXTS } from '../core/texts';
                   </tr>
                 }
               </tbody>
+              <tfoot>
+                <tr data-testid="plan-share-total">
+                  <th scope="row">{{ t.totalRow }}</th>
+                  <td class="number" data-column="done">{{ d.totals.trips }}</td>
+                  <td class="number" data-column="planned">{{ d.totals.plannedTrips }}</td>
+                  <td class="number" data-column="total">{{ d.totals.trips + d.totals.plannedTrips }}</td>
+                  <td class="number" data-column="kilometres">
+                    {{ t.km(d.totals.kilometres + d.totals.plannedKilometres) }}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </section>
@@ -300,6 +355,23 @@ import { TEXTS } from '../core/texts';
               </li>
             }
           </ul>
+        </section>
+
+        <section class="card" aria-labelledby="plan-history-title" data-testid="driver-plan-history">
+          <h2 id="plan-history-title" class="section-title">{{ t.historyTitle }}</h2>
+          <p class="secondary-text">{{ t.historyText }}</p>
+          @if (d.history.length === 0) {
+            <p class="empty">{{ t.noHistory }}</p>
+          } @else {
+            <ol class="history" [attr.aria-label]="t.historyTitle">
+              @for (h of d.history; track h.id) {
+                <li class="history-entry" [attr.data-kind]="h.kind">
+                  <span class="history-text">{{ h.text }}</span>
+                  <span class="secondary-text">{{ t.historyBy(h.by ? name(h.by) : '', when(h.at)) }}</span>
+                </li>
+              }
+            </ol>
+          }
         </section>
       }
     </div>
@@ -502,6 +574,47 @@ import { TEXTS } from '../core/texts';
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
     }
+    tfoot th,
+    tfoot td {
+      font-weight: 800;
+      border-bottom: 0;
+      border-top: 2px solid var(--text);
+    }
+    .team-switch {
+      max-width: 320px;
+    }
+    .edit {
+      gap: 6px;
+    }
+    .edit-panel {
+      margin-top: 6px;
+      min-width: 0;
+    }
+    .history {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+    }
+    .history-entry {
+      display: grid;
+      gap: 2px;
+      padding: 8px 0 8px 14px;
+      border-left: 2px solid var(--border);
+      overflow-wrap: anywhere;
+    }
+    .history-entry[data-kind='SWAPPED'],
+    .history-entry[data-kind='TAKEN_OVER'] {
+      border-left-color: var(--primary);
+    }
+    .history-entry[data-kind='CAR_REMOVED'],
+    .history-entry[data-kind='TRIP_REMOVED'],
+    .history-entry[data-kind='SWAP_DECLINED'] {
+      border-left-color: var(--coral);
+    }
+    .history-text {
+      font-weight: 600;
+    }
     .bar {
       display: inline-block;
       height: 8px;
@@ -541,6 +654,15 @@ export class DriverPlanPage {
   protected readonly selectionError = signal<string | null>(null);
 
   protected readonly meId = computed(() => this.auth.me()?.id ?? null);
+  private readonly router = inject(Router);
+  /** Match days opened for editing (DRV-24). */
+  protected readonly editing = signal<string[]>([]);
+  /** Own teams of the current season, for the choice «Team». */
+  protected readonly myTeams = computed(() => {
+    const seen = new Map<string, { id: string; name: string }>();
+    for (const m of this.auth.me()?.memberships ?? []) seen.set(m.team.id, m.team);
+    return [...seen.values()];
+  });
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
   /** Match days on which the caller can enter a driver right now. */
@@ -552,6 +674,36 @@ export class DriverPlanPage {
       const season = this.saison();
       untracked(() => void this.load(team, season));
     });
+  }
+
+  protected isEditing(eventId: string): boolean {
+    return this.editing().includes(eventId);
+  }
+
+  protected toggleEdit(eventId: string): void {
+    this.editing.update((ids) => (ids.includes(eventId) ? ids.filter((id) => id !== eventId) : [...ids, eventId]));
+  }
+
+  protected switchTeam(team: string): void {
+    void this.router.navigate(['/teams', team, 'fahrerliste']);
+  }
+
+  /** «21.11.2026, 14:03» */
+  protected when(iso: string): string {
+    return dateTime(iso);
+  }
+
+  /** Reloads after a change in an opened match day. */
+  protected async refresh(): Promise<void> {
+    try {
+      this.apply(
+        await firstValueFrom(
+          this.http.get<DriverPlan>(`/api/teams/${this.teamId()}/driver-plan`, { params: this.params() }),
+        ),
+      );
+    } catch (e) {
+      this.error.set(errorText(e));
+    }
   }
 
   /** «So 22.11. 09:30» */
@@ -642,7 +794,7 @@ export class DriverPlanPage {
     this.selectionError.set(null);
   }
 
-  private params(): Record<string, string> {
+  protected params(): Record<string, string> {
     const season = this.saison();
     return season ? { season } : {};
   }
@@ -661,7 +813,7 @@ export class DriverPlanPage {
     }
   }
 
-  private apply(plan: DriverPlan): void {
+  protected apply(plan: DriverPlan): void {
     this.data.set(plan);
     const me = this.meId();
     const members = plan.members ?? [];

@@ -82,6 +82,15 @@ export class Shell {
     this.main().nativeElement.focus();
   }
 
+  /** Teams the person coaches in the current season: «<Team> verwalten» on desktop (E-91). */
+  protected readonly coachedTeams = computed(() => {
+    const seen = new Map<string, { id: string; name: string }>();
+    for (const m of this.auth.me()?.memberships ?? []) {
+      if (m.teamRole === 'COACH') seen.set(m.team.id, m.team);
+    }
+    return [...seen.values()];
+  });
+
   protected readonly entries = computed<NavEntry[]>(() => {
     const n = TEXTS.navigation;
     const list: NavEntry[] = [

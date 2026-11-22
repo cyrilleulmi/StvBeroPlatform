@@ -215,3 +215,27 @@
 .chip[data-kind='existing'] {
   background: var(--border);
 }
+
+/* «So wird die Fahrzeit berechnet» (DRV-22) */
+.route-info summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.info-list {
+  margin: 0 0 4px;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.plan-hint {
+  font-size: 14px;
+}
