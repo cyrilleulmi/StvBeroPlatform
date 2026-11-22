@@ -126,11 +126,12 @@ import { Stepper } from './simple/stepper';
                           class="day-button"
                           [attr.data-testid]="'plan-day-' + m.eventId"
                           [attr.aria-pressed]="selectedId() === m.eventId"
-                          [attr.aria-label]="b.openDay(store.dayTime(m), store.venue(m))"
+                          [attr.title]="store.dayTime(m) + ', ' + store.venue(m)"
                           (click)="select(m)"
                         >
                           <span class="day-date">{{ shortDay(m) }}</span>
                           <span class="day-place">{{ m.noTrip ? b.home : (m.town ?? m.venue ?? '') }}</span>
+                          <span class="visually-hidden">{{ b.openDay }}</span>
                         </button>
                       </th>
                     }
@@ -163,13 +164,11 @@ import { Stepper } from './simple/stepper';
                                 aria-pressed="true"
                                 [attr.aria-label]="b.drives(name(q.person), store.day(m))"
                                 [attr.data-testid]="'cell-' + q.person.id + '-' + m.eventId"
+                                [attr.data-riders]="car.passengers.length > 0 ? car.passengers.length : null"
                                 [disabled]="store.busy()"
                                 (click)="off(m, car)"
                               >
                                 <app-icon name="car" [size]="18" />
-                                @if (car.passengers.length > 0) {
-                                  <span class="riders" aria-hidden="true">{{ car.passengers.length }}</span>
-                                }
                               </button>
                             } @else {
                               <span class="toggle on fixed" [attr.aria-label]="b.drives(name(q.person), store.day(m))" role="img">
@@ -524,7 +523,9 @@ import { Stepper } from './simple/stepper';
       height: 20px;
       border-radius: 5px;
     }
-    .riders {
+    /* People in the car: drawn, not text, so the name of the button stays «… fährt am …» */
+    .toggle[data-riders]::after {
+      content: attr(data-riders);
       position: absolute;
       top: -6px;
       right: -6px;

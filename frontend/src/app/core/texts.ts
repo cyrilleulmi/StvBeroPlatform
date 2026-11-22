@@ -484,7 +484,7 @@ export const TEXTS = {
     home: 'Heimspiel',
     places: 'Plätze',
     of: (n: number) => ` / ${n}`,
-    openDay: (day: string, venue: string) => `Autos am ${day} zeigen, ${venue}`,
+    openDay: 'Autos zeigen',
     drives: (person: string, day: string) => `${person} fährt am ${day}`,
     drivesNot: (person: string, day: string) => `${person} fährt am ${day} nicht`,
     legendDrives: 'fährt',
