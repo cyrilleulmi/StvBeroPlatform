@@ -175,12 +175,13 @@ import { Stepper } from './simple/stepper';
                           class="driver-chip"
                           [attr.data-testid]="'plan-car-' + car.driver.id"
                           [attr.data-me]="car.driver.id === store.meId() ? 'true' : null"
-                          [attr.aria-label]="a.changeDriver(name(car.driver))"
+                          [attr.title]="name(car.driver)"
                           [disabled]="store.busy()"
                           (click)="openDriver(m, car)"
                         >
                           <app-icon name="car" [size]="16" />
                           {{ store.shortName(car.driver) }}
+                          <span class="visually-hidden">{{ a.changeDriver }}</span>
                           <span class="chip-places" aria-hidden="true">{{ car.seats + 1 }}</span>
                         </button>
                       } @else {
@@ -196,22 +197,22 @@ import { Stepper } from './simple/stepper';
                         type="button"
                         class="driver-chip add"
                         [attr.data-testid]="'plan-add-' + m.eventId"
-                        [attr.aria-label]="a.addDriverFor(store.day(m))"
                         [disabled]="store.busy()"
                         (click)="openAdd(m)"
                       >
                         + {{ a.addDriver }}
+                        <span class="visually-hidden">{{ a.addDriverFor(store.day(m)) }}</span>
                       </button>
                     } @else if (m.changeable && d.canJoin && !drives(m)) {
                       <button
                         type="button"
                         class="driver-chip add"
                         [attr.data-testid]="'plan-join-' + m.eventId"
-                        [attr.aria-label]="a.iDriveFor(store.day(m))"
                         [disabled]="store.busy()"
                         (click)="driveMyself(m)"
                       >
                         + {{ a.iDrive }}
+                        <span class="visually-hidden">{{ a.iDriveFor(store.day(m)) }}</span>
                       </button>
                     }
                     @if (m.cars.length === 0 && !m.changeable) {
