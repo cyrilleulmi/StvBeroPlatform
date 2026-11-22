@@ -11,7 +11,6 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
 const T04 = '40000000-0000-4000-8000-000000000004';
 const SARA = '20000000-0000-4000-8000-000000000008';
-const KIM = '20000000-0000-4000-8000-000000000011';
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
