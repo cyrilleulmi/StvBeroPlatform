@@ -54,8 +54,9 @@ In all three the page no longer shows: the form «Fahrten einplanen», swaps on 
 
 ```bash
 git switch claude/driver-list-a-fahrplan   # or -b-raster, -c-reihum
-scripts/db-start.sh reset                  # once: the proposals add migration V19
 scripts/start.sh
 ```
+
+The proposals add migration V19 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
 
 Then http://localhost:4200/dev-login. Good to look at: team «Herren KF 4. Liga II» (eight match days entered by hand) as coach `reto` and as player `silvan`, page «Fahrerliste».
