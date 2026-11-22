@@ -181,6 +181,28 @@ public class DriverListService {
         notifications.send(messages);
     }
 
+    /**
+     * Enters a car without a notification, in the caller's transaction: for the distribution of a season, which
+     * sends one message per driver (DRV-30). The caller has checked the rights and the match day.
+     */
+    void enterCar(Event event, UUID actor, Person driver, int seats) {
+        clearIndividual(event.id, driver.id);
+        seatOf(event.id, driver.id).ifPresent(car -> deletePassenger(car.id(), driver.id));
+        em.createNativeQuery("insert into car (id, event_id, driver_id, seats, created_at) values (?, ?, ?, ?, ?)")
+                .setParameter(1, UUID.randomUUID()).setParameter(2, event.id).setParameter(3, driver.id)
+                .setParameter(4, seats).setParameter(5, clock.now())
+                .executeUpdate();
+        history.ofMatchDay(event.id, event.season.id, DriverPlanHistory.Kind.CAR_ADDED, actor,
+                DriverRules.historyCarAdded(name(driver), label(event)));
+    }
+
+    /** Removes a car without passengers and without a notification, in the caller's transaction (DRV-30). */
+    void dropCar(Event event, UUID actor, UUID carId, Person driver) {
+        em.createNativeQuery("delete from car where id = ?").setParameter(1, carId).executeUpdate();
+        history.ofMatchDay(event.id, event.season.id, DriverPlanHistory.Kind.CAR_REMOVED, actor,
+                DriverRules.historyCarRemoved(name(driver), label(event)));
+    }
+
     // ------------------------------------------------------------------ Passengers
 
     /**

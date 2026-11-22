@@ -61,6 +61,16 @@ Status legend: see [README](../../README.md#requirement-status).
 | DRV-26 | **History («Verlauf»).** The season page lists the changes of the driver plan, newest first: a trip entered («Eingetragen»), taken out, swapped, taken over, a swap asked for, declined or withdrawn, another trip added or removed (DRV-28). Each entry says who did it and when, e.g. «Petra Meier hat mit Sara Brun getauscht: Petra fährt am Sa 05.12., Sara am So 22.11.» · «21.11.2026, 14:03». Changes from before the history existed are not listed. | Decided |
 | DRV-27 | The table «Verteilung der Fahrten» (DRV-17) also counts the other trips (DRV-28) and ends with a total row («Total»): trips that are over, planned trips, all trips and kilometres. | Decided |
 | DRV-28 | **Other trips («Weitere Fahrten»).** Trips for something that is not an event in the app (a tournament, a club outing) can be added on the season page so that they count: date, what it was («Wofür», 1 to 80 characters), driver and kilometres one way (0.1 to 2000). The driver is credited with the return trip, like on a match day (DRV-05). Members add their own trips, coaches and admins also for others; the driver, whoever added it, coaches and admins remove it. They count in the distribution (DRV-27) and on «Fahrten» (DRV-09): over once the date has passed, planned before. | Decided (other trips count), Assumption (fields and rights) |
+
+## Simple planning (proposal, not decided)
+
+The driver list should be simple and serve two cases: planning the season, and the last changes right before a match day. These requirements are the shared basis of the design proposals in [docs/proposals/driver-list.md](../proposals/driver-list.md).
+
+| ID | Requirement | Status |
+|---|---|---|
+| DRV-29 | **Expected people.** The plan assumes how many people travel to a match day: by default all players and coaches of the team. Coaches (of any team) and admins set another number for the team in the season (1 to 60) and, if needed, for a single match day. From this number and the places of the cars the plan knows whether a match day has enough cars. | Assumption |
+| DRV-30 | **Share fairly («Fair verteilen»).** Coaches and admins let the app enter the drivers of all upcoming match days: each match day gets drivers until there is a place for everyone who is expected. The next driver is the member who can drive (DRV-18) with the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not driven for longer, then by name; nobody who responded «nicht dabei». Cars that are entered stay, unless the plan is made anew («Neu verteilen»): then only cars with passengers stay. Home match days (the meeting point is the venue) need no drivers. Every driver whose trips changed gets one notification with all her match days, instead of one per match day. | Assumption |
+
 ## Notes
 
 - Only kilometres are counted, no money (assumption to confirm from the issue).

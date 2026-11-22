@@ -69,6 +69,10 @@ public class Event extends PanacheEntityBase {
     @Column(name = "meeting_point_location")
     public String meetingPointLocation;
 
+    /** Assumed number of people who travel to this match day (DRV-29); missing: the number of the team. */
+    @Column(name = "expected_travellers")
+    public Integer expectedTravellers;
+
     /** The meeting time was set by the automatic departure, not by hand (TML-09). */
     @Column(name = "meeting_point_time_auto")
     public boolean meetingPointTimeAuto;

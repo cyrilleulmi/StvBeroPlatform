@@ -257,6 +257,16 @@ public final class DriverRules {
                 + (seats == 1 ? " Platz." : " Plätzen.");
     }
 
+    /** One message per driver after the trips of a season were shared (DRV-30). */
+    public static String distributedText(List<String> days) {
+        if (days.isEmpty()) {
+            return "Die Fahrten der Saison wurden neu verteilt. Du bist an keinem kommenden Spieltag mehr als "
+                    + "Fahrerin oder Fahrer eingetragen.";
+        }
+        return "Die Fahrten der Saison wurden verteilt. Du fährst an " + (days.size() == 1
+                ? "einem Spieltag: " : days.size() + " Spieltagen: ") + String.join(", ", days) + ".";
+    }
+
     public static String ownCarRemovedText(String event) {
         return "Dein Auto ist am " + event + " nicht mehr in der Fahrerliste.";
     }

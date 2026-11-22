@@ -2,6 +2,7 @@ package ch.stvbero.platform.core.team;
 
 import ch.stvbero.platform.core.season.Season;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
@@ -33,6 +34,10 @@ public class TeamSeason extends PanacheEntityBase {
     public Season season;
 
     public String name;
+
+    /** Assumed number of people who travel to a match day (DRV-29); missing: all players and coaches. */
+    @Column(name = "expected_travellers")
+    public Integer expectedTravellers;
 
     public static TeamSeason create(Team team, Season season, String name) {
         TeamSeason ts = new TeamSeason();
