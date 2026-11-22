@@ -1,46 +1,34 @@
-import { HttpClient } from '@angular/common/http';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import type { Car, DriverPlan, DriverPlanMatchDay, DriverSetting } from '../api/types';
-import { clockTime, eventDate, yearOf } from '../attendance/time';
+import type { Car, DriverPlanMatchDay } from '../api/types';
 import { AuthService } from '../core/auth.service';
-import { errorStatus, errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
+import { Icon } from '../core/icon';
 import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
-import { dateTime } from '../core/format';
-import { Icon } from '../core/icon';
-import { DriverListSection } from './driver-list';
-import { PlanSwaps } from './plan-swaps';
-import { PlanTrips } from './plan-trips';
+import { Fairness } from './simple/fairness';
+import { PlanStore, QueueEntry } from './simple/plan-store';
+import { SeatBoard } from './simple/seat-board';
+import { Stepper } from './simple/stepper';
 
 /**
- * Driver plan of a team for a whole season (`/teams/:teamId/fahrerliste`, DRV-14, DRV-17): every match day with
- * its cars, a form to enter one person for several match days at once, and how the trips are shared. Members
- * enter themselves, coaches and admins also others. `?saison=<id>` shows another season.
+ * Driver list of a team, proposal B «Raster» (`/teams/:teamId/fahrerliste`): the season as a grid, people down
+ * and match days across. A tap on a cell says «drives» or «does not drive»; the row shows how often a person
+ * drives, the foot of the column whether the match day has enough places (DRV-29). «Fair verteilen» fills the
+ * grid (DRV-30). A tap on a match day opens its cars below to seat people (DRV-03). `?saison=<id>` shows another
+ * season.
  */
 @Component({
   selector: 'app-driver-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, DriverListSection, PlanSwaps, PlanTrips],
+  imports: [RouterLink, Icon, Fairness, SeatBoard, Stepper],
+  providers: [PlanStore],
   template: `
     <div class="header">
-      <a class="back" [routerLink]="['/teams', teamId()]">{{ data()?.teamName ?? texts.teams.title }}</a>
+      <a class="back" [routerLink]="['/teams', teamId()]">{{ store.plan()?.teamName ?? texts.teams.title }}</a>
       <h1 class="page-title">{{ t.title }}</h1>
-      @if (data(); as d) {
-        <p class="secondary-text" data-testid="driver-plan-season">
-          {{ d.teamName }} · {{ texts.teamAdmin.season }} {{ d.seasonName }}
-        </p>
+      @if (store.plan(); as d) {
+        <p class="secondary-text" data-testid="driver-plan-season">{{ t.seasonOf(d.teamName, d.seasonName) }}</p>
       }
       @if (myTeams().length > 1) {
         <div class="field team-switch">
@@ -53,325 +41,238 @@ import { PlanTrips } from './plan-trips';
         </div>
       }
     </div>
-    @if (success(); as m) {
+    @if (store.success(); as m) {
       <p class="message-success" role="status">{{ m }}</p>
     }
-    @if (error(); as m) {
+    @if (store.error(); as m) {
       <p class="message-error" role="alert">{{ m }}</p>
     }
-    <div class="sections" [attr.aria-busy]="loading() ? 'true' : null">
-      @if (loading()) {
+    <div class="sections" [attr.aria-busy]="store.loading() ? 'true' : null">
+      @if (store.loading()) {
         <p class="empty">{{ texts.common.loading }}</p>
-      } @else if (data(); as d) {
-        <p class="secondary-text">{{ t.explanation }}</p>
+      } @else if (store.plan(); as d) {
+        <section class="card grid-card" aria-labelledby="grid-title" data-testid="driver-plan-match-days">
+          <div class="grid-head">
+            <h2 id="grid-title" class="section-title">{{ b.gridTitle }}</h2>
+            @if (store.past().length > 0) {
+              <label class="check">
+                <input type="checkbox" [checked]="showPast()" (change)="showPast.set($any($event.target).checked)" />
+                {{ b.showPast }}
+              </label>
+            }
+          </div>
+          @if (d.canManage) {
+            <!-- Planning the season: one number and one button (DRV-29, DRV-30) -->
+            <div class="planning" data-testid="planning">
+              <span class="expected">
+                <span class="expected-label">{{ t.expected }}</span>
+                <app-stepper
+                  [value]="d.expected"
+                  [label]="t.expected"
+                  [disabled]="store.busy()"
+                  testId="expected"
+                  (changed)="store.setExpected($event)"
+                />
+                @if (d.expectedManual) {
+                  <button type="button" class="link" [disabled]="store.busy()" (click)="store.setExpected(null)">
+                    {{ b.allAgain(d.expectedDefault) }}
+                  </button>
+                }
+              </span>
+              <span class="plan-buttons">
+                <button
+                  type="button"
+                  class="button button-primary button-small"
+                  [disabled]="store.busy() || store.short().length === 0"
+                  [attr.aria-busy]="store.running() === 'distribute' ? 'true' : null"
+                  data-testid="distribute"
+                  (click)="store.distribute(false)"
+                >
+                  {{ t.distribute }}
+                </button>
+                @if (hasPlanned()) {
+                  <button
+                    type="button"
+                    class="button button-secondary button-small"
+                    [disabled]="store.busy()"
+                    data-testid="redistribute"
+                    (click)="store.distribute(true)"
+                  >
+                    {{ t.redistribute }}
+                  </button>
+                }
+              </span>
+            </div>
+          }
+          <p class="secondary-text">{{ d.canManage ? b.hintCoach : d.canJoin ? b.hintMember : b.hintRead }}</p>
 
-        <section class="card" aria-labelledby="plan-match-days-title" data-testid="driver-plan-match-days">
-          <h2 id="plan-match-days-title" class="section-title">
-            {{ t.matchDays }} <span class="count">{{ d.matchDays.length }}</span>
-          </h2>
-          @if (d.matchDays.length === 0) {
+          @if (columns().length === 0) {
             <p class="empty">{{ t.noMatchDays }}</p>
           } @else {
-            <ol class="match-days" aria-labelledby="plan-match-days-title">
-              @for (m of d.matchDays; track m.eventId) {
-                <li
-                  class="match-day"
-                  [attr.aria-label]="label(m)"
-                  [attr.data-testid]="'plan-match-day-' + m.eventId"
-                  [attr.data-state]="m.cancelled ? 'cancelled' : m.over ? 'over' : 'upcoming'"
-                >
-                  <div class="match-day-head">
-                    <span class="date">{{ label(m) }}</span>
-                    @if (m.cancelled) {
-                      <span class="chip" data-kind="cancelled">{{ t.cancelled }}</span>
-                    } @else if (m.over) {
-                      <span class="chip" data-kind="over">{{ t.over }}</span>
-                    }
-                    <a
-                      class="open"
-                      [routerLink]="['/termine', m.eventId]"
-                      [attr.aria-label]="t.openFor(label(m))"
-                      >{{ t.open }}</a
-                    >
-                    @if (m.ready && !m.cancelled) {
-                      <button
-                        type="button"
-                        class="button button-secondary button-small edit"
-                        [attr.data-testid]="'plan-edit-' + m.eventId"
-                        [attr.aria-expanded]="isEditing(m.eventId)"
-                        [attr.aria-label]="isEditing(m.eventId) ? t.closeEdit : t.editFor(label(m))"
-                        (click)="toggleEdit(m.eventId)"
+            <div class="scroll" tabindex="0" role="region" [attr.aria-label]="b.gridTitle">
+              <table class="grid" data-testid="plan-grid">
+                <thead>
+                  <tr>
+                    <th scope="col" class="corner">{{ b.who }}</th>
+                    @for (m of columns(); track m.eventId) {
+                      <th
+                        scope="col"
+                        class="day"
+                        [attr.data-state]="m.over ? 'over' : store.state(m)"
+                        [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
                       >
-                        <app-icon [name]="isEditing(m.eventId) ? 'chevron-up' : 'pencil'" [size]="16" />
-                        {{ isEditing(m.eventId) ? t.closeEdit : t.edit }}
-                      </button>
-                    }
-                  </div>
-                  <p class="secondary-text" data-testid="plan-venue">
-                    {{ venue(m) }}
-                    @if (m.distanceKm !== undefined && m.distanceKm !== null) {
-                      · {{ t.distance(km(m.distanceKm), m.durationMinutes ?? null) }}
-                    }
-                  </p>
-                  @if (!m.ready) {
-                    <p class="notice" data-testid="plan-missing">{{ t.notReady(missing(m)) }}</p>
-                  } @else if (m.cars.length === 0) {
-                    <p class="secondary-text" data-testid="plan-no-cars">{{ t.noCars }}</p>
-                  } @else {
-                    <ul class="cars" [attr.aria-label]="texts.driverList.cars">
-                      @for (car of m.cars; track car.id) {
-                        <li
-                          class="car"
-                          [attr.aria-label]="name(car.driver)"
-                          [attr.data-testid]="'plan-car-' + car.driver.id"
-                          [attr.data-free]="car.freeSeats"
+                        <button
+                          type="button"
+                          class="day-button"
+                          [attr.data-testid]="'plan-day-' + m.eventId"
+                          [attr.aria-pressed]="selectedId() === m.eventId"
+                          [attr.aria-label]="b.openDay(store.dayTime(m), store.venue(m))"
+                          (click)="select(m)"
                         >
-                          <span class="car-text">
-                            <span class="car-title">{{ t.car(name(car.driver), car.freeSeats, car.seats) }}</span>
-                            @if (car.passengers.length > 0) {
-                              <span class="secondary-text">{{ t.passengers(passengers(car)) }}</span>
+                          <span class="day-date">{{ shortDay(m) }}</span>
+                          <span class="day-place">{{ m.noTrip ? b.home : (m.town ?? m.venue ?? '') }}</span>
+                        </button>
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (q of rows(); track q.person.id) {
+                    <tr
+                      [attr.data-testid]="'plan-row-' + q.person.id"
+                      [attr.data-me]="q.person.id === store.meId() ? 'true' : null"
+                      [attr.data-can-drive]="q.canDrive"
+                    >
+                      <th scope="row" class="person">
+                        <span class="person-name">{{ store.shortName(q.person) }}</span>
+                        <span class="trips" [attr.title]="t.fairness.trips(q.trips)" data-testid="plan-trips">{{ q.trips }}</span>
+                      </th>
+                      @for (m of columns(); track m.eventId) {
+                        <td
+                          class="cell"
+                          [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
+                          [attr.data-state]="m.over ? 'over' : null"
+                        >
+                          @if (m.noTrip || m.cancelled) {
+                            <span class="none" aria-hidden="true">·</span>
+                          } @else if (carOf(m, q.person.id); as car) {
+                            @if (canToggle(m, q)) {
+                              <button
+                                type="button"
+                                class="toggle on"
+                                aria-pressed="true"
+                                [attr.aria-label]="b.drives(name(q.person), store.day(m))"
+                                [attr.data-testid]="'cell-' + q.person.id + '-' + m.eventId"
+                                [disabled]="store.busy()"
+                                (click)="off(m, car)"
+                              >
+                                <app-icon name="car" [size]="18" />
+                                @if (car.passengers.length > 0) {
+                                  <span class="riders" aria-hidden="true">{{ car.passengers.length }}</span>
+                                }
+                              </button>
+                            } @else {
+                              <span class="toggle on fixed" [attr.aria-label]="b.drives(name(q.person), store.day(m))" role="img">
+                                <app-icon name="car" [size]="18" />
+                              </span>
                             }
-                          </span>
-                          @if (m.changeable && (d.canManage || car.driver.id === meId())) {
+                          } @else if (q.canDrive && canToggle(m, q)) {
                             <button
                               type="button"
-                              class="button button-secondary button-small"
-                              [disabled]="busy()"
-                              [attr.aria-busy]="running() === 'remove:' + car.id ? 'true' : null"
-                              (click)="remove(m, car)"
-                            >
-                              {{ t.remove(name(car.driver)) }}
-                            </button>
+                              class="toggle"
+                              aria-pressed="false"
+                              [attr.aria-label]="b.drivesNot(name(q.person), store.day(m))"
+                              [attr.data-testid]="'cell-' + q.person.id + '-' + m.eventId"
+                              [disabled]="store.busy()"
+                              (click)="store.addDriver(m, q.person)"
+                            ></button>
+                          } @else {
+                            <span class="none" aria-hidden="true"></span>
                           }
-                        </li>
+                        </td>
                       }
-                    </ul>
+                    </tr>
                   }
-                  @if (isEditing(m.eventId)) {
-                    <!-- Drivers, passengers and the proposal of one match day (DRV-24) -->
-                    <div class="edit-panel" [attr.data-testid]="'plan-editor-' + m.eventId">
-                      <app-driver-list
-                        [eventId]="m.eventId"
-                        [teamId]="null"
-                        [meId]="meId()"
-                        [manage]="true"
-                        (changed)="refresh()"
-                      />
-                    </div>
-                  }
-                </li>
-              }
-            </ol>
+                </tbody>
+                <tfoot>
+                  <tr data-testid="plan-places-row">
+                    <th scope="row" class="person">{{ b.places }}</th>
+                    @for (m of columns(); track m.eventId) {
+                      <td
+                        class="sum"
+                        [attr.data-state]="m.over ? 'over' : store.state(m)"
+                        [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
+                        [attr.data-testid]="'plan-places-' + m.eventId"
+                      >
+                        @if (m.noTrip || m.cancelled) {
+                          <span aria-hidden="true">–</span>
+                        } @else {
+                          <span class="sum-places">{{ m.places }}</span>
+                          <span class="sum-of">{{ b.of(m.over ? m.attending : m.expected) }}</span>
+                        }
+                      </td>
+                    }
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p class="legend secondary-text">
+              <span class="toggle on fixed small" aria-hidden="true"><app-icon name="car" [size]="12" /></span> {{ b.legendDrives }}
+              <span class="swatch enough" aria-hidden="true"></span> {{ b.legendEnough }}
+              <span class="swatch short" aria-hidden="true"></span> {{ b.legendShort }}
+            </p>
           }
         </section>
 
-        @if (d.canJoin || d.canManage) {
-          <form
-            class="card form"
-            (submit)="enter($event)"
-            novalidate
-            aria-labelledby="plan-form-title"
-            data-testid="driver-plan-form"
-          >
-            <h2 id="plan-form-title" class="section-title">{{ t.planTitle }}</h2>
-            @if (plannable().length === 0) {
-              <p class="empty">{{ t.nothingToPlan }}</p>
+        @if (selected(); as m) {
+          <!-- The cars of the chosen match day: seat people right before the match (DRV-03, DRV-19) -->
+          <section class="card" aria-labelledby="day-title" [attr.data-testid]="'plan-editor-' + m.eventId">
+            <div class="day-head">
+              <div>
+                <p class="eyebrow">{{ m.eventId === store.nextMatchDay()?.eventId ? b.nextDay : b.matchDay }}</p>
+                <h2 id="day-title" class="section-title">{{ store.dayTime(m) }}</h2>
+                <p class="secondary-text">
+                  {{ store.venue(m) }}
+                  @if (m.distanceKm !== undefined && m.distanceKm !== null && !m.noTrip) {
+                    · {{ t.distance(km(m.distanceKm)) }}
+                  }
+                </p>
+              </div>
+              <a class="to-event" [routerLink]="['/termine', m.eventId]">{{ t.openMatchDay }}</a>
+            </div>
+            @if (m.cancelled) {
+              <p class="empty">{{ t.cancelled }}</p>
+            } @else if (m.noTrip) {
+              <p class="empty">{{ t.home }}</p>
+            } @else if (!m.ready) {
+              <p class="empty">{{ t.notReady }}</p>
             } @else {
-              <p class="secondary-text">{{ t.planText }}</p>
-              <div class="field-row">
-                @if (d.canManage) {
-                  <div class="field">
-                    <label for="plan-driver">{{ t.driver }}</label>
-                    <select id="plan-driver" (change)="setDriver($any($event.target).value)">
-                      @for (p of d.members ?? []; track p.id) {
-                        <option [value]="p.id" [selected]="driver() === p.id">
-                          {{ name(p) }}{{ p.id === meId() ? ' (' + t.me + ')' : '' }}
-                        </option>
-                      }
-                    </select>
-                  </div>
-                }
-                <div class="field">
-                  <label for="plan-seats">{{ t.seats }}</label>
-                  <input
-                    spellcheck="false"
-                    name="plan-seats"
-                    id="plan-seats"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="1"
-                    autocomplete="off"
-                    [value]="seats()"
-                    (input)="seats.set($any($event.target).value)"
-                    [attr.aria-invalid]="seatsError() ? 'true' : null"
-                    [attr.aria-describedby]="seatsError() ? 'plan-seats-error' : null"
+              @if (d.canManage && !m.over) {
+                <div class="expected">
+                  <span class="expected-label">{{ b.expectedHere }}</span>
+                  <app-stepper
+                    [value]="m.expected"
+                    [label]="t.expectedOf(store.day(m))"
+                    [disabled]="store.busy()"
+                    (changed)="store.setMatchDayExpected(m.eventId, $event)"
                   />
-                  @if (seatsError(); as m) {
-                    <p class="field-error" id="plan-seats-error">{{ m }}</p>
+                  @if (m.expectedManual) {
+                    <button type="button" class="link" [disabled]="store.busy()" (click)="store.setMatchDayExpected(m.eventId, null)">
+                      {{ b.likeTeam(d.expected) }}
+                    </button>
+                  }
+                  @if (m.attending > 0) {
+                    <span class="secondary-text">{{ b.attendingNow(m.attending) }}</span>
                   }
                 </div>
-              </div>
-              <fieldset
-                class="choices"
-                [attr.aria-invalid]="selectionError() ? 'true' : null"
-                [attr.aria-describedby]="selectionError() ? 'plan-selection-error' : null"
-              >
-                <legend>{{ t.chooseMatchDays }}</legend>
-                <div class="choice-buttons">
-                  <button type="button" class="button button-secondary button-small" (click)="selectWithoutCar()">
-                    {{ t.selectWithoutCar }}
-                  </button>
-                  <button type="button" class="button button-secondary button-small" (click)="selected.set([])">
-                    {{ t.clearSelection }}
-                  </button>
-                </div>
-                @for (m of plannable(); track m.eventId) {
-                  <label class="choice" [attr.data-testid]="'plan-choice-' + m.eventId">
-                    <input
-                      type="checkbox"
-                      [checked]="isSelected(m.eventId)"
-                      [disabled]="drives(m)"
-                      (change)="toggle(m.eventId, $any($event.target).checked)"
-                    />
-                    <span>
-                      {{ t.matchDayOption(label(m), venue(m)) }}
-                      @if (drives(m)) {
-                        <span class="secondary-text">({{ t.alreadyDrives }})</span>
-                      }
-                    </span>
-                  </label>
-                }
-              </fieldset>
-              @if (selectionError(); as m) {
-                <p class="field-error" id="plan-selection-error">{{ m }}</p>
               }
-              <button
-                type="submit"
-                class="button button-primary"
-                [disabled]="busy()"
-                [attr.aria-busy]="running() === 'enter' ? 'true' : null"
-              >
-                {{ t.enter }}
-              </button>
+              <app-seat-board [matchDay]="m" />
             }
-          </form>
+          </section>
         }
 
-        <app-plan-swaps [plan]="d" [params]="params()" (updated)="apply($event)" />
-
-        <app-plan-trips [plan]="d" [params]="params()" (updated)="apply($event)" />
-
-        <section class="card" aria-labelledby="plan-shares-title" data-testid="driver-plan-shares">
-          <h2 id="plan-shares-title" class="section-title">{{ t.shares }}</h2>
-          <p class="secondary-text">{{ t.sharesText }}</p>
-          <div class="scroll" tabindex="0" role="region" [attr.aria-label]="t.shares">
-            <table [attr.aria-label]="t.shares">
-              <thead>
-                <tr>
-                  <th scope="col">{{ t.person }}</th>
-                  <th scope="col" class="number">{{ t.done }}</th>
-                  <th scope="col" class="number">{{ t.planned }}</th>
-                  <th scope="col" class="number">{{ t.total }}</th>
-                  <th scope="col" class="number">{{ t.kilometres }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (share of d.shares; track share.person.id) {
-                  <tr
-                    [attr.data-testid]="'plan-share-' + share.person.id"
-                    [attr.data-total]="share.trips + share.plannedTrips"
-                  >
-                    <th scope="row">{{ name(share.person) }}</th>
-                    <td class="number" data-column="done">{{ share.trips }}</td>
-                    <td class="number" data-column="planned">{{ share.plannedTrips }}</td>
-                    <td class="number" data-column="total">
-                      <span class="bar" aria-hidden="true" [style.width.px]="(share.trips + share.plannedTrips) * 8"></span>
-                      {{ share.trips + share.plannedTrips }}
-                    </td>
-                    <td class="number" data-column="kilometres">
-                      {{ t.km(share.kilometres + share.plannedKilometres) }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-              <tfoot>
-                <tr data-testid="plan-share-total">
-                  <th scope="row">{{ t.totalRow }}</th>
-                  <td class="number" data-column="done">{{ d.totals.trips }}</td>
-                  <td class="number" data-column="planned">{{ d.totals.plannedTrips }}</td>
-                  <td class="number" data-column="total">{{ d.totals.trips + d.totals.plannedTrips }}</td>
-                  <td class="number" data-column="kilometres">
-                    {{ t.km(d.totals.kilometres + d.totals.plannedKilometres) }}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </section>
-
-        <!-- Who can drive, and with how many places: for the proposed driver list (DRV-18) -->
-        <section class="card" aria-labelledby="plan-drivers-title" data-testid="driver-plan-drivers">
-          <h2 id="plan-drivers-title" class="section-title">{{ texts.driving.planSection }}</h2>
-          <p class="secondary-text">{{ texts.driving.planIntro }}</p>
-          <ul class="list drivers" aria-labelledby="plan-drivers-title">
-            @for (x of d.drivers; track x.person.id) {
-              <li
-                class="driver-row"
-                [attr.aria-label]="name(x.person)"
-                [attr.data-testid]="'plan-driver-' + x.person.id"
-                [attr.data-can-drive]="x.canDrive"
-              >
-                <span class="row-title">{{ name(x.person) }}</span>
-                @if (x.canChange) {
-                  <label class="check">
-                    <input
-                      type="checkbox"
-                      [checked]="x.canDrive"
-                      [disabled]="busy()"
-                      [attr.aria-label]="texts.driving.canDriveFor(name(x.person))"
-                      (change)="setDriving(x, $any($event.target).checked, x.carSeats)"
-                    />
-                    {{ texts.driving.canDrive }}
-                  </label>
-                  @if (x.canDrive) {
-                    <label class="seats-field">
-                      <span>{{ texts.driving.seatsShort }}</span>
-                      <select
-                        [attr.aria-label]="texts.driving.seatsFor(name(x.person))"
-                        [disabled]="busy()"
-                        (change)="setDriving(x, true, +$any($event.target).value)"
-                      >
-                        @for (n of carSeatOptions; track n) {
-                          <option [value]="n" [selected]="n === x.carSeats">{{ n }}</option>
-                        }
-                      </select>
-                    </label>
-                  }
-                } @else {
-                  <span class="secondary-text">{{
-                    x.canDrive ? texts.driving.yes(x.carSeats) : texts.driving.no
-                  }}</span>
-                }
-              </li>
-            }
-          </ul>
-        </section>
-
-        <section class="card" aria-labelledby="plan-history-title" data-testid="driver-plan-history">
-          <h2 id="plan-history-title" class="section-title">{{ t.historyTitle }}</h2>
-          <p class="secondary-text">{{ t.historyText }}</p>
-          @if (d.history.length === 0) {
-            <p class="empty">{{ t.noHistory }}</p>
-          } @else {
-            <ol class="history" [attr.aria-label]="t.historyTitle">
-              @for (h of d.history; track h.id) {
-                <li class="history-entry" [attr.data-kind]="h.kind">
-                  <span class="history-text">{{ h.text }}</span>
-                  <span class="secondary-text">{{ t.historyBy(h.by ? name(h.by) : '', when(h.at)) }}</span>
-                </li>
-              }
-            </ol>
-          }
+        <section class="card" data-testid="driver-plan-shares">
+          <app-fairness [title]="b.settingsTitle" [text]="b.settingsText" />
         </section>
       }
     </div>
@@ -387,99 +288,19 @@ import { PlanTrips } from './plan-trips';
       gap: 16px;
       min-width: 0;
     }
+    p {
+      margin: 0;
+    }
     .card {
       display: grid;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
     }
-    .card p,
-    .sections > p {
-      margin: 0;
-    }
-    .match-days,
-    .cars {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .match-day {
-      display: grid;
-      gap: 6px;
-      padding: 12px 0;
-      min-width: 0;
-    }
-    .match-day + .match-day {
-      border-top: 1px solid var(--border);
-    }
-    .match-day[data-state='over'] .date,
-    .match-day[data-state='cancelled'] .date {
-      color: var(--muted);
-    }
-    .match-day-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 10px;
-    }
-    .date {
-      font-weight: 800;
-    }
-    .open {
-      margin-left: auto;
-      min-height: var(--touch);
-      display: inline-flex;
-      align-items: center;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .chip[data-kind='over'] {
-      background: var(--border);
-      color: var(--text);
-    }
-    .chip[data-kind='cancelled'] {
-      background: var(--coral-soft);
-      color: var(--text);
-    }
-    .notice {
-      padding: 6px 10px;
-      border-radius: var(--radius-icon);
-      background: var(--mustard-soft);
-      border: 1px solid var(--mustard);
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .cars {
-      display: grid;
-      gap: 6px;
-    }
-    .car {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 10px;
-      padding: 8px 10px;
-      border-radius: var(--radius-icon);
-      background: var(--primary-soft);
-      min-width: 0;
-    }
-    .car[data-free='0'] {
-      background: var(--coral-soft);
-    }
-    .car-text {
-      display: grid;
-      gap: 2px;
-      flex: 1 1 180px;
-      min-width: 0;
-      overflow-wrap: anywhere;
-    }
-    .car-title {
-      font-weight: 700;
-    }
-    select,
-    #plan-seats {
-      min-height: var(--touch);
+    .team-switch {
+      max-width: 320px;
     }
     select {
+      min-height: var(--touch);
       padding: 0 12px;
       border: 1.5px solid var(--control-border);
       border-radius: var(--radius-icon);
@@ -488,149 +309,304 @@ import { PlanTrips } from './plan-trips';
       font: 600 15px/1.2 var(--font);
       max-width: 100%;
     }
-    .choices {
-      display: grid;
-      gap: 4px;
+    .grid-head,
+    .day-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px 16px;
+    }
+    .grid-head .section-title,
+    .day-head .section-title {
       margin: 0;
-      padding: 10px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-icon);
-      min-width: 0;
     }
-    .choices legend {
-      padding: 0 6px;
-      font-weight: 700;
-    }
-    .choice-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .choice {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: var(--touch);
-      font-weight: 600;
-      overflow-wrap: anywhere;
-    }
-    .choice input {
-      flex: none;
-      width: 20px;
-      height: 20px;
-    }
-    form .button-primary {
-      justify-self: start;
-    }
-    .scroll {
-      overflow-x: auto;
-      min-width: 0;
-    }
-    .driver-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 16px;
-      padding: 8px 0;
-    }
-    .driver-row .row-title {
-      flex: 1 1 180px;
-    }
-    .driver-row .check,
-    .seats-field {
+    .check {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       min-height: var(--touch);
       font-weight: 600;
+      font-size: 14px;
     }
-    .seats-field select {
-      min-height: var(--touch);
-      padding: 0 10px;
-      border: 1.5px solid var(--control-border);
-      border-radius: var(--radius-icon);
-      background: var(--surface);
-      color: var(--text);
-      font: 600 14px/1.2 var(--font);
+    .check input {
+      width: 20px;
+      height: 20px;
     }
-    table {
+    .planning {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px 20px;
+      padding: 12px 14px;
+      border-radius: var(--radius-control);
+      background: var(--board);
+      border: 1.5px solid var(--board-border);
+    }
+    .expected,
+    .plan-buttons {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+    }
+    .expected-label {
+      font-weight: 700;
+    }
+    .link {
+      border: 0;
+      padding: 0;
+      background: none;
+      color: var(--primary);
+      font: 600 14px/1.3 var(--font);
+      text-decoration: underline;
+      cursor: pointer;
+      min-height: 32px;
+    }
+    .scroll {
+      overflow-x: auto;
+      min-width: 0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-control);
+    }
+    .grid {
+      border-collapse: separate;
+      border-spacing: 0;
       width: 100%;
-      border-collapse: collapse;
     }
     th,
     td {
-      text-align: left;
-      padding: 10px 8px;
+      padding: 0;
       border-bottom: 1px solid var(--border);
+      text-align: center;
       vertical-align: middle;
     }
-    thead th {
+    .corner,
+    .person {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--surface);
+      text-align: left;
+      padding: 0 10px 0 12px;
+      border-right: 1.5px solid var(--border);
+      white-space: nowrap;
+    }
+    .corner {
       font-size: 13px;
       color: var(--muted);
+      vertical-align: bottom;
+      padding-bottom: 8px;
     }
-    .number {
-      text-align: right;
-      white-space: nowrap;
+    .person {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    tr[data-me='true'] .person-name {
+      font-weight: 800;
+    }
+    tr[data-me='true'] .person,
+    tr[data-me='true'] .cell {
+      background: var(--primary-soft);
+    }
+    tr[data-can-drive='false'] .person-name {
+      color: var(--muted);
+    }
+    .person-name {
+      display: inline-block;
+      min-width: 74px;
+    }
+    @media (max-width: 520px) {
+      .corner,
+      .person {
+        padding: 0 6px 0 8px;
+        font-size: 13px;
+      }
+      .day {
+        min-width: 58px;
+      }
+      .toggle {
+        width: 40px;
+        height: 38px;
+      }
+    }
+    .trips {
+      display: inline-grid;
+      place-items: center;
+      min-width: 24px;
+      height: 24px;
+      border-radius: var(--radius-chip);
+      background: var(--tag-grey-soft);
+      font-size: 13px;
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
+    }
+    .day {
+      min-width: 66px;
+    }
+    .day-button {
+      display: grid;
+      gap: 2px;
+      justify-items: center;
+      width: 100%;
+      min-height: 56px;
+      padding: 6px 4px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+    .day-date {
+      font-weight: 800;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .day-place {
+      max-width: 84px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .day[data-state='over'] .day-date {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    [data-selected='true'] {
+      box-shadow:
+        inset 2px 0 0 var(--primary),
+        inset -2px 0 0 var(--primary);
+    }
+    .day[data-selected='true'] {
+      background: var(--primary-soft);
+      box-shadow:
+        inset 2px 0 0 var(--primary),
+        inset -2px 0 0 var(--primary),
+        inset 0 2px 0 var(--primary);
+    }
+    .sum[data-selected='true'] {
+      box-shadow:
+        inset 2px 0 0 var(--primary),
+        inset -2px 0 0 var(--primary),
+        inset 0 -2px 0 var(--primary);
+    }
+    .cell {
+      height: 48px;
+    }
+    .cell[data-state='over'] {
+      opacity: 0.6;
+    }
+    .toggle {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 44px;
+      height: 40px;
+      border-radius: var(--radius-icon);
+      border: 1.5px dashed var(--border);
+      background: transparent;
+      color: var(--on-primary);
+      cursor: pointer;
+    }
+    .toggle.on {
+      border: 0;
+      background: var(--primary);
+    }
+    .toggle.fixed {
+      cursor: default;
+    }
+    .toggle.small {
+      width: 22px;
+      height: 20px;
+      border-radius: 5px;
+    }
+    .riders {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--surface);
+      border: 1.5px solid var(--primary);
+      color: var(--text);
+      font: 700 11px/15px var(--font);
+    }
+    .none {
+      color: var(--muted);
     }
     tfoot th,
     tfoot td {
-      font-weight: 800;
       border-bottom: 0;
-      border-top: 2px solid var(--text);
+      border-top: 1.5px solid var(--border);
+      height: 46px;
     }
-    .team-switch {
-      max-width: 320px;
+    .sum {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
-    .edit {
-      gap: 6px;
+    .sum-places {
+      font-weight: 800;
+      font-size: 16px;
     }
-    .edit-panel {
-      margin-top: 6px;
-      min-width: 0;
+    .sum-of {
+      font-size: 12px;
+      color: var(--muted);
     }
-    .history {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
+    .sum[data-state='enough'] {
+      background: var(--tag-green-soft);
     }
-    .history-entry {
-      display: grid;
-      gap: 2px;
-      padding: 8px 0 8px 14px;
-      border-left: 2px solid var(--border);
-      overflow-wrap: anywhere;
+    .sum[data-state='enough'] .sum-places {
+      color: var(--tag-green);
     }
-    .history-entry[data-kind='SWAPPED'],
-    .history-entry[data-kind='TAKEN_OVER'] {
-      border-left-color: var(--primary);
+    .sum[data-state='short'] {
+      background: var(--coral-soft);
     }
-    .history-entry[data-kind='CAR_REMOVED'],
-    .history-entry[data-kind='TRIP_REMOVED'],
-    .history-entry[data-kind='SWAP_DECLINED'] {
-      border-left-color: var(--coral);
+    .sum[data-state='short'] .sum-places {
+      color: var(--coral);
     }
-    .history-text {
-      font-weight: 600;
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
     }
-    .bar {
+    .swatch {
       display: inline-block;
-      height: 8px;
-      max-width: 64px;
-      margin-right: 6px;
+      width: 16px;
+      height: 16px;
       border-radius: 4px;
-      background: var(--primary);
-      vertical-align: middle;
+      margin-left: 8px;
+    }
+    .swatch.enough {
+      background: var(--tag-green-soft);
+      border: 1.5px solid var(--tag-green);
+    }
+    .swatch.short {
+      background: var(--coral-soft);
+      border: 1.5px solid var(--coral);
+    }
+    .to-event {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--touch);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--primary);
     }
   `,
 })
 export class DriverPlanPage {
-  private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  protected readonly store = inject(PlanStore);
   protected readonly texts = TEXTS;
-  protected readonly t = TEXTS.driverPlan;
+  protected readonly t = TEXTS.simplePlan;
+  protected readonly b = TEXTS.planB;
   protected readonly km = formatDecimal;
   protected readonly name = name;
 
@@ -639,252 +615,87 @@ export class DriverPlanPage {
   /** Query parameter `?saison=<id>`; without it the current season. */
   readonly saison = input<string | undefined>(undefined);
 
-  protected readonly data = signal<DriverPlan | null>(null);
-  protected readonly loading = signal(true);
-  /** Which action is running: `enter` or `remove:<carId>`. */
-  protected readonly running = signal<string | null>(null);
-  protected readonly busy = computed(() => this.running() !== null);
-  protected readonly error = signal<string | null>(null);
-  protected readonly success = signal<string | null>(null);
+  /** Past match days are columns too. */
+  protected readonly showPast = signal(false);
+  /** The match day whose cars are shown; without a choice the next one. */
+  private readonly chosen = signal<string | null>(null);
 
-  protected readonly driver = signal('');
-  protected readonly seats = signal('3');
-  protected readonly seatsError = signal<string | null>(null);
-  protected readonly selected = signal<string[]>([]);
-  protected readonly selectionError = signal<string | null>(null);
-
-  protected readonly meId = computed(() => this.auth.me()?.id ?? null);
-  private readonly router = inject(Router);
-  /** Match days opened for editing (DRV-24). */
-  protected readonly editing = signal<string[]>([]);
   /** Own teams of the current season, for the choice «Team». */
   protected readonly myTeams = computed(() => {
     const seen = new Map<string, { id: string; name: string }>();
     for (const m of this.auth.me()?.memberships ?? []) seen.set(m.team.id, m.team);
     return [...seen.values()];
   });
-  private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
-  /** Match days on which the caller can enter a driver right now. */
-  protected readonly plannable = computed(() => (this.data()?.matchDays ?? []).filter((m) => m.changeable));
+  protected readonly columns = computed(() =>
+    this.showPast() || this.store.upcoming().length === 0 ? this.store.matchDays() : this.store.upcoming(),
+  );
+
+  /** Everyone of the team by name; who cannot drive comes last. */
+  protected readonly rows = computed<QueueEntry[]>(() => {
+    const byId = new Map(this.store.queue().map((q) => [q.person.id, q]));
+    const all = (this.store.plan()?.drivers ?? []).map((d) => byId.get(d.person.id)!).filter(Boolean);
+    return [...all.filter((q) => q.canDrive), ...all.filter((q) => !q.canDrive)];
+  });
+
+  protected readonly selectedId = computed(() => {
+    const chosen = this.chosen();
+    if (chosen && this.columns().some((m) => m.eventId === chosen)) return chosen;
+    return this.store.nextMatchDay()?.eventId ?? null;
+  });
+
+  protected readonly selected = computed(
+    () => this.store.matchDays().find((m) => m.eventId === this.selectedId()) ?? null,
+  );
+
+  protected readonly hasPlanned = computed(() =>
+    this.store.upcoming().some((m) => !m.cancelled && m.cars.length > 0),
+  );
 
   constructor() {
     effect(() => {
       const team = this.teamId();
       const season = this.saison();
-      untracked(() => void this.load(team, season));
+      untracked(() => {
+        this.chosen.set(null);
+        void this.store.load(team, season);
+      });
     });
-  }
-
-  protected isEditing(eventId: string): boolean {
-    return this.editing().includes(eventId);
-  }
-
-  protected toggleEdit(eventId: string): void {
-    this.editing.update((ids) => (ids.includes(eventId) ? ids.filter((id) => id !== eventId) : [...ids, eventId]));
   }
 
   protected switchTeam(team: string): void {
     void this.router.navigate(['/teams', team, 'fahrerliste']);
   }
 
-  /** «21.11.2026, 14:03» */
-  protected when(iso: string): string {
-    return dateTime(iso);
+  /** «So 10.01.» without the year: the columns stay narrow. */
+  protected shortDay(m: DriverPlanMatchDay): string {
+    return this.store.day(m).replace(/\.\d{4}$/, '.');
   }
 
-  /** Reloads after a change in an opened match day. */
-  protected async refresh(): Promise<void> {
-    try {
-      this.apply(
-        await firstValueFrom(
-          this.http.get<DriverPlan>(`/api/teams/${this.teamId()}/driver-plan`, { params: this.params() }),
-        ),
-      );
-    } catch (e) {
-      this.error.set(errorText(e));
-    }
+  protected select(m: DriverPlanMatchDay): void {
+    this.chosen.set(m.eventId);
   }
 
-  /** «So 22.11. 09:30» */
-  protected label(m: DriverPlanMatchDay): string {
-    return `${eventDate(m.start, this.year())} ${clockTime(m.start)}`;
+  protected carOf(m: DriverPlanMatchDay, personId: string): Car | null {
+    return m.cars.find((car) => car.driver.id === personId) ?? null;
   }
 
-  protected venue(m: DriverPlanMatchDay): string {
-    return [m.venue, m.town].filter(Boolean).join(', ');
+  /** Coaches and admins change every row, members their own (DRV-02). */
+  protected canToggle(m: DriverPlanMatchDay, q: QueueEntry): boolean {
+    return m.changeable && (this.store.canManage() || q.person.id === this.store.meId());
   }
 
-  protected missing(m: DriverPlanMatchDay): string {
-    return m.missing.map((what) => this.t.missing[what]).join(', ');
-  }
-
-  protected passengers(car: Car): string {
-    return car.passengers.map(name).join(', ');
-  }
-
-  /** The chosen driver already has a car on this match day. */
-  protected drives(m: DriverPlanMatchDay): boolean {
-    const driver = this.driver();
-    return m.cars.some((car) => car.driver.id === driver);
-  }
-
-  protected isSelected(eventId: string): boolean {
-    return this.selected().includes(eventId);
-  }
-
-  protected toggle(eventId: string, on: boolean): void {
-    this.selected.update((ids) => (on ? [...ids, eventId] : ids.filter((id) => id !== eventId)));
-    this.selectionError.set(null);
-  }
-
-  protected readonly carSeatOptions = [2, 3, 4, 5, 6, 7, 8, 9];
-
-  /** Seats for passengers the driver usually offers: her places minus herself (DRV-18). */
-  private usualSeats(id: string): string {
-    const places = this.data()?.drivers.find((x) => x.person.id === id)?.carSeats ?? 5;
-    return String(Math.max(1, Math.min(8, places - 1)));
-  }
-
-  /** Coach, admin or the person herself: can drive and the places of the car (DRV-18). */
-  protected async setDriving(x: DriverSetting, canDrive: boolean, carSeats: number): Promise<void> {
-    if (this.busy()) return;
-    this.running.set('driving-' + x.person.id);
-    this.error.set(null);
-    this.success.set(null);
-    try {
-      await firstValueFrom(
-        this.http.put(`/api/persons/${x.person.id}/driving`, { canDrive, carSeats }),
-      );
-      this.apply(
-        await firstValueFrom(
-          this.http.get<DriverPlan>(`/api/teams/${this.teamId()}/driver-plan`, {
-            params: this.params(),
-          }),
-        ),
-      );
-      this.success.set(
-        x.person.id === this.meId()
-          ? TEXTS.driving.saved
-          : TEXTS.driving.savedFor(name(x.person)),
-      );
-    } catch (e) {
-      this.error.set(errorText(e));
-    } finally {
-      this.running.set(null);
-    }
-  }
-
-  protected setDriver(id: string): void {
-    this.driver.set(id);
-    this.seats.set(this.usualSeats(id));
-    // Match days on which the new driver already drives are no longer a choice
-    this.selected.update((ids) =>
-      ids.filter((eventId) => !this.plannable().some((m) => m.eventId === eventId && this.drives(m))),
-    );
-  }
-
-  /** Every match day that has no car yet and on which the chosen driver does not drive. */
-  protected selectWithoutCar(): void {
-    this.selected.set(
-      this.plannable()
-        .filter((m) => m.cars.length === 0 && !this.drives(m))
-        .map((m) => m.eventId),
-    );
-    this.selectionError.set(null);
-  }
-
-  protected params(): Record<string, string> {
-    const season = this.saison();
-    return season ? { season } : {};
-  }
-
-  private async load(team: string, season: string | undefined): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const params: Record<string, string> = season ? { season } : {};
-      this.apply(await firstValueFrom(this.http.get<DriverPlan>(`/api/teams/${team}/driver-plan`, { params })));
-    } catch (e) {
-      this.data.set(null);
-      this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  protected apply(plan: DriverPlan): void {
-    this.data.set(plan);
-    const me = this.meId();
-    const members = plan.members ?? [];
-    if (!this.driver() || (plan.canManage && !members.some((p) => p.id === this.driver()))) {
-      // Coaches plan for anyone of the team; everyone else for themselves
-      this.driver.set(plan.canManage ? (members.find((p) => p.id === me)?.id ?? members[0]?.id ?? '') : (me ?? ''));
-      this.seats.set(this.usualSeats(this.driver()));
-    }
-  }
-
-  protected async enter(domEvent: Event): Promise<void> {
-    domEvent.preventDefault();
-    const plan = this.data();
-    if (!plan || this.busy()) return;
-    const seats = Number(this.seats().trim());
-    this.seatsError.set(/^[1-8]$/.test(this.seats().trim()) ? null : this.t.seatsInvalid);
-    const eventIds = this.selected();
-    this.selectionError.set(eventIds.length === 0 ? this.t.noneSelected : null);
-    if (this.seatsError()) {
-      document.getElementById('plan-seats')?.focus();
+  /**
+   * Takes a driver off. A car with passengers is not removed with one tap: its match day opens below, where
+   * the people can be moved first.
+   */
+  protected async off(m: DriverPlanMatchDay, car: Car): Promise<void> {
+    if (car.passengers.length > 0) {
+      this.select(m);
+      this.store.success.set(null);
+      this.store.error.set(this.b.hasPassengers(name(car.driver), car.passengers.length));
       return;
     }
-    if (this.selectionError()) return;
-    const driverId = this.driver();
-    const who =
-      (plan.members ?? []).find((p) => p.id === driverId) ??
-      plan.shares.find((share) => share.person.id === driverId)?.person;
-    this.success.set(null);
-    this.error.set(null);
-    this.running.set('enter');
-    try {
-      const updated = await firstValueFrom(
-        this.http.post<DriverPlan>(
-          `/api/teams/${this.teamId()}/driver-plan/cars`,
-          { driverId: plan.canManage ? driverId : null, seats, eventIds },
-          { params: this.params() },
-        ),
-      );
-      this.apply(updated);
-      this.selected.set([]);
-      this.success.set(this.t.entered(who ? name(who) : this.t.me, eventIds.length));
-    } catch (e) {
-      const fields = fieldErrorsOf(e);
-      if (fields['seats']) {
-        this.seatsError.set(fields['seats']);
-      } else {
-        this.error.set(fields['eventIds'] ?? errorText(e));
-      }
-    } finally {
-      this.running.set(null);
-    }
-  }
-
-  /** Takes a driver off a match day (DRV-02); her passengers lose their seat and are told (DRV-11). */
-  protected async remove(m: DriverPlanMatchDay, car: Car): Promise<void> {
-    if (this.busy()) return;
-    this.success.set(null);
-    this.error.set(null);
-    this.running.set(`remove:${car.id}`);
-    try {
-      await firstValueFrom(this.http.delete(`/api/events/${m.eventId}/driver-list/cars/${car.id}`));
-      this.apply(
-        await firstValueFrom(
-          this.http.get<DriverPlan>(`/api/teams/${this.teamId()}/driver-plan`, { params: this.params() }),
-        ),
-      );
-      this.success.set(this.t.removed(name(car.driver), this.label(m)));
-    } catch (e) {
-      this.error.set(errorText(e));
-    } finally {
-      this.running.set(null);
-    }
+    await this.store.removeCar(m, car.id, car.driver);
   }
 }
