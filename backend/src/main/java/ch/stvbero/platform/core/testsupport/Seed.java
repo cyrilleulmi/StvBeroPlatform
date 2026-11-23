@@ -334,6 +334,8 @@ public class Seed {
 
     @Inject
     ch.stvbero.platform.core.driver.DriverPlanHistory driverPlanHistory;
+
+    @Inject
     ch.stvbero.platform.core.absence.AbsenceService absences;
 
     /** Sara's holidays (ABS): Mon 14.12.–Sun 20.12.2026, declines the practices of Tue 15.12. and Thu 17.12. */
