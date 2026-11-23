@@ -825,7 +825,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * The series of a team in a season with their upcoming events (TER-18)
+         * @description Everyone who may see the team (otherwise 403). Series with upcoming events come first, then by weekday and
+         *     start. `canEdit` says whether the caller may change the series (coach of a team of the series, admin; not in
+         *     an archived season). Without `team`: 400.
+         */
+        get: operations["listTeamSeries"];
         put?: never;
         /**
          * Create a series; creates the events in the validity period (TER-05, coach)
@@ -858,6 +864,75 @@ export interface paths {
          */
         put: operations["updateSeries"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a change of the series would do to its upcoming events; changes nothing (TER-19, coach)
+         * @description Counts as `updateSeries` would act: upcoming events that take over new details (`adjusted`, only those that
+         *     really change), new events, events that no longer fit and are removed (nobody has responded) or cancelled
+         *     (someone has responded; everyone is notified), and upcoming events changed by hand or cancelled before, which
+         *     stay as they are. Past events never change. Same permissions and validation as `updateSeries`.
+         */
+        post: operations["previewSeriesChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/end/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Which upcoming events ending the series would remove or cancel; changes nothing (TER-20, coach) */
+        post: operations["previewSeriesEnd"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End a series from a day on (TER-20, coach)
+         * @description The planned upcoming events of the series from `from` on are removed, or cancelled («Serie beendet») if
+         *     someone has responded, also events changed by hand; everyone of a cancelled event is notified. Past events
+         *     stay. The series ends the day before `from` (never later than before); ended before it began, it keeps no
+         *     day at all. Archived season: 409.
+         */
+        post: operations["endSeries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3117,6 +3192,63 @@ export interface components {
             attendanceCheck?: boolean;
             /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
             optionalTeamIds?: string[] | null;
+        };
+        /** @description A series of a team with its upcoming events (TER-18) */
+        SeriesOverview: {
+            series: components["schemas"]["Series"];
+            /**
+             * Format: int32
+             * @description Upcoming events of the series that are not cancelled
+             */
+            upcoming: number;
+            /**
+             * Format: date-time
+             * @description Start of the next upcoming event; missing without one
+             */
+            next?: string;
+            /** @description The caller may change the series (coach of a team of the series, admin) */
+            canEdit: boolean;
+        };
+        /** @description What a change would do to the upcoming events, without changing anything (TER-19, TER-20) */
+        SeriesPreview: {
+            /**
+             * Format: int32
+             * @description Upcoming events that take over the new details; responses stay
+             */
+            adjusted: number;
+            /**
+             * Format: int32
+             * @description New events
+             */
+            created: number;
+            /**
+             * Format: int32
+             * @description Upcoming events that no longer fit and are removed (nobody has responded)
+             */
+            removed: number;
+            /**
+             * Format: int32
+             * @description Upcoming events that no longer fit and are cancelled, because someone has responded; everyone is notified
+             */
+            cancelled: number;
+            /**
+             * Format: int32
+             * @description Upcoming events changed by hand or cancelled before: they stay as they are
+             */
+            keptAsTheyAre: number;
+            /**
+             * Format: date
+             * @description First day that changes; missing if nothing changes
+             */
+            from?: string;
+        };
+        /** @description End a series from a day on (TER-20) */
+        SeriesEndInput: {
+            /**
+             * Format: date
+             * @description From this day on the series has no events any more
+             */
+            from: string;
         };
         SeriesException: {
             /** Format: date */
@@ -5850,6 +5982,33 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    listTeamSeries: {
+        parameters: {
+            query: {
+                team: string;
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesOverview"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     createSeries: {
         parameters: {
             query?: never;
@@ -5917,6 +6076,94 @@ export interface operations {
         };
         responses: {
             /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Series"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    previewSeriesChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    previewSeriesEnd: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesEndInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    endSeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesEndInput"];
+            };
+        };
+        responses: {
+            /** @description The series after the change */
             200: {
                 headers: {
                     [name: string]: unknown;

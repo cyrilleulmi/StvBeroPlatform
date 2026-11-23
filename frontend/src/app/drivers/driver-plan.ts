@@ -6,7 +6,7 @@ import { name } from '../core/format';
 import { Icon } from '../core/icon';
 import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
-import { ConfirmDialog } from './simple/confirm-dialog';
+import { ConfirmDialog } from '../core/confirm-dialog';
 import { Fairness } from './simple/fairness';
 import { PlanStore, QueueEntry } from './simple/plan-store';
 import { SeatBoard } from './simple/seat-board';

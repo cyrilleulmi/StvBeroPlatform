@@ -862,6 +862,173 @@ export const TEXTS = {
     notFound: 'Diese Serie gibt es nicht.',
     untilBeforeFrom: 'Das Ende muss nach dem Beginn liegen.',
   },
+  teamWizard: {
+    title: 'Neues Team',
+    intro:
+      'In ein paar Schritten ist das Team bereit: Personen, Trainings, swiss unihockey und Spieltage. Jeder Schritt lässt sich überspringen und später unter «Verwaltung» nachholen.',
+    progress: (n: number, total: number) => `Schritt ${n} von ${total}`,
+    stepsLabel: 'Schritte',
+    back: 'Zurück',
+    next: 'Weiter',
+    skip: 'Überspringen',
+    finish: 'Fertig',
+    steps: {
+      name: 'Name',
+      personen: 'Personen',
+      swissunihockey: 'swiss unihockey',
+      trainings: 'Trainings',
+      spieltage: 'Spieltage',
+      linien: 'Linien',
+      fertig: 'Fertig',
+    } as Record<string, string>,
+    nameTitle: 'Wie heisst das Team?',
+    nameText: 'So erscheint das Team überall in der App, z.B. «Herren KF 4. Liga II» oder «Junioren C».',
+    name: 'Name des Teams',
+    season: 'Saison',
+    create: 'Team erstellen',
+    created: (name: string) => `${name} ist erstellt.`,
+    rename: 'Name speichern',
+    renamed: 'Der Name ist gespeichert.',
+    peopleTitle: 'Wer gehört zum Team?',
+    peopleText:
+      'Nimm die Coaches und die Spielerinnen und Spieler auf. Coaches verwalten Termine, Aufgebote und die Fahrerliste des Teams.',
+    peopleMissing: 'Wer noch nicht in der App ist, erfasst du zuerst als Person.',
+    newPerson: 'Person erfassen',
+    coaches: 'Coaches',
+    players: 'Spielerinnen und Spieler',
+    nobody: 'Noch niemand.',
+    suTitle: 'Mit swiss unihockey verbinden',
+    suText:
+      'Ist das Team bei swiss unihockey gemeldet, kommen Spiele, Spieltage und Tabelle von selbst in die App und bleiben aktuell. Ohne Verknüpfung erfasst ihr die Spieltage von Hand.',
+    trainingsTitle: 'Wann trainiert das Team?',
+    trainingsText:
+      'Eine Serie legt jede Woche zur gleichen Zeit einen Termin an, z.B. jeden Dienstag 18:30–20:00. Mehrere Trainings pro Woche sind mehrere Serien. Ferien trägst du später unter «Termine» → «Überarbeiten» ein.',
+    trainingsNone: 'Noch keine Serie.',
+    matchDaysTitle: 'Spieltage',
+    matchDaysText:
+      'Mit diesen Angaben plant die App den Zeitplan eines Spieltags und schlägt die Abfahrt vor. Die üblichen Werte passen meistens.',
+    variantsTitle: 'Terminvarianten (für Fortgeschrittene)',
+    variantsText:
+      'Wie Trainings, Spieltage und andere Termine im Team aussehen: Farbe, Name, ob es ein Aufgebot gibt, welche Abschnitte ein Termin zeigt.',
+    linesTitle: 'Linien für das Training',
+    linesText:
+      'In den Linien teilst du die Spielerinnen und Spieler ein, z.B. Linie 1, Linie 2, Goalies. Termine und Aufgebote zeigen dann, wer in welcher Linie fehlt.',
+    linesNeedPlayers: 'Nimm zuerst Spielerinnen und Spieler auf, dann lassen sie sich in Linien einteilen.',
+    linesOpen: 'Linien einteilen',
+    linesState: (lined: number, players: number) =>
+      `${lined} von ${players} ${players === 1 ? 'Person ist' : 'Personen sind'} in einer Linie.`,
+    doneTitle: 'Das Team ist bereit',
+    doneText: 'Das ist eingerichtet. Was noch offen ist, holst du jederzeit nach.',
+    checkPeople: (coaches: number, players: number) =>
+      `${coaches} ${coaches === 1 ? 'Coach' : 'Coaches'}, ${players} ${players === 1 ? 'Spielerin oder Spieler' : 'Spielerinnen und Spieler'}`,
+    checkSu: (linked: boolean) => (linked ? 'Mit swiss unihockey verbunden' : 'Nicht mit swiss unihockey verbunden'),
+    checkTrainings: (n: number) => (n === 0 ? 'Keine Trainings-Serie' : n === 1 ? '1 Trainings-Serie' : `${n} Trainings-Serien`),
+    checkMatchDays: (duration: number, lead: number) =>
+      `Spieltage: ${duration} Min. pro Spiel, Ankunft ${lead} Min. vor dem ersten Spiel`,
+    checkLines: (lined: number, players: number) => `${lined} von ${players} in einer Linie`,
+    done: 'erledigt',
+    open: 'offen',
+    toTeam: 'Zum Team',
+    toRework: 'Termine überarbeiten',
+    toAdmin: 'Team verwalten',
+    edit: 'Ändern',
+  },
+  rework: {
+    title: 'Termine überarbeiten',
+    button: 'Überarbeiten',
+    team: 'Team',
+    intro:
+      'Hier passt du die Termine eines Teams an. Änderungen gelten immer nur für kommende Termine: vergangene Termine und ihre Antworten bleiben, wie sie sind.',
+    seriesTitle: 'Trainings und Serien',
+    seriesNone: 'Dieses Team hat keine Serie.',
+    newSeries: 'Neue Serie',
+    singleTitle: 'Nächste Einzeltermine',
+    singleText: 'Spieltage und Termine, die zu keiner Serie gehören. Jeder lässt sich einzeln bearbeiten oder absagen.',
+    singleNone: 'Keine kommenden Einzeltermine.',
+    newEvent: 'Neuer Termin',
+    editEvent: 'Bearbeiten',
+    editEventOf: (title: string, day: string) => `${title} am ${day} bearbeiten`,
+    variantsTitle: 'Terminvarianten',
+    noTeam: 'Du verwaltest kein Team.',
+  },
+  seriesCard: {
+    upcoming: (n: number) => (n === 0 ? 'Keine kommenden Termine' : n === 1 ? '1 kommender Termin' : `${n} kommende Termine`),
+    next: (day: string) => `nächster ${day}`,
+    ended: 'beendet',
+    view: 'Serie ansehen',
+    change: 'Ändern',
+    holidays: 'Ferien eintragen',
+    end: 'Serie beenden',
+    cancel: 'Abbrechen',
+    weekday: 'Wochentag',
+    start: 'Beginn',
+    endTime: 'Ende',
+    location: 'Ort',
+    validUntil: 'Gültig bis',
+    check: 'Auswirkung prüfen',
+    apply: 'Änderungen übernehmen',
+    applied: 'Die Serie ist geändert.',
+    changeHint: 'Vor dem Speichern zeigt die App, was mit den kommenden Terminen passiert.',
+    recheck: 'Du hast etwas geändert: Prüfe die Auswirkung nochmals.',
+    preview: {
+      nothing: 'Für die kommenden Termine ändert sich nichts.',
+      from: (day: string) => `Gilt ab ${day}. Vergangene Termine bleiben, wie sie sind.`,
+      adjusted: (n: number) =>
+        n === 1 ? '1 Termin wird angepasst, die Antworten bleiben.' : `${n} Termine werden angepasst, die Antworten bleiben.`,
+      created: (n: number) => (n === 1 ? '1 Termin kommt neu dazu.' : `${n} Termine kommen neu dazu.`),
+      removed: (n: number) => (n === 1 ? '1 Termin fällt weg.' : `${n} Termine fallen weg.`),
+      cancelled: (n: number) =>
+        n === 1
+          ? 'Achtung: 1 Termin hat schon Antworten und wird abgesagt. Alle bekommen eine Mitteilung.'
+          : `Achtung: ${n} Termine haben schon Antworten und werden abgesagt. Alle bekommen eine Mitteilung.`,
+      kept: (n: number) =>
+        n === 1
+          ? '1 einzeln geänderter oder abgesagter Termin bleibt, wie er ist.'
+          : `${n} einzeln geänderte oder abgesagte Termine bleiben, wie sie sind.`,
+    },
+    holidaysHint:
+      'Kommende Termine in dieser Zeit fallen weg. Hat schon jemand geantwortet, wird der Termin abgesagt, und alle bekommen eine Mitteilung.',
+    holidaysFrom: 'Von',
+    holidaysUntil: 'Bis',
+    holidaysReason: 'Grund, z.B. Herbstferien',
+    holidaysSave: 'Ferien eintragen',
+    holidaysSaved: (reason: string) => `«${reason}» ist eingetragen.`,
+    endHint: 'Ab diesem Tag gibt es keine Termine der Serie mehr. Vergangene Termine bleiben.',
+    endFrom: 'Keine Termine mehr ab',
+    endCheck: 'Weiter',
+    endTitle: 'Serie beenden?',
+    endText: (day: string, removed: number, cancelled: number) =>
+      [
+        `Ab ${day} gibt es keine Termine dieser Serie mehr.`,
+        removed + cancelled === 0
+          ? 'Es fällt kein kommender Termin weg.'
+          : `${removed + cancelled === 1 ? '1 kommender Termin wird' : `${removed + cancelled} kommende Termine werden`} gelöscht.`,
+        cancelled > 0
+          ? `${cancelled === 1 ? '1 davon hat' : `${cancelled} davon haben`} schon Antworten und ${cancelled === 1 ? 'wird' : 'werden'} abgesagt; alle bekommen eine Mitteilung.`
+          : '',
+        'Das lässt sich nicht rückgängig machen.',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    endConfirm: 'Serie beenden',
+    endDone: 'Die Serie ist beendet.',
+    exceptions: (list: string) => `Ausnahmen: ${list}`,
+  },
+  seriesNew: {
+    title: 'Titel',
+    defaultTitle: 'Training',
+    weekday: 'Wochentag',
+    start: 'Beginn',
+    end: 'Ende',
+    location: 'Ort (Halle)',
+    from: 'Ab',
+    until: 'Bis',
+    hint: (weekday: string) =>
+      `Die App legt in dieser Zeit jeden ${weekday} einen Termin an. Eine Serie dauert höchstens ein Jahr.`,
+    save: 'Serie erstellen',
+    created: (title: string, weekday: string) => `${title} am ${weekday} ist erstellt.`,
+    required: 'Bitte ausfüllen.',
+  },
   teams: {
     title: 'Meine Teams',
     empty: 'Du bist noch in keinem Team.',

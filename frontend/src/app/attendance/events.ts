@@ -53,6 +53,16 @@ interface Month {
             data-testid="statistics-link"
             >{{ texts.statistics.link }}</a
           >
+          <!-- Series, single events, match days, swiss unihockey of a team in one place (TER-21) -->
+          <a
+            class="button button-secondary button-small"
+            routerLink="/termine/ueberarbeiten"
+            [queryParams]="{ team: team() || null }"
+            data-testid="rework-link"
+          >
+            <app-icon name="pencil" [size]="16" />
+            {{ texts.rework.button }}
+          </a>
           <a class="button button-primary button-small" routerLink="/termine/neu">{{
             texts.events.create
           }}</a>

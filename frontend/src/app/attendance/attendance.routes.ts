@@ -15,6 +15,11 @@ export const ATTENDANCE_ROUTES: Routes = [
     loadComponent: () => import('./calendar').then((m) => m.CalendarPage),
   },
   {
+    path: 'ueberarbeiten',
+    title: title('Termine überarbeiten'),
+    loadComponent: () => import('./events-rework').then((m) => m.EventsRework),
+  },
+  {
     path: 'neu',
     title: title('Termin erfassen'),
     loadComponent: () => import('./event-form').then((m) => m.EventForm),

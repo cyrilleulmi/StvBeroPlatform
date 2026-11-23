@@ -3,7 +3,7 @@ import type { Car, DriverList, PersonSummary } from '../../api/types';
 import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
-import { ConfirmDialog } from './confirm-dialog';
+import { ConfirmDialog } from '../../core/confirm-dialog';
 import { PlanStore } from './plan-store';
 import { Stepper } from './stepper';
 

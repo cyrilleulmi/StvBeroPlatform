@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, signal, viewChild } from '@angular/core';
-import { TEXTS } from '../../core/texts';
+import { TEXTS } from './texts';
 
 /** What the dialog asks, and what happens on «yes». */
 export interface Confirmation {

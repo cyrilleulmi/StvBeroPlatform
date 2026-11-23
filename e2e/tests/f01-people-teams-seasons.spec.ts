@@ -194,7 +194,7 @@ test('F-01 K7 S16 SAI-02: Archive is visible read-only', async ({ page }) => {
 
   await expect(page).toHaveURL(`/verwaltung/teams?saison=${SEASON_2025}`);
   await expect(page.getByTestId('archive-notice')).toHaveText('Saison 2025/26 im Archiv: nur lesend.');
-  await expect(page.getByRole('button', { name: 'Team anlegen' })).toHaveCount(0);
+  await expect(page.getByTestId('team-wizard-link')).toHaveCount(0);
   await page.getByRole('link', { name: 'Team 1' }).click();
 
   await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_1}?saison=${SEASON_2025}`);
@@ -271,15 +271,17 @@ test('F-01 K2 PTF-11: Double click on Speichern creates the person only once', a
   expect(posts.count).toBe(1);
 });
 
-test('F-01 K3: Double click on Team anlegen creates the team only once', async ({ page }) => {
+test('F-01 K3 PTF-14: Double click on Team erstellen creates the team only once', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung/teams');
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveCount(3);
   const posts = countPosts(page, /^\/api\/teams$/);
-  await page.getByLabel('Name des neuen Teams').fill('Team 4');
-  await page.getByRole('button', { name: 'Team anlegen' }).dblclick();
+  await page.getByTestId('team-wizard-link').click();
+  await page.getByLabel('Name des Teams').fill('Team 4');
+  await page.getByRole('button', { name: 'Team erstellen' }).dblclick();
 
-  await expect(page.getByRole('status')).toHaveText(/Team 4/);
+  await expect(page).toHaveURL(/schritt=personen/);
+  await page.goto('/verwaltung/teams');
   await expect(page.getByRole('list', { name: 'Teams' }).getByRole('link')).toHaveText([
     'Team 1',
     'Team 2',
