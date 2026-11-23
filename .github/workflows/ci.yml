@@ -4,7 +4,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -78,3 +78,11 @@ jobs:
 
       - name: Build image (profile preview)
         run: docker build --build-arg PROFILE=preview -t stvbero:ci .
+
+  deploy-test:
+    name: Test environment
+    # After a green run on develop: deploy the test environment on Fly.io (E-91, docs/deployment.md)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    needs: [build-and-tests, container]
+    uses: ./.github/workflows/deploy-test.yml
+    secrets: inherit

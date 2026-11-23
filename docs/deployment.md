@@ -4,7 +4,7 @@ The platform runs as hosted **test environments** on [Fly.io](https://fly.io) (E
 
 | Environment | Address | Deployed |
 |---|---|---|
-| Test environment | `https://<FLY_APP>.fly.dev` (default `stvbero`) | after every green CI run on `develop` (`.github/workflows/deploy-test.yml`) |
+| Test environment | `https://<FLY_APP>.fly.dev` (default `stvbero`) | after every green CI run on a push to `develop` (job «Test environment» in `ci.yml`, which calls `.github/workflows/deploy-test.yml`) |
 | Preview of a pull request | `https://<FLY_APP>-pr-<nr>.fly.dev` | on every push to the pull request, link as a comment in the pull request; destroyed when it is closed (`.github/workflows/preview.yml`, nightly safety net `preview-cleanup.yml`) |
 
 Both run the image built with profile `preview` ([Dockerfile](../Dockerfile), [fly.toml](../fly.toml)):
@@ -31,11 +31,11 @@ Until the secret exists, the three workflows do nothing and only leave a notice.
    | Variable (optional) | `FLY_APP` | app name if `stvbero` is taken on Fly.io (names are global) |
    | Variable (optional) | `FLY_ORG` | Fly.io organization, default `personal` |
 
-3. **First deploy:** after the merge into `develop`, Actions → «Test environment» → «Run workflow» (or wait for the next merge). The script creates the Fly app if it does not exist yet.
+3. **First deploy:** happens with the merge into `develop`. The script creates the Fly app if it does not exist yet.
 
 ## Operation
 
-- Deploy the test environment by hand: Actions → «Test environment» → «Run workflow».
+- Deploy the test environment again: re-run the CI run of the last push to `develop`. «Run workflow» on «Test environment» and the nightly «Preview cleanup» only appear in GitHub once the workflows are on the default branch `main` (GitHub runs manual and scheduled workflows from there).
 - A preview is missing or broken: push again, or close and reopen the pull request.
 - Logs: `fly logs --app <app>`. Status: `fly status --app <app>`.
 - Locally without Docker the app runs as before with `scripts/start.sh`. With Docker: `docker build --build-arg PROFILE=preview -t stvbero . && docker run -p 8080:8080 -e STV_SESSION_COOKIE_SECURE=false stvbero`, then http://localhost:8080/dev-login (the cookie flag only for plain HTTP on localhost).
