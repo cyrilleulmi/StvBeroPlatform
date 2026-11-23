@@ -70,13 +70,21 @@ public final class ResponseRules {
         }
     }
 
-    /** «vielleicht» requires a comment (ANM-04). For «nicht dabei» it is optional (ANM-05). */
-    public static void checkComment(ResponseStatus status, String comment) {
+    public static final String REASON_REQUIRED = "Bitte gib einen Grund an.";
+
+    /**
+     * «vielleicht» requires a comment (ANM-04). For «nicht dabei» the reason is optional, unless the event variant
+     * requires one (ANM-05, VAR-12).
+     */
+    public static void checkComment(ResponseStatus status, String comment, boolean declineReasonRequired) {
         if (status == ResponseStatus.PENDING) {
             throw DomainError.invalidField("status", "Die Antwort ist «dabei», «nicht dabei» oder «vielleicht».");
         }
         if (status == ResponseStatus.MAYBE && EventRules.blankToNull(comment) == null) {
             throw DomainError.ruleViolation("comment", "Kommentar fehlt", COMMENT_REQUIRED, "ANM-04");
+        }
+        if (status == ResponseStatus.DECLINED && declineReasonRequired && EventRules.blankToNull(comment) == null) {
+            throw DomainError.ruleViolation("comment", "Grund fehlt", REASON_REQUIRED, "ANM-05");
         }
     }
 

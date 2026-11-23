@@ -108,6 +108,9 @@ public class EventVariantService {
         if (input.attendanceCheck() != null) {
             variant.attendanceCheck = input.attendanceCheck();
         }
+        if (input.declineReasonRequired() != null) {
+            variant.declineReasonRequired = input.declineReasonRequired();
+        }
         if (input.sections() != null || created) {
             variant.sections = VariantRules.joinSections(VariantRules.checkSections(variant.eventType, input.sections()));
         }

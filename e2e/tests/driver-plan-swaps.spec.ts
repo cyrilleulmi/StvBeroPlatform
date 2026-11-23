@@ -3,7 +3,7 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
  * E-91 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-24). Swaps, other
- * trips and the history (DRV-25 to DRV-28) have no page since E-92; their API is tested in the backend. Seed from
+ * trips and the history (DRV-25 to DRV-28) have no page since E-96; their API is tested in the backend. Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Team 1 is linked with swiss unihockey (900001), Team 2 is not. Default "now": Mon 16.11.2026 06:00.
  */

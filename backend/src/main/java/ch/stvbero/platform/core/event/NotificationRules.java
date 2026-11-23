@@ -122,6 +122,17 @@ public final class NotificationRules {
                 : person + " hat sich kurzfristig für " + event + " abgemeldet.";
     }
 
+    /** The reason or comment of a response, for the coaches and those with a special permission (ANM-05, ANM-07). */
+    public static String withReason(String text, String comment) {
+        return comment == null || comment.isBlank() ? text : text + " Grund: «" + comment.strip() + "»";
+    }
+
+    /** Special permission given (BEN-08, RR-14). */
+    public static String grantedText(String event) {
+        return "Du hast eine Sonderberechtigung für " + event
+                + ": Du kannst den Termin bearbeiten, absagen, für andere antworten und die Gründe sehen.";
+    }
+
     public static String calledUpDeclinedText(String person, String event, ResponseStatus newStatus) {
         return newStatus == ResponseStatus.MAYBE
                 ? person + " ist für " + event + " aufgeboten und jetzt nur «vielleicht» dabei."

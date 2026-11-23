@@ -24,24 +24,35 @@ class ResponseRulesTest {
 
     @Test
     void anm04MaybeRequiresComment() {
-        DomainError error = assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, null));
+        DomainError error = assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, null, false));
         assertEquals(422, error.status());
         assertEquals("ANM-04", error.rule());
         assertEquals("comment", error.toProblem().fields().get(0).field());
-        assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, "   "));
-        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.MAYBE, "Komme später"));
+        assertThrows(DomainError.class, () -> ResponseRules.checkComment(ResponseStatus.MAYBE, "   ", false));
+        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.MAYBE, "Komme später", false));
     }
 
     @Test
     void anm05DeclineWithoutReasonIsAllowed() {
-        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.DECLINED, null));
-        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.ATTENDING, null));
+        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.DECLINED, null, false));
+        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.ATTENDING, null, false));
+    }
+
+    @Test
+    void anm05DeclineNeedsReasonWhenTheVariantRequiresIt() {
+        DomainError error = assertThrows(DomainError.class,
+                () -> ResponseRules.checkComment(ResponseStatus.DECLINED, "  ", true));
+        assertEquals(422, error.status());
+        assertEquals("ANM-05", error.rule());
+        assertEquals("comment", error.toProblem().fields().get(0).field());
+        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.DECLINED, "Krank", true));
+        assertDoesNotThrow(() -> ResponseRules.checkComment(ResponseStatus.ATTENDING, null, true));
     }
 
     @Test
     void anm06PendingIsNoResponse() {
         assertEquals(400, assertThrows(DomainError.class,
-                () -> ResponseRules.checkComment(ResponseStatus.PENDING, null)).status());
+                () -> ResponseRules.checkComment(ResponseStatus.PENDING, null, false)).status());
     }
 
     @Test

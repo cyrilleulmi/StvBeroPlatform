@@ -136,6 +136,14 @@ public class EventService {
         Instant start = input.start().toInstant();
         Instant end = input.end().toInstant();
         Set<Team> teams = teams(input.teamIds());
+        if (user.eventGrant()) {
+            // A special permission does not reach the teams of the event (RR-11)
+            Set<UUID> optional = new java.util.HashSet<>(input.optionalTeamIds() == null ? List.of() : input.optionalTeamIds());
+            if (!teams.equals(event.teams) || !optional.equals(event.optionalTeamIds)) {
+                throw DomainError.ruleViolation("teamIds", "Teams unverändert",
+                        "Die Teams eines Termins ändern nur Coaches.", "RR-11");
+            }
+        }
         Season season = seasonOn(EventRules.date(start), event.season);
         // After the change, the person must still be coach of a participating team.
         EventRules.checkCanCreate(user.allTeams(), teamRoles(user, teams, season));

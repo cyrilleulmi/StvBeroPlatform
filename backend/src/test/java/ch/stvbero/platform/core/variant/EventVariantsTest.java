@@ -256,4 +256,39 @@ class EventVariantsTest {
         variants(anna, UUID.randomUUID().toString()).statusCode(404);
         update(login("petra"), TEAM_2, practice, "{\"name\":\"Training\",\"color\":\"RED\"}").statusCode(404);
     }
+
+    // ------------------------------------------------------------------ VAR-12: reason with «nicht dabei»
+
+    @Test
+    void var12DeclineReasonRequiredBySetting() {
+        String petra = login("petra");
+        String anna = login("anna");
+        String annaId = "20000000-0000-4000-8000-000000000005";
+        // Default off: «nicht dabei» without a reason works (ANM-05)
+        variants(anna, TEAM_1).body("[0].declineReasonRequired", equalTo(false));
+        respond(anna, T01, annaId, "{\"status\":\"DECLINED\"}").statusCode(200);
+        respond(anna, T01, annaId, "{\"status\":\"ATTENDING\"}").statusCode(200);
+
+        // Coach switches it on for «Training» of Team 1; event 01 (Team 1 + Team 2) uses the variants of Team 1
+        update(petra, TEAM_1, standard(TEAM_1, VariantKind.PRACTICE),
+                "{\"name\":\"Training\",\"color\":\"GREEN\",\"declineReasonRequired\":true}")
+                .statusCode(200).body("declineReasonRequired", equalTo(true));
+        event(anna, T01).statusCode(200).body("variant.declineReasonRequired", equalTo(true));
+
+        respond(anna, T01, annaId, "{\"status\":\"DECLINED\",\"comment\":\"  \"}").statusCode(422)
+                .body("rule", equalTo("ANM-05")).body("fields[0].field", equalTo("comment"))
+                .body("fields[0].message", equalTo("Bitte gib einen Grund an."));
+        respond(anna, T01, annaId, "{\"status\":\"DECLINED\",\"comment\":\"Krank\"}").statusCode(200);
+        // Also on behalf of someone
+        respond(petra, T01, annaId, "{\"status\":\"DECLINED\"}").statusCode(422);
+        // «dabei» never needs a reason
+        respond(anna, T01, annaId, "{\"status\":\"ATTENDING\"}").statusCode(200);
+        // Other variants stay without the rule: match day 04
+        respond(anna, T04, annaId, "{\"status\":\"DECLINED\"}").statusCode(200);
+    }
+
+    private static ValidatableResponse respond(String session, String event, String person, String body) {
+        return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body)
+                .put("/api/events/" + event + "/responses/" + person).then();
+    }
 }

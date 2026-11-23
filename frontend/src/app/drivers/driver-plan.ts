@@ -14,7 +14,7 @@ import { Stepper } from './simple/stepper';
 
 /**
  * Driver list of a team (`/teams/:teamId/fahrerliste`): the season as a grid, people down and match days across
- * (E-92). The rows show the places of each car, the columns the distance, the column on the right how often and how
+ * (E-96). The rows show the places of each car, the columns the distance, the column on the right how often and how
  * far each person drives (DRV-17). A tap on a cell says «drives» or «does not drive»; a driver with passengers is
  * taken off only after a question. «Fair verteilen» shows a proposal for the trips that are missing, which is entered
  * with «Vorschlag übernehmen» and then stays (DRV-30); «Alle entfernen» takes every planned driver off (DRV-33). A tap

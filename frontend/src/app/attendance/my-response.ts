@@ -21,7 +21,8 @@ type Choice = ResponseInput['status'];
 /**
  * Response buttons of the logged-in person (`my-response`): «dabei» and «nicht dabei» with one tap
  * (ANM-08), «nicht dabei» then offers an optional reason (ANM-05), «vielleicht» requires a
- * comment (ANM-04). Disabled for cancelled or past events, with an explanation (TER-06).
+ * comment (ANM-04). If the event variant requires a reason (VAR-12), «nicht dabei» asks for it first
+ * and is only saved with one. Disabled for cancelled or past events, with an explanation (TER-06).
  */
 @Component({
   selector: 'app-my-response',
@@ -149,9 +150,13 @@ type Choice = ResponseInput['status'];
     >
       <form class="form" (submit)="saveReason($event)" novalidate>
         <h2 [id]="id('reason-title')">{{ texts.declinedTitle }}</h2>
-        <p class="secondary-text" [id]="id('reason-text')">{{ texts.declinedText }}</p>
+        <p class="secondary-text" [id]="id('reason-text')">
+          {{ reasonRequired() ? texts.declinedTextRequired : texts.declinedText }}
+        </p>
         <div class="field">
-          <label [for]="id('reason')">{{ texts.reason }}</label>
+          <label [for]="id('reason')">{{
+            reasonRequired() ? texts.reasonRequiredLabel : texts.reason
+          }}</label>
           <input
             [name]="id('reason')"
             #reasonField
@@ -175,7 +180,7 @@ type Choice = ResponseInput['status'];
             [disabled]="running() !== null"
             [attr.aria-busy]="running() === 'DECLINED' ? 'true' : null"
           >
-            {{ texts.saveReason }}
+            {{ reasonRequired() ? texts.declineWithReason : texts.saveReason }}
           </button>
           <button
             type="button"
@@ -183,7 +188,7 @@ type Choice = ResponseInput['status'];
             [disabled]="running() !== null"
             (click)="close(reasonDialog)"
           >
-            {{ texts.skip }}
+            {{ reasonRequired() ? texts.cancel : texts.skip }}
           </button>
         </div>
       </form>
@@ -208,6 +213,8 @@ export class MyResponse {
   readonly details = input(false);
   /** Match day: offer «Ich reise individuell an» with «dabei» (ANM-13). */
   readonly travel = input(false);
+  /** The event variant requires a reason with «nicht dabei» (VAR-12, ANM-05). */
+  readonly reasonRequired = input(false);
   protected readonly travelTexts = TEXTS.individual;
 
   /** After every save, so that the page reloads counters and overview. */
@@ -238,8 +245,9 @@ export class MyResponse {
       this.open(this.maybeDialog());
       return;
     }
-    if (w === 'DECLINED' && previous.status === 'DECLINED') {
-      this.comment.set(previous.comment ?? '');
+    if (w === 'DECLINED' && (previous.status === 'DECLINED' || this.reasonRequired())) {
+      // With a required reason nothing is saved before the reason is there (VAR-12)
+      this.comment.set(previous.status === 'DECLINED' ? (previous.comment ?? '') : '');
       this.open(this.reasonDialog());
       return;
     }
@@ -270,7 +278,14 @@ export class MyResponse {
   protected async saveReason(domEvent: Event): Promise<void> {
     domEvent.preventDefault();
     const comment = this.comment().trim();
-    if (await this.save({ status: 'DECLINED', comment: comment || null }, true)) {
+    if (this.reasonRequired() && !comment) {
+      this.commentError.set(TEXTS.response.reasonRequired);
+      this.focus('reason');
+      return;
+    }
+    // With a required reason the response itself is saved here: «Antwort gespeichert» instead of «Grund gespeichert»
+    const reasonOnly = !this.reasonRequired() || this.current().status === 'DECLINED';
+    if (await this.save({ status: 'DECLINED', comment: comment || null }, reasonOnly)) {
       this.reasonDialog()?.nativeElement.close();
     } else {
       this.focus('reason');

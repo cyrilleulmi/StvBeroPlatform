@@ -233,6 +233,7 @@ interface Month {
                     class="card-response"
                     [eventId]="t.id"
                     [response]="t.myResponse"
+                    [reasonRequired]="!!t.variant?.declineReasonRequired"
                     [name]="texts.response.myResponseFor(cardName(t))"
                     [locked]="t.status === 'CANCELLED' ? texts.response.cancelled : null"
                     (changed)="reload(t.id)"
