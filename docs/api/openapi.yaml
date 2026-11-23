@@ -1189,6 +1189,31 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
 
   /api/series:
+    get:
+      tags: [Events]
+      operationId: listTeamSeries
+      summary: The series of a team in a season with their upcoming events (TER-18)
+      description: |
+        Everyone who may see the team (otherwise 403). Series with upcoming events come first, then by weekday and
+        start. `canEdit` says whether the caller may change the series (coach of a team of the series, admin; not in
+        an archived season). Without `team`: 400.
+      parameters:
+        - name: team
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SeriesOverview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [Events]
       operationId: createSeries
@@ -1241,6 +1266,80 @@ paths:
       responses:
         '200':
           description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Series' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/series/{seriesId}/preview:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: previewSeriesChange
+      summary: What a change of the series would do to its upcoming events; changes nothing (TER-19, coach)
+      description: |
+        Counts as `updateSeries` would act: upcoming events that take over new details (`adjusted`, only those that
+        really change), new events, events that no longer fit and are removed (nobody has responded) or cancelled
+        (someone has responded; everyone is notified), and upcoming events changed by hand or cancelled before, which
+        stay as they are. Past events never change. Same permissions and validation as `updateSeries`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeriesPreview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/series/{seriesId}/end/preview:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: previewSeriesEnd
+      summary: Which upcoming events ending the series would remove or cancel; changes nothing (TER-20, coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesEndInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeriesPreview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/series/{seriesId}/end:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: endSeries
+      summary: End a series from a day on (TER-20, coach)
+      description: |
+        The planned upcoming events of the series from `from` on are removed, or cancelled («Serie beendet») if
+        someone has responded, also events changed by hand; everyone of a cancelled event is notified. Past events
+        stay. The series ends the day before `from` (never later than before); ended before it began, it keeps no
+        day at all. Archived season: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesEndInput' }
+      responses:
+        '200':
+          description: The series after the change
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Series' }
@@ -3905,6 +4004,32 @@ components:
             Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
             they like, are not reminded and do not count as «offen». At least one team stays expected (400)
           items: { type: string, format: uuid }
+    SeriesOverview:
+      type: object
+      description: A series of a team with its upcoming events (TER-18)
+      required: [series, upcoming, canEdit]
+      properties:
+        series: { $ref: '#/components/schemas/Series' }
+        upcoming: { type: integer, format: int32, description: Upcoming events of the series that are not cancelled }
+        next: { type: string, format: date-time, description: Start of the next upcoming event; missing without one }
+        canEdit: { type: boolean, description: 'The caller may change the series (coach of a team of the series, admin)' }
+    SeriesPreview:
+      type: object
+      description: What a change would do to the upcoming events, without changing anything (TER-19, TER-20)
+      required: [adjusted, created, removed, cancelled, keptAsTheyAre]
+      properties:
+        adjusted: { type: integer, format: int32, description: Upcoming events that take over the new details; responses stay }
+        created: { type: integer, format: int32, description: New events }
+        removed: { type: integer, format: int32, description: Upcoming events that no longer fit and are removed (nobody has responded) }
+        cancelled: { type: integer, format: int32, description: 'Upcoming events that no longer fit and are cancelled, because someone has responded; everyone is notified' }
+        keptAsTheyAre: { type: integer, format: int32, description: 'Upcoming events changed by hand or cancelled before: they stay as they are' }
+        from: { type: string, format: date, description: First day that changes; missing if nothing changes }
+    SeriesEndInput:
+      type: object
+      description: End a series from a day on (TER-20)
+      required: [from]
+      properties:
+        from: { type: string, format: date, description: From this day on the series has no events any more }
     SeriesException:
       type: object
       required: [startDate, endDate, reason]

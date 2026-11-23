@@ -59,19 +59,19 @@ for (const t of THEMES) {
   });
 }
 
-test('NF-08: A stored theme that no longer exists falls back to «System»', async ({ page }) => {
+test('NF-08 E-98: A stored theme that no longer exists falls back to «Hell»', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await login(page, 'anna');
   await page.goto('/profil');
   await page.evaluate(() => localStorage.setItem('stv-theme', 'dunkel'));
   await page.reload();
 
-  await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System', exact: true })).toBeChecked();
-  await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
+  await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell', exact: true })).toBeChecked();
+  await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
 });
 
-test('NF-40 E-68 E-90: An old stored theme (hell, duene, dune, github-dark) loads the app with «System» and no console errors', async ({ page }) => {
-  // No migration (E-68): old values from before F-11 fall back to «System».
+test('NF-40 E-68 E-90: An old stored theme (hell, duene, dune, github-dark) loads the app with «Hell» and no console errors', async ({ page }) => {
+  // No migration (E-68): old values from before F-11 fall back to «Hell» (E-98).
   // The console check of the `test` fixture fails the test on any console error.
   await page.emulateMedia({ colorScheme: 'light' });
   await login(page, 'anna');
@@ -81,12 +81,12 @@ test('NF-40 E-68 E-90: An old stored theme (hell, duene, dune, github-dark) load
     await page.evaluate((value) => localStorage.setItem('stv-theme', value), oldValue);
     await page.reload();
 
-    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System', exact: true })).toBeChecked();
-    await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
+    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell', exact: true })).toBeChecked();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
 
     await page.goto('/');
     await expect(page.getByTestId('tile-anwesenheit')).toBeVisible();
-    await expect(documentRoot(page)).not.toHaveAttribute('data-theme', /.*/);
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
     await page.goto('/profil');
   }
 });

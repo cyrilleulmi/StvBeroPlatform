@@ -141,6 +141,154 @@ public class SeriesService {
         return SeriesDto.of(s, user);
     }
 
+    // ------------------------------------------------------------------ Reworking (TER-18 to TER-20)
+
+    /** Reason used to cancel an event when its series is ended. */
+    static final String REASON_SERIES_ENDED = "Serie beendet";
+
+    /**
+     * The series of a team in a season, with their upcoming events (TER-18): series that still run first, then by
+     * weekday and start. Everyone who may see the team.
+     */
+    @Transactional
+    public List<SeriesPlanDto.Overview> ofTeam(CurrentUser user, UUID teamId, UUID seasonId) {
+        Team team = Team.<Team>findByIdOptional(teamId)
+                .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es nicht."));
+        Season season = Season.orCurrent(seasonId);
+        EventRules.checkCanView(user.allTeams(), EventService.teamRoles(user, Set.of(team), season));
+        Instant now = clock.now();
+        List<Series> list = Series.list("select distinct s from Series s join s.teams t where t.id = ?1 and s.season.id = ?2",
+                team.id, season.id);
+        return list.stream()
+                .map(s -> {
+                    List<Event> upcoming = events(s).stream()
+                            .filter(e -> e.start.isAfter(now) && e.status != EventStatus.CANCELLED).toList();
+                    boolean canEdit = !s.season.isArchived()
+                            && EventRules.canEdit(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+                    return new SeriesPlanDto.Overview(SeriesDto.of(s, user), upcoming.size(),
+                            upcoming.isEmpty() ? null : upcoming.get(0).start.atZone(BackendClock.ZONE).toOffsetDateTime(),
+                            canEdit);
+                })
+                .sorted(java.util.Comparator.comparing((SeriesPlanDto.Overview o) -> o.upcoming() == 0)
+                        .thenComparing(o -> o.series().weekday())
+                        .thenComparing(o -> o.series().startTime()))
+                .toList();
+    }
+
+    /** What {@link #update} would do to the upcoming events; changes nothing (TER-19). */
+    @Transactional
+    public SeriesPlanDto.Preview preview(CurrentUser user, UUID seriesId, SeriesInput input) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        Set<Team> teams = EventService.teams(input.teamIds());
+        checkInput(input, teams, s.season);
+        Instant now = clock.now();
+        Map<LocalDate, Event> all = new HashMap<>();
+        Map<LocalDate, EventRules.Existing> future = new HashMap<>();
+        int kept = 0;
+        for (Event event : events(s)) {
+            all.put(event.seriesDate, event);
+            if (event.start.isAfter(now)) {
+                boolean planned = event.status == EventStatus.PLANNED;
+                future.put(event.seriesDate, new EventRules.Existing(planned, event.individuallyChanged));
+                if (!planned || event.individuallyChanged) {
+                    kept++;
+                }
+            }
+        }
+        java.time.LocalTime start = EventRules.time(input.startTime());
+        List<LocalDate> target = EventRules.dates(input.weekday().day, input.validFrom(), input.validUntil(),
+                        s.exceptionPeriods()).stream()
+                .filter(day -> EventRules.instant(day, start).isAfter(now))
+                .filter(day -> !all.containsKey(day) || future.containsKey(day))
+                .toList();
+        EventRules.SeriesSync sync = EventRules.syncSeries(future, target);
+        int adjusted = (int) sync.apply().stream().filter(day -> changes(all.get(day), s, input, teams, day)).count();
+        int cancelled = (int) sync.drop().stream().filter(day -> hasResponses(all.get(day))).count();
+        java.util.TreeSet<LocalDate> touched = new java.util.TreeSet<>(sync.create());
+        touched.addAll(sync.drop());
+        sync.apply().stream().filter(day -> changes(all.get(day), s, input, teams, day)).forEach(touched::add);
+        return new SeriesPlanDto.Preview(adjusted, sync.create().size(), sync.drop().size() - cancelled, cancelled,
+                kept, touched.isEmpty() ? null : touched.first());
+    }
+
+    /** What {@link #end} would do; changes nothing (TER-20). */
+    @Transactional
+    public SeriesPlanDto.Preview previewEnd(CurrentUser user, UUID seriesId, LocalDate from) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        List<Event> gone = ending(s, from);
+        int cancelled = (int) gone.stream().filter(this::hasResponses).count();
+        return new SeriesPlanDto.Preview(0, 0, gone.size() - cancelled, cancelled, 0,
+                gone.isEmpty() ? null : gone.get(0).seriesDate);
+    }
+
+    /**
+     * Ends a series from a day on (TER-20): its upcoming events from that day on are removed, or cancelled («Serie
+     * beendet») if someone has responded; also events changed by hand. Past events stay. The series keeps its
+     * history and ends the day before.
+     */
+    @Transactional
+    public SeriesDto end(CurrentUser user, UUID seriesId, LocalDate from) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        s.season.checkWritable();
+        for (Event event : ending(s, from)) {
+            drop(user, event, REASON_SERIES_ENDED);
+        }
+        LocalDate until = from.minusDays(1);
+        if (!until.isBefore(s.validFrom)) {
+            // Never longer than before
+            if (until.isBefore(s.validUntil)) {
+                s.validUntil = until;
+            }
+            return SeriesDto.of(s, user);
+        }
+        // Ended before it began: no day of the series is left. The shortest period plus an exception on its
+        // only day keep the series valid without any date
+        s.validUntil = s.validFrom;
+        SeriesException none = new SeriesException();
+        none.id = UUID.randomUUID();
+        none.series = s;
+        none.startDate = s.validFrom;
+        none.endDate = s.validFrom;
+        none.reason = REASON_SERIES_ENDED;
+        s.exceptions.add(none);
+        return SeriesDto.of(s, user);
+    }
+
+    /** Upcoming events of the series on or after {@code from} that are still planned. */
+    private List<Event> ending(Series s, LocalDate from) {
+        Instant now = clock.now();
+        return events(s).stream()
+                .filter(e -> e.status == EventStatus.PLANNED && e.start.isAfter(now)
+                        && !EventRules.date(e.start).isBefore(from))
+                .toList();
+    }
+
+    private boolean hasResponses(Event event) {
+        Number count = (Number) em.createNativeQuery(
+                        "select count(*) from response where event_id = ?1 and absence_id is null")
+                .setParameter(1, event.id).getSingleResult();
+        return count.longValue() > 0;
+    }
+
+    /** The event would look different after the change. */
+    private static boolean changes(Event event, Series s, SeriesInput input, Set<Team> teams, LocalDate day) {
+        if (event == null) {
+            return true;
+        }
+        Location location = Location.of(input.location());
+        return !event.start.equals(EventRules.instant(day, EventRules.time(input.startTime())))
+                || !event.end.equals(EventRules.instant(day, EventRules.time(input.endTime())))
+                || !java.util.Objects.equals(event.title, input.title().strip())
+                || !java.util.Objects.equals(event.location == null ? null : event.location.dto(),
+                        location == null ? null : location.dto())
+                || !event.teams.equals(teams)
+                || event.responseDeadlineHours != EventRules.responseDeadline(input.responseDeadlineHours())
+                || (input.attendanceCheck() != null && event.attendanceCheck != input.attendanceCheck());
+    }
+
     private static Series find(UUID id) {
         return Series.<Series>findByIdOptional(id)
                 .orElseThrow(() -> DomainError.notFound("Diese Serie gibt es nicht."));
