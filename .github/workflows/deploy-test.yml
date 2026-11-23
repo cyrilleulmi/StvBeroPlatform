@@ -1,0 +1,51 @@
+# Test environment of develop on Fly.io (E-91): deploys after every green CI run on develop.
+# Does nothing until the hosting is set up (docs/deployment.md).
+name: Test environment
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: ${{ vars.FLY_APP }}
+      FLY_ORG: ${{ vars.FLY_ORG }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - id: config
+        run: scripts/deploy.sh check >> "$GITHUB_OUTPUT"
+
+      - if: steps.config.outputs.configured != 'true'
+        run: echo "::notice::Hosting is not set up yet, nothing deployed. See docs/deployment.md."
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - if: steps.config.outputs.configured == 'true'
+        id: deploy
+        run: scripts/deploy.sh test
+
+      - if: failure() && steps.config.outputs.configured == 'true'
+        name: Diagnose Fly.io access
+        run: scripts/deploy.sh diagnose
+
+      - if: steps.config.outputs.configured == 'true'
+        run: echo "### Test environment ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

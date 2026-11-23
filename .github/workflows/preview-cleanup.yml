@@ -1,0 +1,33 @@
+# Nightly safety net for the previews (E-91): destroys the preview app of every closed pull request,
+# in case the run on closing failed or was skipped. Does nothing until the hosting is set up.
+name: Preview cleanup
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: ${{ vars.FLY_APP }}
+      FLY_ORG: ${{ vars.FLY_ORG }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: config
+        run: scripts/deploy.sh check >> "$GITHUB_OUTPUT"
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - if: steps.config.outputs.configured == 'true'
+        run: scripts/deploy.sh cleanup
