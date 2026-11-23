@@ -89,6 +89,20 @@ class NotificationChannelsTest {
                 .filter(d -> channel.equals(d.get("channel"))).toList();
     }
 
+    /**
+     * The first attempt runs after the commit in the background. Waits for it, so that a following change does not
+     * race with it (at most 5 seconds).
+     */
+    private static void awaitFirstPushAttempt() throws InterruptedException {
+        for (int i = 0; i < 50; i++) {
+            List<Map<String, Object>> pushes = deliveries(created("EVENT_CANCELLED"), "PUSH");
+            if (!pushes.isEmpty() && ((Number) pushes.getFirst().get("attempts")).intValue() > 0) {
+                return;
+            }
+            Thread.sleep(100);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> of(List<Map<String, Object>> notifications, String personId) {
         return notifications.stream()
@@ -375,9 +389,10 @@ class NotificationChannelsTest {
     }
 
     @Test
-    void removedDeviceGetsNoPendingPush() {
+    void removedDeviceGetsNoPendingPush() throws InterruptedException {
         deliveryMode("{\"failing\":[\"PUSH\"]}");
         cancelT01();
+        awaitFirstPushAttempt();
         given().cookie("stv_session", login("lea")).delete("/api/me/push-subscriptions/" + LEA_PHONE).then().statusCode(204);
         deliveryMode("{}");
         clock("2026-11-16T06:01:00+01:00");
