@@ -25,6 +25,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/absences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own absences that are not over yet (ABS-06) */
+        get: operations["listMyAbsences"];
+        put?: never;
+        /**
+         * Enter an absence; upcoming practices in this time are declined (ABS-01 to ABS-03)
+         * @description Every upcoming practice of the person's teams that touches a day of the absence gets «nicht dabei» with
+         *     the reason as comment («Abwesend: Ferien · Skiferien»). An own «nicht dabei» stays; «dabei» and
+         *     «vielleicht» are replaced. Other events (match days, other events) are not changed. No notification.
+         */
+        post: operations["createMyAbsence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/absences/{absenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change an own absence; the responses follow (ABS-05)
+         * @description Practices no longer covered are «offen» again if the absence had declined them. Practices covered newly
+         *     are declined like for a new absence. A response the person gave by hand after the absence stays.
+         */
+        put: operations["updateMyAbsence"];
+        post?: never;
+        /** Delete an own absence; upcoming practices it declined are pending again (ABS-05) */
+        delete: operations["deleteMyAbsence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/calendar": {
         parameters: {
             query?: never;
@@ -615,6 +662,29 @@ export interface paths {
          *     season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
          */
         post: operations["createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Events of the chosen teams in a period of at most six weeks, with the own absences (KAL-01 to KAL-04)
+         * @description Past and upcoming events together, sorted by start. Without `team` and `all` the default teams are shown:
+         *     coaches the teams they coach, everyone else all own teams of the current season (a player in two teams
+         *     sees both together). `all=true` and teams of which the caller is not a member are for coaches and admins
+         *     (403 otherwise); players see only events of teams they belong to in the season of the event.
+         */
+        get: operations["getCalendarView"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1988,6 +2058,65 @@ export interface components {
                 field: string;
                 message: string;
             }[];
+        };
+        /**
+         * @description «Ferien», «Verletzung», «Anderes» (ABS-01)
+         * @enum {string}
+         */
+        AbsenceReason: "VACATION" | "INJURY" | "OTHER";
+        AbsenceInput: {
+            /**
+             * Format: date
+             * @description First day away
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Last day away (inclusive)
+             */
+            to: string;
+            reason: components["schemas"]["AbsenceReason"];
+            /** @description Optional note; required for OTHER */
+            note?: string;
+        };
+        /** @description An absence of the logged-in person (ABS-01, ABS-06) */
+        Absence: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            reason: components["schemas"]["AbsenceReason"];
+            note?: string;
+            /** @description Upcoming practices this absence declined (ABS-03) */
+            declinedPractices: number;
+        };
+        CalendarTeam: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            myTeamRole?: components["schemas"]["TeamRole"];
+        };
+        /** @description Calendar view of a period (KAL) */
+        CalendarView: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Teams to choose from: own teams, for coaches and admins all teams of the current season */
+            teams: components["schemas"]["CalendarTeam"][];
+            /** @description Teams shown without a choice: coaches their coached teams, everyone else all own teams (KAL-03, KAL-04) */
+            defaultTeamIds: string[];
+            /** @description Teams shown now */
+            teamIds: string[];
+            /** @description All teams are shown (KAL-04) */
+            allTeams: boolean;
+            /** @description The caller may show all teams: coaches and admins (KAL-04) */
+            canShowAllTeams: boolean;
+            events: components["schemas"]["EventSummary"][];
+            /** @description Own absences in the period (ABS-07) */
+            absences: components["schemas"]["Absence"][];
         };
         /** @description Personal address of the calendar feed (CAL-01). Whoever knows it sees the person's events. */
         CalendarSubscription: {
@@ -3606,6 +3735,156 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    listMyAbsences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description By first day */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    createMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Overlaps another absence (ABS-02) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Note missing for OTHER (ABS-02) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Not an own absence */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Overlaps another absence (ABS-02) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Note missing for OTHER (ABS-02) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Not an own absence */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getMyCalendar: {
         parameters: {
             query?: never;
@@ -4645,6 +4924,38 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCalendarView: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Last day (inclusive), at most 41 days after `from` */
+                to: string;
+                /** @description Teams to show (repeatable) */
+                team?: string[];
+                /** @description All teams of the current season (coaches and admins) */
+                all?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
         };

@@ -1,0 +1,315 @@
+:host {
+  display: grid;
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+.team-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.team-actions:empty {
+  display: none;
+}
+
+/* ---- Team choice: one pill per team (.pill-option in styles.css) ---- */
+
+.teams {
+  display: grid;
+  gap: 10px;
+}
+
+/* ---- Layout: grid and the chosen day side by side from 1400px ---- */
+
+.layout {
+  display: grid;
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+@media (min-width: 1400px) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    align-items: start;
+  }
+}
+
+.month-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-inline: 10px;
+}
+
+@media (min-width: 600px) {
+  .month-card {
+    padding-inline: 18px;
+  }
+}
+
+.month-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.month-title {
+  flex: 1 1 auto;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.today-link {
+  margin-left: 4px;
+}
+
+/* ---- Month grid ---- */
+
+.grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.grid th {
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+
+.grid abbr {
+  text-decoration: none;
+}
+
+.grid td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 52px;
+  height: 100%;
+  padding: 4px 2px 6px;
+  border-radius: var(--radius-icon);
+  border: 1.5px solid transparent;
+  color: var(--text);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+td[data-in-month='false'] .day {
+  color: var(--muted);
+}
+
+/* Own absence: a quiet hatching in the court-line colour of «nicht dabei» */
+td[data-absent='true'] .day {
+  background: repeating-linear-gradient(135deg, var(--coral-soft) 0 6px, transparent 6px 12px);
+}
+
+@media (hover: hover) {
+  .day:hover {
+    border-color: var(--border);
+  }
+}
+
+.day[aria-current='date'] {
+  border-color: var(--primary);
+  background-color: var(--primary-soft);
+}
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.day.today .number {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* Mobile: one dot per event in the colour of its variant */
+.entries {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+
+.entry {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.entry-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tag, var(--primary));
+  flex: none;
+}
+
+.entry.cancelled .entry-dot {
+  background: transparent;
+  border: 1.5px solid var(--muted);
+  box-sizing: border-box;
+}
+
+.entry-text {
+  display: none;
+}
+
+.more {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 8px;
+}
+
+/* From 768px the entries carry time and title */
+@media (min-width: 768px) {
+  .day {
+    align-items: stretch;
+    min-height: 96px;
+    padding: 4px;
+  }
+
+  .number {
+    align-self: flex-start;
+  }
+
+  .entries {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .entry {
+    gap: 4px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--tag-soft, var(--primary-soft));
+    color: var(--tag, var(--text));
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .entry-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .entry-text {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry.cancelled .entry-text {
+    text-decoration: line-through;
+  }
+
+  .more {
+    padding-left: 4px;
+    line-height: 1.4;
+  }
+}
+
+/* ---- The chosen day ---- */
+
+.agenda {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.agenda .section-title {
+  margin: 0;
+}
+
+.absence-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-icon);
+  background: var(--coral-soft);
+  font-weight: 600;
+}
+
+.absence-note app-icon {
+  flex: none;
+  padding-top: 2px;
+  color: var(--coral);
+}
+
+.agenda-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.agenda-time {
+  min-width: 52px;
+  padding: 4px 6px;
+  border-radius: var(--radius-icon);
+  background: var(--tag-soft, var(--primary-soft));
+  color: var(--tag, var(--text));
+  text-align: center;
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.agenda-content {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.agenda-content .secondary-text {
+  overflow-wrap: anywhere;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 2px;
+}
+
+.chip[data-kind='cancelled'] {
+  background: var(--coral-soft);
+}

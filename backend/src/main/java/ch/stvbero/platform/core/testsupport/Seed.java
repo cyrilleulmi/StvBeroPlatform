@@ -332,6 +332,12 @@ public class Seed {
     @Inject
     LeagueService league;
 
+    @Inject
+    ch.stvbero.platform.core.absence.AbsenceService absences;
+
+    /** Sara's holidays (ABS): Mon 14.12.–Sun 20.12.2026, declines the practices of Tue 15.12. and Thu 17.12. */
+    public static final String SARA_ABSENCE_ID = "d0000000-0000-4000-8000-000000000001";
+
     /** Empties all tables (except the Flyway history), fills in the seed and sets the clock to the default. */
     @Transactional
     public void reset() {
@@ -448,6 +454,15 @@ public class Seed {
         em.clear();
 
         clock.fixAt(DEFAULT_NOW.atZone(BackendClock.ZONE).toInstant());
+        // ABS: Sara is on holiday; her practices in this time are declined like after entering it in the app
+        em.createNativeQuery("""
+                        insert into absence (id, person_id, first_day, last_day, reason, note, created_at)
+                        values (?, ?, ?, ?, 'VACATION', 'Skiferien', ?)""")
+                .setParameter(1, UUID.fromString(SARA_ABSENCE_ID)).setParameter(2, personId(8))
+                .setParameter(3, LocalDate.of(2026, 12, 14)).setParameter(4, LocalDate.of(2026, 12, 20))
+                .setParameter(5, zurich(RESPONDED_AT))
+                .executeUpdate();
+        absences.applyForPerson(personId(8), practice -> false);
     }
 
     /** Series with all their events (past ones too) and the single events (F-03). */

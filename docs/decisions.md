@@ -105,3 +105,10 @@ Log of the decisions taken, newest last. Whoever changes a requirement records t
 | No. | Decision | Kind |
 |---|---|---|
 | E-90 | The base design is «Sporthalle» instead of «Salbei frisch» (replaces E-03 and the theme choice of E-67): condensed DIN type from local fonts, hall-floor grey, ultramarine, the response counts as a scoreboard, court lines as accents, defined motion. It comes from the design-skill trials of 21./22.11.2026 (branches `poc/ux-*`): Cyrille chose the identity of the skill `frontend-design`, wanted the scoreboard in «Hell» less aggressive («mehr im Design») and a dark theme without neon colours, and had it refined with impeccable, better-interface, Vercel Web Interface Guidelines and emil-design-eng. Of three dark candidates Cyrille kept «Schiefer» and renamed it «Dunkel»; «Düne» and «GitHub Dark» are dropped. Themes: «Hell», «Dunkel», «System» (NF-07, NF-08). Stored values `dune` and `github-dark` fall back to «System» without migration. New UI text «Zum Inhalt springen» (skip link). [design-principles.md](design-principles.md) | Decided |
+
+## 23.11.2026 · Calendar view, absences, timeline
+
+| No. | Decision | Kind |
+|---|---|---|
+| E-92 | Asked for by Cyrille on 23.11.2026: (1) the timeline shows arrival and the time before the first match as one point («08:26 Ankunft · 64 Min. vor dem 1. Spiel», TML-01; the API keeps both items); (2) a calendar view `/termine/kalender`: players in several teams see them together, coaches and admins can show all teams, coaches start with the teams they coach (KAL-01 to KAL-05, new `docs/requirements/17-calendar-view.md`, API `GET /api/events/calendar`); (3) players enter longer absences (holidays, injuries), practices in this time are declined by themselves with the reason as comment (ABS-01 to ABS-07, new `docs/requirements/18-absences.md`, table `absence`, column `response.absence_id`, API `/api/me/absences`). Migration V20 leaves V18/V19 to the open driver list branches. Assumptions: O-67. | Decided (asked for), Assumption (details, O-67) |
+
