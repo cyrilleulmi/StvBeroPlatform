@@ -24,7 +24,7 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
 | `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
 | `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
-| `Dockerfile`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
+| `Dockerfile`, `docker/`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
 
 ## Why our own app?
 

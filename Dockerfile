@@ -1,4 +1,5 @@
 # One container for the whole platform (E-83): Quarkus serves the API and the Angular app on port 8080.
+# Without STV_DB_URL a throwaway PostgreSQL starts inside the container (docker/start.sh).
 #
 #   docker build --build-arg PROFILE=preview -t stvbero .   # test environments: seed, /dev-login, simulators
 #   docker build --build-arg PROFILE=prod -t stvbero .      # production (later, after the login, O-01)
@@ -26,10 +27,17 @@ RUN mvn -B -q package -DskipTests -Dquarkus.profile="$PROFILE"
 
 FROM eclipse-temurin:21-jre
 ARG PROFILE=prod
+# PostgreSQL for the test environments (docker/start.sh): a throwaway database inside the container
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql \
+ && rm -rf /var/lib/apt/lists/*
 ENV QUARKUS_PROFILE=$PROFILE \
-    JAVA_OPTS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+    JAVA_OPTS="-XX:MaxRAMPercentage=60 -XX:+ExitOnOutOfMemoryError"
 WORKDIR /app
 COPY --from=backend /src/backend/target/quarkus-app/ ./
+COPY docker/start.sh /app/start.sh
+RUN chmod 755 /app/start.sh
 USER 1000
 EXPOSE 8080
-CMD ["sh", "-c", "exec java $JAVA_OPTS -jar quarkus-run.jar"]
+CMD ["/app/start.sh"]

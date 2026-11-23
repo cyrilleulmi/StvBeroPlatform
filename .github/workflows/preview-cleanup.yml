@@ -1,4 +1,4 @@
-# Nightly safety net for the previews (E-83): removes app and Neon branch of every closed pull request,
+# Nightly safety net for the previews (E-83): destroys the preview app of every closed pull request,
 # in case the run on closing failed or was skipped. Does nothing until the hosting is set up.
 name: Preview cleanup
 
@@ -17,8 +17,6 @@ jobs:
     timeout-minutes: 15
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
       FLY_APP: ${{ vars.FLY_APP }}
       FLY_ORG: ${{ vars.FLY_ORG }}
       GH_TOKEN: ${{ github.token }}

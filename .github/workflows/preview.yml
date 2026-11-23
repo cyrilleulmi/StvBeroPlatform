@@ -1,6 +1,6 @@
-# Preview of every pull request on Fly.io with its own Neon branch (E-83).
+# Preview of every pull request on Fly.io (E-83).
 # Opened, pushed or reopened: (re)deploys <FLY_APP>-pr-<nr>.fly.dev and writes the link into the pull request.
-# Closed: removes the app and the branch. Pull requests from forks get no preview (no secrets).
+# Closed: destroys the app. Pull requests from forks get no preview (no secrets).
 # Does nothing until the hosting is set up (docs/deployment.md).
 name: Preview
 
@@ -18,8 +18,6 @@ concurrency:
 
 env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-  NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   FLY_APP: ${{ vars.FLY_APP }}
   FLY_ORG: ${{ vars.FLY_ORG }}
   PR: ${{ github.event.pull_request.number }}
