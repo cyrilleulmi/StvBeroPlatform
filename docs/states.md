@@ -365,6 +365,15 @@ stateDiagram-v2
 | Carry-over copies teams, team memberships and lines with names, order and assignments. The source stays unchanged. | SAI-04, LIN-11 |
 | Name already taken or period overlaps with another season: 409. Two concurrent requests (double click) also give 201 and 409, never 500. End before start: 400. | SAI-01 |
 
+## Absences
+
+| Rule | Reference |
+|---|---|
+| Entering an absence declines every upcoming practice of the person's teams that touches one of its days: «nicht dabei» with «Abwesend: <Grund> · <Bemerkung>». An own «nicht dabei» stays, «dabei» and «vielleicht» are replaced. The response remembers the absence (`response.absence_id`). | ABS-03 |
+| Creating, moving or changing the teams of a practice, a series or a team membership applies the absences again: covered practices without a response are declined, practices no longer covered lose a response set by an absence («offen»). A response given by hand is never touched and no longer belongs to the absence. | ABS-04 |
+| Changing an absence reopens what it no longer covers and declines what it covers newly (also over «dabei»/«vielleicht»). Deleting reopens its upcoming practices; past ones keep «nicht dabei». | ABS-05 |
+| Overlapping absences: 409. Last day before the first or completely in the past, more than a year: 400. «Anderes» without a note: 422. Someone else's absence: 404. | ABS-02, ABS-01 |
+
 ## Team membership
 
 | Rule | Reference |

@@ -8,7 +8,7 @@ Status legend: see [README](../../README.md#requirement-status).
 
 | ID | Requirement | Status |
 |---|---|---|
-| TML-01 | Every match day has the section «Zeitplan» in `/termine/:id`, for everyone who may see the match day. It lists in order of time: departure, arrival, time before the first match, each match, the time between two matches, cool down and the approximate return. Other events have no timeline (API 409). | Decided |
+| TML-01 | Every match day has the section «Zeitplan» in `/termine/:id`, for everyone who may see the match day. It lists in order of time: departure, arrival together with the time before the first match (one point, «08:26 Ankunft · 64 Min. vor dem 1. Spiel»), each match, the time between two matches, cool down and the approximate return. Other events have no timeline (API 409). | Decided |
 | TML-02 | A match lasts as long as the team says: «Dauer eines Spiels», 10 to 240 minutes, default **50**. The same duration sets the end of a match day created by the sync (last start plus this duration). | Decided |
 | TML-03 | Each team says how long before the first match it wants to arrive at the venue: «Ankunft vor dem ersten Spiel», 0 to 240 minutes, default **70**. | Decided |
 | TML-04 | Suggested departure: first match minus the arrival lead minus the driving time, rounded down to five minutes. While a match day has no meeting time, the timeline shows the suggestion, marked «Vorschlag». Coaches of the team and admins take it over as meeting time with one click («Vorschlag als Treffpunkt-Zeit übernehmen»). With a meeting time set, the timeline starts there and still names the suggestion to coaches if it differs. | Decided |

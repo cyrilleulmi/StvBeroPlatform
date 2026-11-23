@@ -119,3 +119,22 @@ export function zurich(date: string, time: string): string {
 export function yearOf(now: string | undefined): number | null {
   return now ? parts(now).year : null;
 }
+
+/** Day of an instant in Zurich as «2026-11-17» (calendar view, KAL). */
+export function dayKey(iso: string): string {
+  const t = parts(iso);
+  return `${t.year}-${two(t.month)}-${two(t.day)}`;
+}
+
+/** «November 2026» for a month key «2026-11». */
+export function monthName(key: string): string {
+  const [year, m] = key.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${year}`;
+}
+
+/** «Di 17.11.» for a day key «2026-11-17»; with the year if it is not `currentYear`. */
+export function dayLabel(key: string, currentYear: number | null): string {
+  const [year, m, d] = key.split('-').map(Number);
+  const suffix = currentYear !== null && year !== currentYear ? String(year) : '';
+  return `${weekday({ year, month: m, day: d, hour: 0, minute: 0 })} ${two(d)}.${two(m)}.${suffix}`;
+}

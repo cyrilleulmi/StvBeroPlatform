@@ -300,7 +300,8 @@ export const TEXTS = {
     nobody: 'In dieser Saison ist noch niemand gefahren.',
     mine: 'Deine Fahrten',
     myTitle: 'Meine Fahrten',
-    myHint: 'Wie oft du an Spieltage gefahren bist und wie viele Kilometer dir gutgeschrieben sind.',
+    myHint:
+      'Wie oft du an Spieltage gefahren bist und wie viele Kilometer dir gutgeschrieben sind.',
     myLink: 'Fahrten ansehen',
     toProfile: 'Zum Profil',
   },
@@ -323,6 +324,7 @@ export const TEXTS = {
     match: (n: number, pairing: string) => `Spiel ${n}: ${pairing}`,
     minutes: (n: number) => `${n} Min.`,
     drive: (n: number) => `${n} Min. Fahrt`,
+    beforeFirstMatch: (n: number) => `${n} Min. vor dem 1. Spiel`,
     span: (from: string, until: string) => `${from}–${until}`,
     suggested: 'Vorschlag',
     auto: 'automatisch gesetzt',
@@ -853,7 +855,8 @@ export const TEXTS = {
     sectionText: 'Tabelle, kommende Spiele und Resultate von swiss unihockey.',
     open: 'Liga ansehen',
     backTo: (team: string) => `Zurück zu ${team}`,
-    notLinked: 'Dieses Team ist nicht mit swiss unihockey verknüpft. Darum gibt es keine Ligadaten.',
+    notLinked:
+      'Dieses Team ist nicht mit swiss unihockey verknüpft. Darum gibt es keine Ligadaten.',
     linkInAdministration: 'In der Verwaltung verknüpfen',
     leagueGroup: (league: string | null, group: string | null) =>
       [league, group].filter((x) => !!x).join(' · '),
@@ -941,6 +944,79 @@ export const TEXTS = {
     dark: 'Dunkel',
     system: 'System',
     logout: 'Abmelden',
+  },
+  /** KAL */
+  calendarView: {
+    title: 'Kalender',
+    link: 'Kalender',
+    listLink: 'Liste',
+    absencesLink: 'Abwesenheiten',
+    month: 'Monat',
+    previous: 'Vorheriger Monat',
+    next: 'Nächster Monat',
+    today: 'Heute',
+    teams: 'Teams',
+    myTeams: 'Meine Teams',
+    allTeams: 'Alle Teams',
+    lastTeam: 'Mindestens ein Team bleibt gewählt.',
+    weekdays: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+    weekdayNames: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+    grid: (month: string) => `Kalender ${month}`,
+    day: (date: string, count: number, absent: boolean) =>
+      `${date}: ${count === 0 ? 'keine Termine' : count === 1 ? '1 Termin' : `${count} Termine`}${absent ? ', abwesend' : ''}`,
+    more: (n: number) => `+${n}`,
+    dayEvents: (date: string) => `Termine am ${date}`,
+    noEvents: 'An diesem Tag gibt es keine Termine.',
+    absent: (reason: string) => `Du bist abwesend: ${reason}`,
+    absentShort: 'abwesend',
+    shown: (teams: string) => `Angezeigt: ${teams}`,
+  },
+  /** ABS */
+  absences: {
+    title: 'Abwesenheiten',
+    intro:
+      'Trag ein, wenn du länger weg bist, zum Beispiel in den Ferien oder wegen einer Verletzung. Trainings in dieser Zeit sagen wir automatisch für dich ab, mit dem Grund als Kommentar.',
+    profileHint: 'Ferien oder Verletzung? Trainings in dieser Zeit werden automatisch abgesagt.',
+    profileLink: 'Abwesenheiten verwalten',
+    toProfile: 'Zum Profil',
+    newTitle: 'Abwesenheit eintragen',
+    editTitle: 'Abwesenheit bearbeiten',
+    from: 'Erster Tag',
+    to: 'Letzter Tag',
+    reason: 'Grund',
+    reasons: { VACATION: 'Ferien', INJURY: 'Verletzung', OTHER: 'Anderes' } as Record<
+      string,
+      string
+    >,
+    note: 'Bemerkung (freiwillig)',
+    noteRequired: 'Bemerkung',
+    noteMissing: 'Bei «Anderes» braucht es eine Bemerkung.',
+    fromMissing: 'Bitte den ersten Tag wählen.',
+    toMissing: 'Bitte den letzten Tag wählen.',
+    create: 'Eintragen',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    listTitle: 'Deine Abwesenheiten',
+    empty: 'Du hast keine Abwesenheiten eingetragen.',
+    period: (from: string, to: string) => (from === to ? from : `${from} – ${to}`),
+    entry: (reason: string, period: string) => `${reason} ${period}`,
+    declined: (n: number) =>
+      n === 0
+        ? 'Keine Trainings abgesagt'
+        : n === 1
+          ? '1 Training abgesagt'
+          : `${n} Trainings abgesagt`,
+    created: (n: number) =>
+      `Eingetragen. ${n === 0 ? 'Kein Training betroffen.' : n === 1 ? '1 Training ist abgesagt.' : `${n} Trainings sind abgesagt.`}`,
+    updated: (n: number) =>
+      `Gespeichert. ${n === 0 ? 'Kein Training betroffen.' : n === 1 ? '1 Training ist abgesagt.' : `${n} Trainings sind abgesagt.`}`,
+    edit: (entry: string) => `${entry} bearbeiten`,
+    delete: (entry: string) => `${entry} löschen`,
+    editShort: 'Bearbeiten',
+    deleteShort: 'Löschen',
+    deleteTitle: 'Abwesenheit löschen?',
+    deleteText: 'Die Trainings, die diese Abwesenheit abgesagt hat, sind danach wieder offen.',
+    deleted: 'Die Abwesenheit ist gelöscht.',
   },
   calendar: {
     title: 'Kalender abonnieren',
@@ -1123,7 +1199,8 @@ export const TEXTS = {
   /** TML-02, TML-03, AUF-32 */
   matchDaySettings: {
     title: 'Spieltage',
-    explanation: 'Diese Angaben gelten für den Zeitplan der Spieltage und den Vorschlag für die Abfahrt.',
+    explanation:
+      'Diese Angaben gelten für den Zeitplan der Spieltage und den Vorschlag für die Abfahrt.',
     duration: 'Dauer eines Spiels (Minuten)',
     durationInvalid: 'Bitte eine Zahl von 10 bis 240 eingeben.',
     lead: 'Ankunft vor dem ersten Spiel (Minuten)',
@@ -1262,7 +1339,9 @@ export const TEXTS = {
       'Du kannst kommen und dich anmelden, musst aber nicht. Du bekommst keine Erinnerung.',
     filter: 'Freiwillige Termine anzeigen',
     hidden: (n: number) =>
-      n === 1 ? '1 freiwilliger Termin ist ausgeblendet.' : `${n} freiwillige Termine sind ausgeblendet.`,
+      n === 1
+        ? '1 freiwilliger Termin ist ausgeblendet.'
+        : `${n} freiwillige Termine sind ausgeblendet.`,
     legend: 'Wer wird erwartet?',
     hint: 'Erwartete Teams sollen antworten. Freiwillige Teams können kommen und bekommen keine Erinnerung.',
     expected: 'erwartet',
@@ -1280,7 +1359,8 @@ export const TEXTS = {
   },
   lineups: {
     section: 'Spezialaufstellungen',
-    intro: 'Aufstellungen für besondere Situationen, zum Beispiel Überzahl und Unterzahl. Sie ersetzen die Linien nicht.',
+    intro:
+      'Aufstellungen für besondere Situationen, zum Beispiel Überzahl und Unterzahl. Sie ersetzen die Linien nicht.',
     empty: 'Noch keine Spezialaufstellung.',
     add: 'Aufstellung hinzufügen',
     edit: 'Bearbeiten',
@@ -1327,7 +1407,8 @@ export const TEXTS = {
   },
   driving: {
     section: 'Fahren',
-    intro: 'Für den Vorschlag der Fahrerliste: Kannst du an Spieltage fahren, und wie viele Plätze hat dein Auto?',
+    intro:
+      'Für den Vorschlag der Fahrerliste: Kannst du an Spieltage fahren, und wie viele Plätze hat dein Auto?',
     planSection: 'Wer kann fahren',
     planIntro: 'Diese Angaben nutzt «Vorschlag erarbeiten» in der Fahrerliste eines Spieltags.',
     canDrive: 'Kann fahren',

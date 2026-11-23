@@ -22,12 +22,26 @@
   </section>
 }
 
+<section class="card" aria-labelledby="profile-absences">
+  <h2 id="profile-absences" class="section-title">{{ texts.absences.title }}</h2>
+  <p class="secondary-text">{{ texts.absences.profileHint }}</p>
+  <a
+    class="button button-secondary button-small"
+    routerLink="/profil/abwesenheiten"
+    data-testid="my-absences-link"
+    >{{ texts.absences.profileLink }}</a
+  >
+</section>
+
 <section class="card" aria-labelledby="profile-trips">
   <h2 id="profile-trips" class="section-title">{{ texts.trips.myTitle }}</h2>
   <p class="secondary-text">{{ texts.trips.myHint }}</p>
-  <a class="button button-secondary button-small" routerLink="/fahrten" data-testid="my-trips-link">{{
-    texts.trips.myLink
-  }}</a>
+  <a
+    class="button button-secondary button-small"
+    routerLink="/fahrten"
+    data-testid="my-trips-link"
+    >{{ texts.trips.myLink }}</a
+  >
 </section>
 
 @if (auth.me(); as me) {
