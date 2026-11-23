@@ -43,6 +43,10 @@ jobs:
         id: deploy
         run: scripts/deploy.sh preview "$PR"
 
+      - if: failure() && steps.config.outputs.configured == 'true'
+        name: Diagnose Fly.io access
+        run: scripts/deploy.sh diagnose
+
       - if: steps.config.outputs.configured == 'true'
         uses: actions/github-script@v7
         env:

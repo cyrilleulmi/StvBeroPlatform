@@ -43,5 +43,9 @@ jobs:
         id: deploy
         run: scripts/deploy.sh test
 
+      - if: failure() && steps.config.outputs.configured == 'true'
+        name: Diagnose Fly.io access
+        run: scripts/deploy.sh diagnose
+
       - if: steps.config.outputs.configured == 'true'
         run: echo "### Test environment ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,7 @@
 #   scripts/deploy.sh preview <pr>          # preview of a pull request: <FLY_APP>-pr-<pr>.fly.dev
 #   scripts/deploy.sh remove-preview <pr>   # destroys the app of a pull request
 #   scripts/deploy.sh cleanup               # destroys previews whose pull request is closed (needs gh)
+#   scripts/deploy.sh diagnose              # what the token may see (after a failed run; prints no secrets)
 #
 # Both run the image built with profile preview: seed data, /dev-login, simulators, and a throwaway PostgreSQL
 # inside the container (docker/start.sh). No data is kept between starts.
@@ -77,8 +78,16 @@ case "${1:-}" in
       fi
     done
     ;;
+  diagnose)
+    require
+    for cmd in "version" "auth whoami" "orgs list" "apps list"; do
+      echo "--- flyctl $cmd"
+      # shellcheck disable=SC2086 # the command words are split on purpose
+      flyctl $cmd 2>&1 || true
+    done
+    ;;
   *)
-    sed -n '2,8p' "$0" >&2
+    sed -n '2,9p' "$0" >&2
     exit 2
     ;;
 esac
