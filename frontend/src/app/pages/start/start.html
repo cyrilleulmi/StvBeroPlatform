@@ -39,6 +39,7 @@
         [eventId]="t.id"
         [response]="t.myResponse"
         [name]="texts.response.myResponseFor(cardName(t))"
+        [reasonRequired]="!!t.variant?.declineReasonRequired"
         (changed)="reload(t.id)"
       />
     } @else {
@@ -69,6 +70,7 @@
               [eventId]="t.id"
               [response]="t.myResponse"
               [name]="texts.response.myResponseFor(cardName(t))"
+              [reasonRequired]="!!t.variant?.declineReasonRequired"
               (changed)="reload(t.id)"
             />
           </li>

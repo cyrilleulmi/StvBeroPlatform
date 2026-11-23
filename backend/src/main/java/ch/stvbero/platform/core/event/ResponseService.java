@@ -1,5 +1,6 @@
 package ch.stvbero.platform.core.event;
 
+import ch.stvbero.platform.core.variant.Variants;
 import ch.stvbero.platform.core.auth.CurrentUser;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.line.Group;
@@ -88,7 +89,7 @@ public class ResponseService {
         ResponseRules.checkOpenForResponses(event.status, event.end, now);
         event.season.checkWritable();
         ResponseStatus newStatus = input.status().status();
-        ResponseRules.checkComment(newStatus, input.comment());
+        ResponseRules.checkComment(newStatus, input.comment(), Variants.of(event).declineReasonRequired);
 
         Stored previous = locked(event.id, respondent);
         boolean lateCancellation = ResponseRules.lateCancellation(
@@ -106,7 +107,7 @@ public class ResponseService {
                 .setParameter(5, now).setParameter(6, enteredBy).setParameter(7, lateCancellation)
                 .executeUpdate();
         notifications.responseChanged(user, event, members, respondent,
-                previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation);
+                previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation, comment);
         // «Ich reise individuell an» comes with «dabei» and goes with every other response (ANM-13)
         drivers.individualFromResponse(user, event, respondent, newStatus == ResponseStatus.ATTENDING,
                 input.travelsIndividually());

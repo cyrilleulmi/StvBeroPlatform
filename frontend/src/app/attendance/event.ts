@@ -20,6 +20,7 @@ import { AuthService } from '../core/auth.service';
 import { errorStatus, errorText } from '../core/error-text';
 import { FeedbackService } from '../core/feedback.service';
 import { TEXTS } from '../core/texts';
+import { Grants } from './grants';
 import { MyResponse } from './my-response';
 import { MatchDay } from './match-day';
 import { DriverListSection } from '../drivers/driver-list';
@@ -52,6 +53,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
+    Grants,
     MyResponse,
     MatchDay,
     TimelineSection,
@@ -111,6 +113,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
               [eventId]="t.id"
               [response]="t.myResponse"
               [name]="texts.response.myResponse"
+              [reasonRequired]="!!t.variant?.declineReasonRequired"
               [locked]="lock()"
               [details]="true"
               [travel]="t.type === 'MATCH_DAY'"
@@ -126,7 +129,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
                   [eventId]="t.id"
                   [data]="u"
                   [coachIn]="coachIn()"
-                  [allTeams]="auth.canManage()"
+                  [allTeams]="auth.canManage() || !!t.myGrant"
                   [meId]="auth.me()?.id ?? null"
                   [responsesOpen]="!lock()"
                   (changed)="reload()"
@@ -285,7 +288,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
                   @if (t.seriesId) {
                     <dt>{{ texts.events.series }}</dt>
                     <dd>
-                      @if (t.canEdit) {
+                      @if (t.canEdit && !t.myGrant) {
                         <a [routerLink]="['/serien', t.seriesId]">{{ texts.events.viewSeries }}</a>
                       } @else {
                         {{ texts.events.partOfSeries }}
@@ -300,6 +303,12 @@ const DEFAULT_SECTIONS: EventSection[] = [
                     >{{ texts.events.edit }}</a
                   >
                 }
+                <app-grants
+                  kind="event"
+                  [targetId]="t.id"
+                  [mine]="!!t.myGrant"
+                  [editable]="t.status !== 'CANCELLED' && !lock()"
+                />
               </section>
             }
           }
@@ -351,9 +360,12 @@ export class EventPage {
     (this.event()?.teams ?? []).filter((t) => t.myTeamRole === 'COACH').map((t) => t.id),
   );
 
-  /** Coach (of any team, E-69) or admin: call-up and results (RR-03). */
+  /**
+   * Coach (of any team, E-69) or admin: call-up and results (RR-03). A special permission gives the same rights for
+   * this one event (RR-09).
+   */
   protected readonly coachOrAdmin = computed(
-    () => this.coachIn().length > 0 || this.auth.canManage(),
+    () => this.coachIn().length > 0 || this.auth.canManage() || !!this.event()?.myGrant,
   );
 
   /**

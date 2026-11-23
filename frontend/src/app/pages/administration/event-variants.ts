@@ -251,6 +251,20 @@ function sectionsOf(type: EventType): EventSection[] {
           />
           {{ s.attendanceCheck }}
         </label>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            name="variant-declineReasonRequired"
+            data-testid="variant-decline-reason"
+            aria-describedby="variant-decline-reason-hint"
+            [checked]="declineReasonRequired()"
+            (change)="declineReasonRequired.set($any($event.target).checked)"
+          />
+          {{ s.declineReasonRequired }}
+        </label>
+        <p class="secondary-text" id="variant-decline-reason-hint">
+          {{ s.declineReasonRequiredHint }}
+        </p>
 
         <fieldset class="sections">
           <legend class="label">{{ s.sections }}</legend>
@@ -499,6 +513,7 @@ export class EventVariantsSection {
   protected readonly nameError = signal<string | null>(null);
   protected readonly deadlineError = signal<string | null>(null);
   protected readonly dialogError = signal<string | null>(null);
+  protected readonly declineReasonRequired = signal(false);
 
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
   private readonly nameField = viewChild<ElementRef<HTMLInputElement>>('nameField');
@@ -513,8 +528,14 @@ export class EventVariantsSection {
 
   /** «mit Aufgebot · Abfahrt automatisch» for match days, nothing for the others. */
   protected summary(v: EventVariant): string {
-    if (v.eventType !== 'MATCH_DAY') return '';
-    return [v.callUp ? this.s.withCallUp : this.s.responsesOnly, v.autoDeparture ? this.s.autoOn : null]
+    const matchDay =
+      v.eventType === 'MATCH_DAY'
+        ? [
+            v.callUp ? this.s.withCallUp : this.s.responsesOnly,
+            v.autoDeparture ? this.s.autoOn : null,
+          ]
+        : [];
+    return [...matchDay, v.declineReasonRequired ? this.s.reasonRequiredSummary : null]
       .filter(Boolean)
       .join(' · ');
   }
@@ -536,6 +557,7 @@ export class EventVariantsSection {
     this.nameError.set(null);
     this.deadlineError.set(null);
     this.dialogError.set(null);
+    this.declineReasonRequired.set(v?.declineReasonRequired ?? false);
     this.message.set(null);
     this.error.set(null);
     const dialog = this.dialog()?.nativeElement;
@@ -590,6 +612,7 @@ export class EventVariantsSection {
       autoDeparture: matchDay ? this.autoDeparture() : true,
       responseDeadlineHours: hours,
       attendanceCheck: this.attendanceCheck(),
+      declineReasonRequired: this.declineReasonRequired(),
       sections: this.rows()
         .filter((r) => r.shown)
         .map((r) => r.section),

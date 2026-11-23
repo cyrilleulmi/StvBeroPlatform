@@ -14,7 +14,8 @@ import java.util.UUID;
  * match days (AUF-14, AUF-23, AUF-24). Whether attendance is recorded only for coaches and admins, the own
  * attendance only for players with a recorded value (PRS-06, PRS-08). {@code variant} says how the event looks and
  * what it offers (VAR); without a call-up in the variant, {@code callUpStatus} and {@code myCallUp} are missing
- * (VAR-06). {@code standing} is the rank of the own team in the league table (AUF-34).
+ * (VAR-06). {@code standing} is the rank of the own team in the league table (AUF-34). {@code myGrant}: the caller
+ * manages this event like a coach because of a special permission (RR-09); missing otherwise.
  */
 @Schema(name = "Event")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -25,5 +26,6 @@ public record EventDto(UUID id, EventType type, String title, OffsetDateTime sta
                         List<MatchDto> matches, CallUpStatus callUpStatus, MyCallUp myCallUp,
                         boolean canEdit, boolean attendanceCheck, Boolean attendanceRecorded,
                         boolean canRecordAttendance, AttendanceStatus myAttendance, EventVariantDto variant,
-                        StandingDto standing, List<UUID> optionalTeamIds, Participation myParticipation) {
+                        StandingDto standing, List<UUID> optionalTeamIds, Participation myParticipation,
+                        Boolean myGrant) {
 }

@@ -14,6 +14,12 @@ Status legend: see [README](../../README.md#requirement-status).
 | RR-06 | For an event with several teams, every coach (RR-03) may edit the event, respond on behalf of every person in it and see all comments. Notifications that go to «the coaches of the team» (late cancellation, withdrawal of a called-up player) still go only to the coaches of that team, not to all coaches. | Decided (E-69) |
 | RR-07 | Permissions are enforced in the backend, not just hidden in the user interface. | Assumption |
 | RR-08 | Deleting is for admins. Deleting means: delete a person, a team, a line, an event, a series or a series exception, and remove a person from a team. These actions are hidden for coaches and answer 403 in the API. Cancelling an event is not deleting. Removing a match from a match day counts as editing the match day, not as deleting (assumption, O-55). | Decided (E-69), Accepted (scope) |
+| RR-09 | **Special permissions per event** («Sonderberechtigungen», E-94). Coaches and admins give any member of the teams of an event a special permission for this event. With it she manages this one event like a coach: edit, move and cancel it, respond on behalf of everyone in it, see all comments and reasons, call-up, results, matches, timeline, driver list, special line-ups and attendance. She also receives the notifications that go to the coaches of the team about this event (BEN-02, BEN-04). It is generic: one kind of permission, so that further kinds can be added later without rebuilding. | Decided (generic, per event), Assumption (scope of the rights) |
+| RR-10 | A special permission can also be given on a series: it applies to all events of the series, also later ones. The event shows it with «über die Serie». | Assumption |
+| RR-11 | Only coaches and admins in their own right give or take special permissions; a person with one cannot pass it on. A special permission does not reach the teams of the event (they stay, 422 with rule RR-11), the series itself, deleting (RR-08), or anything outside the event. | Assumption |
+| RR-12 | Only members (any team role) of the teams of the event or series in its season can get a special permission (422 with rule RR-12). | Assumption |
+| RR-13 | Everyone who may see the event sees who has a special permission (in «Angaben»). The person herself sees «Du hast für diesen Termin eine Sonderberechtigung.» | Assumption |
+| RR-14 | Whoever gets a special permission is notified (BEN-08). Taking it away is silent. | Assumption |
 
 ## Overview
 
@@ -42,6 +48,9 @@ Status legend: see [README](../../README.md#requirement-status).
 | Link a team to swiss unihockey, trigger the sync, confirm a change by swiss unihockey | – | ✓ | ✓ |
 | Change the match day settings of a team (match duration, arrival lead, usual meeting point) | – | ✓ | ✓ |
 | Manage seasons | – | – | ✓ |
+| Give and take special permissions for an event or a series (RR-09 to RR-11) | – | ✓ | ✓ |
+
+**Special permission (RR-09):** a person with a special permission for an event has, for this one event, the rights of the column «Coach» (except giving special permissions and changing the teams of the event); everywhere else her own rights apply.
 
 «Coach» means coach of at least one team in the current season. In the API the flag `coach` of `GET /api/me` shows it.
 

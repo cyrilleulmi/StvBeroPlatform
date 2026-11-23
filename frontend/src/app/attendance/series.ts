@@ -1,3 +1,4 @@
+import { Grants } from './grants';
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -27,7 +28,7 @@ type ExceptionField = 'from' | 'until' | 'reason';
 @Component({
   selector: 'app-series',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Grants],
   template: `
     <div class="header">
       <a class="back" routerLink="/termine">{{ texts.events.allEvents }}</a>
@@ -74,6 +75,8 @@ type ExceptionField = 'from' | 'until' | 'reason';
             >
           }
         </section>
+
+        <app-grants kind="series" [targetId]="s.id" />
 
         <section class="card" aria-labelledby="series-exceptions" data-testid="exceptions">
           <h2 id="series-exceptions" class="section-title">

@@ -62,6 +62,11 @@ export const TEXTS = {
     declinedText:
       'Du bist abgemeldet. Wenn du magst, gib einen Grund an. Ihn sehen nur die Coaches deines Teams.',
     reason: 'Grund (freiwillig)',
+    declinedTextRequired:
+      'Gib kurz an, warum du nicht dabei bist. Den Grund sehen die Coaches und wer den Termin organisiert.',
+    reasonRequiredLabel: 'Grund',
+    reasonRequired: 'Bitte gib einen Grund an.',
+    declineWithReason: 'Abmelden',
     saveReason: 'Grund speichern',
     skip: 'Überspringen',
     save: 'Speichern',
@@ -121,6 +126,23 @@ export const TEXTS = {
     saveMinimums: 'Mindestzahlen speichern',
     minimumsSaved: 'Die Mindestzahlen sind gespeichert.',
     invalidNumber: 'Bitte eine Zahl von 0 bis 99 eingeben.',
+  },
+  grants: {
+    title: 'Sonderberechtigungen',
+    intro:
+      'Diese Personen verwalten den Termin wie Coaches: bearbeiten, verschieben, absagen, für andere antworten und die Gründe sehen.',
+    introSeries:
+      'Diese Personen verwalten alle Termine der Serie wie Coaches: bearbeiten, verschieben, absagen, für andere antworten und die Gründe sehen.',
+    mine: 'Du hast für diesen Termin eine Sonderberechtigung.',
+    none: 'Niemand. Den Termin verwalten die Coaches.',
+    viaSeries: 'über die Serie',
+    change: 'Personen wählen',
+    dialogTitle: 'Sonderberechtigungen',
+    dialogText: 'Wähle, wer diesen Termin wie eine Coach verwalten darf. Wer neu dazukommt, wird benachrichtigt.',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    saved: 'Sonderberechtigungen gespeichert.',
+    teamsLocked: 'Die Teams eines Termins ändern nur Coaches.',
   },
   events: {
     title: 'Termine',
@@ -757,7 +779,7 @@ export const TEXTS = {
       'Adresse einfügen, als Namen «STV Bero» eingeben und bestätigen.',
     ],
     refresh:
-      'Kalender-Apps holen Änderungen selbst ab. Je nach App dauert das ein paar Minuten bis einige Stunden.',
+      'Kalender-Apps holen Änderungen selbst ab. Apple meist innert einer Stunde, Google Kalender kann bis zu einem Tag brauchen.',
     private:
       'Behalte die Adresse für dich: Wer sie kennt, sieht deine Termine. Hast du sie weitergegeben, erneuere sie.',
     renew: 'Adresse erneuern',
@@ -767,6 +789,27 @@ export const TEXTS = {
     renewConfirm: 'Erneuern',
     cancel: 'Abbrechen',
     renewed: 'Neue Adresse erstellt. Die bisherige funktioniert nicht mehr.',
+    filterTitle: 'Was im Kalender erscheint',
+    filterIntro:
+      'Die Adresse bleibt gleich. Dein Kalender übernimmt die Auswahl beim nächsten Abgleich.',
+    filterTypes: 'Termine',
+    filterTypeLabels: {
+      PRACTICE: 'Trainings',
+      MATCH_DAY: 'Spieltage',
+      OTHER: 'Anlässe',
+    } as Record<'PRACTICE' | 'MATCH_DAY' | 'OTHER', string>,
+    filterResponses: 'Meine Antwort',
+    filterAttending: '«dabei» und aufgeboten',
+    filterAttendingHint: 'Termine, für die du dabei bist, erscheinen immer.',
+    filterResponseLabels: {
+      PENDING: 'Noch nicht beantwortet',
+      OPTIONAL_PENDING: 'Freiwillig, noch nicht beantwortet',
+      MAYBE: '«vielleicht»',
+      DECLINED: '«nicht dabei» und nicht aufgeboten',
+    } as Record<'PENDING' | 'OPTIONAL_PENDING' | 'MAYBE' | 'DECLINED', string>,
+    filterTeams: 'Teams',
+    filterSaved: 'Gespeichert. Dein Kalender übernimmt das beim nächsten Abgleich.',
+    filterTypeRequired: 'Wähle mindestens eine Terminart.',
   },
   notificationSettings: {
     title: 'Benachrichtigungen',
@@ -1010,6 +1053,10 @@ export const TEXTS = {
     responseDeadline: 'Antwortfrist neuer Termine (Stunden vor Beginn)',
     responseDeadlineInvalid: 'Bitte eine Zahl von 0 bis 336 eingeben.',
     attendanceCheck: 'Präsenz erfassen bei neuen Terminen',
+    declineReasonRequired: 'Grund bei «nicht dabei» verlangen',
+    declineReasonRequiredHint:
+      'Wer sich abmeldet, muss kurz sagen warum. Gilt sofort für alle Termine dieser Variante.',
+    reasonRequiredSummary: 'Grund bei Abmeldung',
     sections: 'Abschnitte der Terminseite',
     sectionsHint: 'Reihenfolge und Sichtbarkeit. «Meine Antwort» steht immer zuoberst.',
     sectionName: {

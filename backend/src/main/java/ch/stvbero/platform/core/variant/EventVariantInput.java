@@ -25,5 +25,6 @@ public record EventVariantInput(
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
         Boolean attendanceCheck,
+        Boolean declineReasonRequired,
         List<@NotNull Section> sections) {
 }
