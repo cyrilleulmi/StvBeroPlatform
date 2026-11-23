@@ -86,7 +86,7 @@ a {
   justify-content: center;
   gap: 2px;
   min-height: 56px;
-  padding: 6px 2px;
+  padding: 6px 1px;
   border-radius: var(--radius-nav);
   color: var(--muted);
   text-decoration: none;
@@ -95,10 +95,12 @@ a {
 }
 
 /* Labels are never cut off (follow-up fix #15). Mobile 11px, so that five entries fit
-   side by side at 375px; the desktop sets 15px again below. */
+   side by side at 375px; the desktop sets 15px again below. The font of the design «Sporthalle» falls back to the
+   system font where Bahnschrift is missing (Linux, many Android phones); the spacing is chosen so that «Verwaltung»
+   also fits in a wide fallback such as DejaVu Sans (follow-up fix #23, E-90). */
 a span {
   font-size: 11px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
@@ -115,12 +117,12 @@ a span {
   }
 
   a {
-    padding-left: 1px;
-    padding-right: 1px;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   a span {
-    letter-spacing: -0.03em;
+    font-size: 10px;
   }
 }
 
