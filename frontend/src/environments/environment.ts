@@ -1,4 +1,7 @@
-/** Development and test: test mode with /dev-login (backend in profile dev/test). */
+/**
+ * Development, test and the hosted test environments (build configuration «preview», backend profile preview):
+ * test mode with /dev-login.
+ */
 export const environment = {
   testMode: true,
 };

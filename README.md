@@ -23,7 +23,8 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 | `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
 | `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
-| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
+| `Dockerfile`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
 
 ## Why our own app?
 

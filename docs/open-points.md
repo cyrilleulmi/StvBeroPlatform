@@ -7,7 +7,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | No. | Question | Remark |
 |---|---|---|
 | O-01 | **Login:** How do members log in? | E-mail and password, magic link or Keycloak/OIDC. |
-| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | |
+| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | Previews and a test environment with seed data are decided (E-83, [deployment.md](deployment.md)). Open: production with real data, after the login (O-01). |
 | O-03 | **Data protection:** Which data is stored, who sees what (nDSG)? | For now the app is meant for adults. If minors are added, reassess. |
 | O-04 | **Multi-tenancy:** Are several clubs needed in one installation? | Several teams within the club are part of the core. |
 | O-05 | ~~**Notifications:** E-mail, push via the PWA or both?~~ | Decided: both (E-71, F-19). |
@@ -59,7 +59,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 
 | No. | Question | Remark |
 |---|---|---|
-| O-30 | Preview URL for trying things out | Depends on hosting (O-02). Until then via a cloud session on the PR branch. |
+| O-30 | ~~Preview URL for trying things out~~ | Decided (E-83): every pull request gets a preview, the link is in a comment of the pull request. |
 | O-31 | ~~Java and migration tool for F-00~~ | Decided: Java 21 and Flyway (E-57). |
 | O-32 | Contrast of the active navigation entry | `primary` on `primary-soft` only reaches 3.97:1 in light mode (WCAG AA requires 4.5:1 for small text). Assumption F-00: icon in `primary`, text in `text`. Alternative: make `primary` slightly darker in light mode. |
 | O-33 | How long does a session last? | Assumption F-00: until logout, without expiry. Depends on the login method (O-01). |

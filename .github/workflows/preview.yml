@@ -1,0 +1,88 @@
+# Preview of every pull request on Fly.io with its own Neon branch (E-83).
+# Opened, pushed or reopened: (re)deploys <FLY_APP>-pr-<nr>.fly.dev and writes the link into the pull request.
+# Closed: removes the app and the branch. Pull requests from forks get no preview (no secrets).
+# Does nothing until the hosting is set up (docs/deployment.md).
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+  FLY_APP: ${{ vars.FLY_APP }}
+  FLY_ORG: ${{ vars.FLY_ORG }}
+  PR: ${{ github.event.pull_request.number }}
+
+jobs:
+  deploy:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: config
+        run: scripts/deploy.sh check >> "$GITHUB_OUTPUT"
+
+      - if: steps.config.outputs.configured != 'true'
+        run: echo "::notice::Hosting is not set up yet, no preview. See docs/deployment.md."
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - if: steps.config.outputs.configured == 'true'
+        id: deploy
+        run: scripts/deploy.sh preview "$PR"
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: actions/github-script@v7
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const marker = '<!-- stvbero-preview -->';
+            const body = [
+              marker,
+              `**Preview:** ${process.env.URL}`,
+              '',
+              `Built from ${process.env.SHA.substring(0, 7)}. Sign in at ${process.env.URL}/dev-login.`,
+              'Seed data only, the clock stands at Mon 16.11.2026 06:00 (docs/test-data.md).',
+              'After a pause the app stops; the next visit starts it in a few seconds and resets the seed.',
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR);
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find((c) => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  remove:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: config
+        run: scripts/deploy.sh check >> "$GITHUB_OUTPUT"
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - if: steps.config.outputs.configured == 'true'
+        run: scripts/deploy.sh remove-preview "$PR"
