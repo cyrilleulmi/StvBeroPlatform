@@ -179,7 +179,9 @@ test.describe('Design', () => {
 
     const themeSwitch = page.getByTestId('theme-switch');
     await expect(themeSwitch).toHaveAccessibleName('Darstellung');
-    await expect(themeSwitch.getByRole('radio', { name: 'System' })).toBeChecked();
+    // Hell is the default (E-98)
+    await expect(themeSwitch.getByRole('radio', { name: 'Hell' })).toBeChecked();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
     expect(await background(page)).toBe(LIGHT);
 
     await themeSwitch.getByRole('radio', { name: 'Dunkel' }).check();
@@ -203,9 +205,20 @@ test.describe('Design', () => {
     await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System' })).toBeChecked();
   });
 
-  test('F-00 K6: Start in dark mode without accessibility findings', async ({ page }) => {
+  test('E-98: a device in dark mode still starts in Hell; Dunkel needs a choice', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await login(page, 'alex');
+    await page.goto('/');
+    await expect(page.getByTestId('tile-anwesenheit')).toBeVisible();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
+    expect(await background(page)).toBe(LIGHT);
+  });
+
+  test('F-00 K6: Start in Dunkel without accessibility findings', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await login(page, 'alex');
+    await page.goto('/profil');
+    await page.getByTestId('theme-switch').getByRole('radio', { name: 'Dunkel' }).check();
     await page.goto('/');
 
     await expect(page.getByTestId('tile-anwesenheit')).toBeVisible();

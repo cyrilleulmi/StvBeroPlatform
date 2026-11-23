@@ -118,9 +118,11 @@ Decided on 22.11.2026 (E-90, NF-08). Before: «Hell», «Düne» and «GitHub Da
 
 | Entry in the profile | `data-theme` | Stored value | Shows |
 |---|---|---|---|
-| «Hell» | `light` | `light` | Hall floor with ultramarine |
+| «Hell» (default, E-98) | `light` | `light` | Hall floor with ultramarine |
 | «Dunkel» | `dark` | `dark` | Cool slate, muted colours |
-| «System» (default) | none | `system` | «Hell» in light mode, «Dunkel» in dark mode |
+| «System» | none | `system` | «Hell» in light mode, «Dunkel» in dark mode |
+
+Without a stored choice the app is «Hell», also on a device in dark mode; «Dunkel» and «System» are chosen in the profile (E-98).
 
 Rules:
 
