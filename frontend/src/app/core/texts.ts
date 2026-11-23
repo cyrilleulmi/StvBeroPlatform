@@ -411,8 +411,9 @@ export const TEXTS = {
     distributed: 'Die Fahrten sind eingetragen. Wer fährt, bekommt eine Mitteilung.',
     carsNeeded: (cars: number) => (cars === 1 ? 'braucht etwa 1 Auto' : `braucht etwa ${cars} Autos`),
     passed: (person: string, day: string) => `${person} fährt am ${day} nicht. Die nächste Person in der Reihe übernimmt.`,
-    carAdded: (day: string) => `Ein Auto mehr am ${day}.`,
-    driverAdded: (person: string, day: string) => `${person} fährt am ${day}.`,
+    // «So 06.12.» ends with a dot already: no second one
+    carAdded: (day: string) => `Ein Auto mehr am ${day.replace(/\.$/, '')}.`,
+    driverAdded: (person: string, day: string) => `${person} fährt am ${day.replace(/\.$/, '')}.`,
     driverRemoved: (person: string, day: string) => `${person} fährt am ${day} nicht mehr.`,
     handedOver: (from: string, to: string, day: string) => `${to} fährt am ${day} statt ${from}.`,
     filled: 'Alle haben einen Platz.',
