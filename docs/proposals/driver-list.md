@@ -1,6 +1,6 @@
 # Proposals for a simpler driver list
 
-Status: **proposal, not decided.** Cyrille was not happy with the page «Fahrerliste» of E-91: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
+Status: **decided (E-92): proposal B «Raster»**, with the changes listed under [Chosen](#chosen). Proposals A and C are dropped; their branches are deleted. Cyrille was not happy with the page «Fahrerliste» of E-91: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
 
 1. **Before the season:** assign all trips at once, as fairly as possible, with an assumption of how many people travel (a number set by hand, by default all players and coaches).
 2. **Right before a match day:** add or remove a driver, and put the people into the cars.
@@ -60,3 +60,14 @@ scripts/start.sh
 The proposals add migration V19 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
 
 Then http://localhost:4200/dev-login. Good to look at: team «Herren KF 4. Liga II» (eight match days entered by hand) as coach `reto` and as player `silvan`, page «Fahrerliste».
+
+## Chosen
+
+Cyrille chose B «Raster» on 23.11.2026 (E-92), with these changes:
+
+- The match day shows by default only «<n> Plätze für <m> Personen». «Plätze zuweisen», for everyone of the team, opens the cars as bubbles (DRV-23, DRV-32).
+- Every member of the team arranges the cars of a match day for everyone (DRV-32).
+- A driver with passengers is taken off after a question (DRV-02).
+- «Fair verteilen» only fills what is missing, shows it as a proposal first and enters it with «Vorschlag übernehmen»; entered trips stay. «Neu verteilen» is gone (DRV-30).
+- «Alle entfernen» takes every planned driver off after a question (DRV-33).
+- The grid shows the places per person, the kilometres per match day and the trips and kilometres per person with a total (DRV-34).

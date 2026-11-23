@@ -19,6 +19,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -170,7 +171,9 @@ class DriverListTest {
         assertThat(json.getList("withoutSeat.firstName"), contains("Jana"));
         assertThat(json.getBoolean("canJoin"), equalTo(true));
         assertThat(json.getBoolean("canManage"), equalTo(false));
-        assertThat(json.get("members"), nullValue());
+        // Members arrange the cars for everyone of the team (DRV-32)
+        assertThat(json.getBoolean("canArrange"), equalTo(true));
+        assertThat(json.getList("members"), hasSize(8));
     }
 
     @Test
@@ -245,10 +248,21 @@ class DriverListTest {
     }
 
     @Test
-    void drv02OnlyCoachesAndAdminsEnterOthers() {
-        addCar(login("anna"), T04, KIM, 2).statusCode(403);
-        seats(login("anna"), T04, CAR_SARA, 2).statusCode(403);
-        removeCar(login("anna"), T04, CAR_SARA).statusCode(403);
+    void drv32MembersArrangeTheCarsForEveryone() {
+        // «Plätze zuweisen»: every member of the team enters and removes drivers for others (DRV-32)
+        String anna = login("anna");
+        addCar(anna, T04, KIM, 2).statusCode(200);
+        assertThat(textsFor("Kim"), contains(
+                "Du bist am Spieltag So 22.11. als Fahrerin oder Fahrer eingetragen, mit 2 Plätzen."));
+        seats(anna, T04, CAR_SARA, 2).statusCode(200);
+        removeCar(anna, T04, CAR_SARA).statusCode(200);
+        assertThat(list(anna, T04).extract().jsonPath().getBoolean("canArrange"), equalTo(true));
+        // Eva (Team 2) cannot
+        addCar(login("eva"), T04, EVA, 2).statusCode(403);
+    }
+
+    @Test
+    void drv02CoachesAndAdminsEnterOthers() {
 
         addCar(login("petra"), T04, KIM, 2).statusCode(200);
         assertThat(textsFor("Kim"), contains(
@@ -318,9 +332,7 @@ class DriverListTest {
     }
 
     @Test
-    void drv03OnlyCoachesAndAdminsAssignOthers() {
-        ride(login("anna"), T04, CAR_SARA, JANA).statusCode(403);
-        leave(login("anna"), T04, CAR_PETRA, LEA).statusCode(403);
+    void drv03MembersCoachesAndAdminsAssignOthers() {
         // Eva (Team 2) can neither view nor ride along
         ride(login("eva"), T04, CAR_SARA, EVA).statusCode(403);
 
@@ -338,6 +350,10 @@ class DriverListTest {
         ride(login("alex"), T04, CAR_SARA, EVA).statusCode(422).body("rule", equalTo("DRV-02"));
         ride(login("alex"), T04, CAR_SARA, PETRA).statusCode(422).body("rule", equalTo("DRV-03"));
         ride(login("alex"), T04, "b0000000-0000-4000-8000-000000000099", JANA).statusCode(404);
+        // Every member of the team puts others into cars and takes them out (DRV-32)
+        leave(login("anna"), T04, CAR_SARA, JANA).statusCode(200);
+        ride(login("anna"), T04, CAR_SARA, NINA).statusCode(200);
+        assertThat(textsFor("Nina"), contains("Du fährst am Spieltag So 22.11. bei Sara Brun mit."));
     }
 
     @Test

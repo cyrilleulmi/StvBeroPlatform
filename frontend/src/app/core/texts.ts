@@ -255,7 +255,15 @@ export const TEXTS = {
       `Von Hand angepasst${who ? ' von ' + who : ''}${when ? ' am ' + when : ''}` +
       (calculated === null ? '.' : `, berechnet wären etwa ${calculated} Min.`),
     toPlan: 'Zur Fahrerliste',
-    planHint: 'Fahrerinnen und Fahrer trägst du in der Fahrerliste ein.',
+    seatSummary: (places: number, people: number) =>
+      `${places} ${places === 1 ? 'Platz' : 'Plätze'} für ${people} ${people === 1 ? 'Person' : 'Personen'}`,
+    seatSummaryHint: 'Personen, die individuell anreisen, zählen nicht.',
+    seatCars: (cars: number) => (cars === 0 ? 'Noch kein Auto' : cars === 1 ? '1 Auto' : `${cars} Autos`),
+    seatMissing: (n: number) => (n === 1 ? 'Es fehlt 1 Platz.' : `Es fehlen ${n} Plätze.`),
+    seatEnough: 'Genug Plätze.',
+    assignSeats: 'Plätze zuweisen',
+    showCars: 'Autos zeigen',
+    assignDone: 'Fertig',
     credit: (km: string) => `Gutschrift pro Auto: ${km} km (hin und zurück)`,
     unavailable:
       'Die Strecke lässt sich gerade nicht berechnen, der Routendienst ist nicht erreichbar. Die Fahrerliste funktioniert trotzdem, nur ohne Kilometer.',
@@ -272,54 +280,12 @@ export const TEXTS = {
     kmSaved: 'Die Kilometer sind gespeichert.',
     kmFormat: 'Bitte eine Zahl von 0.1 bis 1000 eingeben.',
     cars: 'Autos',
-    noCars: 'Noch niemand fährt.',
-    carOf: (driver: string) => `Auto von ${driver}`,
-    seatsFree: (free: number, seats: number) =>
-      `${free} von ${seats} ${seats === 1 ? 'Platz' : 'Plätzen'} frei`,
-    full: 'voll',
-    carCredit: (km: string) => `Gutschrift ${km} km`,
-    passengersOf: (driver: string) => `Mitfahrende bei ${driver}`,
-    noPassengers: 'Noch niemand fährt mit.',
     you: '(du)',
-    rideWith: (driver: string) => `Bei ${driver} mitfahren`,
-    leave: 'Aussteigen',
-    removePassenger: (person: string) => `${person} aussteigen lassen`,
-    seatsOf: (driver: string) => `Plätze im Auto von ${driver}`,
-    removeCar: (driver: string) => `Auto von ${driver} entfernen`,
-    stopDriving: 'Ich fahre nicht mehr',
-    removeTitle: (driver: string) => `Auto von ${driver} entfernen?`,
-    removeOwnTitle: 'Nicht mehr fahren?',
-    removeText: (count: number) =>
-      count === 0
-        ? 'Im Auto sitzt noch niemand.'
-        : `${count === 1 ? 'Die mitfahrende Person verliert' : `Die ${count} Mitfahrenden verlieren`} ihren Platz und ${count === 1 ? 'wird' : 'werden'} benachrichtigt.`,
     remove: 'Entfernen',
     cancel: 'Abbrechen',
-    assignTo: (driver: string) => `Mitfahrende für ${driver} wählen`,
-    assign: 'Zuteilen',
     choose: 'Person wählen',
-    seatedWith: (driver: string) => `(bei ${driver})`,
-    drives: '(fährt)',
-    iDrive: 'Ich fahre',
-    mySeats: 'Freie Plätze in deinem Auto',
-    enterDriver: 'Fahrerin oder Fahrer eintragen',
-    driver: 'Person',
     seats: 'Freie Plätze',
-    enter: 'Eintragen',
-    withoutSeat: 'Ohne Platz',
-    withoutSeatCalledUp: 'Aufgebotene Spielerinnen ohne Platz.',
-    withoutSeatAttending: 'Spielerinnen mit «dabei» ohne Platz. Das Aufgebot ist noch nicht veröffentlicht.',
-    everyoneSeated: 'Alle haben einen Platz.',
     summaryLink: 'Fahrten der Saison',
-    // Feedback
-    driving: (who: string | null, seats: number) =>
-      `${who ? `${who} fährt` : 'Du fährst'} mit ${seats} ${seats === 1 ? 'Platz' : 'Plätzen'}.`,
-    seatsSaved: (seats: number) => `Gespeichert: ${seats} ${seats === 1 ? 'Platz' : 'Plätze'}.`,
-    riding: (who: string | null, driver: string) =>
-      `${who ? `${who} fährt` : 'Du fährst'} bei ${driver} mit.`,
-    left: (who: string | null, driver: string) =>
-      who ? `${who} fährt nicht mehr bei ${driver} mit.` : `Du fährst nicht mehr bei ${driver} mit.`,
-    carRemoved: (driver: string) => `Das Auto von ${driver} ist entfernt.`,
   },
   trips: {
     title: 'Fahrten',
@@ -402,9 +368,23 @@ export const TEXTS = {
     expectedReset: 'Wieder alle',
     expectedOf: (label: string) => `Personen am ${label}`,
     distribute: 'Fair verteilen',
-    redistribute: 'Neu verteilen',
+    proposalTitle: 'Vorschlag',
+    proposalText: (trips: number, days: number) =>
+      `${trips === 1 ? '1 Fahrt' : `${trips} Fahrten`} an ${days === 1 ? '1 Spieltag' : `${days} Spieltagen`}. ` +
+      'Die gestrichelten Autos sind vorgeschlagen, eingetragen ist noch nichts. Bereits eingetragene Fahrten bleiben.',
+    proposalAccept: 'Vorschlag übernehmen',
+    proposalDiscard: 'Verwerfen',
+    proposalNothing: 'Es fehlt kein Auto. Es gibt nichts zu verteilen.',
+    proposalDiscarded: 'Der Vorschlag ist verworfen.',
+    proposedCell: (person: string, day: string) => `Vorschlag: ${person} fährt am ${day}`,
+    removeAll: 'Alle entfernen',
+    removeAllTitle: 'Alle geplanten Fahrten entfernen?',
+    removeAllText: (trips: number, days: number) =>
+      `${trips === 1 ? '1 Fahrt' : `${trips} Fahrten`} an ${days === 1 ? '1 kommenden Spieltag wird' : `${days} kommenden Spieltagen werden`} ` +
+      'entfernt. Wer mitfährt, verliert den Platz. Alle Betroffenen bekommen eine Mitteilung.',
+    removedAll: 'Alle geplanten Fahrten sind entfernt.',
     distributeText: 'Die App teilt die Fahrten so ein, dass alle etwa gleich oft fahren.',
-    distributed: 'Die Fahrten sind verteilt. Wer fährt, bekommt eine Mitteilung.',
+    distributed: 'Die Fahrten sind eingetragen. Wer fährt, bekommt eine Mitteilung.',
     carsNeeded: (cars: number) => (cars === 1 ? 'braucht etwa 1 Auto' : `braucht etwa ${cars} Autos`),
     passed: (person: string, day: string) => `${person} fährt am ${day} nicht. Die nächste Person in der Reihe übernimmt.`,
     carAdded: (day: string) => `Ein Auto mehr am ${day}.`,
@@ -449,7 +429,7 @@ export const TEXTS = {
       hintPerson: 'Person antippen, dann das Auto wählen. Oder alle auf einmal:',
       hintCar: (first: string) => `Jetzt bei einem Auto «${first} hier einsteigen» antippen.`,
       fill: 'Alle verteilen',
-      individual: (names: string) => `Reist individuell an: ${names}`,
+      individuals: (names: string) => `Reist individuell an: ${names}`,
       short: (missing: number, waiting: number) =>
         `${waiting} ohne Platz, es ${missing === 1 ? 'fehlt 1 Platz' : `fehlen ${missing} Plätze`}: Es braucht ein Auto mehr.`,
       open: (waiting: number, free: number) =>
@@ -458,6 +438,23 @@ export const TEXTS = {
       allSeated: (free: number) =>
         free === 0 ? 'Alle haben Platz. Die Autos sind voll.' : `Alle haben Platz · ${free} ${free === 1 ? 'Platz' : 'Plätze'} frei`,
       nobody: 'Noch niemand braucht einen Platz.',
+      removeDriver: (driver: string) => `${driver} austragen`,
+      removeTitle: (driver: string) => `${driver} austragen?`,
+      removeText: (driver: string, n: number) =>
+        n === 1
+          ? `Im Auto von ${driver} sitzt 1 Person. Sie verliert den Platz und bekommt eine Mitteilung.`
+          : `Im Auto von ${driver} sitzen ${n} Personen. Sie verlieren den Platz und bekommen eine Mitteilung.`,
+      removeConfirm: 'Austragen',
+      added: (driver: string) => `${driver} fährt.`,
+      removed: (driver: string) => `${driver} fährt nicht mehr.`,
+      addTitle: 'Fahrerin oder Fahrer hinzufügen',
+      addWho: 'Wer fährt',
+      addSeats: 'Freie Plätze',
+      add: 'Eintragen',
+      choose: 'Person wählen',
+      seatedWith: (driver: string) => `(bei ${driver})`,
+      individual: (first: string) => `${first} reist individuell an`,
+      readOnly: 'Ändern lässt sich die Fahrerliste nicht mehr.',
     },
     fairness: {
       title: 'Wer fährt wie oft',
@@ -477,10 +474,20 @@ export const TEXTS = {
     gridTitle: 'Wer fährt wann',
     showPast: 'Vergangene zeigen',
     allAgain: (n: number) => `Wieder alle ${n}`,
-    hintCoach: 'Feld antippen: fährt oder fährt nicht. Spieltag antippen: Autos füllen.',
-    hintMember: 'In deiner Zeile trägst du dich selbst ein oder aus. Spieltag antippen: wer bei wem mitfährt.',
+    hintCoach: 'Feld antippen: fährt oder fährt nicht. Spieltag antippen: Plätze zuweisen.',
+    hintMember: 'In deiner Zeile trägst du dich selbst ein oder aus. Spieltag antippen: Plätze zuweisen.',
     hintRead: 'Spieltag antippen: wer bei wem mitfährt.',
-    who: 'Wer · Fahrten',
+    who: 'Wer · Plätze',
+    carSeats: (n: number) => `${n} Plätze im Auto`,
+    cannotDrive: 'fährt nicht',
+    trips: 'Fahrten',
+    km: 'km',
+    total: 'Total',
+    tripsOf: (person: string, trips: number, km: string) =>
+      `${person}: ${trips === 1 ? '1 Fahrt' : `${trips} Fahrten`}, ${km} km`,
+    proposedMore: (n: number) => `+${n} im Vorschlag`,
+    dayKm: (km: string) => `${km} km`,
+    legendProposed: 'Vorschlag',
     home: 'Heimspiel',
     places: 'Plätze',
     of: (n: number) => ` / ${n}`,
@@ -495,8 +502,6 @@ export const TEXTS = {
     expectedHere: 'Personen an diesem Spieltag',
     likeTeam: (n: number) => `Wieder ${n} wie sonst`,
     attendingNow: (n: number) => `Bis jetzt ${n} dabei.`,
-    hasPassengers: (driver: string, n: number) =>
-      `Im Auto von ${driver} ${n === 1 ? 'sitzt 1 Person' : `sitzen ${n} Personen`}. Setze sie unten zuerst in ein anderes Auto.`,
     settingsTitle: 'Wer kann fahren',
     settingsText: 'So sind die Fahrten verteilt. Unter «Anpassen»: wer fahren kann und wie viele Plätze das Auto hat.',
   },
@@ -1305,27 +1310,6 @@ export const TEXTS = {
     notCalledUp: 'nicht aufgeboten',
     placeText: (label: string | null, n: number) => label ?? `Platz ${n}`,
   },
-  proposal: {
-    button: 'Vorschlag erarbeiten',
-    title: 'Vorschlag für die Fahrerliste',
-    intro:
-      'Wer am wenigsten gefahren ist, fährt zuerst. Autos, die schon eingetragen sind, bleiben und werden zuerst gefüllt.',
-    nothing: 'Alle haben schon einen Platz. Es gibt nichts vorzuschlagen.',
-    newCar: 'neu',
-    existingCar: 'schon eingetragen',
-    drives: (name: string, seats: number) =>
-      `${name} fährt · ${seats} ${seats === 1 ? 'Platz' : 'Plätze'}`,
-    passengers: 'Fährt mit',
-    alone: 'Fährt allein.',
-    added: 'neu',
-    withoutSeat: (n: number) =>
-      n === 1
-        ? 'Für 1 Person fehlt ein Platz. Es gibt zu wenige Fahrerinnen und Fahrer.'
-        : `Für ${n} Personen fehlt ein Platz. Es gibt zu wenige Fahrerinnen und Fahrer.`,
-    apply: 'Vorschlag übernehmen',
-    cancel: 'Abbrechen',
-    applied: 'Der Vorschlag ist übernommen.',
-  },
   individual: {
     title: 'Reist individuell an',
     self: 'Ich reise individuell an',
@@ -1366,5 +1350,6 @@ export const TEXTS = {
     toStartPage: 'Zur Startseite',
     loadError: 'Das hat nicht geklappt. Bitte versuche es nochmals.',
     back: 'Zurück',
+    cancel: 'Abbrechen',
   },
 } as const;

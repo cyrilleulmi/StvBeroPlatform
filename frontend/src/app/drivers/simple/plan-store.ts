@@ -1,7 +1,16 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
-import type { DriverList, DriverPlan, DriverPlanMatchDay, DriverProposal, DriverSetting, PersonSummary } from '../../api/types';
+import type {
+  DriverList,
+  DriverPlan,
+  DriverPlanDistribution,
+  DriverPlanMatchDay,
+  DriverPlanProposedTrip,
+  DriverProposal,
+  DriverSetting,
+  PersonSummary,
+} from '../../api/types';
 import { clockTime, eventDate, yearOf } from '../../attendance/time';
 import { AuthService } from '../../core/auth.service';
 import { errorStatus, errorText } from '../../core/error-text';
@@ -22,8 +31,9 @@ export interface QueueEntry {
 }
 
 /**
- * State and actions of the simple driver list (DRV-29 to DRV-31): the plan of a team for a season and the driver
- * lists of the match days that are opened. The page provides it; its parts inject it.
+ * State and actions of the simple driver list (DRV-29 to DRV-33): the plan of a team for a season and the driver
+ * lists of the match days that are opened. The page provides it; its parts inject it. On the match day
+ * (`/termine/:id`) only the driver list of that match day is loaded, without a plan.
  */
 @Injectable()
 export class PlanStore {
@@ -43,6 +53,8 @@ export class PlanStore {
   readonly success = signal<string | null>(null);
   /** Driver lists of opened match days, by event. */
   readonly lists = signal<Record<string, DriverList>>({});
+  /** «Fair verteilen» shows its proposal first; nothing is entered until it is accepted (DRV-30). */
+  readonly proposal = signal<DriverPlanProposedTrip[] | null>(null);
 
   readonly meId = computed(() => this.auth.me()?.id ?? null);
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
@@ -83,6 +95,19 @@ export class PlanStore {
       );
   });
   readonly maxTrips = computed(() => Math.max(1, ...this.queue().map((q) => q.trips)));
+
+  /**
+   * The proposed trips that still fit: the match day can be planned and the person does not drive there yet. A
+   * change made while the proposal is shown keeps the rest of it.
+   */
+  readonly proposed = computed<DriverPlanProposedTrip[]>(() => {
+    const trips = this.proposal() ?? [];
+    const days = new Map(this.upcoming().map((m) => [m.eventId, m]));
+    return trips.filter((t) => {
+      const m = days.get(t.eventId);
+      return !!m && !m.cancelled && m.changeable && !m.cars.some((car) => car.driver.id === t.driver.id);
+    });
+  });
 
   /** Match days on which the signed-in person drives, upcoming ones. */
   readonly myTrips = computed(() => {
@@ -133,6 +158,22 @@ export class PlanStore {
     return Math.max(1, Math.min(8, places - 1));
   }
 
+  /** Proposed trips of a match day. */
+  proposedOn(eventId: string): DriverPlanProposedTrip[] {
+    return this.proposed().filter((t) => t.eventId === eventId);
+  }
+
+  /** Places of a match day with the proposal: the cars plus the proposed ones with their drivers. */
+  placesWithProposal(m: DriverPlanMatchDay): number {
+    return m.places + this.proposedOn(m.eventId).reduce((sum, t) => sum + t.seats + 1, 0);
+  }
+
+  /** `enough` or `short` with the proposal, for the foot of the grid. */
+  stateWithProposal(m: DriverPlanMatchDay): 'enough' | 'short' | 'none' {
+    if (m.noTrip || m.cancelled || !m.ready) return 'none';
+    return this.placesWithProposal(m) >= m.expected ? 'enough' : 'short';
+  }
+
   // ------------------------------------------------------------------ Loading
 
   async load(team: string, season: string | undefined): Promise<void> {
@@ -149,6 +190,17 @@ export class PlanStore {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Shows a driver list that was loaded elsewhere, e.g. by the section on the match day. */
+  put(list: DriverList): void {
+    this.lists.update((all) => ({ ...all, [list.eventId]: list }));
+  }
+
+  /** Loads the plan again, if this store shows one (not on the match day). */
+  private async reloadPlan(): Promise<void> {
+    if (!this.team) return;
+    this.plan.set(await firstValueFrom(this.http.get<DriverPlan>(this.url(''), { params: this.params() })));
   }
 
   /** Loads the driver list of a match day (cars with passengers, who needs a seat). */
@@ -206,26 +258,71 @@ export class PlanStore {
     try {
       const list = await firstValueFrom(request);
       if (this.lists()[eventId]) this.lists.update((all) => ({ ...all, [eventId]: list }));
-      this.plan.set(await firstValueFrom(this.http.get<DriverPlan>(this.url(''), { params: this.params() })));
+      await this.reloadPlan();
       if (success) this.success.set(success);
       return true;
     } catch (e) {
       this.error.set(errorText(e));
+      // The list may have changed meanwhile (e.g. car full): show the current state
+      if (this.lists()[eventId]) await this.open(eventId);
       return false;
     } finally {
       this.running.set(null);
     }
   }
 
-  // ------------------------------------------------------------------ Season (DRV-29, DRV-30, DRV-31)
+  // ------------------------------------------------------------------ Season (DRV-29 to DRV-31, DRV-33)
 
-  /** «Fair verteilen»; with `replace` the upcoming match days are planned anew. */
-  distribute(replace: boolean): Promise<boolean> {
-    return this.change(
-      'distribute',
-      this.http.post<DriverPlan>(this.url('/distribute'), { replace }, { params: this.params() }),
+  /** «Fair verteilen»: asks for a proposal and shows it; nothing is entered yet (DRV-30). */
+  async preview(): Promise<void> {
+    if (this.busy()) return;
+    this.running.set('distribute');
+    this.error.set(null);
+    this.success.set(null);
+    try {
+      const d = await firstValueFrom(
+        this.http.post<DriverPlanDistribution>(this.url('/distribute/preview'), null, { params: this.params() }),
+      );
+      if (d.trips.length === 0) {
+        this.proposal.set(null);
+        this.success.set(this.t.proposalNothing);
+      } else {
+        this.proposal.set(d.trips);
+      }
+    } catch (e) {
+      this.error.set(errorText(e));
+    } finally {
+      this.running.set(null);
+    }
+  }
+
+  /** Enters the proposal as it is shown; the trips then stay (DRV-30). */
+  async acceptProposal(): Promise<boolean> {
+    const trips = this.proposed().map((t) => ({ eventId: t.eventId, driverId: t.driver.id, seats: t.seats }));
+    const done = await this.change(
+      'accept',
+      this.http.post<DriverPlan>(this.url('/distribute'), { trips }, { params: this.params() }),
       this.t.distributed,
     );
+    if (done) this.proposal.set(null);
+    return done;
+  }
+
+  discardProposal(): void {
+    this.proposal.set(null);
+    this.error.set(null);
+    this.success.set(this.t.proposalDiscarded);
+  }
+
+  /** «Alle entfernen»: every driver of the upcoming match days (DRV-33). */
+  async removeAll(): Promise<boolean> {
+    const done = await this.change(
+      'remove-all',
+      this.http.delete<DriverPlan>(this.url('/cars'), { params: this.params() }),
+      this.t.removedAll,
+    );
+    if (done) this.proposal.set(null);
+    return done;
   }
 
   /** People expected per match day of the team; `null`: everyone. */
@@ -259,23 +356,41 @@ export class PlanStore {
 
   /** Enters a person as driver of a match day with her usual seats. */
   addDriver(m: DriverPlanMatchDay, person: PersonSummary): Promise<boolean> {
+    return this.enterDriver(m.eventId, person, this.usualSeats(person.id), this.day(m));
+  }
+
+  /** Enters a person as driver of a match day (DRV-02, DRV-32). */
+  enterDriver(eventId: string, person: PersonSummary, seats: number, day?: string): Promise<boolean> {
     return this.changeList(
-      'add:' + person.id + ':' + m.eventId,
-      m.eventId,
-      this.http.post<DriverList>(this.listUrl(m.eventId, '/cars'), {
-        driverId: person.id,
-        seats: this.usualSeats(person.id),
-      }),
-      this.t.driverAdded(name(person), this.day(m)),
+      'add:' + person.id + ':' + eventId,
+      eventId,
+      this.http.post<DriverList>(this.listUrl(eventId, '/cars'), { driverId: person.id, seats }),
+      day ? this.t.driverAdded(name(person), day) : this.t.board.added(name(person)),
     );
   }
 
   removeCar(m: DriverPlanMatchDay, carId: string, driver: PersonSummary): Promise<boolean> {
+    return this.dropDriver(m.eventId, carId, driver, this.day(m));
+  }
+
+  /** Takes a driver off a match day; her passengers lose their seats (DRV-02, DRV-11). */
+  dropDriver(eventId: string, carId: string, driver: PersonSummary, day?: string): Promise<boolean> {
     return this.changeList(
       'remove:' + carId,
-      m.eventId,
-      this.http.delete<DriverList>(this.listUrl(m.eventId, `/cars/${carId}`)),
-      this.t.driverRemoved(name(driver), this.day(m)),
+      eventId,
+      this.http.delete<DriverList>(this.listUrl(eventId, `/cars/${carId}`)),
+      day ? this.t.driverRemoved(name(driver), day) : this.t.board.removed(name(driver)),
+    );
+  }
+
+  /** Travelling on one's own, from the cars of a match day (DRV-20). */
+  setIndividual(eventId: string, person: PersonSummary, individual: boolean): Promise<boolean> {
+    const url = this.listUrl(eventId, `/individual/${person.id}`);
+    return this.changeList(
+      'individual:' + person.id,
+      eventId,
+      individual ? this.http.put<DriverList>(url, {}) : this.http.delete<DriverList>(url),
+      individual ? TEXTS.individual.saved(name(person)) : TEXTS.individual.removed(name(person)),
     );
   }
 
@@ -352,7 +467,7 @@ export class PlanStore {
       if (cars.length > 0) {
         const list = await firstValueFrom(this.http.post<DriverList>(this.listUrl(eventId, '/proposal/apply'), { cars }));
         this.lists.update((all) => ({ ...all, [eventId]: list }));
-        this.plan.set(await firstValueFrom(this.http.get<DriverPlan>(this.url(''), { params: this.params() })));
+        await this.reloadPlan();
       }
       const added = p.cars.filter((c) => !c.existing).map((c) => name(c.driver));
       this.success.set(

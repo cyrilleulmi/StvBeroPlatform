@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import type { Car, DriverPlanMatchDay } from '../api/types';
 import { AuthService } from '../core/auth.service';
@@ -6,22 +6,24 @@ import { name } from '../core/format';
 import { Icon } from '../core/icon';
 import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
+import { ConfirmDialog } from './simple/confirm-dialog';
 import { Fairness } from './simple/fairness';
 import { PlanStore, QueueEntry } from './simple/plan-store';
 import { SeatBoard } from './simple/seat-board';
 import { Stepper } from './simple/stepper';
 
 /**
- * Driver list of a team, proposal B «Raster» (`/teams/:teamId/fahrerliste`): the season as a grid, people down
- * and match days across. A tap on a cell says «drives» or «does not drive»; the row shows how often a person
- * drives, the foot of the column whether the match day has enough places (DRV-29). «Fair verteilen» fills the
- * grid (DRV-30). A tap on a match day opens its cars below to seat people (DRV-03). `?saison=<id>` shows another
- * season.
+ * Driver list of a team (`/teams/:teamId/fahrerliste`): the season as a grid, people down and match days across
+ * (E-92). The rows show the places of each car, the columns the distance, the column on the right how often and how
+ * far each person drives (DRV-17). A tap on a cell says «drives» or «does not drive»; a driver with passengers is
+ * taken off only after a question. «Fair verteilen» shows a proposal for the trips that are missing, which is entered
+ * with «Vorschlag übernehmen» and then stays (DRV-30); «Alle entfernen» takes every planned driver off (DRV-33). A tap
+ * on a match day opens its cars below (DRV-03, DRV-32). `?saison=<id>` shows another season.
  */
 @Component({
   selector: 'app-driver-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, Fairness, SeatBoard, Stepper],
+  imports: [RouterLink, Icon, Fairness, SeatBoard, Stepper, ConfirmDialog],
   providers: [PlanStore],
   template: `
     <div class="header">
@@ -62,7 +64,7 @@ import { Stepper } from './simple/stepper';
             }
           </div>
           @if (d.canManage) {
-            <!-- Planning the season: one number and one button (DRV-29, DRV-30) -->
+            <!-- Planning the season: one number and the proposal (DRV-29, DRV-30, DRV-33) -->
             <div class="planning" data-testid="planning">
               <span class="expected">
                 <span class="expected-label">{{ t.expected }}</span>
@@ -79,30 +81,65 @@ import { Stepper } from './simple/stepper';
                   </button>
                 }
               </span>
-              <span class="plan-buttons">
-                <button
-                  type="button"
-                  class="button button-primary button-small"
-                  [disabled]="store.busy() || store.short().length === 0"
-                  [attr.aria-busy]="store.running() === 'distribute' ? 'true' : null"
-                  data-testid="distribute"
-                  (click)="store.distribute(false)"
-                >
-                  {{ t.distribute }}
-                </button>
-                @if (hasPlanned()) {
+              @if (store.proposal() === null) {
+                <span class="plan-buttons">
+                  <button
+                    type="button"
+                    class="button button-primary button-small"
+                    [disabled]="store.busy() || store.short().length === 0"
+                    [attr.aria-busy]="store.running() === 'distribute' ? 'true' : null"
+                    data-testid="distribute"
+                    (click)="store.preview()"
+                  >
+                    {{ t.distribute }}
+                  </button>
+                  @if (hasPlanned()) {
+                    <button
+                      type="button"
+                      class="button button-secondary button-small button-destructive"
+                      [disabled]="store.busy()"
+                      [attr.aria-busy]="store.running() === 'remove-all' ? 'true' : null"
+                      data-testid="remove-all"
+                      (click)="askRemoveAll()"
+                    >
+                      {{ t.removeAll }}
+                    </button>
+                  }
+                </span>
+              }
+            </div>
+            @if (store.proposal() !== null) {
+              <section class="proposal" aria-labelledby="proposal-title" data-testid="distribution-proposal">
+                <div>
+                  <h3 id="proposal-title">
+                    <span class="toggle proposed small" aria-hidden="true"><app-icon name="car" [size]="12" /></span>
+                    {{ t.proposalTitle }}
+                  </h3>
+                  <p>{{ t.proposalText(store.proposed().length, proposedDays()) }}</p>
+                </div>
+                <span class="plan-buttons">
+                  <button
+                    type="button"
+                    class="button button-primary button-small"
+                    data-testid="distribute-accept"
+                    [disabled]="store.busy() || store.proposed().length === 0"
+                    [attr.aria-busy]="store.running() === 'accept' ? 'true' : null"
+                    (click)="store.acceptProposal()"
+                  >
+                    {{ t.proposalAccept }}
+                  </button>
                   <button
                     type="button"
                     class="button button-secondary button-small"
+                    data-testid="distribute-discard"
                     [disabled]="store.busy()"
-                    data-testid="redistribute"
-                    (click)="store.distribute(true)"
+                    (click)="store.discardProposal()"
                   >
-                    {{ t.redistribute }}
+                    {{ t.proposalDiscard }}
                   </button>
-                }
-              </span>
-            </div>
+                </span>
+              </section>
+            }
           }
           <p class="secondary-text">{{ d.canManage ? b.hintCoach : d.canJoin ? b.hintMember : b.hintRead }}</p>
 
@@ -131,10 +168,17 @@ import { Stepper } from './simple/stepper';
                         >
                           <span class="day-date">{{ shortDay(m) }}</span>
                           <span class="day-place">{{ m.noTrip ? b.home : (m.town ?? m.venue ?? '') }}</span>
+                          <span class="day-km" [attr.data-testid]="'plan-day-km-' + m.eventId">{{
+                            m.noTrip || !has(m.distanceKm) ? '–' : b.dayKm(km(m.distanceKm))
+                          }}</span>
                           <span class="visually-hidden">{{ b.openDay }}</span>
                         </button>
                       </th>
                     }
+                    <th scope="col" class="total total-head">
+                      <span>{{ b.trips }}</span>
+                      <span class="total-km">{{ b.km }}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -146,7 +190,15 @@ import { Stepper } from './simple/stepper';
                     >
                       <th scope="row" class="person">
                         <span class="person-name">{{ store.shortName(q.person) }}</span>
-                        <span class="trips" [attr.title]="t.fairness.trips(q.trips)" data-testid="plan-trips">{{ q.trips }}</span>
+                        @if (q.canDrive) {
+                          <span class="car-seats" [attr.title]="b.carSeats(q.carSeats)" data-testid="plan-car-seats">
+                            <app-icon name="armchair" [size]="13" />
+                            <span class="visually-hidden">{{ b.carSeats(q.carSeats) }}</span>
+                            <span aria-hidden="true">{{ q.carSeats }}</span>
+                          </span>
+                        } @else {
+                          <span class="car-seats none-seats" data-testid="plan-car-seats">{{ b.cannotDrive }}</span>
+                        }
                       </th>
                       @for (m of columns(); track m.eventId) {
                         <td
@@ -175,6 +227,15 @@ import { Stepper } from './simple/stepper';
                                 <app-icon name="car" [size]="18" />
                               </span>
                             }
+                          } @else if (isProposed(m, q.person.id)) {
+                            <span
+                              class="toggle proposed"
+                              role="img"
+                              [attr.aria-label]="t.proposedCell(name(q.person), store.day(m))"
+                              [attr.data-testid]="'proposal-' + q.person.id + '-' + m.eventId"
+                            >
+                              <app-icon name="car" [size]="18" />
+                            </span>
                           } @else if (q.canDrive && canToggle(m, q)) {
                             <button
                               type="button"
@@ -190,6 +251,18 @@ import { Stepper } from './simple/stepper';
                           }
                         </td>
                       }
+                      <td
+                        class="total"
+                        data-testid="plan-total"
+                        [attr.data-trips]="q.trips"
+                        [attr.aria-label]="b.tripsOf(name(q.person), q.trips, km(q.kilometres))"
+                      >
+                        <span class="total-trips">{{ q.trips }}</span>
+                        @if (proposedFor(q.person.id); as more) {
+                          <span class="total-more" [attr.title]="b.proposedMore(more)">+{{ more }}</span>
+                        }
+                        <span class="total-km">{{ km(q.kilometres) }}</span>
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -199,24 +272,36 @@ import { Stepper } from './simple/stepper';
                     @for (m of columns(); track m.eventId) {
                       <td
                         class="sum"
-                        [attr.data-state]="m.over ? 'over' : store.state(m)"
+                        [attr.data-state]="m.over ? 'over' : store.stateWithProposal(m)"
                         [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
                         [attr.data-testid]="'plan-places-' + m.eventId"
                       >
                         @if (m.noTrip || m.cancelled) {
                           <span aria-hidden="true">–</span>
                         } @else {
-                          <span class="sum-places">{{ m.places }}</span>
+                          <span class="sum-places">{{ store.placesWithProposal(m) }}</span>
                           <span class="sum-of">{{ b.of(m.over ? m.attending : m.expected) }}</span>
                         }
                       </td>
                     }
+                    <td
+                      class="total"
+                      data-testid="plan-total-sum"
+                      [attr.aria-label]="b.tripsOf(b.total, totalTrips(), km(totalKm()))"
+                    >
+                      <span class="total-trips">{{ totalTrips() }}</span>
+                      <span class="total-km">{{ km(totalKm()) }}</span>
+                    </td>
                   </tr>
                 </tfoot>
               </table>
             </div>
             <p class="legend secondary-text">
               <span class="toggle on fixed small" aria-hidden="true"><app-icon name="car" [size]="12" /></span> {{ b.legendDrives }}
+              @if (store.proposal() !== null) {
+                <span class="toggle proposed small" aria-hidden="true"><app-icon name="car" [size]="12" /></span>
+                {{ b.legendProposed }}
+              }
               <span class="swatch enough" aria-hidden="true"></span> {{ b.legendEnough }}
               <span class="swatch short" aria-hidden="true"></span> {{ b.legendShort }}
             </p>
@@ -224,7 +309,7 @@ import { Stepper } from './simple/stepper';
         </section>
 
         @if (selected(); as m) {
-          <!-- The cars of the chosen match day: seat people right before the match (DRV-03, DRV-19) -->
+          <!-- The cars of the chosen match day: seat people right before the match (DRV-03, DRV-19, DRV-32) -->
           <section class="card" aria-labelledby="day-title" [attr.data-testid]="'plan-editor-' + m.eventId">
             <div class="day-head">
               <div>
@@ -232,7 +317,7 @@ import { Stepper } from './simple/stepper';
                 <h2 id="day-title" class="section-title">{{ store.dayTime(m) }}</h2>
                 <p class="secondary-text">
                   {{ store.venue(m) }}
-                  @if (m.distanceKm !== undefined && m.distanceKm !== null && !m.noTrip) {
+                  @if (has(m.distanceKm) && !m.noTrip) {
                     · {{ t.distance(km(m.distanceKm)) }}
                   }
                 </p>
@@ -265,7 +350,7 @@ import { Stepper } from './simple/stepper';
                   }
                 </div>
               }
-              <app-seat-board [matchDay]="m" />
+              <app-seat-board [eventId]="m.eventId" />
             }
           </section>
         }
@@ -275,6 +360,7 @@ import { Stepper } from './simple/stepper';
         </section>
       }
     </div>
+    <app-confirm-dialog testId="plan-confirm" />
   `,
   styles: `
     :host {
@@ -287,7 +373,8 @@ import { Stepper } from './simple/stepper';
       gap: 16px;
       min-width: 0;
     }
-    p {
+    p,
+    h3 {
       margin: 0;
     }
     .card {
@@ -332,7 +419,8 @@ import { Stepper } from './simple/stepper';
       width: 20px;
       height: 20px;
     }
-    .planning {
+    .planning,
+    .proposal {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -342,6 +430,21 @@ import { Stepper } from './simple/stepper';
       border-radius: var(--radius-control);
       background: var(--board);
       border: 1.5px solid var(--board-border);
+    }
+    .proposal {
+      background: var(--primary-soft);
+      border: 1.5px dashed var(--primary);
+    }
+    .proposal > div {
+      display: grid;
+      gap: 4px;
+      flex: 1 1 320px;
+    }
+    .proposal h3 {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font: 800 16px/1.3 var(--font);
     }
     .expected,
     .plan-buttons {
@@ -406,7 +509,8 @@ import { Stepper } from './simple/stepper';
       font-weight: 800;
     }
     tr[data-me='true'] .person,
-    tr[data-me='true'] .cell {
+    tr[data-me='true'] .cell,
+    tr[data-me='true'] .total {
       background: var(--primary-soft);
     }
     tr[data-can-drive='false'] .person-name {
@@ -416,11 +520,68 @@ import { Stepper } from './simple/stepper';
       display: inline-block;
       min-width: 74px;
     }
+    .car-seats {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      border-radius: var(--radius-chip);
+      background: var(--tag-grey-soft);
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .none-seats {
+      background: transparent;
+      padding: 0;
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .total {
+      position: sticky;
+      right: 0;
+      z-index: 1;
+      min-width: 64px;
+      padding: 0 10px;
+      background: var(--surface);
+      border-left: 1.5px solid var(--border);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .total-head {
+      font-size: 13px;
+      color: var(--muted);
+      vertical-align: bottom;
+      padding-bottom: 8px;
+    }
+    .total > span {
+      display: block;
+    }
+    .total-trips {
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .total-km {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .total-more {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+    }
     @media (max-width: 520px) {
       .corner,
       .person {
         padding: 0 6px 0 8px;
         font-size: 13px;
+      }
+      .person-name {
+        min-width: 60px;
       }
       .day {
         min-width: 58px;
@@ -429,17 +590,10 @@ import { Stepper } from './simple/stepper';
         width: 40px;
         height: 38px;
       }
-    }
-    .trips {
-      display: inline-grid;
-      place-items: center;
-      min-width: 24px;
-      height: 24px;
-      border-radius: var(--radius-chip);
-      background: var(--tag-grey-soft);
-      font-size: 13px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
+      .total {
+        min-width: 52px;
+        padding: 0 6px;
+      }
     }
     .day {
       min-width: 66px;
@@ -449,7 +603,7 @@ import { Stepper } from './simple/stepper';
       gap: 2px;
       justify-items: center;
       width: 100%;
-      min-height: 56px;
+      min-height: 64px;
       padding: 6px 4px;
       border: 0;
       background: transparent;
@@ -470,6 +624,12 @@ import { Stepper } from './simple/stepper';
       font-size: 12px;
       font-weight: 500;
       color: var(--muted);
+    }
+    .day-km {
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .day[data-state='over'] .day-date {
       color: var(--muted);
@@ -510,6 +670,7 @@ import { Stepper } from './simple/stepper';
       background: transparent;
       color: var(--on-primary);
       cursor: pointer;
+      vertical-align: middle;
     }
     .toggle.on {
       border: 0;
@@ -518,10 +679,20 @@ import { Stepper } from './simple/stepper';
     .toggle.fixed {
       cursor: default;
     }
+    /* Proposed by «Fair verteilen», not entered yet (DRV-30) */
+    .toggle.proposed {
+      cursor: default;
+      border: 2px dashed var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
     .toggle.small {
       width: 22px;
       height: 20px;
       border-radius: 5px;
+    }
+    .toggle.proposed.small {
+      border-width: 1.5px;
     }
     /* People in the car: drawn, not text, so the name of the button stays «… fährt am …» */
     .toggle[data-riders]::after {
@@ -608,8 +779,9 @@ export class DriverPlanPage {
   protected readonly texts = TEXTS;
   protected readonly t = TEXTS.simplePlan;
   protected readonly b = TEXTS.planB;
-  protected readonly km = formatDecimal;
   protected readonly name = name;
+  protected readonly has = (v: number | null | undefined): v is number => v !== null && v !== undefined;
+  private readonly confirm = viewChild(ConfirmDialog);
 
   /** Route `/teams/:teamId/fahrerliste` */
   readonly teamId = input.required<string>();
@@ -639,6 +811,9 @@ export class DriverPlanPage {
     return [...all.filter((q) => q.canDrive), ...all.filter((q) => !q.canDrive)];
   });
 
+  protected readonly totalTrips = computed(() => this.store.queue().reduce((sum, q) => sum + q.trips, 0));
+  protected readonly totalKm = computed(() => this.store.queue().reduce((sum, q) => sum + q.kilometres, 0));
+
   protected readonly selectedId = computed(() => {
     const chosen = this.chosen();
     if (chosen && this.columns().some((m) => m.eventId === chosen)) return chosen;
@@ -649,9 +824,20 @@ export class DriverPlanPage {
     () => this.store.matchDays().find((m) => m.eventId === this.selectedId()) ?? null,
   );
 
-  protected readonly hasPlanned = computed(() =>
-    this.store.upcoming().some((m) => !m.cancelled && m.cars.length > 0),
+  /** Upcoming match days with planned drivers: what «Alle entfernen» takes off. */
+  private readonly planned = computed(() =>
+    this.store.upcoming().filter((m) => !m.cancelled && m.cars.length > 0),
   );
+  protected readonly hasPlanned = computed(() => this.planned().length > 0);
+
+  protected readonly proposedDays = computed(() => new Set(this.store.proposed().map((t) => t.eventId)).size);
+
+  /** Proposed trips per person, for «+1» in the column on the right. */
+  private readonly proposedCount = computed(() => {
+    const counts = new Map<string, number>();
+    for (const t of this.store.proposed()) counts.set(t.driver.id, (counts.get(t.driver.id) ?? 0) + 1);
+    return counts;
+  });
 
   constructor() {
     effect(() => {
@@ -659,9 +845,17 @@ export class DriverPlanPage {
       const season = this.saison();
       untracked(() => {
         this.chosen.set(null);
+        this.store.proposal.set(null);
         void this.store.load(team, season);
       });
     });
+  }
+
+  /** «23.4» kilometres, whole numbers from 100 on so the column stays narrow. */
+  protected km(value: number | null | undefined): string {
+    const v = value ?? 0;
+    if (v === 0) return '0';
+    return formatDecimal(v >= 100 ? Math.round(v) : v);
   }
 
   protected switchTeam(team: string): void {
@@ -681,22 +875,43 @@ export class DriverPlanPage {
     return m.cars.find((car) => car.driver.id === personId) ?? null;
   }
 
+  protected isProposed(m: DriverPlanMatchDay, personId: string): boolean {
+    return this.store.proposedOn(m.eventId).some((t) => t.driver.id === personId);
+  }
+
+  protected proposedFor(personId: string): number {
+    return this.proposedCount().get(personId) ?? 0;
+  }
+
   /** Coaches and admins change every row, members their own (DRV-02). */
   protected canToggle(m: DriverPlanMatchDay, q: QueueEntry): boolean {
     return m.changeable && (this.store.canManage() || q.person.id === this.store.meId());
   }
 
-  /**
-   * Takes a driver off. A car with passengers is not removed with one tap: its match day opens below, where
-   * the people can be moved first.
-   */
-  protected async off(m: DriverPlanMatchDay, car: Car): Promise<void> {
-    if (car.passengers.length > 0) {
-      this.select(m);
-      this.store.success.set(null);
-      this.store.error.set(this.b.hasPassengers(name(car.driver), car.passengers.length));
+  /** Takes a driver off; a car with passengers only after a question (DRV-02). */
+  protected off(m: DriverPlanMatchDay, car: Car): void {
+    if (car.passengers.length === 0) {
+      void this.store.removeCar(m, car.id, car.driver);
       return;
     }
-    await this.store.removeCar(m, car.id, car.driver);
+    const board = TEXTS.simplePlan.board;
+    this.confirm()?.ask({
+      title: board.removeTitle(name(car.driver)),
+      text: board.removeText(name(car.driver), car.passengers.length),
+      confirm: board.removeConfirm,
+      action: () => this.store.removeCar(m, car.id, car.driver),
+    });
+  }
+
+  /** «Alle entfernen» after a question (DRV-33). */
+  protected askRemoveAll(): void {
+    const days = this.planned();
+    const trips = days.reduce((sum, m) => sum + m.cars.length, 0);
+    this.confirm()?.ask({
+      title: this.t.removeAllTitle,
+      text: this.t.removeAllText(trips, days.length),
+      confirm: this.t.removeAll,
+      action: () => this.store.removeAll(),
+    });
   }
 }

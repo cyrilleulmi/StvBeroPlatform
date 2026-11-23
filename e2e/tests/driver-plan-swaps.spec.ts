@@ -2,7 +2,8 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * E-91 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-28). Seed from
+ * E-91 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-24). Swaps, other
+ * trips and the history (DRV-25 to DRV-28) have no page since E-92; their API is tested in the backend. Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Team 1 is linked with swiss unihockey (900001), Team 2 is not. Default "now": Mon 16.11.2026 06:00.
  */
@@ -54,83 +55,30 @@ test('SUH-16: the swiss unihockey page links to the team page, players without a
   await expect(page.getByTestId('su-not-linked')).toHaveText('Nicht verbunden. Frag den Coach zum Einrichten.');
 });
 
-test('DRV-23: on the match day the driver list only shows; travelling on one own stays; link to the plan', async ({ page }) => {
+test('DRV-23 DRV-32: the match day shows the places; travelling on one own stays; link to the plan', async ({ page }) => {
   await login(page, 'jana');
   await page.goto(`/termine/${T04}`);
   const list = page.getByTestId('driver-list');
-  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toBeVisible();
-  await expect(list.getByRole('button', { name: /mitfahren/ })).toHaveCount(0);
-  await expect(list.getByRole('button', { name: 'Ich fahre' })).toHaveCount(0);
-  await expect(list.getByTestId('driver-list-plan-hint')).toBeVisible();
+  await expect(list.getByTestId('driver-seat-summary')).toContainText('Plätze für');
+  // The cars show only behind «Plätze zuweisen»
+  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toHaveCount(0);
   await list.getByTestId('individual-self').click();
   await expect(list.getByTestId('individual').getByRole('listitem', { name: 'Jana Wyss' })).toBeVisible();
+  await list.getByTestId('driver-assign').click();
+  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toBeVisible();
   await list.getByTestId('driver-plan-link').click();
   await expect(page).toHaveURL(`/teams/${TEAM_1}/fahrerliste`);
 });
 
-test('DRV-24: on the driver plan a match day opens for entering passengers and drivers', async ({ page }) => {
+test('DRV-24: on the driver list a match day opens its cars for seating people', async ({ page }) => {
   await login(page, 'kim');
   await openPlan(page);
-  await page.getByTestId(`plan-edit-${T04}`).click();
+  await page.getByTestId(`plan-day-${T04}`).click();
   const editor = page.getByTestId(`plan-editor-${T04}`);
-  await editor.getByRole('button', { name: 'Bei Sara Brun mitfahren' }).click();
-  await expect(
-    editor.getByRole('list', { name: 'Mitfahrende bei Sara Brun' }).getByRole('listitem', { name: 'Kim Baumann' }),
-  ).toBeVisible();
-  await expect(page.getByTestId(`plan-match-day-${T04}`).getByTestId(`plan-car-${SARA}`)).toContainText('Kim Baumann');
+  await editor.getByRole('button', { name: 'Jana Wyss' }).click();
+  await editor.getByTestId(`seat-enter-${SARA}`).click();
+  await expect(editor.getByTestId(`seat-car-${SARA}`)).toContainText('Jana Wyss');
   await checkAccessibility(page);
-});
-
-test('DRV-25 DRV-26: swap directly or ask; the history tells who did what', async ({ page }) => {
-  await login(page, 'sara');
-  await openPlan(page);
-  const form = page.getByTestId('plan-swap-form');
-  await form.getByLabel('Fahrt am').selectOption({ index: 1 });
-  await form.getByLabel('An wen').selectOption({ label: 'Kim Baumann' });
-  await form.getByTestId('plan-swap-ask').click();
-  await expect(page.getByRole('status')).toContainText('Kim Baumann ist gefragt');
-  await expect(page.getByTestId('plan-swaps-open')).toContainText('Sara Brun fragt Kim Baumann');
-
-  // Kim accepts: she drives now
-  await login(page, 'kim');
-  await openPlan(page);
-  await page.getByTestId('plan-swaps-open').getByRole('button', { name: 'Annehmen' }).click();
-  await expect(page.getByRole('status')).toContainText('Angenommen');
-  await expect(page.getByTestId(`plan-match-day-${T04}`).getByTestId(`plan-car-${KIM}`)).toBeVisible();
-  const history = page.getByTestId('driver-plan-history');
-  await expect(history.getByRole('listitem').first()).toContainText(
-    'Übernommen: Kim Baumann fährt am Spieltag So 22.11. statt Sara Brun.',
-  );
-  await expect(history).toContainText('Eingetragen: Petra Keller fährt am Spieltag So 22.11.');
-
-  // Kim gives it back directly
-  const form2 = page.getByTestId('plan-swap-form');
-  await form2.getByLabel('Fahrt am').selectOption({ index: 1 });
-  await form2.getByLabel('An wen').selectOption({ label: 'Sara Brun' });
-  await form2.getByTestId('plan-swap-direct').click();
-  await expect(page.getByRole('status')).toContainText('Getauscht');
-  await expect(page.getByTestId(`plan-match-day-${T04}`).getByTestId(`plan-car-${SARA}`)).toBeVisible();
-  await checkAccessibility(page);
-});
-
-test('DRV-27 DRV-28: other trips count and the distribution ends with a total', async ({ page }) => {
-  await login(page, 'kim');
-  await openPlan(page);
-  const trips = page.getByTestId('plan-trips');
-  await trips.getByLabel('Datum').fill('2026-11-01');
-  await trips.getByLabel('Kilometer (einfacher Weg)').fill('100');
-  await trips.getByLabel('Wofür').fill('Turnier Tenero');
-  await trips.getByRole('button', { name: 'Fahrt hinzufügen' }).click();
-  await expect(trips.getByRole('status')).toHaveText('Die Fahrt ist hinzugefügt.');
-  await expect(trips.getByRole('listitem', { name: 'Turnier Tenero' })).toContainText('01.11.2026 · Turnier Tenero · Kim Baumann');
-  await expect(page.getByTestId(`plan-share-${KIM}`).getByRole('cell').nth(0)).toHaveText('1');
-  const total = page.getByTestId('plan-share-total');
-  await expect(total.getByRole('cell').nth(0)).toHaveText('1');
-  await expect(total.getByRole('cell').nth(1)).toHaveText('2');
-  await expect(total.getByRole('cell').nth(2)).toHaveText('3');
-  await trips.getByRole('button', { name: 'Fahrt «Turnier Tenero» entfernen' }).click();
-  await expect(trips.getByRole('status')).toHaveText('Die Fahrt ist entfernt.');
-  await expect(total.getByRole('cell').nth(0)).toHaveText('0');
 });
 
 test('DRV-21 DRV-22: coaches overwrite the driving time; the info tells how it was calculated', async ({ page }) => {

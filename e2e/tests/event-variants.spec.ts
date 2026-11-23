@@ -70,11 +70,13 @@ async function createMatchDay(page: Page, day: string): Promise<string> {
   return id;
 }
 
-/** Drivers, passengers and the proposal are on the season page, in the opened match day (DRV-23, DRV-24). */
-async function openEditor(page: Page, eventId: string): Promise<void> {
-  await page.goto(`/teams/${TEAM_1}/fahrerliste`);
-  await page.getByTestId(`plan-edit-${eventId}`).click();
-  await expect(page.getByTestId(`plan-editor-${eventId}`).getByTestId('driver-list')).toBeVisible();
+/** The cars of a match day behind «Plätze zuweisen» (DRV-32). */
+async function openSeats(page: Page, eventId: string): Promise<Locator> {
+  await page.goto(`/termine/${eventId}`);
+  await page.getByTestId('driver-assign').click();
+  const board = page.getByTestId(`seat-board-${eventId}`);
+  await expect(board).toBeVisible();
+  return board;
 }
 
 test.beforeEach(async ({ request }) => {
@@ -168,8 +170,9 @@ test('VAR-06: without a call-up in the variant the match day works with the resp
   await page.goto(`/termine/${T04}`);
   await expect(page.getByRole('heading', { level: 2, name: 'Spiele' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Aufgebot' })).toHaveCount(0);
-  // The driver list counts who responded «dabei»
-  await expect(driverList(page)).toContainText('Spielerinnen mit «dabei» ohne Platz.');
+  // The driver list counts who responded «dabei»: Jana still waits for a seat
+  await page.getByTestId('driver-assign').click();
+  await expect(driverList(page).getByTestId('seat-waiting')).toContainText('Jana Wyss');
 
   // Players see no call-up status either
   await login(page, 'anna');
@@ -304,34 +307,16 @@ test('AUF-34: the match day and the call-up show the ranks of the league table',
 
 // ------------------------------------------------------------------ Proposed driver list (DRV-19)
 
-test('DRV-19: a coach lets the app propose the driver list and takes the proposal over', async ({ page }) => {
-  await login(page, 'petra');
-  await openEditor(page, T04);
-  await expect(page.getByTestId('without-seat')).toContainText('Jana Wyss');
-
-  await driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Vorschlag für die Fahrerliste' });
-  // Petra's car is full; Jana gets a seat in Sara's car, which is already entered
-  const sara = dialog.getByRole('listitem', { name: 'Auto von Sara Brun' });
-  await expect(sara).toContainText('schon eingetragen');
-  await expect(sara.getByRole('listitem', { name: 'Jana Wyss' })).toContainText('neu');
-  await checkAccessibility(page);
-  await dialog.getByRole('button', { name: 'Vorschlag übernehmen' }).click();
-
-  await expect(driverList(page).getByRole('status')).toHaveText('Der Vorschlag ist übernommen.');
-  await expect(page.getByTestId('without-seat-empty')).toBeVisible();
-  await expect(driverList(page).getByRole('listitem', { name: 'Auto von Sara Brun' })).toContainText('Jana Wyss');
-
-  // Everyone has a seat now
-  await driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' }).click();
-  await expect(page.getByTestId('proposal-nothing')).toBeVisible();
-});
-
-test('DRV-19: players have no proposal', async ({ page }) => {
+test('DRV-19 DRV-32: «Alle verteilen» gives everyone a seat, for coaches and players alike', async ({ page }) => {
   await login(page, 'anna');
-  await page.goto(`/termine/${T04}`);
-  await expect(driverList(page).getByRole('heading', { name: 'Autos' })).toBeVisible();
-  await expect(driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' })).toHaveCount(0);
+  const board = await openSeats(page, T04);
+  await expect(board.getByTestId('seat-waiting')).toContainText('Jana Wyss');
+  // Petra's car is full; Jana gets a seat in Sara's car, which is already entered
+  await board.getByTestId('seat-fill').click();
+  await expect(driverList(page).getByRole('status')).toHaveText('Alle haben einen Platz.');
+  await expect(board.getByTestId('seat-waiting')).toHaveCount(0);
+  await expect(board.getByRole('listitem', { name: 'Auto von Sara Brun' })).toContainText('Jana Wyss');
+  await checkAccessibility(page);
 });
 
 // ------------------------------------------------------------------ Driving settings (DRV-18)
@@ -353,16 +338,21 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
   await checkAccessibility(page);
 
   // Seven places are the driver and six others
-  await openEditor(page, T04);
-  await expect(driverList(page).getByLabel('Freie Plätze in deinem Auto')).toHaveValue('6');
+  const board = await openSeats(page, T04);
+  const form = board.getByRole('form', { name: 'Fahrerin oder Fahrer hinzufügen' });
+  await form.getByLabel('Wer fährt').selectOption({ label: 'Anna Muster (bei Petra Keller)' });
+  await expect(form.getByRole('group', { name: 'Freie Plätze' })).toContainText('6');
 
+  // In the driver list the grid shows the places, and coaches change them under «Anpassen»
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/fahrerliste`);
-  const row = page.getByTestId(`plan-driver-${ANNA}`);
-  await expect(row.getByLabel('Plätze im Auto von Anna Muster (mit Fahrerin oder Fahrer)')).toHaveValue('7');
+  await expect(page.getByTestId(`plan-row-${ANNA}`).getByTestId('plan-car-seats')).toContainText('7');
+  await page.getByTestId('fairness-edit').click();
+  const row = page.getByTestId(`fair-${ANNA}`);
+  await expect(row.getByRole('group', { name: 'Plätze im Auto von Anna Muster (mit Fahrerin oder Fahrer)' })).toContainText('7');
   await row.getByRole('checkbox', { name: 'Anna Muster kann fahren' }).uncheck();
-  await expect(page.getByRole('status')).toHaveText('Die Angaben von Anna Muster sind gespeichert.');
   await expect(row).toHaveAttribute('data-can-drive', 'false');
+  await expect(page.getByTestId(`plan-row-${ANNA}`).getByTestId('plan-car-seats')).toHaveText('fährt nicht');
   await checkAccessibility(page);
 });
 
@@ -371,14 +361,16 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
 test('ANM-13: «dabei» and travelling on one`s own needs no seat', async ({ page }) => {
   await login(page, 'jana');
   await page.goto(`/termine/${T04}`);
-  await expect(page.getByTestId('without-seat')).toContainText('Jana Wyss');
+  const summary = page.getByTestId('driver-seat-summary');
+  await expect(summary).toHaveAttribute('data-people', '6');
 
   await page.getByTestId('travels-individually').check();
   await expect(page.getByTestId('my-response').getByRole('status')).toHaveText(
     'Du reist individuell an und brauchst keinen Platz.',
   );
   await expect(page.getByTestId('individual')).toContainText('Jana Wyss');
-  await expect(page.getByTestId('without-seat-empty')).toBeVisible();
+  // Who travels on her own does not count for the places
+  await expect(summary).toHaveAttribute('data-people', '5');
   // Everyone who sees the responses sees it
   await expect(page.getByTestId('overview').getByTestId('overview-individual')).toHaveText(
     'reist individuell an',
@@ -388,19 +380,20 @@ test('ANM-13: «dabei» and travelling on one`s own needs no seat', async ({ pag
   // Taken back in the driver list
   await driverList(page).getByRole('button', { name: 'Entfernen: Ich reise individuell an' }).click();
   await expect(driverList(page).getByRole('status')).toHaveText('Du reist nicht mehr individuell an.');
-  await expect(page.getByTestId('without-seat')).toContainText('Jana Wyss');
+  await expect(summary).toHaveAttribute('data-people', '6');
   await expect(page.getByTestId('travels-individually')).not.toBeChecked();
 });
 
 test('DRV-20: a coach marks someone without a seat as travelling on her own', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/termine/${T04}`);
-  await driverList(page).getByRole('button', { name: 'Jana Wyss reist individuell an' }).click();
+  const board = await openSeats(page, T04);
+  await board.getByTestId('seat-waiting').getByRole('button', { name: 'Jana Wyss' }).click();
+  await board.getByTestId('seat-individual').click();
   await expect(driverList(page).getByRole('status')).toHaveText(
     'Jana Wyss reist individuell an und braucht keinen Platz.',
   );
   await expect(page.getByTestId('individual')).toContainText('Jana Wyss');
-  await expect(page.getByTestId('without-seat-empty')).toBeVisible();
+  await expect(board.getByTestId('seat-waiting')).toHaveCount(0);
 
   // A practice offers no such choice
   await page.goto(`/termine/${T01}`);

@@ -328,44 +328,26 @@ test('DRV-14: one person enters herself for several match days of the season at 
   await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
   await expect(page.getByTestId('driver-plan-season')).toHaveText('Team 1 · Saison 2026/27');
 
-  // Match day 04 as in its own driver list
-  const matchDay04 = page.getByTestId(`plan-match-day-${T04}`);
-  await expect(matchDay04).toContainText('So 22.11. 09:30');
-  await expect(matchDay04.getByTestId('plan-venue')).toContainText('Sporthalle Seefeld, Musterdorf · 23.4 km · 26 Min.');
-  await expect(matchDay04.getByTestId(`plan-car-${PETRA}`)).toContainText('Petra Keller · voll');
-  await expect(page.getByTestId(`plan-match-day-${december}`).getByTestId('plan-no-cars')).toBeVisible();
+  // Match day 04: distance in the head, Petra's full car in her row
+  await expect(page.getByTestId(`plan-day-km-${T04}`)).toHaveText('23.4 km');
+  await expect(page.getByRole('img', { name: 'Petra Keller fährt am So 22.11.' })).toBeVisible();
+  // Members change only their own row
+  await expect(page.getByTestId(`cell-${PETRA}-${december}`)).toHaveCount(0);
 
-  const form = page.getByTestId('driver-plan-form');
-  // Members plan for themselves: no choice of the driver
-  await expect(form.getByLabel('Wer fährt')).toHaveCount(0);
-  await form.getByRole('button', { name: 'Eintragen' }).click();
-  await expect(form.getByText('Bitte mindestens einen Spieltag wählen.')).toBeVisible();
-  await form.getByLabel('Freie Plätze').fill('4');
-  await form.getByRole('button', { name: 'Alle ohne Auto wählen' }).click();
-  await expect(form.getByTestId(`plan-choice-${december}`).getByRole('checkbox')).toBeChecked();
-  await expect(form.getByTestId(`plan-choice-${january}`).getByRole('checkbox')).toBeChecked();
-  await expect(form.getByTestId(`plan-choice-${T04}`).getByRole('checkbox')).not.toBeChecked();
-  await checkAccessibility(page);
-  await form.getByRole('button', { name: 'Eintragen' }).click();
-
-  await expect(page.getByRole('status')).toHaveText('Kim Baumann fährt an 2 Spieltagen.');
-  await expect(page.getByTestId(`plan-match-day-${december}`).getByTestId(`plan-car-${KIM}`)).toContainText(
-    'Kim Baumann · 4 von 4 Plätzen frei',
-  );
+  await page.getByTestId(`cell-${KIM}-${december}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${december}`)).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId(`cell-${KIM}-${january}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${january}`)).toHaveAttribute('aria-pressed', 'true');
   // The trips are shared visibly (DRV-17)
-  const share = page.getByTestId(`plan-share-${KIM}`);
-  await expect(share.getByRole('cell').nth(1)).toHaveText('2');
-  await expect(page.getByTestId(`plan-share-${PETRA}`)).toHaveAttribute('data-total', '1');
-  // She now drives there already
-  await expect(form.getByTestId(`plan-choice-${december}`)).toContainText('fährt schon');
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '2');
+  await expect(page.getByTestId(`plan-row-${PETRA}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '1');
+  await checkAccessibility(page);
 
   // And she can take herself off again
-  await page
-    .getByTestId(`plan-match-day-${january}`)
-    .getByRole('button', { name: 'Kim Baumann austragen' })
-    .click();
-  await expect(page.getByRole('status')).toContainText('Kim Baumann fährt am So 10.01.2027 10:00 nicht mehr.');
-  await expect(page.getByTestId(`plan-match-day-${january}`).getByTestId('plan-no-cars')).toBeVisible();
+  await page.getByTestId(`cell-${KIM}-${january}`).click();
+  await expect(page.getByRole('status')).toContainText('Kim Baumann fährt am So 10.01.2027 nicht mehr.');
+  await expect(page.getByTestId(`cell-${KIM}-${january}`)).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '1');
 });
 
 test('DRV-14: a coach plans the season for someone else', async ({ page }) => {
@@ -373,17 +355,17 @@ test('DRV-14: a coach plans the season for someone else', async ({ page }) => {
   const december = await createMatchDay(page, '2026-12-06');
   await page.goto(`/teams/${TEAM_1}/fahrerliste`);
 
-  const form = page.getByTestId('driver-plan-form');
-  await form.getByLabel('Wer fährt').selectOption({ label: 'Kim Baumann' });
-  await form.getByTestId(`plan-choice-${T04}`).getByRole('checkbox').check();
-  await form.getByTestId(`plan-choice-${december}`).getByRole('checkbox').check();
-  await form.getByRole('button', { name: 'Eintragen' }).click();
+  await page.getByTestId(`cell-${KIM}-${T04}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${T04}`)).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId(`cell-${KIM}-${december}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${december}`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '2');
 
-  await expect(page.getByRole('status')).toHaveText('Kim Baumann fährt an 2 Spieltagen.');
-  await expect(page.getByTestId(`plan-match-day-${T04}`).getByTestId(`plan-car-${KIM}`)).toBeVisible();
   // The match day itself shows the same car, and links back to the plan
-  await page.getByTestId(`plan-match-day-${december}`).getByRole('link', { name: /^Zum Spieltag/ }).click();
-  await expect(page.getByTestId('driver-list')).toContainText('Kim Baumann');
+  await page.getByTestId(`plan-day-${december}`).click();
+  await page.getByTestId(`plan-editor-${december}`).getByRole('link', { name: 'Zum Spieltag' }).click();
+  await page.getByTestId('driver-assign').click();
+  await expect(page.getByTestId(`seat-board-${december}`)).toContainText('Kim Baumann');
   await page.getByTestId('driver-plan-link').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
 });

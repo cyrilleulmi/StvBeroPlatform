@@ -1087,8 +1087,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Enter a car: oneself, or someone else as coach or admin (DRV-02)
-         * @description Without `driverId` the caller drives. Someone else: only coaches and admins (otherwise 403). The driver must be
+         * Enter a car: any member of the team for anyone of the team (DRV-02, DRV-32)
+         * @description Without `driverId` the caller drives. Someone else: every member of the team, coaches and admins (DRV-32; otherwise 403). The driver must be
          *     a member of a team of the match day (422, rule DRV-02) and drives at most one car (409, rule DRV-02). If she
          *     sat in another car, she leaves that seat. Not usable (meeting point or venue missing, DRV-01), cancelled
          *     (DRV-10), archived season: 409. After the end of the match day only coaches and admins (409, rule DRV-02).
@@ -1114,14 +1114,14 @@ export interface paths {
         get?: never;
         /**
          * Change the number of seats of a car (DRV-02, DRV-03)
-         * @description The driver herself, coaches and admins. Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
+         * @description Every member of the team, coaches and admins (DRV-32). Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
          *     `addCar`. Notifies the driver if someone else changed it (DRV-11).
          */
         put: operations["changeCarSeats"];
         post?: never;
         /**
          * Remove a car; its passengers lose their seat (DRV-02, DRV-11)
-         * @description The driver herself, coaches and admins. The passengers are notified, and the driver if someone else removed
+         * @description Every member of the team, coaches and admins (DRV-32). The passengers are notified, and the driver if someone else removed
          *     the car (DRV-11). Same 409 cases as `addCar`.
          */
         delete: operations["removeCar"];
@@ -1144,7 +1144,7 @@ export interface paths {
         get?: never;
         /**
          * Put a person into a car, or move her from another car (DRV-03)
-         * @description Oneself: every member of a team of the match day. Someone else: coaches and admins (otherwise 403). A person
+         * @description Every member of a team of the match day, for herself and for others (DRV-32); coaches and admins too (otherwise 403). A person
          *     sits in at most one car: from another car she moves. Already in this car: no change. Car full: 409 (rule
          *     DRV-03). A driver cannot ride along (422, rule DRV-03); not a member: 422 (rule DRV-02). Notifies the driver
          *     (and the previous driver when moving) and, if someone else made the change, the passenger (DRV-11).
@@ -1153,7 +1153,7 @@ export interface paths {
         post?: never;
         /**
          * Take a person out of a car (DRV-03)
-         * @description Oneself, or someone else as coach or admin. Not in this car: 404. Notifies the driver and, if someone else
+         * @description Every member of the team, for herself and for others (DRV-32); coaches and admins too. Not in this car: 404. Notifies the driver and, if someone else
          *     made the change, the passenger (DRV-11).
          */
         delete: operations["removePassenger"];
@@ -1273,8 +1273,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, coach)
-         * @description Only coaches and admins (otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
+         * Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, DRV-32)
+         * @description Every member of the team, coaches and admins (DRV-32; otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
          *     responded «dabei», without those who travel on their own (DRV-20). Existing cars stay and are filled
          *     first. Further drivers are chosen among these people if they can drive (DRV-18), the one with the fewest
          *     trips in the season first, then by name; each brings her usual places minus herself. Only as many cars as
@@ -1300,8 +1300,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Enter a proposed driver list (DRV-19, coach)
-         * @description Only coaches and admins (otherwise 403). Per entry: the car of the driver is created with `seats` if she
+         * Enter a proposed driver list (DRV-19, DRV-32)
+         * @description Every member of the team, coaches and admins (DRV-32; otherwise 403). Per entry: the car of the driver is created with `seats` if she
          *     has none, then the passengers are put into it. Every rule of the driver list applies (DRV-02, DRV-03); if
          *     one entry is refused, nothing is entered. The people affected are notified as usual (DRV-11).
          */
@@ -1386,7 +1386,13 @@ export interface paths {
          *     otherwise).
          */
         post: operations["planDriver"];
-        delete?: never;
+        /**
+         * Remove every driver of the upcoming match days (DRV-33, coach)
+         * @description Removes the cars of all match days of the team in the season that are neither over nor cancelled; their
+         *     passengers lose their seats. Every driver and passenger affected gets one notification. Match days that
+         *     are over keep their cars. Coaches (of any team) and admins; otherwise 403.
+         */
+        delete: operations["removeAllPlannedDrivers"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1467,6 +1473,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/driver-plan/distribute/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose a fair distribution of the trips that are still missing; changes nothing (DRV-30, coach)
+         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+         *     until its cars have a place for everyone who is expected (`expected`, drivers included). Drivers who are
+         *     entered stay and count; the proposal only adds. The next driver is the member who can drive (DRV-18) with
+         *     the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not
+         *     driven for longer, then by name; nobody who responded «nicht dabei» to the match day. Each proposed trip
+         *     has the usual seats of its driver. Nothing is entered: the page shows the proposal, and
+         *     `distributeDriverPlan` enters it. Coaches (of any team) and admins; otherwise 403.
+         */
+        post: operations["previewDriverPlanDistribution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/driver-plan/distribute": {
         parameters: {
             query?: never;
@@ -1479,15 +1513,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Share the trips of the upcoming match days fairly (DRV-30, coach)
-         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
-         *     until its cars have a place for everyone who is expected (`expected`, drivers included). The next driver
-         *     is the member who can drive (DRV-18) with the fewest trips in the season (done and planned), then with
-         *     fewer kilometres, then the one who has not driven for longer, then by name; nobody who responded «nicht
-         *     dabei» to the match day. Each new car has the usual seats of its driver. With `replace: true` the cars of
-         *     those match days are removed first, except cars with passengers; with `false` cars that are entered stay
-         *     and only missing drivers are added. Every driver whose trips changed gets one notification. Coaches (of
-         *     any team) and admins; otherwise 403.
+         * Enter the trips of a proposed distribution (DRV-30, coach)
+         * @description Enters the trips as they are, usually the ones `previewDriverPlanDistribution` proposed. They stay: a
+         *     later distribution only adds trips that are missing. If one trip cannot be entered (the match day is over,
+         *     cancelled, at home or not ready, the person is not in the team or cannot drive, or she already drives on
+         *     that match day), nothing is entered (409, rule DRV-30). Every new driver gets one notification. Coaches
+         *     (of any team) and admins; otherwise 403.
          */
         post: operations["distributeDriverPlan"];
         delete?: never;
@@ -3412,15 +3443,17 @@ export interface components {
             cancelled: boolean;
             /** @description The caller can enter herself as driver or passenger right now */
             canJoin: boolean;
-            /** @description Coach or admin: enters and changes drivers and passengers for others, route by hand */
+            /** @description Coach or admin: route and kilometres by hand, travelling on one's own for others */
             canManage: boolean;
+            /** @description The caller arranges the cars right now: enters and removes drivers, seats, puts people into cars, for everyone of the team (DRV-32) */
+            canArrange: boolean;
             /** @description The call-up is published: «without seat» counts the called-up players (DRV-04) */
             callUpPublished: boolean;
             /** @description By name of the driver */
             cars: components["schemas"]["Car"][];
             /** @description Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04) */
             withoutSeat: components["schemas"]["PersonSummary"][];
-            /** @description Members of the teams of the match day, by name; only for coaches and admins */
+            /** @description Members of the teams of the match day, by name; only when the caller can arrange the cars (DRV-32) */
             members?: components["schemas"]["PersonSummary"][];
             /** @description People who travel on their own and need no seat, by name (DRV-20) */
             individual: components["schemas"]["PersonSummary"][];
@@ -3578,10 +3611,34 @@ export interface components {
              */
             replaces?: string | null;
         };
-        /** @description Share the trips of the upcoming match days fairly (DRV-30) */
+        /** @description A fair distribution of the trips that are still missing, as a proposal: nothing is entered yet (DRV-30) */
+        DriverPlanDistribution: {
+            /** @description Proposed trips, by match day and then by name */
+            trips: components["schemas"]["DriverPlanProposedTrip"][];
+        };
+        /** @description A trip the distribution proposes */
+        DriverPlanProposedTrip: {
+            /** Format: uuid */
+            eventId: string;
+            driver: components["schemas"]["PersonSummary"];
+            /**
+             * Format: int32
+             * @description Seats for passengers: the places of her car minus herself (DRV-18)
+             */
+            seats: number;
+        };
+        /** @description Enter the proposed trips (DRV-30); they are entered as they are and stay */
         DriverPlanDistributeInput: {
-            /** @description `true`: plan the upcoming match days anew (cars with passengers stay); `false`: only add the drivers that are missing */
-            replace: boolean;
+            trips: components["schemas"]["DriverPlanTripEntry"][];
+        };
+        /** @description One trip of a distribution that is entered */
+        DriverPlanTripEntry: {
+            /** Format: uuid */
+            eventId: string;
+            /** Format: uuid */
+            driverId: string;
+            /** Format: int32 */
+            seats: number;
         };
         /** @description Sum of all shares (DRV-27) */
         DriverPlanTotals: {
@@ -6205,6 +6262,33 @@ export interface operations {
             422: components["responses"]["RuleViolation"];
         };
     };
+    removeAllPlannedDrivers: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     setDriverPlanExpected: {
         parameters: {
             query?: {
@@ -6304,6 +6388,33 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    previewDriverPlanDistribution: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposed trips */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlanDistribution"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     distributeDriverPlan: {
         parameters: {
             query?: {
@@ -6334,6 +6445,8 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
     startDriverSwap: {

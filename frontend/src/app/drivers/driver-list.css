@@ -239,3 +239,57 @@
 .plan-hint {
   font-size: 14px;
 }
+
+/* DRV-32: places for the people who travel together, «Plätze zuweisen» */
+.seats-row {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.seat-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.seat-summary strong {
+  font-size: 17px;
+}
+
+.seat-summary[data-state='enough'] {
+  border-color: var(--tag-green);
+  background: var(--tag-green-soft);
+}
+
+.seat-summary[data-state='enough'] app-icon {
+  color: var(--tag-green);
+}
+
+.seat-summary[data-state='short'] {
+  border-color: var(--coral);
+  background: var(--coral-soft);
+}
+
+.seat-summary[data-state='short'] app-icon {
+  color: var(--coral);
+}
+
+.assign {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.assign-board {
+  padding-top: 4px;
+  min-width: 0;
+}

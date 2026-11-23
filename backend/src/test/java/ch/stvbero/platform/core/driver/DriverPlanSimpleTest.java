@@ -27,6 +27,7 @@ class DriverPlanSimpleTest {
     static final String TEAM_1 = "10000000-0000-4000-8000-000000000001";
     static final String T04 = "40000000-0000-4000-8000-000000000004";
     static final String PLAN = "/api/teams/" + TEAM_1 + "/driver-plan";
+    static final String NINA = "20000000-0000-4000-8000-000000000009";
 
     /** A further match day of Team 1 on Sun 06.12.2026, ready for drivers. */
     String december;
@@ -50,9 +51,33 @@ class DriverPlanSimpleTest {
         return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body).put(PLAN + path).then();
     }
 
-    private static ValidatableResponse distribute(String session, boolean replace) {
-        return given().cookie("stv_session", session).contentType(ContentType.JSON)
-                .body("{\"replace\":" + replace + "}").post(PLAN + "/distribute").then();
+    private static ValidatableResponse preview(String session) {
+        return given().cookie("stv_session", session).post(PLAN + "/distribute/preview").then();
+    }
+
+    /** Proposes a distribution and enters it as proposed. */
+    private static ValidatableResponse distribute(String session) {
+        List<Map<String, Object>> trips = preview(session).statusCode(200).extract().jsonPath().getList("trips");
+        return enter(session, trips);
+    }
+
+    private static ValidatableResponse enter(String session, List<Map<String, Object>> trips) {
+        StringBuilder body = new StringBuilder("{\"trips\":[");
+        for (int i = 0; i < trips.size(); i++) {
+            Map<String, Object> trip = trips.get(i);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> driver = (Map<String, Object>) trip.get("driver");
+            body.append(i == 0 ? "" : ",").append("{\"eventId\":\"").append(trip.get("eventId"))
+                    .append("\",\"driverId\":\"").append(driver.get("id")).append("\",\"seats\":")
+                    .append(trip.get("seats")).append("}");
+        }
+        return given().cookie("stv_session", session).contentType(ContentType.JSON).body(body.append("]}").toString())
+                .post(PLAN + "/distribute").then();
+    }
+
+    private static List<String> texts(String firstName) {
+        return given().cookie("stv_session", login(firstName)).get("/api/notifications").then()
+                .statusCode(200).extract().jsonPath().getList("findAll { it.type == 'DRIVER_LIST_CHANGED' }.text");
     }
 
     private static Map<String, Object> matchDay(JsonPath plan, String id) {
@@ -107,53 +132,104 @@ class DriverPlanSimpleTest {
     }
 
     @Test
-    void drv30FairDistributionFillsEveryUpcomingMatchDay() {
+    void drv30FairDistributionIsAProposalFirst() {
         String petra = login("petra");
         put(petra, "/expected", "{\"expected\":10}").statusCode(200);
-        JsonPath json = distribute(petra, false).statusCode(200).extract().jsonPath();
+        JsonPath proposal = preview(petra).statusCode(200).extract().jsonPath();
 
-        // Match day 04 keeps Petra and Sara (eight places) and gets one more car; December gets two cars
+        // Match day 04 keeps Petra and Sara (eight places) and needs one more car; December needs two
+        List<String> events = proposal.getList("trips.eventId");
+        assertEquals(1, events.stream().filter(T04::equals).count());
+        assertEquals(2, events.stream().filter(december::equals).count());
+        // Petra and Sara already drive once, so December goes to others
+        List<String> inDecember = proposal.getList("trips.findAll { it.eventId == '" + december + "' }.driver.firstName");
+        assertFalse(inDecember.contains("Petra"));
+        assertFalse(inDecember.contains("Sara"));
+        // Nothing is entered yet
+        assertEquals(java.util.Set.of("Petra", "Sara"), java.util.Set.copyOf(drivers(plan(petra), T04)));
+        assertTrue(drivers(plan(petra), december).isEmpty());
+    }
+
+    @Test
+    void drv30EnteredTripsStayAndALaterDistributionOnlyAdds() {
+        String petra = login("petra");
+        put(petra, "/expected", "{\"expected\":10}").statusCode(200);
+        JsonPath json = distribute(petra).statusCode(200).extract().jsonPath();
+
         List<String> day04 = drivers(json, T04);
         assertEquals(3, day04.size());
         assertTrue(day04.containsAll(List.of("Petra", "Sara")));
         assertEquals(2, drivers(json, december).size());
         assertTrue((int) matchDay(json, T04).get("places") >= 10);
         assertTrue((int) matchDay(json, december).get("places") >= 10);
-        // Petra and Sara already drive once, so December goes to others
-        assertFalse(drivers(json, december).contains("Petra"));
-        assertFalse(drivers(json, december).contains("Sara"));
         // Nobody drives twice while others have not driven
         List<Integer> planned = json.getList("shares.plannedTrips");
         assertTrue(planned.stream().allMatch(n -> n <= 1));
 
-        // Doing it again changes nothing
-        JsonPath again = distribute(petra, false).statusCode(200).extract().jsonPath();
-        assertEquals(day04, drivers(again, T04));
-        assertEquals(drivers(json, december), drivers(again, december));
+        // Nothing is missing: the next proposal is empty, and fewer people expected removes nobody
+        assertTrue(preview(petra).statusCode(200).extract().jsonPath().getList("trips").isEmpty());
+        put(petra, "/expected", "{\"expected\":4}").statusCode(200);
+        assertTrue(preview(petra).statusCode(200).extract().jsonPath().getList("trips").isEmpty());
+        JsonPath after = plan(petra);
+        assertEquals(day04, drivers(after, T04));
+        assertEquals(drivers(json, december), drivers(after, december));
+
+        // More people: only the missing trips are added
+        put(petra, "/expected", "{\"expected\":16}").statusCode(200);
+        JsonPath more = distribute(petra).statusCode(200).extract().jsonPath();
+        assertTrue(drivers(more, T04).containsAll(day04));
+        assertTrue(drivers(more, december).containsAll(drivers(json, december)));
     }
 
     @Test
-    void drv30NewDistributionKeepsCarsWithPassengers() {
+    void drv30AProposalThatNoLongerFitsIsRefused() {
         String petra = login("petra");
-        put(petra, "/expected", "{\"expected\":4}").statusCode(200);
-        JsonPath json = distribute(petra, true).statusCode(200).extract().jsonPath();
-
-        // Petra's car is full and stays; Sara's empty car is planned anew and not needed for four people
-        assertEquals(List.of("Petra"), drivers(json, T04));
-        assertEquals(1, drivers(json, december).size());
+        put(petra, "/expected", "{\"expected\":10}").statusCode(200);
+        List<Map<String, Object>> trips = preview(petra).statusCode(200).extract().jsonPath().getList("trips");
+        enter(petra, trips).statusCode(200);
+        // The same trips once more: the drivers already drive, nothing is entered twice
+        enter(petra, trips).statusCode(409).body("rule", org.hamcrest.Matchers.equalTo("DRV-30"));
+        assertEquals(3, drivers(plan(petra), T04).size());
+        // A match day that is over cannot be planned
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"trips\":[{\"eventId\":\"40000000-0000-4000-8000-000000000001\",\"driverId\":\"" + NINA
+                        + "\",\"seats\":3}]}")
+                .post(PLAN + "/distribute").then().statusCode(409);
+        // Seats from 1 to 8
+        given().cookie("stv_session", petra).contentType(ContentType.JSON)
+                .body("{\"trips\":[{\"eventId\":\"" + december + "\",\"driverId\":\"" + NINA + "\",\"seats\":9}]}")
+                .post(PLAN + "/distribute").then().statusCode(400);
     }
 
     @Test
     void drv30EveryDriverGetsOneNotificationAndOnlyCoachesDistribute() {
-        distribute(login("anna"), false).statusCode(403);
+        preview(login("anna")).statusCode(403);
+        given().cookie("stv_session", login("anna")).contentType(ContentType.JSON).body("{\"trips\":[]}")
+                .post(PLAN + "/distribute").then().statusCode(403);
         String petra = login("petra");
         put(petra, "/expected", "{\"expected\":10}").statusCode(200);
-        JsonPath json = distribute(petra, false).statusCode(200).extract().jsonPath();
+        JsonPath json = distribute(petra).statusCode(200).extract().jsonPath();
 
         String driver = drivers(json, december).get(0).toLowerCase();
-        List<String> texts = given().cookie("stv_session", login(driver)).get("/api/notifications").then()
-                .statusCode(200).extract().jsonPath().getList("findAll { it.type == 'DRIVER_LIST_CHANGED' }.text");
-        assertEquals(1, texts.stream().filter(t -> t.startsWith("Die Fahrten der Saison wurden verteilt.")).count());
+        assertEquals(1, texts(driver).stream().filter(t -> t.startsWith("Die Fahrten der Saison wurden verteilt.")).count());
+    }
+
+    @Test
+    void drv33RemovingAllPlannedDrivers() {
+        given().cookie("stv_session", login("anna")).delete(PLAN + "/cars").then().statusCode(403);
+        String petra = login("petra");
+        put(petra, "/expected", "{\"expected\":10}").statusCode(200);
+        distribute(petra).statusCode(200);
+
+        JsonPath json = given().cookie("stv_session", petra).delete(PLAN + "/cars").then().statusCode(200)
+                .extract().jsonPath();
+        assertTrue(drivers(json, T04).isEmpty());
+        assertTrue(drivers(json, december).isEmpty());
+        // Sara (driver) and Anna (passenger of Petra) are told once each
+        assertEquals(1, texts("sara").stream()
+                .filter(t -> t.startsWith("Die geplanten Fahrten wurden entfernt. Du fährst")).count());
+        assertEquals(1, texts("anna").stream()
+                .filter(t -> t.startsWith("Die geplanten Fahrten wurden entfernt. Du hast keinen Platz")).count());
     }
 
     @Test

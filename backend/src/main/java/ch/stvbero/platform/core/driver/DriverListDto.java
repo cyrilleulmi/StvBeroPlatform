@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Driver list of a match day (DRV-01 to DRV-10). {@code route} is missing until the list is usable;
- * {@code members} (the people who can be entered) only for coaches and admins.
+ * {@code members} (the people who can be entered) only for those who can arrange the cars (DRV-32).
  */
 @Schema(name = "DriverList")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -21,11 +21,12 @@ public record DriverListDto(
         RouteDto route,
         @Schema(description = "Match day cancelled: list kept, no credits (DRV-10)") boolean cancelled,
         @Schema(description = "The caller can enter herself as driver or passenger right now") boolean canJoin,
-        @Schema(description = "Coach or admin: enters and changes drivers and passengers for others, route by hand") boolean canManage,
+        @Schema(description = "Coach or admin: route and kilometres by hand, travelling on one's own for others") boolean canManage,
+        @Schema(description = "The caller arranges the cars right now: enters and removes drivers, seats, puts people into cars, for everyone of the team (DRV-32)") boolean canArrange,
         @Schema(description = "The call-up is published: «without seat» counts the called-up players (DRV-04)") boolean callUpPublished,
         List<CarDto> cars,
         @Schema(description = "Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04)") List<PersonSummary> withoutSeat,
-        @Schema(description = "Members of the teams of the match day, by name; only for coaches and admins") List<PersonSummary> members,
+        @Schema(description = "Members of the teams of the match day, by name; only when the caller can arrange the cars (DRV-32)") List<PersonSummary> members,
         @Schema(description = "People who travel on their own and need no seat, by name (DRV-20)") List<PersonSummary> individual,
         @Schema(description = "Seats for passengers the caller usually offers: her places minus herself (DRV-18)") int defaultSeats,
         @Schema(description = "Everyone who still needs a seat, by name: the players without a seat and the coaches who responded «dabei» (DRV-19)") List<PersonSummary> needSeat) {
