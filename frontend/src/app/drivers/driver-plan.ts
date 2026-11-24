@@ -305,6 +305,8 @@ import { Stepper } from './simple/stepper';
                     <td
                       class="total"
                       data-testid="plan-total-sum"
+                      [attr.data-trips]="totalTrips()"
+                      [attr.data-trips-proposed]="store.proposed().length > 0 ? totalTrips() + store.proposed().length : null"
                       [attr.data-changed]="store.proposed().length > 0 ? 'true' : null"
                       [attr.aria-label]="
                         store.proposed().length > 0

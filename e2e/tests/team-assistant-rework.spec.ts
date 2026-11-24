@@ -47,7 +47,7 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   const people = step(page, 'personen');
   const teamId = new URL(page.url()).searchParams.get('team')!;
   const cell = (personId: string) => page.getByTestId(`membership-cell-${personId}-${teamId}`);
-  const rows = people.locator('[data-testid^="membership-row-"]');
+  const rows = people.getByTestId('membership-rows').getByRole('row');
   await expect(rows).toHaveCount(17);
   await expect(rows.first()).toContainText('Petra Keller');
   await expect(rows.last()).toContainText('Alex Admin');

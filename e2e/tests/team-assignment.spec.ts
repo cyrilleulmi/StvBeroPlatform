@@ -27,7 +27,7 @@ test('PTF-16 PTF-17: at the end of a season an admin moves people on in one tabl
   await page.getByRole('link', { name: /Teamzuteilung/ }).click();
   await expect(page).toHaveURL(/\/verwaltung\/zuteilung$/);
   const table = page.getByTestId('membership-table');
-  const rows = table.locator('[data-testid^="membership-row-"]');
+  const rows = table.getByTestId('membership-rows').getByRole('row');
   const team2 = page.getByTestId(`membership-team-${TEAM_2}`);
   await expect(rows).toHaveCount(17);
   await expect(team2).toHaveAttribute('data-players', '6');

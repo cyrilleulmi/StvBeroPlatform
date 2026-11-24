@@ -261,7 +261,7 @@ const key = (personId: string, teamId: string) => `${personId}|${teamId}`;
                 }
               </tr>
             </thead>
-            <tbody>
+            <tbody data-testid="membership-rows">
               @for (r of rows(); track r.person.id) {
                 <tr [attr.data-testid]="'membership-row-' + r.person.id">
                   <th scope="row" class="person">

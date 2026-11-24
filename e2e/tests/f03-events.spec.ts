@@ -246,24 +246,22 @@ test('F-03 K7 S13 TER-06: A cancelled event is recognizable, with reason', async
   await checkAccessibility(page);
 });
 
-test('F-03 K7 TER-06: A cancelled event has a coral date in the list', async ({ page }) => {
+test('F-03 K7 TER-06: A cancelled event has a coral line on top of its card in the list', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine');
-  // The date is the first element in the card link (aria-hidden, hence without role).
-  const background = (id: string) =>
-    card(page, id)
-      .getByRole('link')
-      .evaluate((a) => getComputedStyle(a.firstElementChild as Element).backgroundColor);
+  // Since E-105 every card carries the colour of its kind on its top edge; a cancelled one is coral instead.
+  const lineOnTop = (id: string) => card(page, id).evaluate((li) => getComputedStyle(li).borderTopColor);
   const coral = await page.evaluate(() => {
     const probe = document.createElement('span');
-    probe.style.background = 'var(--coral-soft)';
+    probe.style.color = 'var(--coral)';
     document.body.append(probe);
-    const color = getComputedStyle(probe).backgroundColor;
+    const color = getComputedStyle(probe).color;
     probe.remove();
     return color;
   });
-  expect(await background(T03)).toBe(coral);
-  expect(await background(T01)).not.toBe(coral);
+  expect(await lineOnTop(T03)).toBe(coral);
+  expect(await lineOnTop(T01)).not.toBe(coral);
+  await expect(card(page, T03).getByTestId('event-status')).toHaveText(/^abgesagt$/i);
 });
 
 test('F-03 K7 TER-06: Coach cancels an event with reason', async ({ page }) => {

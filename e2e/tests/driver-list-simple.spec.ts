@@ -82,11 +82,14 @@ test('DRV-29 DRV-30: the coach sets the number of people and plans the season wi
   await expect(page.getByTestId(`plan-places-${december}`)).toHaveAttribute('data-state', 'enough');
   // The column on the right shows trips and kilometres as they would be with the proposal
   await expect(page.getByRole('columnheader', { name: /Mit Vorschlag/ })).toBeVisible();
-  const changed = page.locator('[data-testid="plan-total"][data-changed="true"]').first();
+  const changed = page.getByRole('cell', { name: /mit Vorschlag: .*\(bisher / }).first();
+  await expect(changed).toHaveAttribute('data-changed', 'true');
   const tripsBefore = Number(await changed.getAttribute('data-trips'));
   await expect(changed).toHaveAttribute('data-trips-proposed', String(tripsBefore + 1));
-  await expect(changed).toHaveAccessibleName(/mit Vorschlag: .*\(bisher /);
-  const sumWithProposal = (await page.getByTestId('plan-total-sum').locator('.total-trips').innerText()).trim();
+  const sum = page.getByTestId('plan-total-sum');
+  await expect(sum).toHaveAttribute('data-changed', 'true');
+  const sumWithProposal = (await sum.getAttribute('data-trips-proposed'))!;
+  expect(Number(sumWithProposal)).toBeGreaterThan(Number(await sum.getAttribute('data-trips')));
   await checkAccessibility(page);
   // Discarding enters nothing
   await page.getByTestId('distribute-discard').click();
@@ -102,7 +105,8 @@ test('DRV-29 DRV-30: the coach sets the number of people and plans the season wi
   await expect(page.getByRole('img', { name: /^Vorschlag: / })).toHaveCount(0);
   await expect(page.getByTestId('distribute')).toBeDisabled();
   // The totals are now what the proposal showed
-  await expect(page.getByTestId('plan-total-sum').locator('.total-trips')).toHaveText(sumWithProposal);
+  await expect(page.getByTestId('plan-total-sum')).toHaveAttribute('data-trips', sumWithProposal);
+  await expect(page.getByTestId('plan-total-sum')).not.toHaveAttribute('data-changed', 'true');
   await expect(page.getByRole('columnheader', { name: /Mit Vorschlag/ })).toHaveCount(0);
   // Petra and Sara keep their cars on match day 04
   await expect(page.getByTestId(`cell-${SARA}-${T04}`)).toHaveAttribute('aria-pressed', 'true');
