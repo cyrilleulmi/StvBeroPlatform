@@ -4166,6 +4166,11 @@ export interface components {
              * @description One-way distance, if a route is known
              */
             distanceKm?: number;
+            /**
+             * Format: double
+             * @description Credit of one trip, there and back, to the meter (DRV-05), so proposed trips add up like the totals; missing without distance or if cancelled
+             */
+            creditKm?: number;
             /** Format: int32 */
             durationMinutes?: number;
             /** @description Drivers can be entered right now by the caller */

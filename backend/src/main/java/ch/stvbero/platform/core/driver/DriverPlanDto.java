@@ -164,6 +164,7 @@ public record DriverPlanDto(
             @Schema(description = "Meeting point and venue are set, so drivers can be entered (DRV-01)") boolean ready,
             List<DriverRules.Missing> missing,
             @Schema(description = "One-way distance, if a route is known") Double distanceKm,
+            @Schema(description = "Credit of one trip, there and back, to the meter (DRV-05); missing without distance or if cancelled") Double creditKm,
             Integer durationMinutes,
             @Schema(description = "Drivers can be entered right now by the caller") boolean changeable,
             List<DriverListDto.CarDto> cars,

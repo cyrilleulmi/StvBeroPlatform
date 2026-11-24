@@ -5018,6 +5018,7 @@ components:
             type: string
             enum: [MEETING_POINT, VENUE]
         distanceKm: { type: number, format: double, description: 'One-way distance, if a route is known' }
+        creditKm: { type: number, format: double, description: 'Credit of one trip, there and back, to the meter (DRV-05), so proposed trips add up like the totals; missing without distance or if cancelled' }
         durationMinutes: { type: integer, format: int32 }
         changeable: { type: boolean, description: Drivers can be entered right now by the caller }
         cars:

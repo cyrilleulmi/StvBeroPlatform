@@ -510,7 +510,11 @@ export const TEXTS = {
     total: 'Total',
     tripsOf: (person: string, trips: number, km: string) =>
       `${person}: ${trips === 1 ? '1 Fahrt' : `${trips} Fahrten`}, ${km} km`,
-    proposedMore: (n: number) => `+${n} im Vorschlag`,
+    withProposal: 'Mit Vorschlag',
+    tripsWithProposal: (person: string, trips: number, km: string, tripsBefore: number, kmBefore: string) =>
+      `${person} mit Vorschlag: ${trips === 1 ? '1 Fahrt' : `${trips} Fahrten`}, ${km} km ` +
+      `(bisher ${tripsBefore === 1 ? '1 Fahrt' : `${tripsBefore} Fahrten`}, ${kmBefore} km)`,
+    before: (trips: number, km: string) => `bisher ${trips} · ${km}`,
     dayKm: (km: string) => `${km} km`,
     legendProposed: 'Vorschlag',
     home: 'Heimspiel',

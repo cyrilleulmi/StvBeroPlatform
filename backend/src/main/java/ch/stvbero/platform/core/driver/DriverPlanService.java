@@ -286,7 +286,7 @@ public class DriverPlanService {
                     event.start.atZone(BackendClock.ZONE).toOffsetDateTime(),
                     event.location == null ? null : event.location.name,
                     event.location == null ? null : event.location.address, cancelled, over, missing.isEmpty(),
-                    missing, DriverRules.kilometres(distance),
+                    missing, DriverRules.kilometres(distance), exactKilometres(DriverRules.credit(distance, event.status)),
                     DriverRules.minutes(route.map(Routes.Stored::effectiveDurationSeconds).orElse(null)), changeable, cars,
                     freeSeats, DriverDistributionRules.expected(event.expectedTravellers, ofTeam, memberCount),
                     event.expectedTravellers != null,
@@ -614,5 +614,10 @@ public class DriverPlanService {
             throw DomainError.forbidden();
         }
         return c;
+    }
+
+    /** Kilometres to the meter, so the page can add proposed trips and round once, like the totals (DRV-30). */
+    private static Double exactKilometres(Integer meters) {
+        return meters == null ? null : meters / 1000.0;
     }
 }

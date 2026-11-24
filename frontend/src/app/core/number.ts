@@ -5,3 +5,10 @@ const ONE_DECIMAL = new Intl.NumberFormat('de-CH', { minimumFractionDigits: 1, m
 export function formatDecimal(value: number): string {
   return ONE_DECIMAL.format(value);
 }
+
+const WHOLE = new Intl.NumberFormat('de-CH', { maximumFractionDigits: 0 });
+
+/** Whole numbers, e.g. kilometres in a narrow column «381», «1’204». */
+export function formatWhole(value: number): string {
+  return WHOLE.format(value);
+}

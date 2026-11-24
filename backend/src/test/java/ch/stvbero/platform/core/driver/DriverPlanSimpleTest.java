@@ -151,6 +151,18 @@ class DriverPlanSimpleTest {
     }
 
     @Test
+    void drv30MatchDayNamesTheCreditOfOneTripForTheProposal() {
+        String petra = login("petra");
+        given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"distanceKm\":23.4}")
+                .put("/api/events/" + december + "/driver-list/route").then().statusCode(200);
+        JsonPath json = plan(petra);
+
+        // The page adds this to the kilometres of a proposed driver: there and back, like an entered trip (DRV-05)
+        assertEquals(23.4f, matchDay(json, december).get("distanceKm"));
+        assertEquals(46.8f, matchDay(json, december).get("creditKm"));
+    }
+
+    @Test
     void drv30EnteredTripsStayAndALaterDistributionOnlyAdds() {
         String petra = login("petra");
         put(petra, "/expected", "{\"expected\":10}").statusCode(200);

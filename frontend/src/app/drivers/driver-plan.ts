@@ -4,7 +4,7 @@ import type { Car, DriverPlanMatchDay } from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { name } from '../core/format';
 import { Icon } from '../core/icon';
-import { formatDecimal } from '../core/number';
+import { formatDecimal, formatWhole } from '../core/number';
 import { TEXTS } from '../core/texts';
 import { ConfirmDialog } from '../core/confirm-dialog';
 import { Fairness } from './simple/fairness';
@@ -176,6 +176,9 @@ import { Stepper } from './simple/stepper';
                       </th>
                     }
                     <th scope="col" class="total total-head">
+                      @if (store.proposed().length > 0) {
+                        <span class="total-with">{{ b.withProposal }}</span>
+                      }
                       <span>{{ b.trips }}</span>
                       <span class="total-km">{{ b.km }}</span>
                     </th>
@@ -255,13 +258,28 @@ import { Stepper } from './simple/stepper';
                         class="total"
                         data-testid="plan-total"
                         [attr.data-trips]="q.trips"
-                        [attr.aria-label]="b.tripsOf(name(q.person), q.trips, km(q.kilometres))"
+                        [attr.data-trips-proposed]="withProposal(q).more > 0 ? withProposal(q).trips : null"
+                        [attr.data-changed]="withProposal(q).more > 0 ? 'true' : null"
+                        [attr.aria-label]="
+                          withProposal(q).more > 0
+                            ? b.tripsWithProposal(
+                                name(q.person),
+                                withProposal(q).trips,
+                                km(withProposal(q).km),
+                                q.trips,
+                                km(q.kilometres)
+                              )
+                            : b.tripsOf(name(q.person), q.trips, km(q.kilometres))
+                        "
                       >
-                        <span class="total-trips">{{ q.trips }}</span>
-                        @if (proposedFor(q.person.id); as more) {
-                          <span class="total-more" [attr.title]="b.proposedMore(more)">+{{ more }}</span>
+                        @if (withProposal(q).more > 0) {
+                          <span class="total-trips">{{ withProposal(q).trips }}</span>
+                          <span class="total-km">{{ km(withProposal(q).km) }}</span>
+                          <span class="total-before" aria-hidden="true">{{ b.before(q.trips, km(q.kilometres)) }}</span>
+                        } @else {
+                          <span class="total-trips">{{ q.trips }}</span>
+                          <span class="total-km">{{ km(q.kilometres) }}</span>
                         }
-                        <span class="total-km">{{ km(q.kilometres) }}</span>
                       </td>
                     </tr>
                   }
@@ -287,10 +305,27 @@ import { Stepper } from './simple/stepper';
                     <td
                       class="total"
                       data-testid="plan-total-sum"
-                      [attr.aria-label]="b.tripsOf(b.total, totalTrips(), km(totalKm()))"
+                      [attr.data-changed]="store.proposed().length > 0 ? 'true' : null"
+                      [attr.aria-label]="
+                        store.proposed().length > 0
+                          ? b.tripsWithProposal(
+                              b.total,
+                              totalTrips() + store.proposed().length,
+                              km(totalKm() + proposedKmSum()),
+                              totalTrips(),
+                              km(totalKm())
+                            )
+                          : b.tripsOf(b.total, totalTrips(), km(totalKm()))
+                      "
                     >
-                      <span class="total-trips">{{ totalTrips() }}</span>
-                      <span class="total-km">{{ km(totalKm()) }}</span>
+                      @if (store.proposed().length > 0) {
+                        <span class="total-trips">{{ totalTrips() + store.proposed().length }}</span>
+                        <span class="total-km">{{ km(totalKm() + proposedKmSum()) }}</span>
+                        <span class="total-before" aria-hidden="true">{{ b.before(totalTrips(), km(totalKm())) }}</span>
+                      } @else {
+                        <span class="total-trips">{{ totalTrips() }}</span>
+                        <span class="total-km">{{ km(totalKm()) }}</span>
+                      }
                     </td>
                   </tr>
                 </tfoot>
@@ -569,10 +604,18 @@ import { Stepper } from './simple/stepper';
       font-size: 12px;
       color: var(--muted);
     }
-    .total-more {
+    .total[data-changed='true'] .total-trips,
+    .total[data-changed='true'] .total-km,
+    .total-with {
+      color: var(--primary);
+    }
+    .total-with {
       font-size: 11px;
       font-weight: 700;
-      color: var(--primary);
+    }
+    .total-before {
+      font-size: 11px;
+      color: var(--muted);
     }
     @media (max-width: 520px) {
       .corner,
@@ -832,12 +875,32 @@ export class DriverPlanPage {
 
   protected readonly proposedDays = computed(() => new Set(this.store.proposed().map((t) => t.eventId)).size);
 
-  /** Proposed trips per person, for «+1» in the column on the right. */
-  private readonly proposedCount = computed(() => {
-    const counts = new Map<string, number>();
-    for (const t of this.store.proposed()) counts.set(t.driver.id, (counts.get(t.driver.id) ?? 0) + 1);
-    return counts;
+  /**
+   * Proposed trips and kilometres per person, for the column on the right: what the totals would be once the
+   * proposal is accepted. A trip gets the credit of its match day, like an entered one (DRV-05).
+   */
+  private readonly proposedPerPerson = computed(() => {
+    const days = new Map(this.store.matchDays().map((m) => [m.eventId, m]));
+    const per = new Map<string, { trips: number; km: number }>();
+    for (const t of this.store.proposed()) {
+      const entry = per.get(t.driver.id) ?? { trips: 0, km: 0 };
+      entry.trips += 1;
+      entry.km += days.get(t.eventId)?.creditKm ?? 0;
+      per.set(t.driver.id, entry);
+    }
+    return per;
   });
+
+  protected readonly proposedKmSum = computed(() =>
+    [...this.proposedPerPerson().values()].reduce((sum, p) => sum + p.km, 0),
+  );
+
+  /** Trips and kilometres of a person with the proposal; `more` is the number of proposed trips. */
+  protected withProposal(q: QueueEntry): { trips: number; km: number; more: number } {
+    const p = this.proposedPerPerson().get(q.person.id);
+    if (!p) return { trips: q.trips, km: q.kilometres, more: 0 };
+    return { trips: q.trips + p.trips, km: Math.round((q.kilometres + p.km) * 10) / 10, more: p.trips };
+  }
 
   constructor() {
     effect(() => {
@@ -855,7 +918,7 @@ export class DriverPlanPage {
   protected km(value: number | null | undefined): string {
     const v = value ?? 0;
     if (v === 0) return '0';
-    return formatDecimal(v >= 100 ? Math.round(v) : v);
+    return v >= 100 ? formatWhole(v) : formatDecimal(v);
   }
 
   protected switchTeam(team: string): void {
@@ -877,10 +940,6 @@ export class DriverPlanPage {
 
   protected isProposed(m: DriverPlanMatchDay, personId: string): boolean {
     return this.store.proposedOn(m.eventId).some((t) => t.driver.id === personId);
-  }
-
-  protected proposedFor(personId: string): number {
-    return this.proposedCount().get(personId) ?? 0;
   }
 
   /** Coaches and admins change every row, members their own (DRV-02). */
