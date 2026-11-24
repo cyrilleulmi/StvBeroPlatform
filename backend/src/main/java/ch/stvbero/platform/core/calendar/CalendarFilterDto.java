@@ -20,7 +20,7 @@ public record CalendarFilterDto(
         @Schema(required = true) List<Team> teams) {
 
     /** A team of the person and whether its events are in the feed (CAL-13). */
-    @Schema(name = "CalendarTeam")
+    @Schema(name = "CalendarFilterTeam")
     public record Team(
             @Schema(required = true) UUID teamId,
             @Schema(required = true, examples = "Team 1") String name,

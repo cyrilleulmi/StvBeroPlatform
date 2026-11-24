@@ -2407,9 +2407,9 @@ export interface components {
             /** @description Participations in the feed besides «dabei» */
             responses: components["schemas"]["CalendarResponse"][];
             /** @description The person's teams in the current season, sorted by name */
-            teams: components["schemas"]["CalendarTeam"][];
+            teams: components["schemas"]["CalendarFilterTeam"][];
         };
-        CalendarTeam: {
+        CalendarFilterTeam: {
             /** Format: uuid */
             teamId: string;
             /** @example Team 1 */

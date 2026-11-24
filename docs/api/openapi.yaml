@@ -3015,8 +3015,8 @@ components:
         teams:
           type: array
           description: The person's teams in the current season, sorted by name
-          items: { $ref: '#/components/schemas/CalendarTeam' }
-    CalendarTeam:
+          items: { $ref: '#/components/schemas/CalendarFilterTeam' }
+    CalendarFilterTeam:
       type: object
       required: [teamId, name, included]
       properties:
