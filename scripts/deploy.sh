@@ -33,8 +33,23 @@ deploy_app() { # app
   fi
   (cd "$ROOT" && flyctl deploy --app "$app" --config fly.toml --local-only --ha=false \
     --env "STV_APP_URL=$url" --wait-timeout 5m)
+  smoke_test "$url"
   log "deployed: $url"
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "url=$url" >>"$GITHUB_OUTPUT"; fi
+}
+
+smoke_test() { # url: the page and the API answer from outside (the machine may need a few seconds to start)
+  local url="$1" i
+  for i in $(seq 1 30); do
+    if curl -fsS --max-time 20 "$url/" | grep -q "<app-root" &&
+      curl -sS --max-time 20 -o /dev/null "$url/api/session" -w '%{http_code}' | grep -qE '^(200|204|401)$'; then
+      log "smoke test passed: $url answers with the app and the API"
+      return 0
+    fi
+    sleep 5
+  done
+  log "smoke test failed: $url does not answer with the app"
+  return 1
 }
 
 remove_app() { # app
