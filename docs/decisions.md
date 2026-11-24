@@ -106,6 +106,12 @@ Log of the decisions taken, newest last. Whoever changes a requirement records t
 |---|---|---|
 | E-90 | The base design is «Sporthalle» instead of «Salbei frisch» (replaces E-03 and the theme choice of E-67): condensed DIN type from local fonts, hall-floor grey, ultramarine, the response counts as a scoreboard, court lines as accents, defined motion. It comes from the design-skill trials of 21./22.11.2026 (branches `poc/ux-*`): Cyrille chose the identity of the skill `frontend-design`, wanted the scoreboard in «Hell» less aggressive («mehr im Design») and a dark theme without neon colours, and had it refined with impeccable, better-interface, Vercel Web Interface Guidelines and emil-design-eng. Of three dark candidates Cyrille kept «Schiefer» and renamed it «Dunkel»; «Düne» and «GitHub Dark» are dropped. Themes: «Hell», «Dunkel», «System» (NF-07, NF-08). Stored values `dune` and `github-dark` fall back to «System» without migration. New UI text «Zum Inhalt springen» (skip link). [design-principles.md](design-principles.md) | Decided |
 
+## 23.11.2026 · Hosting
+
+| No. | Decision | Kind |
+|---|---|---|
+| E-91 | Hosted test environments on Fly.io (region `fra`), see [deployment.md](deployment.md): the test environment of `develop` after every green CI run and one preview per pull request, destroyed on closing. Both run the image with profile `preview`: test support (`/dev-login`) without simulation, so they start with the club data set (live data from swiss unihockey, real routes); e-mail and push stay off. A throwaway PostgreSQL runs inside the container (`docker/start.sh`): no external database, nothing kept between starts. Machines stop when unused. Fly.io has no database included (Managed Postgres from 38 USD per month), and the data is loaded again on every start anyway. No production with real data yet: it needs the login (O-01) and a real database, and stays open in O-02. One container: Quarkus serves the Angular build and reroutes browser routes to `index.html`; `index.html` and `sw.js` are not cached; health check `/q/health/ready`. New Angular build configuration `preview` (test mode). Assumptions: previews only for pull requests from this repository (no secrets for forks); preview addresses are public, with `X-Robots-Tag: noindex`; the pipeline agents keep testing locally. | Decided (test environment of develop with live club data, stopping when unused, database inside the container), Accepted (assumptions) |
+
 ## 22.11.2026 · Driver plan, swiss unihockey page, start page
 
 | No. | Decision | Kind |
