@@ -1543,6 +1543,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/driver-plan/expected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set how many people are expected to travel to a match day of the team (DRV-29, coach)
+         * @description The assumption for planning a season: with it the plan knows how many cars a match day needs. Without a
+         *     number (`null`) it is all players and coaches of the team. Coaches (of any team) and admins; otherwise 403.
+         */
+        put: operations["setDriverPlanExpected"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/match-days/{eventId}/expected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set how many people are expected to travel to one match day (DRV-29, coach)
+         * @description Overrides the number of the team for one match day; `null` uses the number of the team again. The match
+         *     day must belong to the team in the season (404 otherwise). Coaches (of any team) and admins; otherwise 403.
+         */
+        put: operations["setMatchDayExpected"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/match-days/{eventId}/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The next driver in line takes a trip of a match day (DRV-31)
+         * @description The next in line is the member who can drive (DRV-18) with the fewest trips in the season, then with fewer
+         *     kilometres, then by name, who neither drives on that match day nor responded «nicht dabei». Without
+         *     `replaces` she is entered with one more car (coaches and admins). With `replaces` that driver hands her
+         *     car over with its seats and passengers, like a direct takeover (DRV-25): the driver herself, coaches and
+         *     admins. 409 if nobody is left, if `replaces` does not drive on the match day, or if the match day cannot be
+         *     changed.
+         */
+        post: operations["nextDriver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/distribute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share the trips of the upcoming match days fairly (DRV-30, coach)
+         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+         *     until its cars have a place for everyone who is expected (`expected`, drivers included). The next driver
+         *     is the member who can drive (DRV-18) with the fewest trips in the season (done and planned), then with
+         *     fewer kilometres, then the one who has not driven for longer, then by name; nobody who responded «nicht
+         *     dabei» to the match day. Each new car has the usual seats of its driver. With `replace: true` the cars of
+         *     those match days are removed first, except cars with passengers; with `false` cars that are entered stay
+         *     and only missing drivers are added. Every driver whose trips changed gets one notification. Coaches (of
+         *     any team) and admins; otherwise 403.
+         */
+        post: operations["distributeDriverPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/driver-plan/swaps": {
         parameters: {
             query?: never;
@@ -3588,6 +3692,8 @@ export interface components {
              * @description Seats for passengers the caller usually offers: her places minus herself (DRV-18)
              */
             defaultSeats: number;
+            /** @description Everyone who still needs a seat, by name: the players without a seat and the coaches who responded «dabei» (DRV-19) */
+            needSeat: components["schemas"]["PersonSummary"][];
         };
         /** @description A car with its driver and passengers (DRV-02, DRV-03) */
         Car: {
@@ -3709,6 +3815,36 @@ export interface components {
             extraTrips: components["schemas"]["ExtraTrip"][];
             /** @description Changes of the plan, newest first, at most 100 (DRV-26) */
             history: components["schemas"]["DriverPlanHistoryEntry"][];
+            /**
+             * Format: int32
+             * @description People expected to travel to a match day of this team (DRV-29)
+             */
+            expected: number;
+            /**
+             * Format: int32
+             * @description All players and coaches of the team: the number without a manual one (DRV-29)
+             */
+            expectedDefault: number;
+            /** @description The number of the team was set by hand (DRV-29) */
+            expectedManual: boolean;
+        };
+        /** @description The assumed number of people who travel; `null` goes back to the default (DRV-29) */
+        DriverPlanExpectedInput: {
+            /** Format: int32 */
+            expected?: number | null;
+        };
+        /** @description The next driver in line takes a trip (DRV-31) */
+        DriverPlanNextInput: {
+            /**
+             * Format: uuid
+             * @description Driver who hands her trip over; missing: one more car is entered
+             */
+            replaces?: string | null;
+        };
+        /** @description Share the trips of the upcoming match days fairly (DRV-30) */
+        DriverPlanDistributeInput: {
+            /** @description `true`: plan the upcoming match days anew (cars with passengers stay); `false`: only add the drivers that are missing */
+            replace: boolean;
         };
         /** @description Sum of all shares (DRV-27) */
         DriverPlanTotals: {
@@ -3851,6 +3987,25 @@ export interface components {
              * @description Free seats in all cars
              */
             freeSeats: number;
+            /**
+             * Format: int32
+             * @description People expected to travel: the number of the match day, otherwise of the team (DRV-29)
+             */
+            expected: number;
+            /** @description The number was set by hand for this match day (DRV-29) */
+            expectedManual: boolean;
+            /**
+             * Format: int32
+             * @description Places of all cars, drivers included
+             */
+            places: number;
+            /**
+             * Format: int32
+             * @description People who responded «dabei»
+             */
+            attending: number;
+            /** @description The meeting point is the venue: nobody has to drive (DRV-30) */
+            noTrip: boolean;
         };
         /** @description How often a member drives in the season (DRV-17), done and planned */
         DriverShare: {
@@ -6633,6 +6788,137 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["RuleViolation"];
+        };
+    };
+    setDriverPlanExpected: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanExpectedInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setMatchDayExpected: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanExpectedInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    nextDriver: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanNextInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    distributeDriverPlan: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanDistributeInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     startDriverSwap: {

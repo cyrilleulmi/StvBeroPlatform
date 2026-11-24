@@ -9,6 +9,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -179,5 +180,88 @@ public class DriverPlanResource {
     public DriverPlanDto removeTrip(@PathParam("teamId") UUID teamId, @PathParam("tripId") UUID tripId,
                                     @QueryParam("season") UUID season) {
         return plan.removeTrip(auth.person(), teamId, season, tripId);
+    }
+
+    @PUT
+    @Path("/expected")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setDriverPlanExpected",
+            summary = "Set how many people are expected to travel to a match day of the team; without a number: "
+                    + "all players and coaches (DRV-29, coach)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto setExpected(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
+                                     @Valid @NotNull DriverPlanDto.ExpectedInput input) {
+        return plan.setExpected(auth.person(), teamId, season, input.expected());
+    }
+
+    @PUT
+    @Path("/match-days/{eventId}/expected")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setMatchDayExpected",
+            summary = "Set how many people are expected to travel to one match day; without a number: the number "
+                    + "of the team (DRV-29, coach)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto setMatchDayExpected(@PathParam("teamId") UUID teamId, @PathParam("eventId") UUID eventId,
+                                             @QueryParam("season") UUID season,
+                                             @Valid @NotNull DriverPlanDto.ExpectedInput input) {
+        return plan.setMatchDayExpected(auth.person(), teamId, season, eventId, input.expected());
+    }
+
+    @POST
+    @Path("/distribute")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "distributeDriverPlan",
+            summary = "Share the trips of the upcoming match days fairly: every match day gets drivers until there "
+                    + "is a place for everyone who is expected (DRV-30, coach)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto distribute(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
+                                    @Valid @NotNull DriverPlanDto.DistributeInput input) {
+        return plan.distribute(auth.person(), teamId, season, input.replace());
+    }
+
+    @POST
+    @Path("/match-days/{eventId}/next")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "nextDriver",
+            summary = "The next driver in line takes a trip of a match day: one more car, or instead of a driver "
+                    + "who cannot drive (DRV-31)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Nobody is left who can drive, or the match day cannot be changed (DRV-31)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto next(@PathParam("teamId") UUID teamId, @PathParam("eventId") UUID eventId,
+                              @QueryParam("season") UUID season, @Valid @NotNull DriverPlanDto.NextInput input) {
+        return plan.next(auth.person(), teamId, season, eventId, input.replaces());
     }
 }

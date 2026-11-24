@@ -34,7 +34,31 @@ public record DriverPlanDto(
         @Schema(description = "Sum of the distribution (DRV-27)") Totals totals,
         @Schema(description = "Open swap requests the caller sees: her own and those to her; coaches and admins all (DRV-25)") List<Swap> swaps,
         @Schema(description = "Other trips of the team in the season, by date (DRV-28)") List<ExtraTrip> extraTrips,
-        @Schema(description = "Changes of the plan, newest first (DRV-26)") List<HistoryEntry> history) {
+        @Schema(description = "Changes of the plan, newest first (DRV-26)") List<HistoryEntry> history,
+        @Schema(description = "People expected to travel to a match day of this team (DRV-29)") int expected,
+        @Schema(description = "All players and coaches of the team: the number without a manual one (DRV-29)") int expectedDefault,
+        @Schema(description = "The number of the team was set by hand (DRV-29)") boolean expectedManual) {
+
+    static final String EXPECTED_TEXT = "Bitte eine Zahl von 1 bis 60 angeben.";
+
+    /** Request: the assumed number of people who travel; {@code null} goes back to the default (DRV-29). */
+    @Schema(name = "DriverPlanExpectedInput")
+    public record ExpectedInput(
+            @Min(value = 1, message = EXPECTED_TEXT) @Max(value = 60, message = EXPECTED_TEXT) Integer expected) {
+    }
+
+    /** Request: the next driver in line takes a trip (DRV-31). */
+    @Schema(name = "DriverPlanNextInput")
+    public record NextInput(
+            @Schema(description = "Driver who hands her trip over; missing: one more car is entered") UUID replaces) {
+    }
+
+    /** Request: share the trips of the upcoming match days fairly (DRV-30). */
+    @Schema(name = "DriverPlanDistributeInput")
+    public record DistributeInput(
+            @Schema(description = "`true`: plan the upcoming match days anew (cars with passengers stay); "
+                    + "`false`: only add the drivers that are missing") boolean replace) {
+    }
 
     /** Sum of all shares (DRV-27). */
     @Schema(name = "DriverPlanTotals")
@@ -118,7 +142,12 @@ public record DriverPlanDto(
             Integer durationMinutes,
             @Schema(description = "Drivers can be entered right now by the caller") boolean changeable,
             List<DriverListDto.CarDto> cars,
-            @Schema(description = "Free seats in all cars") int freeSeats) {
+            @Schema(description = "Free seats in all cars") int freeSeats,
+            @Schema(description = "People expected to travel: the number of the match day, otherwise of the team (DRV-29)") int expected,
+            @Schema(description = "The number was set by hand for this match day (DRV-29)") boolean expectedManual,
+            @Schema(description = "Places of all cars, drivers included") int places,
+            @Schema(description = "People who responded «dabei»") int attending,
+            @Schema(description = "The meeting point is the venue: nobody has to drive (DRV-30)") boolean noTrip) {
     }
 
     /** How often a member drives in the season (DRV-17): done and planned. */
