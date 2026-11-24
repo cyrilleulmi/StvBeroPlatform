@@ -264,7 +264,7 @@ test('DRV-08: changing the meeting point recalculates route and credits', async 
   await expect(page.getByTestId('driver-route-credit')).toHaveText('Gutschrift pro Auto: 39.6 km (hin und zurück)');
 });
 
-test('DRV-09: the season summary shows everyone to coaches and only themselves to members', async ({ page }) => {
+test('DRV-09: the season summary shows everyone to coaches and only themselves to members', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T04}`);
   await page.getByTestId('driver-summary-link').click();

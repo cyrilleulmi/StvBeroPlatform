@@ -24,7 +24,7 @@ test.beforeEach(async ({ request }) => {
 
 // ------------------------------------------------------------------ Calendar (KAL)
 
-test("KAL-01: the calendar shows the month with today and the events of the chosen day", async ({
+test("KAL-01: the calendar shows the month with today and the events of the chosen day", { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, "anna");
@@ -306,7 +306,7 @@ test.describe("invalid absences", () => {
   });
 });
 
-test("ABS-05: change and delete an absence; the practices follow", async ({
+test("ABS-05: change and delete an absence; the practices follow", { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, "sara");

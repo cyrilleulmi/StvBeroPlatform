@@ -21,7 +21,7 @@ function cell(page: Page, personId: string, teamId: string): Locator {
   return page.getByTestId(`membership-cell-${personId}-${teamId}`);
 }
 
-test('PTF-16 PTF-17: at the end of a season an admin moves people on in one table', async ({ page }) => {
+test('PTF-16 PTF-17: at the end of a season an admin moves people on in one table', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung');
   await page.getByRole('link', { name: /Teamzuteilung/ }).click();

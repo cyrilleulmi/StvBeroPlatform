@@ -121,7 +121,7 @@ function section(page: Page) {
   return page.getByRole('region', { name: 'Benachrichtigungen' });
 }
 
-test('F-19 criterion 2: «Benachrichtigungen» in the profile, e-mail on by default, push off', async ({ page }) => {
+test('F-19 criterion 2: «Benachrichtigungen» in the profile, e-mail on by default, push off', { tag: '@desktop' }, async ({ page }) => {
   await fakePush(page);
   await login(page, 'anna');
   await page.goto('/profil');

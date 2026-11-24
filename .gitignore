@@ -9,8 +9,10 @@ blob-report/
 
 # Build-Ausgaben
 target/
+target-e2e/
 build/
 dist/
+dist-e2e/
 node_modules/
 .angular/
 

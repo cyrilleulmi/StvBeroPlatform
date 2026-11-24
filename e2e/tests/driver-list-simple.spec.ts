@@ -65,7 +65,7 @@ test('DRV-03 DRV-19: right before the match the coach seats everyone with one ta
   await checkAccessibility(page);
 });
 
-test('DRV-29 DRV-30: the coach sets the number of people and plans the season with one button', async ({ page }) => {
+test('DRV-29 DRV-30: the coach sets the number of people and plans the season with one button', { tag: '@desktop' }, async ({ page }) => {
   const december = await openPlan(page, 'petra');
   await expect(page.getByTestId(`plan-places-${december}`)).toHaveAttribute('data-state', 'short');
 
@@ -129,7 +129,7 @@ test('DRV-33: «Alle entfernen» takes every planned driver off after a question
   await expect(page.getByTestId('remove-all')).toHaveCount(0);
 });
 
-test('E-98: the grid shows the places of each car, the distance of each match day and the totals', async ({ page }) => {
+test('E-98: the grid shows the places of each car, the distance of each match day and the totals', { tag: '@desktop' }, async ({ page }) => {
   const december = await openPlan(page, 'petra');
   await expect(page.getByTestId(`plan-row-${SARA}`).getByTestId('plan-car-seats')).toContainText(/\d/);
   await expect(page.getByTestId(`plan-day-km-${T04}`)).toHaveText('23.4 km');

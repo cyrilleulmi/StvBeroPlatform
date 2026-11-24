@@ -76,7 +76,7 @@ test('F-05 K1 AUF-24: Event 05 is published – Eva called up, Lea not', async (
   await expect(page.getByTestId('my-call-up')).toHaveText('nicht aufgeboten');
 });
 
-test('F-05 K2 AUF-10 to AUF-16: Petra creates a match day with two matches', async ({ page }) => {
+test('F-05 K2 AUF-10 to AUF-16: Petra creates a match day with two matches', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByLabel('Art', { exact: true }).selectOption({ label: 'Spieltag' });
@@ -126,7 +126,7 @@ test('F-05 K2 AUF-14: Matches without opponent are reported at the field', async
   await expect(page).toHaveURL(/\/termine\/neu$/);
 });
 
-test('F-05 K4 AUF-21 AUF-22: Call-up by lines, response status next to it, pending and maybe also selectable', async ({
+test('F-05 K4 AUF-21 AUF-22: Call-up by lines, response status next to it, pending and maybe also selectable', { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, 'petra');

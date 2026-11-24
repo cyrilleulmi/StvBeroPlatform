@@ -111,7 +111,7 @@ test('Dev login: people are grouped by team, coaches come first and are marked',
 
 // ------------------------------------------------------------------ Linking (SUH-02, SUH-11)
 
-test('SUH-02: a coach links a team through the dialog with the teams of the club', async ({ page }) => {
+test('SUH-02: a coach links a team through the dialog with the teams of the club', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/verwaltung/teams/${TEAM_2}`);
   await expect(page.getByTestId('su-status')).toHaveText('Nicht verknüpft.');

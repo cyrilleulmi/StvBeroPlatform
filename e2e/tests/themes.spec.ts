@@ -31,7 +31,7 @@ test('NF-08: The switch offers exactly Hell, Dunkel and System', async ({ page }
 });
 
 for (const t of THEMES) {
-  test(`NF-08: Choosing theme «${t.name}» persists, without accessibility findings`, async ({ page }) => {
+  test(`NF-08: Choosing theme «${t.name}» persists, without accessibility findings`, { tag: '@desktop' }, async ({ page }) => {
     // The system is set to the opposite: the chosen theme must still apply.
     await page.emulateMedia({ colorScheme: t.system });
     await login(page, 'anna');

@@ -85,7 +85,7 @@ test.beforeEach(async ({ request }) => {
 
 // ------------------------------------------------------------------ Colours and names (VAR-04, VAR-05, TER-14)
 
-test('VAR-05: the event list shows the variant of every event by name and colour', async ({ page }) => {
+test('VAR-05: the event list shows the variant of every event by name and colour', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine');
 

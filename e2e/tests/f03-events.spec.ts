@@ -33,7 +33,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-03 K1 K2 TER-13: Anna sees the upcoming events of her teams in chronological order', async ({
+test('F-03 K1 K2 TER-13: Anna sees the upcoming events of her teams in chronological order', { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, 'anna');
@@ -140,7 +140,7 @@ test('F-03 K3 RR-05: Players see «Keine Berechtigung» when creating', async ({
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
 });
 
-test('F-03 K4 TER-05: Petra creates a weekly series', async ({ page }) => {
+test('F-03 K4 TER-05: Petra creates a weekly series', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine/neu');
   await page.getByRole('radio', { name: 'Serie (jede Woche)' }).check();
@@ -279,7 +279,7 @@ test('F-03 K7 TER-06: Coach cancels an event with reason', async ({ page }) => {
   await expect(page.getByTestId('event-status')).toContainText('Abgesagt: Halle gesperrt');
 });
 
-test('F-03 K8 TER-09 TER-10: Response deadline per event, default 24 hours', async ({ page }) => {
+test('F-03 K8 TER-09 TER-10: Response deadline per event, default 24 hours', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   await expect(page.getByTestId('response-deadline')).toHaveText('Mo 16.11. 18:30 (24 Stunden vor Beginn)');

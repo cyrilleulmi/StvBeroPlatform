@@ -49,7 +49,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-02 K1 LIN-01 LIN-06 LIN-09: Seed with lines, goalies and «Ohne Linie»', async ({ page }) => {
+test('F-02 K1 LIN-01 LIN-06 LIN-09: Seed with lines, goalies and «Ohne Linie»', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Linien');
@@ -159,7 +159,7 @@ test('F-02 K3 LIN-07 S14: Assignment via select field saves immediately', async 
   await expect.poll(() => names(page.getByTestId('group-no-line'))).toEqual(['Kim Baumann']);
 });
 
-test('F-02 K3 LIN-07: Assignment via drag and drop saves immediately', async ({ page }, testInfo) => {
+test('F-02 K3 LIN-07: Assignment via drag and drop saves immediately', { tag: '@desktop' }, async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'On the phone the assignment uses the select field (LIN-07).');
   // Tall enough that source and target are visible at the same time (the mouse does not leave the window).
   await page.setViewportSize({ width: 1280, height: 1600 });

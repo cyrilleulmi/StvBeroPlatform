@@ -147,7 +147,7 @@ test('PRS-02 PRS-03 PRS-05: Petra sees the players of event 09 by line with the 
   expect(event.attendanceRecorded).toBe(false);
 });
 
-test('PRS-03: a shared event shows the players by team, then by line, as in the overview', async ({
+test('PRS-03: a shared event shows the players by team, then by line, as in the overview', { tag: '@desktop' }, async ({
   page,
   request,
 }) => {

@@ -68,7 +68,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-06 K1: List newest first, unread marked, count in the navigation', async ({ page }) => {
+test('F-06 K1: List newest first, unread marked, count in the navigation', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'lea');
   await page.goto('/');
   await expect(page.getByTestId('notifications-counter')).toHaveText('2');

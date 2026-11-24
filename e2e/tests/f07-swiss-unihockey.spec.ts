@@ -72,7 +72,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the sync', async ({ page }) => {
+test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the sync', { tag: '@desktop' }, async ({ page }) => {
   await simulator(page.request, 900002, [
     {
       suMatchId: 6000001,

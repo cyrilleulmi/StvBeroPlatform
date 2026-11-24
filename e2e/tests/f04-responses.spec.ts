@@ -60,7 +60,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-04 K1 K2 S1 ANM-20 to ANM-32: Overview of event 01 as in test-data.md', async ({ page }) => {
+test('F-04 K1 K2 S1 ANM-20 to ANM-32: Overview of event 01 as in test-data.md', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   const overview = page.getByTestId('overview');
