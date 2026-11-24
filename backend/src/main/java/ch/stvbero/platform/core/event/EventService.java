@@ -45,6 +45,9 @@ public class EventService {
     @Inject
     EventNotifications notifications;
 
+    @Inject
+    ch.stvbero.platform.core.absence.AbsenceService absences;
+
     /**
      * Events of the caller's own teams (TER-13). Upcoming ones ascending from "now", past ones descending.
      * Own teams means: member of a participating team in the season of the event. With a team filter, admins
@@ -116,6 +119,8 @@ public class EventService {
         event.season = season;
         apply(event, input, teams);
         event.persist();
+        // A practice in the time of an absence is declined by itself (ABS-04)
+        absences.applyForEvents(java.util.List.of(event.id));
         return get(user, event.id);
     }
 
@@ -131,6 +136,14 @@ public class EventService {
         Instant start = input.start().toInstant();
         Instant end = input.end().toInstant();
         Set<Team> teams = teams(input.teamIds());
+        if (user.eventGrant()) {
+            // A special permission does not reach the teams of the event (RR-11)
+            Set<UUID> optional = new java.util.HashSet<>(input.optionalTeamIds() == null ? List.of() : input.optionalTeamIds());
+            if (!teams.equals(event.teams) || !optional.equals(event.optionalTeamIds)) {
+                throw DomainError.ruleViolation("teamIds", "Teams unverändert",
+                        "Die Teams eines Termins ändern nur Coaches.", "RR-11");
+            }
+        }
         Season season = seasonOn(EventRules.date(start), event.season);
         // After the change, the person must still be coach of a participating team.
         EventRules.checkCanCreate(user.allTeams(), teamRoles(user, teams, season));
@@ -157,6 +170,7 @@ public class EventService {
         if (NotificationRules.rescheduled(oldStart, event.start)) {
             notifications.rescheduled(user, event, oldLabel, previousMembers);
         }
+        absences.applyForEvents(java.util.List.of(event.id));
         return get(user, event.id);
     }
 

@@ -26,7 +26,8 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 | `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
 | `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
-| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `e2e-isolated.sh`, `pipeline.sh`, `check-links.py` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `e2e-isolated.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
+| `Dockerfile`, `docker/`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
 
 ## Why our own app?
 
@@ -79,6 +80,8 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 14 | [Driver list](docs/requirements/14-driver-list.md) | DRV |
 | 15 | [Timeline of a match day](docs/requirements/15-timeline.md) | TML |
 | 16 | [Event variants](docs/requirements/16-event-variants.md) | VAR |
+| 17 | [Calendar view](docs/requirements/17-calendar-view.md) | KAL |
+| 18 | [Absences](docs/requirements/18-absences.md) | ABS |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 

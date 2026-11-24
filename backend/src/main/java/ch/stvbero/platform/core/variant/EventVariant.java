@@ -54,6 +54,10 @@ public class EventVariant extends PanacheEntityBase {
     @Column(name = "attendance_check")
     public boolean attendanceCheck;
 
+    /** «nicht dabei» needs a reason (VAR-12, ANM-05). */
+    @Column(name = "decline_reason_required")
+    public boolean declineReasonRequired;
+
     /** Shown sections in their order, comma separated ({@link Section}). */
     public String sections;
 
@@ -73,7 +77,7 @@ public class EventVariant extends PanacheEntityBase {
 
     public EventVariantDto dto() {
         return new EventVariantDto(id, teamId, kind, eventType, name, color, callUp, autoDeparture,
-                responseDeadlineHours, attendanceCheck, sectionList(), standard());
+                responseDeadlineHours, attendanceCheck, declineReasonRequired, sectionList(), standard());
     }
 
     /** All variants of a team: the standard ones first, then the team's own in the order they were added. */

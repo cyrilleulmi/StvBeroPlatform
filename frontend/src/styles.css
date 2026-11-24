@@ -898,3 +898,124 @@ app-scoreboard.live .score-number {
     transform: translateY(-6px);
   }
 }
+
+/* A choice as a pill with a checkbox or radio inside (calendar teams KAL-02, absence reason ABS-01) */
+.pill-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--control-border);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-color) var(--ease-out),
+    border-color var(--duration-color) var(--ease-out);
+}
+
+.pill-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.pill-option:has(input:checked) {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.pill-option:has(input:disabled) {
+  cursor: default;
+}
+
+.pill-option:has(input:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* A group of pills under a legend */
+.pill-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.pill-group legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.pill-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-option {
+    transition: none;
+  }
+}
+
+/* Page title with actions next to it (events, calendar) */
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.title-row h1 {
+  margin: 0;
+}
+
+.title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.struck-through {
+  text-decoration: line-through;
+}
+
+/* A response as a chip (calendar, KAL) */
+.response-chip[data-response='ATTENDING'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.response-chip[data-response='DECLINED'] {
+  background: var(--coral-soft);
+  color: var(--coral);
+}
+
+.response-chip[data-response='MAYBE'] {
+  background: var(--mustard-soft);
+  color: var(--mustard);
+}
+
+/* A link that is only an icon, 44px target (calendar month navigation) */
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-control);
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .icon-link:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+}

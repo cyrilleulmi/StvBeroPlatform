@@ -154,7 +154,11 @@
     >
       <legend>{{ texts.eventForm.teams }}</legend>
       <p class="secondary-text" id="event-teams-hint">
-        {{ matchDay() ? texts.eventForm.teamsHintMatchDay : texts.eventForm.teamsHint }}
+        @if (teamsLocked()) {
+          {{ texts.grants.teamsLocked }}
+        } @else {
+          {{ matchDay() ? texts.eventForm.teamsHintMatchDay : texts.eventForm.teamsHint }}
+        }
       </p>
       @for (t of teams(); track t.id; let first = $first) {
         <label class="checkbox">
@@ -162,6 +166,7 @@
             name="event-teamIds"
             type="checkbox"
             [id]="first ? 'event-teamIds' : null"
+            [disabled]="teamsLocked()"
             [checked]="values().teamIds.includes(t.id)"
             (change)="toggleTeam(t.id, $any($event.target).checked)"
           />
@@ -192,6 +197,7 @@
             <label [for]="'event-participation-' + t.id">{{ t.name }}</label>
             <select
               [id]="'event-participation-' + t.id"
+              [disabled]="teamsLocked()"
               [attr.aria-label]="texts.participation.teamLabel(t.name)"
               (change)="setParticipation(t.id, $any($event.target).value === 'OPTIONAL')"
             >

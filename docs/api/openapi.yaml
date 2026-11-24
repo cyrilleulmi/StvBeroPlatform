@@ -47,6 +47,8 @@ tags:
     description: swiss unihockey integration (SUH)
   - name: Notifications
     description: Notifications in the app, by e-mail and push (BEN)
+  - name: Absences
+    description: Own absences; practices in this time are declined (ABS)
   - name: Calendar
     description: Calendar subscription with an iCalendar feed (CAL)
   - name: Test
@@ -70,6 +72,105 @@ paths:
               schema: { $ref: '#/components/schemas/Me' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/me/absences:
+    get:
+      tags: [Absences]
+      operationId: listMyAbsences
+      summary: Own absences that are not over yet (ABS-06)
+      responses:
+        '200':
+          description: By first day
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Absence' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Absences]
+      operationId: createMyAbsence
+      summary: Enter an absence; upcoming practices in this time are declined (ABS-01 to ABS-03)
+      description: |
+        Every upcoming practice of the person's teams that touches a day of the absence gets «nicht dabei» with
+        the reason as comment («Abwesend: Ferien · Skiferien»). An own «nicht dabei» stays; «dabei» and
+        «vielleicht» are replaced. Other events (match days, other events) are not changed. No notification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AbsenceInput' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Absence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409':
+          description: Overlaps another absence (ABS-02)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: Note missing for OTHER (ABS-02)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+  /api/me/absences/{absenceId}:
+    parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Absences]
+      operationId: updateMyAbsence
+      summary: Change an own absence; the responses follow (ABS-05)
+      description: |
+        Practices no longer covered are «offen» again if the absence had declined them. Practices covered newly
+        are declined like for a new absence. A response the person gave by hand after the absence stays.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AbsenceInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Absence' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404':
+          description: Not an own absence
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '409':
+          description: Overlaps another absence (ABS-02)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: Note missing for OTHER (ABS-02)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+    delete:
+      tags: [Absences]
+      operationId: deleteMyAbsence
+      summary: Delete an own absence; upcoming practices it declined are pending again (ABS-05)
+      responses:
+        '204':
+          description: Deleted
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404':
+          description: Not an own absence
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
   /api/me/calendar:
     get:
       tags: [Calendar]
@@ -97,6 +198,29 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CalendarSubscription' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+  /api/me/calendar/filter:
+    put:
+      tags: [Calendar]
+      operationId: changeMyCalendarFilter
+      summary: Which events the calendar feed delivers; the address stays the same (CAL-10 to CAL-14)
+      description: |
+        Event types (at least one, otherwise 422 with rule CAL-10, field `types`), participations besides «dabei»
+        (empty: only events with «dabei») and teams whose events are left out. Teams the person was never a
+        member of are ignored. The feed applies the filter from the next fetch on.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CalendarFilterInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalendarSubscription' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
   /api/calendar/{token}.ics:
     get:
       tags: [Calendar]
@@ -104,8 +228,9 @@ paths:
       summary: iCalendar feed of a person, reachable with the token alone (CAL-02 to CAL-08)
       description: |
         Public, because calendar apps cannot log in (CAL-06). The token grants read access to this feed only;
-        it is not a session. Content: all events of the person's teams (member in the season of the event)
-        that ended at most 30 days ago or are still to come, cancelled ones with `STATUS:CANCELLED`. `UID` is
+        it is not a session. Content: the events of the person's teams (member in the season of the event)
+        that ended at most 30 days ago or are still to come and pass the person's filter (CAL-10 to CAL-15),
+        cancelled ones with `STATUS:CANCELLED`. `UID` is
         the event ID plus `@stvbero`, so moved events replace their entry. Times are local times in
         Europe/Zurich with a `VTIMEZONE`. The description holds meeting point, matches, notes, the person's
         own response and the link into the app, never responses or comments of other people (CAL-08).
@@ -123,6 +248,99 @@ paths:
             text/calendar:
               schema: { type: string }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/events/{eventId}/grants:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Events]
+      operationId: getEventGrants
+      summary: Who manages the event like a coach (RR-09, RR-13)
+      description: |
+        Everyone who may see the event sees who has a special permission (RR-13). `candidates` (members of the
+        teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventGrants' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Events]
+      operationId: changeEventGrants
+      summary: Set the special permissions of one event; coaches and admins (RR-11, RR-12)
+      description: |
+        Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+        have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+        holders are notified (BEN-08). Cancelled or past events: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventGrantsInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventGrants' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
+  /api/series/{seriesId}/grants:
+    parameters:
+      - name: seriesId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Events]
+      operationId: getSeriesGrants
+      summary: Who manages all events of the series like a coach (RR-10)
+      description: |
+        Everyone who may see the series sees who has a special permission (RR-13). `candidates` (members of the
+        teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventGrants' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Events]
+      operationId: changeSeriesGrants
+      summary: Set the special permissions of a series; they apply to all its events (RR-10, RR-11)
+      description: |
+        Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+        have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+        holders are notified (BEN-08). They apply to all events of the series, also later ones.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventGrantsInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventGrants' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
   /api/tiles:
     get:
       tags: [Me]
@@ -860,6 +1078,46 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
         '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/events/calendar:
+    get:
+      tags: [Events]
+      operationId: getCalendarView
+      summary: Events of the chosen teams in a period of at most six weeks, with the own absences (KAL-01 to KAL-04)
+      description: |
+        Past and upcoming events together, sorted by start. Without `team` and `all` the default teams are shown:
+        coaches the teams they coach, everyone else all own teams of the current season (a player in two teams
+        sees both together). `all=true` and teams of which the caller is not a member are for coaches and admins
+        (403 otherwise); players see only events of teams they belong to in the season of the event.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          description: Last day (inclusive), at most 41 days after `from`
+          schema: { type: string, format: date }
+        - name: team
+          in: query
+          description: Teams to show (repeatable)
+          schema:
+            type: array
+            items: { type: string, format: uuid }
+        - name: all
+          in: query
+          description: All teams of the current season (coaches and admins)
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalendarView' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/events/{eventId}:
@@ -2753,15 +3011,148 @@ components:
               field: { type: string, examples: [comment] }
               message: { type: string }
 
+    AbsenceReason:
+      type: string
+      enum: [VACATION, INJURY, OTHER]
+      description: «Ferien», «Verletzung», «Anderes» (ABS-01)
+    AbsenceInput:
+      type: object
+      required: [from, to, reason]
+      properties:
+        from: { type: string, format: date, description: First day away }
+        to: { type: string, format: date, description: Last day away (inclusive) }
+        reason: { $ref: '#/components/schemas/AbsenceReason' }
+        note: { type: string, maxLength: 120, description: 'Optional note; required for OTHER' }
+    Absence:
+      type: object
+      description: An absence of the logged-in person (ABS-01, ABS-06)
+      required: [id, from, to, reason, declinedPractices]
+      properties:
+        id: { type: string, format: uuid }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        reason: { $ref: '#/components/schemas/AbsenceReason' }
+        note: { type: string }
+        declinedPractices:
+          type: integer
+          description: Upcoming practices this absence declined (ABS-03)
+    CalendarTeam:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        myTeamRole: { $ref: '#/components/schemas/TeamRole' }
+    CalendarView:
+      type: object
+      description: Calendar view of a period (KAL)
+      required: [from, to, teams, defaultTeamIds, teamIds, allTeams, canShowAllTeams, events, absences]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        teams:
+          type: array
+          description: 'Teams to choose from: own teams, for coaches and admins all teams of the current season'
+          items: { $ref: '#/components/schemas/CalendarTeam' }
+        defaultTeamIds:
+          type: array
+          description: 'Teams shown without a choice: coaches their coached teams, everyone else all own teams (KAL-03, KAL-04)'
+          items: { type: string, format: uuid }
+        teamIds:
+          type: array
+          description: Teams shown now
+          items: { type: string, format: uuid }
+        allTeams: { type: boolean, description: All teams are shown (KAL-04) }
+        canShowAllTeams: { type: boolean, description: 'The caller may show all teams: coaches and admins (KAL-04)' }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/EventSummary' }
+        absences:
+          type: array
+          description: Own absences in the period (ABS-07)
+          items: { $ref: '#/components/schemas/Absence' }
+
     CalendarSubscription:
       type: object
       description: Personal address of the calendar feed (CAL-01). Whoever knows it sees the person's events.
-      required: [feedPath]
+      required: [feedPath, filter]
       properties:
         feedPath:
           type: string
           description: Path of the feed with the token. The app puts its own address in front of it.
           examples: ['/api/calendar/q3XyR0p8vUu6Yc1yZf9xwGx0N2m7oVbE4hT5sK1dLaA.ics']
+        filter: { $ref: '#/components/schemas/CalendarFilter' }
+    EventGrants:
+      type: object
+      description: Special permissions of an event or a series (RR-09 to RR-14)
+      required: [grants, canManage]
+      properties:
+        grants:
+          type: array
+          description: By last name
+          items: { $ref: '#/components/schemas/EventGrant' }
+        canManage: { type: boolean, description: 'The caller may change them (coach or admin in her own right, RR-11)' }
+        candidates:
+          type: [array, 'null']
+          description: Members of the teams who can get a special permission (RR-12); only with canManage
+          items: { $ref: '#/components/schemas/PersonSummary' }
+    EventGrant:
+      type: object
+      required: [person, viaSeries]
+      properties:
+        person: { $ref: '#/components/schemas/PersonSummary' }
+        viaSeries: { type: boolean, description: The permission comes from the series and applies to all its events (RR-10) }
+    EventGrantsInput:
+      type: object
+      required: [personIds]
+      properties:
+        personIds:
+          type: array
+          description: Replaces the previous ones; empty removes all
+          items: { type: string, format: uuid }
+    CalendarResponse:
+      type: string
+      enum: [PENDING, OPTIONAL_PENDING, MAYBE, DECLINED]
+      description: |
+        Participation for the filter of the feed (CAL-11, CAL-12). «dabei» is always in the feed and has no value.
+        `PENDING` no response in an expected team, `OPTIONAL_PENDING` no response as an invited («freiwillig»)
+        member, `MAYBE` «vielleicht», `DECLINED` «nicht dabei» or not called up in a published call-up.
+    CalendarFilter:
+      type: object
+      description: Which events the feed delivers (CAL-10 to CAL-14). A new address delivers everything.
+      required: [types, responses, teams]
+      properties:
+        types:
+          type: array
+          items: { $ref: '#/components/schemas/EventType' }
+        responses:
+          type: array
+          description: Participations in the feed besides «dabei»
+          items: { $ref: '#/components/schemas/CalendarResponse' }
+        teams:
+          type: array
+          description: The person's teams in the current season, sorted by name
+          items: { $ref: '#/components/schemas/CalendarFilterTeam' }
+    CalendarFilterTeam:
+      type: object
+      required: [teamId, name, included]
+      properties:
+        teamId: { type: string, format: uuid }
+        name: { type: string, examples: ['Team 1'] }
+        included: { type: boolean, description: Whether the events of this team are in the feed (CAL-13) }
+    CalendarFilterInput:
+      type: object
+      required: [types, responses, excludedTeamIds]
+      properties:
+        types:
+          type: array
+          items: { $ref: '#/components/schemas/EventType' }
+        responses:
+          type: array
+          items: { $ref: '#/components/schemas/CalendarResponse' }
+        excludedTeamIds:
+          type: array
+          items: { type: string, format: uuid }
 
     TeamRole:
       type: string
@@ -3292,6 +3683,11 @@ components:
                 - $ref: '#/components/schemas/Standing'
                 - type: 'null'
               description: Only for MATCH_DAY. Rank of the own team in the league table last loaded (AUF-34)
+            myGrant:
+              type: boolean
+              description: >-
+                Only if true: the caller manages this event like a coach because of a special permission (RR-09).
+                The coach actions are then shown for this event only.
     EventInput:
       type: object
       required: [type, title, start, end, teamIds]
@@ -3358,7 +3754,7 @@ components:
     EventVariant:
       type: object
       description: How a kind of event looks and behaves in a team (VAR)
-      required: [id, teamId, kind, eventType, name, color, callUp, autoDeparture, responseDeadlineHours, attendanceCheck, sections, standard]
+      required: [id, teamId, kind, eventType, name, color, callUp, autoDeparture, responseDeadlineHours, attendanceCheck, declineReasonRequired, sections, standard]
       properties:
         id: { type: string, format: uuid }
         teamId: { type: string, format: uuid }
@@ -3379,6 +3775,9 @@ components:
         attendanceCheck:
           type: boolean
           description: Default of the attendance check of new events (VAR-09)
+        declineReasonRequired:
+          type: boolean
+          description: «nicht dabei» needs a reason (VAR-12, ANM-05). Default false
         sections:
           type: array
           description: Sections of the event page, in the order they are shown (VAR-07)
@@ -3399,6 +3798,7 @@ components:
         autoDeparture: { type: [boolean, 'null'] }
         responseDeadlineHours: { type: [integer, 'null'], format: int32, minimum: 0, maximum: 336 }
         attendanceCheck: { type: [boolean, 'null'] }
+        declineReasonRequired: { type: [boolean, 'null'], description: '«nicht dabei» needs a reason (VAR-12)' }
         sections:
           type: [array, 'null']
           description: 'Shown sections in their order; must fit the event type and include DETAILS. Missing: unchanged, or the defaults for a new variant'
@@ -4589,7 +4989,8 @@ components:
             - EVENT_CANCELLED
             - EVENT_RESCHEDULED
             - DRIVER_LIST_CHANGED
-          description: Corresponds to BEN-01 to BEN-07 and DRV-11
+            - EVENT_GRANTED
+          description: Corresponds to BEN-01 to BEN-08 and DRV-11
         recipient: { $ref: '#/components/schemas/PersonSummary' }
         text: { type: string, examples: ['Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet.'] }
         eventId: { type: [string, 'null'], format: uuid }
@@ -4676,6 +5077,7 @@ components:
             - EVENT_CANCELLED
             - EVENT_RESCHEDULED
             - DRIVER_LIST_CHANGED
+            - EVENT_GRANTED
         recipient: { $ref: '#/components/schemas/PersonSummary' }
         text: { type: string }
         eventId: { type: [string, 'null'], format: uuid }

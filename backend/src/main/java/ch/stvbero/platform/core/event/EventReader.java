@@ -228,7 +228,7 @@ final class EventReader {
                 base.myResponse(), base.counts(), base.seriesId(), base.warningCount(),
                 event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit,
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance, base.variant(),
-                standing, base.optionalTeamIds(), base.myParticipation());
+                standing, base.optionalTeamIds(), base.myParticipation(), user.eventGrant() ? Boolean.TRUE : null);
     }
 
     /**

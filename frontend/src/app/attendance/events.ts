@@ -37,8 +37,16 @@ interface Month {
   template: `
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
-      @if (canCreate()) {
-        <div class="title-actions">
+      <div class="title-actions">
+        <a
+          class="button button-secondary button-small"
+          routerLink="/termine/kalender"
+          data-testid="calendar-link"
+        >
+          <app-icon name="calendar" [size]="18" />
+          {{ texts.calendarView.link }}
+        </a>
+        @if (canCreate()) {
           <a
             class="button button-secondary button-small"
             routerLink="/statistik"
@@ -48,8 +56,8 @@ interface Month {
           <a class="button button-primary button-small" routerLink="/termine/neu">{{
             texts.events.create
           }}</a>
-        </div>
-      }
+        }
+      </div>
     </div>
 
     <div class="filter">
@@ -111,11 +119,15 @@ interface Month {
       } @else if (shown().length === 0) {
         <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
         @if (hiddenCount(); as n) {
-          <p class="secondary-text" data-testid="optional-hidden">{{ texts.participation.hidden(n) }}</p>
+          <p class="secondary-text" data-testid="optional-hidden">
+            {{ texts.participation.hidden(n) }}
+          </p>
         }
       } @else {
         @if (hiddenCount(); as n) {
-          <p class="secondary-text" data-testid="optional-hidden">{{ texts.participation.hidden(n) }}</p>
+          <p class="secondary-text" data-testid="optional-hidden">
+            {{ texts.participation.hidden(n) }}
+          </p>
         }
         @for (m of months(); track m.key) {
           <h3 class="month" [id]="'month-' + m.key">{{ m.name }}</h3>
@@ -149,9 +161,12 @@ interface Month {
                     <!-- One row of markers: kind of event (VAR-05, TER-14), voluntary, status, warnings -->
                     <span class="status-row">
                       @if (t.variant; as v) {
-                        <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{
-                          v.name
-                        }}</span>
+                        <span
+                          class="tag-chip"
+                          data-testid="event-variant"
+                          [attr.data-tag]="v.color"
+                          >{{ v.name }}</span
+                        >
                       }
                       @if (t.myParticipation === 'OPTIONAL') {
                         <span class="chip" data-kind="optional" data-testid="event-optional">{{
@@ -218,6 +233,7 @@ interface Month {
                     class="card-response"
                     [eventId]="t.id"
                     [response]="t.myResponse"
+                    [reasonRequired]="!!t.variant?.declineReasonRequired"
                     [name]="texts.response.myResponseFor(cardName(t))"
                     [locked]="t.status === 'CANCELLED' ? texts.response.cancelled : null"
                     (changed)="reload(t.id)"

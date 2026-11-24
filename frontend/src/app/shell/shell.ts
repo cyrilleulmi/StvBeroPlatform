@@ -82,7 +82,7 @@ export class Shell {
     this.main().nativeElement.focus();
   }
 
-  /** Teams the person coaches in the current season: «<Team> verwalten» on desktop (E-91). */
+  /** Teams the person coaches in the current season: «<Team> verwalten» on desktop (E-92). */
   protected readonly coachedTeams = computed(() => {
     const seen = new Map<string, { id: string; name: string }>();
     for (const m of this.auth.me()?.memberships ?? []) {

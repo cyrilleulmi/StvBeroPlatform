@@ -312,7 +312,8 @@ export class AttendanceCheckPage {
       this.event.set(event);
       // Permission and state first from the event: so without them no 403 or 409 request is made.
       const coach = event.teams.some((t) => t.myTeamRole === 'COACH');
-      if (!coach && !this.auth.canManage()) {
+      // Coach rights also come from a special permission for this event (RR-09)
+      if (!coach && !this.auth.canManage() && !event.myGrant) {
         this.error.set(TEXTS.common.noPermission);
         return;
       }

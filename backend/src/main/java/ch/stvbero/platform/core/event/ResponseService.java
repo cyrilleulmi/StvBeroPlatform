@@ -1,5 +1,6 @@
 package ch.stvbero.platform.core.event;
 
+import ch.stvbero.platform.core.variant.Variants;
 import ch.stvbero.platform.core.auth.CurrentUser;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.line.Group;
@@ -88,25 +89,27 @@ public class ResponseService {
         ResponseRules.checkOpenForResponses(event.status, event.end, now);
         event.season.checkWritable();
         ResponseStatus newStatus = input.status().status();
-        ResponseRules.checkComment(newStatus, input.comment());
+        ResponseRules.checkComment(newStatus, input.comment(), Variants.of(event).declineReasonRequired);
 
         Stored previous = locked(event.id, respondent);
         boolean lateCancellation = ResponseRules.lateCancellation(
                 previous == null ? ResponseStatus.PENDING : previous.status(), previous != null && previous.lateCancellation(), newStatus,
                 EventRules.responseDeadline(event.start, event.responseDeadlineHours), now);
         String comment = EventRules.blankToNull(input.comment());
+        // A response given by hand no longer belongs to an absence (ABS-04)
         em.createNativeQuery("""
                         insert into response (event_id, person_id, status, comment, changed_at, entered_by, late_cancellation)
                         values (?, ?, ?, ?, ?, ?, ?)
                         on conflict (event_id, person_id) do update
                         set status = excluded.status, comment = excluded.comment, changed_at = excluded.changed_at,
-                            entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation
+                            entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation,
+                            absence_id = null
                         """)
                 .setParameter(1, event.id).setParameter(2, respondent).setParameter(3, newStatus.name()).setParameter(4, comment)
                 .setParameter(5, now).setParameter(6, enteredBy).setParameter(7, lateCancellation)
                 .executeUpdate();
         notifications.responseChanged(user, event, members, respondent,
-                previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation);
+                previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation, comment);
         // «Ich reise individuell an» comes with «dabei» and goes with every other response (ANM-13)
         drivers.individualFromResponse(user, event, respondent, newStatus == ResponseStatus.ATTENDING,
                 input.travelsIndividually());

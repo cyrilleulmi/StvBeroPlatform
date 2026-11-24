@@ -28,13 +28,17 @@ public class EventNotifications {
     @Inject
     Notifications notifications;
 
+    @Inject
+    EventGrants grants;
+
     /**
      * After a saved response: a called-up player declining (BEN-04) or a late cancellation (BEN-02) goes to
      * the coaches of the teams in which the person is a player for this event (O-17). If both apply, only the
      * notice about the called-up player is sent.
      */
     void responseChanged(CurrentUser user, Event event, List<TeamMembership> members, UUID personId,
-                          ResponseStatus previousStatus, ResponseStatus newStatus, boolean lateCancellation) {
+                          ResponseStatus previousStatus, ResponseStatus newStatus, boolean lateCancellation,
+                          String comment) {
         // A call-up only counts where the variant of the match day makes one (VAR-06)
         CallUp callUp = event.type == EventType.MATCH_DAY && ch.stvbero.platform.core.variant.Variants.of(event).callUp
                 ? CallUp.findById(event.id) : null;
@@ -51,16 +55,18 @@ public class EventNotifications {
         Set<UUID> teams = new LinkedHashSet<>();
         members.stream().filter(m -> m.person.id.equals(personId) && m.teamRole == TeamRole.PLAYER)
                 .forEach(m -> teams.add(m.team.id));
-        List<UUID> coaches = members.stream()
+        List<UUID> coaches = new java.util.ArrayList<>(members.stream()
                 .filter(m -> m.teamRole == TeamRole.COACH && teams.contains(m.team.id))
-                .map(m -> m.person.id).toList();
+                .map(m -> m.person.id).toList());
+        // Those with a special permission for the event hear it like the coaches (RR-09)
+        grants.holders(event).stream().filter(id -> !coaches.contains(id)).forEach(coaches::add);
         Set<UUID> recipients = NotificationRules.withoutTrigger(coaches, user.personId());
         recipients.remove(personId);
         String person = name(personId);
         String eventLabel = label(event);
-        String text = type == NotificationType.CALLED_UP_PLAYER_DECLINED
+        String text = NotificationRules.withReason(type == NotificationType.CALLED_UP_PLAYER_DECLINED
                 ? NotificationRules.calledUpDeclinedText(person, eventLabel, newStatus)
-                : NotificationRules.lateCancellationText(person, eventLabel, newStatus);
+                : NotificationRules.lateCancellationText(person, eventLabel, newStatus), comment);
         send(recipients, p -> new Message(type, p, event.id, text));
     }
 
