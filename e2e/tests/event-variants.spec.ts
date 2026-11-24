@@ -70,13 +70,6 @@ async function createMatchDay(page: Page, day: string): Promise<string> {
   return id;
 }
 
-/** Drivers, passengers and the proposal are on the season page, in the opened match day (DRV-23, DRV-24). */
-async function openEditor(page: Page, eventId: string): Promise<void> {
-  await page.goto(`/teams/${TEAM_1}/fahrerliste`);
-  await page.getByTestId(`plan-edit-${eventId}`).click();
-  await expect(page.getByTestId(`plan-editor-${eventId}`).getByTestId('driver-list')).toBeVisible();
-}
-
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
@@ -304,29 +297,6 @@ test('AUF-34: the match day and the call-up show the ranks of the league table',
 
 // ------------------------------------------------------------------ Proposed driver list (DRV-19)
 
-test('DRV-19: a coach lets the app propose the driver list and takes the proposal over', async ({ page }) => {
-  await login(page, 'petra');
-  await openEditor(page, T04);
-  await expect(page.getByTestId('without-seat')).toContainText('Jana Wyss');
-
-  await driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Vorschlag für die Fahrerliste' });
-  // Petra's car is full; Jana gets a seat in Sara's car, which is already entered
-  const sara = dialog.getByRole('listitem', { name: 'Auto von Sara Brun' });
-  await expect(sara).toContainText('schon eingetragen');
-  await expect(sara.getByRole('listitem', { name: 'Jana Wyss' })).toContainText('neu');
-  await checkAccessibility(page);
-  await dialog.getByRole('button', { name: 'Vorschlag übernehmen' }).click();
-
-  await expect(driverList(page).getByRole('status')).toHaveText('Der Vorschlag ist übernommen.');
-  await expect(page.getByTestId('without-seat-empty')).toBeVisible();
-  await expect(driverList(page).getByRole('listitem', { name: 'Auto von Sara Brun' })).toContainText('Jana Wyss');
-
-  // Everyone has a seat now
-  await driverList(page).getByRole('button', { name: 'Vorschlag erarbeiten' }).click();
-  await expect(page.getByTestId('proposal-nothing')).toBeVisible();
-});
-
 test('DRV-19: players have no proposal', async ({ page }) => {
   await login(page, 'anna');
   await page.goto(`/termine/${T04}`);
@@ -352,16 +322,14 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
   await expect(driving.getByRole('status')).toHaveText('Deine Angaben zum Fahren sind gespeichert.');
   await checkAccessibility(page);
 
-  // Seven places are the driver and six others
-  await openEditor(page, T04);
-  await expect(driverList(page).getByLabel('Freie Plätze in deinem Auto')).toHaveValue('6');
-
+  // Seven places: coaches see it in the list «Wer fährt wie oft» of the season plan and can change it (E-97)
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/fahrerliste`);
-  const row = page.getByTestId(`plan-driver-${ANNA}`);
-  await expect(row.getByLabel('Plätze im Auto von Anna Muster (mit Fahrerin oder Fahrer)')).toHaveValue('7');
+  await page.getByTestId('fairness-edit').click();
+  const row = page.getByTestId(`fair-${ANNA}`);
+  await expect(row).toHaveAttribute('data-can-drive', 'true');
+  await expect(row).toContainText('7');
   await row.getByRole('checkbox', { name: 'Anna Muster kann fahren' }).uncheck();
-  await expect(page.getByRole('status')).toHaveText('Die Angaben von Anna Muster sind gespeichert.');
   await expect(row).toHaveAttribute('data-can-drive', 'false');
   await checkAccessibility(page);
 });

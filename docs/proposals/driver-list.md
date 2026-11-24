@@ -1,6 +1,6 @@
 # Proposals for a simpler driver list
 
-Status: **proposal, not decided.** Cyrille was not happy with the page «Fahrerliste» of E-91: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
+Status: **decided: proposal B «Raster» (E-97).** Cyrille was not happy with the page «Fahrerliste» of E-92: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
 
 1. **Before the season:** assign all trips at once, as fairly as possible, with an assumption of how many people travel (a number set by hand, by default all players and coaches).
 2. **Right before a match day:** add or remove a driver, and put the people into the cars.
@@ -57,6 +57,6 @@ git switch claude/driver-list-a-fahrplan   # or -b-raster, -c-reihum
 scripts/start.sh
 ```
 
-The proposals add migration V19 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
+The proposals add migration V23 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
 
 Then http://localhost:4200/dev-login. Good to look at: team «Herren KF 4. Liga II» (eight match days entered by hand) as coach `reto` and as player `silvan`, page «Fahrerliste».
