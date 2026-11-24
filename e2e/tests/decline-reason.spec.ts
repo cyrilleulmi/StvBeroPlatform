@@ -2,7 +2,7 @@ import type { Locator } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * Reason required with «nicht dabei» (VAR-12, ANM-05, E-93): a setting of the event variant. Event 01 is a practice
+ * Reason required with «nicht dabei» (VAR-12, ANM-05, E-95): a setting of the event variant. Event 01 is a practice
  * of Team 1 + Team 2 and uses the variant «Training» of Team 1.
  */
 

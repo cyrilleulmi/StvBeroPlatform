@@ -2,7 +2,7 @@ import { request as playwrightRequest } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * Calendar subscription with filters (CAL-10 to CAL-15, E-92): which events the feed delivers. Anna has a fixed
+ * Calendar subscription with filters (CAL-10 to CAL-15, E-94): which events the feed delivers. Anna has a fixed
  * address in the seed (docs/test-data.md): event 01 «dabei», 04 match day «dabei», 06 «Teamessen» without a
  * response, 07 «nicht dabei».
  */
