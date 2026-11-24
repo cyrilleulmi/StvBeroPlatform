@@ -26,7 +26,7 @@ Nothing found: note it and stop.
 
 ## 3. Automated tests
 
-Run all of them and record the result: backend tests, E2E tests (both projects, including axe). A red test is a finding.
+Run all of them with `scripts/test.sh --full` and record the result: backend tests, frontend unit tests, E2E tests (every test on both projects, including axe). A red test is a finding.
 
 ## 4. Test plan and exploratory test
 
@@ -53,7 +53,7 @@ Determine the round (`scripts/pipeline.sh runde <nr>`). Final comment with `<!--
 <!-- pipeline:test -->
 ## Test · Round <n> · ✅ merged   (or 🔁 rework)
 
-**Automated:** Backend ✅ 123 · E2E mobile ✅ 18 · E2E desktop ✅ 18 · axe ✅
+**Automated:** Backend ✅ 123 · Frontend unit ✅ 40 · E2E mobile ✅ 18 · E2E desktop ✅ 18 · axe ✅
 
 | Criterion | Mobile | Desktop | Dark | Roles |
 |---|---|---|---|---|

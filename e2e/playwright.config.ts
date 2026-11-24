@@ -49,7 +49,7 @@ export default defineConfig({
       use: { viewport: { width: 1280, height: 800 } },
     },
   ],
-  // scripts/e2e.sh and scripts/e2e-isolated.sh start their own backend and frontend
+  // scripts/e2e.sh starts its own backends, with the frontend inside
   webServer: stacks.length || process.env.E2E_NO_WEBSERVER ? undefined : [
     {
       command: 'mvn -B -q quarkus:dev -Dquarkus.console.enabled=false',

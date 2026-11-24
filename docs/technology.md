@@ -7,18 +7,20 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Topic | Convention |
 |---|---|
 | Versions | Quarkus 3.40 (Maven), Angular 22, Playwright 1.65 |
-| Backend packages | `ch.stvbero.platform.core.*` (clock, person, season, team, login, tile, errors, test helpers), `ch.stvbero.platform.<tile>` per tile (e.g. `anwesenheit`) |
+| Backend packages | One package per module directly below `ch.stvbero.platform`: `core` (clock, person, season, team, line, sign-in, tile, errors), `notification`, `attendance`, `swissunihockey`, `driver`, `statistics`, `testsupport`. [modules.json](../modules.json) says what may depend on what, `ModulesTest` enforces it ([architecture.md](architecture.md), E-106) |
 | Registering a tile | Backend: CDI bean that implements `TileDefinition` (metadata, `visibleFor`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `core/icon.ts` |
 | «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/clock` |
 | Test helpers | Build property `stv.test-support` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
 | Outside world | swiss unihockey and routing sit behind an interface with a real client and a simulator. A switch (`SuSource`, `RoutingSwitch`) picks at runtime: the simulator while `Simulation` is on (test data set), the real client otherwise. Production has no simulators. `POST /api/test/reset?dataset=` switches (E-85) |
 | Login | Cookie `stv_session` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Public` require a session (401) |
 | Errors | `DomainError` → Problem Details (`application/problem+json`), validation → 400 with `fields` |
-| Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
+| Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01). `ConventionsTest` enforces it (E-106) |
 | Season parameter | Endpoints related to a season take `?season=<id>`; without it the current season applies. Seasons before the current one are read-only (409, SAI-02) |
 | Contract | `OpenApiContractTest` compares `/q/openapi` with `docs/api/openapi.yaml` (paths, methods, operationId, status codes, schemas) |
 | Frontend types | `npm run api-types` generates `src/app/api/schema.d.ts` from the contract (runs before `start` and `build`) |
 | Texts | `frontend/src/app/core/texts.ts` |
+| Frontend folders | One folder per module under `frontend/src/app` (`attendance`, `drivers`, `statistics`, `notifications`, `swissunihockey`), shared code in `core`, `api`, `shell`; `pages` composes the modules. ESLint enforces the imports from [modules.json](../modules.json) ([architecture.md](architecture.md)) |
+| Frontend unit tests | Vitest through `ng test` (`npm test`, `npm run test:watch`), spec files next to the code (`*.spec.ts`) |
 | Font | Plus Jakarta Sans served locally via `@fontsource` (no requests to Google Fonts) |
 | PWA | `public/manifest.webmanifest`, own lean service worker `public/sw.js` (offline page, no data caches) |
 
@@ -27,9 +29,9 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Area | Decision |
 |---|---|
 | Frontend | Angular in the current version, standalone components, signals. |
-| Frontend structure | Each tile is a lazy-loaded feature with its own route. The dashboard shows the tiles depending on the role. |
+| Frontend structure | Each tile is a lazy-loaded feature with its own route and its own folder. The dashboard shows the tiles depending on the role. |
 | Backend | Quarkus with REST API, Java 21 (LTS). |
-| Backend structure | One package structure per tile with clear boundaries. |
+| Backend structure | One package structure per tile with clear boundaries. Since E-106 the boundaries are the modules of [architecture.md](architecture.md), enforced by tests. |
 | Database | PostgreSQL. Schema migrations versioned with Flyway. |
 | Roles | At least player, coach, helper/parent, admin. Tiles and actions are visible based on role. |
 | Tile concept | A tile provides metadata (title, icon, route, required role) and registers itself centrally. The dashboard renders the overview from it. |
@@ -53,7 +55,7 @@ All open points collected: [open-points.md](open-points.md).
 
 These points follow from the domain requirements and should shape the architecture from the start.
 
-1. **Core as a shared foundation.** People, teams, team roles, seasons and roles are needed by all tiles. They belong in a shared core module, not in the attendance tile.
+1. **Core as a shared foundation.** People, teams, team roles, seasons and roles are needed by all tiles. They belong in a shared core module, not in the attendance tile. The core never depends on a tile: where it needs one, it declares an interface the tile implements ([architecture.md](architecture.md), extension points).
 2. **Separate account and person.** The login account is not the person ([PTF-09](requirements/01-people-teams-roles.md)).
 3. **Permissions per team.** Permission depends on the team role in the respective team, not on a global role. It is checked in the backend ([07](requirements/07-roles-permissions.md)).
 4. **Rules instead of structure.** «At most one line per team» is a checkable rule that can be relaxed later ([LIN-04](requirements/02-lines.md)).

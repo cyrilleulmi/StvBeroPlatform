@@ -35,6 +35,7 @@ http://localhost:4200/dev-login → log in as `…` → …
 - [ ] Permissions checked in the backend, with 403 tests
 - [ ] Testability according to docs/testability.md, navigation.md updated
 - [ ] Design tokens, light and dark checked, mobile and desktop checked
-- [ ] Backend tests and E2E tests (mobile, desktop, axe) green
+- [ ] `scripts/test.sh` green (backend with architecture tests and coverage, frontend lint and unit tests, E2E with axe)
+- [ ] Tested at the lowest level that shows it; module boundaries hold, no frozen list extended (docs/architecture.md)
 - [ ] test-data.md and states.md updated
 - [ ] Starts from a fresh clone
