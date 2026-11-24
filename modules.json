@@ -1,0 +1,128 @@
+{
+  "description": "The modules of the platform and what each may depend on, per side (backend packages, frontend folders). One source for three checks: backend/…/architecture/ModulesTest (ArchUnit), frontend/eslint.config.js (imports) and scripts/test-affected.sh (which tests a change needs). Explained in docs/architecture.md.",
+  "modules": {
+    "core": {
+      "purpose": "Shared foundation: sign-in and rights, people, teams, seasons, lines, tiles, errors, clock. Frontend: shared services, texts, API types and the shell.",
+      "backend": {
+        "package": "core",
+        "dependsOn": []
+      },
+      "frontend": {
+        "paths": ["core", "api", "shell"],
+        "dependsOn": []
+      },
+      "e2e": [
+        "f00-foundation",
+        "seed",
+        "themes",
+        "nb13-no-current-season",
+        "nb14-double-click",
+        "nb15-navigation-labels",
+        "nb17-css-selectors",
+        "nb23-navigation-narrow",
+        "nb26-logout-idempotent"
+      ]
+    },
+    "notification": {
+      "purpose": "Notifications in the app, by e-mail and by push, with exchangeable channels.",
+      "backend": {
+        "package": "notification",
+        "dependsOn": ["core"]
+      },
+      "frontend": {
+        "paths": ["notifications"],
+        "dependsOn": ["core"]
+      },
+      "e2e": ["f06-notifications", "f19-notification-channels"]
+    },
+    "attendance": {
+      "purpose": "Tile «Anwesenheit»: events, series, responses, call-up, attendance check, warnings, event variants, absences, calendar, special line-ups.",
+      "backend": {
+        "package": "attendance",
+        "dependsOn": ["core", "notification"]
+      },
+      "frontend": {
+        "paths": ["attendance"],
+        "dependsOn": ["core", "driver"]
+      },
+      "e2e": [
+        "f03-events",
+        "f04-responses",
+        "f05-match-days",
+        "f13-start-practices",
+        "f14-attendance-check",
+        "f16-warnings",
+        "f18-calendar",
+        "calendar-absences",
+        "calendar-filter",
+        "decline-reason",
+        "event-grants",
+        "event-variants",
+        "nb75-result-label",
+        "team-assistant-rework"
+      ]
+    },
+    "swissunihockey": {
+      "purpose": "Match days, matches and league tables from swiss unihockey, behind their own layer with a simulator.",
+      "backend": {
+        "package": "swissunihockey",
+        "dependsOn": ["core", "notification", "attendance"]
+      },
+      "frontend": {
+        "paths": ["swissunihockey"],
+        "dependsOn": ["core"]
+      },
+      "e2e": ["f07-swiss-unihockey", "f17-league", "nb44-delete-match", "club-data", "driver-plan-swaps"]
+    },
+    "driver": {
+      "purpose": "Tile «Fahrerliste»: driver list of a match day, driver plan of the season, routes and timeline.",
+      "backend": {
+        "package": "driver",
+        "dependsOn": ["core", "notification", "attendance"]
+      },
+      "frontend": {
+        "paths": ["drivers"],
+        "dependsOn": ["core"]
+      },
+      "e2e": ["f20-driver-list", "driver-list-simple", "driver-plan-swaps", "club-data"]
+    },
+    "statistics": {
+      "purpose": "Attendance statistics per person and team.",
+      "backend": {
+        "package": "statistics",
+        "dependsOn": ["core", "attendance"]
+      },
+      "frontend": {
+        "paths": ["statistics"],
+        "dependsOn": ["core", "attendance"]
+      },
+      "e2e": ["f15-statistics"]
+    },
+    "testsupport": {
+      "purpose": "Test support: the seed and the test endpoints (reset, clock, sign-in), present only in dev, test and preview. Every test starts from the seed, so a change here runs everything.",
+      "backend": {
+        "package": "testsupport",
+        "dependsOn": ["core", "notification", "attendance", "swissunihockey", "driver", "statistics"],
+        "affectsAll": true
+      },
+      "e2e": []
+    },
+    "app": {
+      "purpose": "Composition in the frontend: the pages that combine several modules (start, profile, teams, administration, assistants) and the routes.",
+      "frontend": {
+        "paths": ["pages", "app.ts", "app.config.ts", "app.routes.ts"],
+        "dependsOn": ["core", "notification", "attendance", "swissunihockey", "driver", "statistics"]
+      },
+      "e2e": [
+        "f01-people-teams-seasons",
+        "f02-lines",
+        "f12-coach-rights",
+        "f13-start-practices",
+        "nb21-team-name-archive",
+        "team-assignment",
+        "team-assistant-rework",
+        "club-data"
+      ]
+    }
+  }
+}
