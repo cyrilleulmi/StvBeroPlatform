@@ -59,7 +59,9 @@ start() {
   if run "'$PGBIN/pg_ctl' -D '$DATA' status" >/dev/null 2>&1; then
     echo "PostgreSQL is already running."
   else
-    run "'$PGBIN/pg_ctl' -D '$DATA' -l '$LOG' -o '-p $PGPORT -k /tmp -c listen_addresses=localhost' -w start" >/dev/null
+    # No fsync: this cluster only holds seed data that every reset builds again, and the tests reset it hundreds of
+    # times (a third less time per reset). Never do this with data that must survive a crash.
+    run "'$PGBIN/pg_ctl' -D '$DATA' -l '$LOG' -o '-p $PGPORT -k /tmp -c listen_addresses=localhost -c fsync=off -c synchronous_commit=off -c full_page_writes=off' -w start" >/dev/null
     echo "PostgreSQL started on localhost:$PGPORT"
   fi
   # Create user and database idempotently

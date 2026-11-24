@@ -82,6 +82,13 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Database without fsync
+        # Throwaway data that every test resets: a third less time per reset
+        run: |
+          PGPASSWORD=stv psql -h localhost -U stv -d stv -q \
+            -c "alter system set fsync = off" -c "alter system set synchronous_commit = off" \
+            -c "alter system set full_page_writes = off" -c "select pg_reload_conf()"
+
       - name: API contract
         run: npx -y @redocly/cli@2.78.0 lint docs/api/openapi.yaml
 
@@ -162,6 +169,13 @@ jobs:
         run: |
           (cd frontend && npm ci --no-audit --no-fund)
           (cd e2e && npm ci --no-audit --no-fund && npx playwright install --with-deps chrome)
+
+      - name: Database without fsync
+        # Throwaway data that every test resets: a third less time per reset
+        run: |
+          PGPASSWORD=stv psql -h localhost -U stv -d stv -q \
+            -c "alter system set fsync = off" -c "alter system set synchronous_commit = off" \
+            -c "alter system set full_page_writes = off" -c "select pg_reload_conf()"
 
       - name: E2E tests (scripts/e2e.sh)
         run: scripts/e2e.sh ${{ github.event_name == 'push' && '--full' || '' }}
