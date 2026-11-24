@@ -64,6 +64,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
+    <!-- Health checks for the hosting (/q/health/ready, E-91) -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-health</artifactId>
+    </dependency>
     <!-- Erinnerungen vor der Antwortfrist (BEN-01): periodische Prüfung -->
     <dependency>
       <groupId>io.quarkus</groupId>
