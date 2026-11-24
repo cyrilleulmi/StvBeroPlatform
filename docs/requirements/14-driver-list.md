@@ -49,7 +49,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | DRV-19 | «Vorschlag erarbeiten»: coaches and admins let the app propose a driver list for a match day. Everyone who needs a seat is seated: the players without a seat (DRV-04) and the coaches who responded «dabei», without those who travel on their own (DRV-20). Cars that are already entered stay and are filled first. Further drivers are chosen among the people who travel anyway and can drive (DRV-18), the one with the fewest trips in the season first (trips that are over plus planned ones, DRV-17), then by name; each brings her usual number of places. As few cars as needed are proposed. The proposal is shown first and changes nothing; «Vorschlag übernehmen» enters it, with the usual notifications (DRV-11). If there are not enough drivers, the proposal says who is left without a seat. | Decided (proposal), Assumption (rules of the proposal) |
 | DRV-20 | «Reist individuell an»: a member marks herself as travelling on her own, in the driver list or with her response ([ANM-13](04-responses.md)); coaches and admins mark others. Such a person is listed under «Reist individuell an», needs no seat (not in «Noch ohne Platz», not in the proposal) and leaves a seat she had. A driver cannot be marked until her car is removed. Whoever enters a car or takes a seat is no longer marked. | Decided |
 
-## Driving time, season page, swaps and other trips (E-91)
+## Driving time, season page, swaps and other trips (E-92)
 
 | ID | Requirement | Status |
 |---|---|---|

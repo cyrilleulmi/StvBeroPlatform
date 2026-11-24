@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * E-91 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-28). Seed from
+ * E-92 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-28). Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Team 1 is linked with swiss unihockey (900001), Team 2 is not. Default "now": Mon 16.11.2026 06:00.
  */
@@ -160,7 +160,7 @@ test('DRV-21 DRV-22: coaches overwrite the driving time; the info tells how it w
   await expect(page.getByTestId('driver-route-duration')).toHaveCount(0);
 });
 
-test('E-91: coaches find «<Team> verwalten» in the desktop navigation', async ({ page, isMobile }) => {
+test('E-92: coaches find «<Team> verwalten» in the desktop navigation', async ({ page, isMobile }) => {
   await login(page, 'petra');
   await page.goto('/');
   const link = page.getByTestId(`nav-manage-team-${TEAM_1}`);

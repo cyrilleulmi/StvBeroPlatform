@@ -35,7 +35,7 @@
         </li>
       }
     </ul>
-    <!-- Desktop: coaches find the administration of their teams directly (E-91) -->
+    <!-- Desktop: coaches find the administration of their teams directly (E-92) -->
     @if (coachedTeams().length > 0) {
       <div class="manage-teams" role="group" [attr.aria-label]="texts.navigation.manageTeams" data-testid="nav-manage-teams">
         @for (team of coachedTeams(); track team.id) {
