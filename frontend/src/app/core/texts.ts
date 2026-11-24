@@ -953,6 +953,10 @@ export const TEXTS = {
       n === 1 ? `1 Person ist nicht mehr in ${team}.` : `${n} Personen sind nicht mehr in ${team}.`,
     bulkNothing: 'Dafür gibt es bei den Angezeigten nichts zu tun.',
   },
+  personQuickAdd: {
+    title: 'Neue Person erfassen',
+    save: (role: string) => `Erfassen und als ${role} aufnehmen`,
+  },
   teamWizard: {
     title: 'Neues Team',
     intro:
@@ -983,8 +987,9 @@ export const TEXTS = {
     peopleTitle: 'Wer gehört zum Team?',
     peopleText:
       'Nimm die Coaches und die Spielerinnen und Spieler auf. Coaches verwalten Termine, Aufgebote und die Fahrerliste des Teams.',
-    peopleMissing: 'Wer noch nicht in der App ist, erfasst du zuerst als Person.',
-    newPerson: 'Person erfassen',
+    peopleMissing: 'Für alle, die noch nicht in der App sind. Die Person kommt gleich ins Team.',
+    newPerson: 'Neue Person erfassen',
+    personAdded: (person: string) => `${person} ist erfasst und im Team.`,
     suTitle: 'Mit swiss unihockey verbinden',
     suText:
       'Ist das Team bei swiss unihockey gemeldet, kommen Spiele, Spieltage und Tabelle von selbst in die App und bleiben aktuell. Ohne Verknüpfung erfasst ihr die Spieltage von Hand.',
@@ -1002,7 +1007,6 @@ export const TEXTS = {
     linesText:
       'In den Linien teilst du die Spielerinnen und Spieler ein, z.B. Linie 1, Linie 2, Goalies. Termine und Aufgebote zeigen dann, wer in welcher Linie fehlt.',
     linesNeedPlayers: 'Nimm zuerst Spielerinnen und Spieler auf, dann lassen sie sich in Linien einteilen.',
-    linesOpen: 'Linien einteilen',
     linesState: (lined: number, players: number) =>
       `${lined} von ${players} ${players === 1 ? 'Person ist' : 'Personen sind'} in einer Linie.`,
     doneTitle: 'Das Team ist bereit',

@@ -78,6 +78,17 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(rows).toHaveCount(17);
   await cell(KIM).click();
   await expect(cell(KIM)).toHaveAttribute('data-role', 'PLAYER');
+  // Someone new is entered right here and is in the team at once, without leaving the assistant
+  await page.getByTestId('wizard-new-person').getByText('Neue Person erfassen').click();
+  const quick = page.getByTestId('person-quick-add');
+  await quick.getByLabel('Vorname').fill('Nora');
+  await quick.getByLabel('Nachname').fill('Lang');
+  await quick.getByLabel('Jahrgang (freiwillig)').fill('2009');
+  await quick.getByTestId('person-quick-add-save').click();
+  await expect(page.getByTestId('wizard-message')).toHaveText('Nora Lang ist erfasst und im Team.');
+  await expect(page).toHaveURL(/schritt=personen/);
+  await expect(page.getByTestId('membership-in-team')).toHaveText('Im Team: 1 Coach · 2 Spielerinnen und Spieler');
+  await expect(rows).toHaveCount(18);
   await checkAccessibility(page);
 
   // 3 swiss unihockey: explained, can be skipped
@@ -113,8 +124,15 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
 
   // 6 Lines
   await next(page, 'linien');
-  await expect(page.getByTestId('wizard-lines-state')).toHaveText('0 von 1 Person ist in einer Linie.');
-  await expect(page.getByTestId('wizard-lines')).toHaveAttribute('href', /\/teams\/.*\/linien$/);
+  // The lines are right here: a new line and a player in it, and the assistant stays open
+  await expect(page.getByTestId('wizard-lines-state')).toHaveText('0 von 2 Personen sind in einer Linie.');
+  const lines = page.getByTestId('wizard-lines');
+  await lines.getByTestId('add-line').click();
+  await lines.getByLabel('Linie von Kim Baumann').selectOption({ label: 'Linie 1' });
+  await expect(page.getByTestId('wizard-lines-state')).toHaveText('1 von 2 Personen sind in einer Linie.');
+  await expect(page).toHaveURL(/schritt=linien/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Neues Team');
+  await checkAccessibility(page);
 
   // 7 Done: what is set up and what is open
   await next(page, 'fertig');
@@ -122,6 +140,7 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(page.getByTestId('wizard-check-swissunihockey')).toHaveAttribute('data-done', 'false');
   await expect(page.getByTestId('wizard-check-trainings')).toHaveText(/1 Trainings-Serie/);
   await expect(page.getByTestId('wizard-check-linien')).toHaveAttribute('data-done', 'false');
+  await expect(page.getByTestId('wizard-check-personen')).toContainText('2 Spielerinnen und Spieler');
   await checkAccessibility(page);
 
   // Back to a step through its address

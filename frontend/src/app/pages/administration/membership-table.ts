@@ -811,6 +811,11 @@ export class MembershipTable {
     return season ? { season } : {};
   }
 
+  /** Load again, e.g. after a new person joined the team. */
+  reload(): Promise<void> {
+    return this.load();
+  }
+
   private async load(): Promise<void> {
     try {
       const d = await firstValueFrom(this.http.get<Overview>('/api/team-memberships', { params: this.params() }));

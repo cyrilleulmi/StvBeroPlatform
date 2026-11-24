@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { components } from '../../api/schema';
@@ -13,6 +13,8 @@ import { TEXTS } from '../../core/texts';
 import { EventVariantsSection } from './event-variants';
 import { MatchDaySettingsForm } from './match-day-settings-form';
 import { MembershipTable } from './membership-table';
+import { PersonQuickAdd } from './person-quick-add';
+import { Lines } from '../teams/lines';
 import { SuConnectionSection } from './su-connection';
 
 type Overview = components['schemas']['SeriesOverview'];
@@ -30,7 +32,7 @@ type Step = (typeof STEPS)[number];
 @Component({
   selector: 'app-team-wizard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MembershipTable, SeriesCard, SeriesNew, MatchDaySettingsForm, SuConnectionSection, EventVariantsSection],
+  imports: [RouterLink, Icon, Lines, MembershipTable, PersonQuickAdd, SeriesCard, SeriesNew, MatchDaySettingsForm, SuConnectionSection, EventVariantsSection],
   template: `
     <div class="header">
       <a class="back" routerLink="/verwaltung/teams">{{ texts.teamAdmin.title }}</a>
@@ -77,7 +79,7 @@ type Step = (typeof STEPS)[number];
       </nav>
 
       @if (message(); as m) {
-        <p class="message-success" role="status">{{ m }}</p>
+        <p class="message-success" role="status" data-testid="wizard-message">{{ m }}</p>
       }
       @if (error(); as m) {
         <p class="message-error" role="alert">{{ m }}</p>
@@ -133,11 +135,13 @@ type Step = (typeof STEPS)[number];
             <!-- PTF-15: everyone of the club as a table, by gender and year of birth; one tap puts someone in -->
             @if (detail(); as t) {
               <app-membership-table [team]="t.id" [season]="saison()" (changed)="peopleChanged.set(true)" />
+              <!-- New people right here: nobody leaves the assistant (PTF-13) -->
+              <details class="more" data-testid="wizard-new-person">
+                <summary>{{ w.newPerson }}</summary>
+                <p class="secondary-text">{{ w.peopleMissing }}</p>
+                <app-person-quick-add [teamId]="t.id" [season]="saison()" (added)="personAdded($event)" />
+              </details>
             }
-            <p class="buttons">
-              <span class="secondary-text">{{ w.peopleMissing }}</span>
-              <a routerLink="/verwaltung/personen/neu" class="summary-link">{{ w.newPerson }}</a>
-            </p>
           }
           @case ('swissunihockey') {
             <h2 id="wizard-step-title" class="section-title">{{ w.suTitle }}</h2>
@@ -155,7 +159,7 @@ type Step = (typeof STEPS)[number];
               <!-- Every series can be changed right here: time, place, end, holidays (TER-19, TER-20, TER-07) -->
               <div class="series-list" data-testid="wizard-series">
                 @for (o of series(); track o.series.id) {
-                  <app-series-card [overview]="o" (changed)="reloadSeries()" />
+                  <app-series-card [overview]="o" [showView]="false" (changed)="reloadSeries()" />
                 }
               </div>
             }
@@ -186,10 +190,13 @@ type Step = (typeof STEPS)[number];
             } @else {
               <p data-testid="wizard-lines-state">{{ w.linesState(lined(), players().length) }}</p>
             }
+            <!-- The lines right here, so nobody leaves the assistant (PTF-13) -->
             @if (detail(); as t) {
-              <a class="button button-secondary button-small open-lines" [routerLink]="['/teams', t.id, 'linien']" data-testid="wizard-lines">
-                {{ w.linesOpen }}
-              </a>
+              @if (players().length > 0) {
+                <div class="lines" data-testid="wizard-lines">
+                  <app-lines [teamId]="t.id" [embedded]="true" (changed)="reloadTeam()" />
+                </div>
+              }
             }
           }
           @case ('fertig') {
@@ -387,6 +394,7 @@ export class TeamWizard {
   protected readonly chosenSeason = signal<string | null>(null);
   /** People were put into the team in the step «Personen»: the other steps load the team again. */
   protected readonly peopleChanged = signal(false);
+  private readonly membershipTable = viewChild(MembershipTable);
 
   protected readonly step = computed<Step>(() => {
     if (!this.team()) return 'name';
@@ -458,6 +466,13 @@ export class TeamWizard {
         }
       });
     });
+  }
+
+  /** A person was created in the step «Personen» and is in the team: the table shows her. */
+  protected personAdded(person: string): void {
+    this.message.set(this.w.personAdded(person));
+    this.peopleChanged.set(true);
+    void this.membershipTable()?.reload();
   }
 
   protected day(d: string): string {

@@ -54,7 +54,9 @@ const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRID
         <p class="message-error" role="alert">{{ m }}</p>
       }
       <div class="actions">
-        <a class="button button-secondary button-small" [routerLink]="['/serien', s.id]">{{ c.view }}</a>
+        @if (showView()) {
+          <a class="button button-secondary button-small" [routerLink]="['/serien', s.id]">{{ c.view }}</a>
+        }
         @if (overview().canEdit) {
           <button
             type="button"
@@ -278,6 +280,8 @@ export class SeriesCard {
   private readonly confirm = viewChild(ConfirmDialog);
 
   readonly overview = input.required<Overview>();
+  /** «Serie ansehen» leads to another page: not inside the assistant «Neues Team». */
+  readonly showView = input(true);
   /** After a change: the page loads the series again. */
   readonly changed = output<void>();
 
