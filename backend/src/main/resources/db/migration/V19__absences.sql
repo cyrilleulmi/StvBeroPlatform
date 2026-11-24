@@ -1,5 +1,5 @@
 -- Absences (ABS): a person is away for a longer time (holidays, injury). Practices in this time are declined
--- by themselves, with the reason as comment (ABS-03). V20 leaves room for V18/V19 of the open driver list branches.
+-- by themselves, with the reason as comment (ABS-03). Runs after V18 (driver plan, E-92).
 
 create table absence (
     id         uuid primary key,
