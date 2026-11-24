@@ -37,6 +37,7 @@ Until the secret exists, the three workflows do nothing and only leave a notice.
 
 - Deploy the test environment again: re-run the CI run of the last push to `develop`. «Run workflow» on «Test environment» and the nightly «Preview cleanup» only appear in GitHub once the workflows are on the default branch `main` (GitHub runs manual and scheduled workflows from there).
 - A preview is missing or broken: push again, or close and reopen the pull request.
+- Fly.io limits the number of machines per organization (new organizations have a low limit). The test environment and every open preview take one machine each; the release pull request `develop` → `main` gets no preview. If a deploy fails with «reached its machine limit», close old pull requests or request a higher limit in the Fly.io dashboard (organization settings).
 - Logs: `fly logs --app <app>`. Status: `fly status --app <app>`.
 - Locally without Docker the app runs as before with `scripts/start.sh`. With Docker: `docker build --build-arg PROFILE=preview -t stvbero . && docker run -p 8080:8080 -e STV_SESSION_COOKIE_SECURE=false stvbero`, then http://localhost:8080/dev-login (the cookie flag only for plain HTTP on localhost).
 
