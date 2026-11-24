@@ -2,7 +2,7 @@ package ch.stvbero.platform.core.auth;
 
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.error.Problem;
-import ch.stvbero.platform.core.event.EventGrants;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 /**
  * Reads the session cookie and fills the {@link AuthContext}. Resources without {@link Public}
@@ -32,7 +31,7 @@ public class AuthFilter implements ContainerRequestFilter {
     AuthContext auth;
 
     @Inject
-    EventGrants grants;
+    Instance<RequestGrant> grants;
 
     @Override
     public void filter(ContainerRequestContext request) {
@@ -49,25 +48,18 @@ public class AuthFilter implements ContainerRequestFilter {
     }
 
     /**
-     * Requests on one event (`/api/events/{eventId}/…`) of a person with a special permission for this event run
-     * with coach rights (RR-09). Everything else keeps the person's own rights.
+     * The modules may widen the rights for this request ({@link RequestGrant}), e.g. for a person with a special
+     * permission for one event (RR-09). Everything else keeps the person's own rights.
      */
     private CurrentUser withGrant(ContainerRequestContext request, CurrentUser user) {
         if (user.allTeams()) {
             return user;
         }
-        String eventId = request.getUriInfo().getPathParameters().getFirst("eventId");
-        String path = request.getUriInfo().getPath();
-        if (eventId == null || !(path.startsWith("/") ? path.substring(1) : path).startsWith("api/events/")) {
-            return user;
+        CurrentUser granted = user;
+        for (RequestGrant grant : grants) {
+            granted = grant.apply(request.getUriInfo(), granted);
         }
-        UUID id;
-        try {
-            id = UUID.fromString(eventId);
-        } catch (IllegalArgumentException e) {
-            return user;
-        }
-        return grants.has(id, user.personId()) ? user.withEventGrant() : user;
+        return granted;
     }
 
     private boolean isPublic() {

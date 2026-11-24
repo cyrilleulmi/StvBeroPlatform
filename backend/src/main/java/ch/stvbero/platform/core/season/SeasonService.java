@@ -7,6 +7,7 @@ import ch.stvbero.platform.core.line.LineService;
 import ch.stvbero.platform.core.team.TeamSeason;
 import ch.stvbero.platform.core.team.TeamMembership;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -22,6 +23,10 @@ public class SeasonService {
 
     @Inject
     EntityManager em;
+
+    /** The modules that keep data per season (e.g. special line-ups). */
+    @Inject
+    Instance<SeasonCarryOver> carryOvers;
 
     /** All seasons, newest first. */
     public List<SeasonDto> list() {
@@ -73,7 +78,7 @@ public class SeasonService {
             copies.put(membership, copy);
         }
         LineService.carryOver(source, target, copies);
-        ch.stvbero.platform.core.lineup.SpecialLineupService.carryOver(em, source, target, java.time.Instant.now());
+        carryOvers.forEach(module -> module.carryOver(source, target));
     }
 
     /** Makes the season the current one. There is always exactly one current season (SAI-03). */
