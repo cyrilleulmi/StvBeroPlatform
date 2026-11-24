@@ -113,16 +113,34 @@ import { TEXTS } from '../../core/texts';
                 data-testid="team-league-link"
                 >{{ texts.league.open }}</a
               >
+              <a class="su-page-link" routerLink="/swissunihockey" data-testid="team-su-page-link">{{
+                texts.suPage.title
+              }}</a>
             } @else {
               <p class="secondary-text">{{ texts.league.notLinked }}</p>
-              @if (auth.isAdmin()) {
+              @if (auth.canManage()) {
                 <a [routerLink]="['/verwaltung/teams', t.id]">{{
                   texts.league.linkInAdministration
                 }}</a>
               }
+              <a class="su-page-link" routerLink="/swissunihockey" data-testid="team-su-page-link">{{
+                texts.suPage.title
+              }}</a>
             }
           </section>
         }
+        <!-- Driver plan of the season: who drives to which match day (DRV-14) -->
+        <section class="card" aria-labelledby="team-driver-plan-title" data-testid="team-driver-plan">
+          <h2 id="team-driver-plan-title" class="section-title">{{ texts.driverPlan.title }}</h2>
+          <p class="secondary-text">{{ texts.driverPlan.explanation }}</p>
+          <a
+            class="button button-secondary button-small"
+            [routerLink]="['/teams', t.id, 'fahrerliste']"
+            [queryParams]="season() ? { saison: season() } : {}"
+            data-testid="team-driver-plan-link"
+            >{{ texts.driverPlan.openPlan }}</a
+          >
+        </section>
         @if (minimums(); as m) {
           <!-- Minimums for the warnings, coaches and admins in the current season (F-16, criterion 4) -->
           <section
@@ -144,6 +162,8 @@ import { TEXTS } from '../../core/texts';
                   <div class="field">
                     <label [for]="'minimum-' + f.key">{{ f.label }}</label>
                     <input
+                      spellcheck="false"
+                      [name]="'minimum-' + f.key"
                       [id]="'minimum-' + f.key"
                       type="number"
                       inputmode="numeric"
@@ -208,9 +228,7 @@ import { TEXTS } from '../../core/texts';
     .group-title {
       margin: 12px 0 0;
       font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-weight: 600;
       color: var(--muted);
     }
   `,

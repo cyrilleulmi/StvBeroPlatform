@@ -9,6 +9,7 @@
   margin: 0;
 }
 
+/* Decisions are filled, options are outlined: the chosen response is a solid block in its colour. */
 .buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -21,16 +22,25 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: var(--touch);
+  min-height: 48px;
   min-width: 0;
-  padding: 4px 6px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: transparent;
+  padding: 4px 2px;
+  border: 1.5px solid var(--control-border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
   color: var(--text);
-  font: 700 13px/1.15 var(--font);
+  /* The condensed DIN of the headings: «Nicht dabei» stays on one line in a third of a phone */
+  font: 600 15px/1.1 var(--font-display);
+  font-stretch: var(--display-stretch);
   text-align: center;
   cursor: pointer;
+}
+
+/* Hover only on pointers that hover: on touch a tap would leave it stuck. */
+@media (hover: hover) {
+  .response-button:not(:disabled):hover {
+    border-color: var(--muted);
+  }
 }
 
 .response-button app-icon {
@@ -44,8 +54,9 @@
 }
 
 .response-button[aria-pressed='true'][data-kind='declined'] {
-  background: var(--coral-soft);
+  background: var(--coral);
   border-color: var(--coral);
+  color: var(--on-coral);
 }
 
 .response-button[aria-pressed='true'][data-kind='maybe'] {
@@ -92,4 +103,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* ANM-13: «Ich reise individuell an» under the buttons */
+.travel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  font-weight: 600;
+}
+
+.travel input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: var(--primary);
 }

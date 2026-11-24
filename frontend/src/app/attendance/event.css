@@ -9,6 +9,21 @@
   gap: 4px;
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+/* TER-17: voluntary for the person */
+.optional-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--muted);
+  border-radius: var(--radius-icon);
+}
+
 .facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -53,6 +68,14 @@
   .facts dt {
     margin-top: 0;
   }
+}
+
+/* Day and time in ink under the title: the first thing a player looks for */
+.header .when {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .edit {

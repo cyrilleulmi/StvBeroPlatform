@@ -8,5 +8,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "ResponseInput")
 public record ResponseInput(
         @NotNull ResponseChoice status,
-        @Size(max = 200, message = "Höchstens 200 Zeichen.") String comment) {
+        @Size(max = 200, message = "Höchstens 200 Zeichen.") String comment,
+        @Schema(nullable = true, description = "Match days: with «dabei», the person travels on her own and needs no "
+                + "seat (ANM-13). Missing: unchanged")
+        Boolean travelsIndividually) {
 }

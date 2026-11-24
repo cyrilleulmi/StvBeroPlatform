@@ -5,8 +5,12 @@ import ch.stvbero.platform.core.auth.Public;
 import ch.stvbero.platform.core.error.DomainError;
 import ch.stvbero.platform.core.error.Problem;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -58,6 +62,25 @@ public class CalendarResource {
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public CalendarSubscriptionDto renew() {
         return calendar.renew(auth.person().personId());
+    }
+
+    @PUT
+    @Path("/me/calendar/filter")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "changeMyCalendarFilter",
+            summary = "Which events the calendar feed delivers; the address stays the same (CAL-10 to CAL-14)")
+    @APIResponse(responseCode = "200", description = "Changed",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = CalendarSubscriptionDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "401", description = "Not logged in",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "422", description = "No event type chosen (CAL-10)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public CalendarSubscriptionDto changeFilter(@Valid @NotNull CalendarFilterInput input) {
+        return calendar.changeFilter(auth.person().personId(), input);
     }
 
     @GET

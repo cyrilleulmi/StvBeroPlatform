@@ -1,38 +1,120 @@
 <main class="dev-login">
-  <p class="test-mode" data-testid="test-mode-notice">{{ texts.devLogin.notice }}</p>
-  <h1>{{ texts.devLogin.title }}</h1>
-  <p class="secondary-text">{{ texts.devLogin.explanation }}</p>
+  <p class="test-mode" data-testid="test-mode-notice">{{ t.notice }}</p>
+  <h1>{{ t.title }}</h1>
+  <p class="secondary-text">{{ t.explanation }}</p>
 
+  @if (success(); as message) {
+    <p class="message-success" role="status">{{ message }}</p>
+  }
   @if (error(); as message) {
     <p class="message-error" role="alert">{{ message }}</p>
   }
 
-  <div [attr.aria-busy]="loading() ? 'true' : null">
+  <!-- Which data the app holds, and the switch to the other data set (docs/test-data.md) -->
+  @if (dataSet(); as d) {
+    <section class="data-set" aria-labelledby="data-set-title" data-testid="data-set" [attr.data-dataset]="d.dataset">
+      <h2 id="data-set-title">
+        {{ t.dataset }}: <span data-testid="data-set-name">{{ t.datasetName[d.dataset] }}</span>
+      </h2>
+      <p class="secondary-text">{{ t.datasetText[d.dataset] }}</p>
+      @if (d.loading) {
+        <p class="secondary-text" role="status" aria-busy="true" data-testid="data-set-loading">{{ t.loading }}</p>
+      }
+      <div class="data-set-buttons">
+        @for (other of dataSets; track other) {
+          <button
+            type="button"
+            class="button button-secondary button-small"
+            [disabled]="switching() !== null || loggingIn() !== null"
+            [attr.aria-busy]="switching() === other ? 'true' : null"
+            (click)="load(other)"
+          >
+            {{ t.load[other] }}
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="groups" [attr.aria-busy]="loading() ? 'true' : null">
     @if (loading()) {
       <p class="empty">{{ texts.common.loading }}</p>
     } @else {
-      <ul class="list" [attr.aria-label]="texts.devLogin.listName">
-        @for (person of people(); track person.id) {
-          <li [attr.data-testid]="'dev-login-person-' + person.loginKey">
-            <button
-              type="button"
-              class="person"
-              [disabled]="loggingIn() !== null"
-              [attr.aria-busy]="loggingIn() === person.loginKey ? 'true' : null"
-              (click)="login(person)"
-            >
-              <span class="name">{{ person.firstName }} {{ person.lastName }}</span>
-              <span class="details">
-                <span class="key">{{ person.loginKey }}</span>
-                @if (person.admin) {
-                  <span class="chip">{{ texts.devLogin.admin }}</span>
-                }
-              </span>
-              <app-icon name="chevron-right" [size]="20" />
-            </button>
-          </li>
-        }
-      </ul>
+      <div class="field">
+        <label for="dev-login-search">{{ t.search }}</label>
+        <input
+          spellcheck="false"
+          name="dev-login-search"
+          id="dev-login-search"
+          type="search"
+          autocomplete="off"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
+      </div>
+
+      @if (groups().length > 3 && !search()) {
+        <nav class="jump" [attr.aria-label]="t.jumpTo">
+          @for (group of groups(); track group.key) {
+            <button type="button" class="jump-link" (click)="jump(group.key)">{{ group.title }}</button>
+          }
+        </nav>
+      }
+
+      @if (shown().length === 0) {
+        <p class="empty" data-testid="dev-login-no-match">{{ t.noMatch }}</p>
+      }
+
+      @for (group of shown(); track group.key; let first = $first) {
+        <section
+          class="group"
+          [id]="'gruppe-' + group.key"
+          [attr.aria-labelledby]="'gruppe-titel-' + group.key"
+          [attr.data-testid]="'dev-login-group-' + group.key"
+        >
+          <h2 [id]="'gruppe-titel-' + group.key" class="group-title">
+            {{ group.title }} <span class="count">{{ t.count(group.entries.length) }}</span>
+          </h2>
+          <ul class="list" [attr.aria-label]="group.title">
+            @for (entry of group.entries; track entry.person.id) {
+              <!-- The first appearance of a person keeps the test ID that the tests know -->
+              <li
+                [attr.data-testid]="
+                  firstGroupOf(entry.person) === group.key
+                    ? 'dev-login-person-' + entry.person.loginKey
+                    : 'dev-login-person-' + entry.person.loginKey + '-' + group.key
+                "
+                [attr.data-role]="entry.coach ? 'coach' : entry.person.admin ? 'admin' : 'player'"
+              >
+                <button
+                  type="button"
+                  class="person"
+                  [disabled]="loggingIn() !== null || switching() !== null"
+                  [attr.aria-busy]="loggingIn() === entry.person.loginKey ? 'true' : null"
+                  (click)="login(entry.person)"
+                >
+                  <span class="name-block">
+                    <span class="name">{{ entry.person.firstName }} {{ entry.person.lastName }}</span>
+                    @if (entry.alsoIn.length > 0) {
+                      <span class="also">{{ t.alsoIn(entry.alsoIn.join(', ')) }}</span>
+                    }
+                  </span>
+                  <span class="details">
+                    <span class="key">{{ entry.person.loginKey }}</span>
+                    @if (entry.coach) {
+                      <span class="chip" data-kind="coach">{{ t.coach }}</span>
+                    }
+                    @if (entry.person.admin) {
+                      <span class="chip" data-kind="admin">{{ t.admin }}</span>
+                    }
+                  </span>
+                  <app-icon name="chevron-right" [size]="20" />
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
     }
   </div>
 </main>

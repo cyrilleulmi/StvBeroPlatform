@@ -33,6 +33,30 @@ public class SyncJob {
         refreshLeagues();
     }
 
+    /**
+     * Loads matches and league of one team right now, e.g. after it was linked (SUH-02). Never throws: if swiss
+     * unihockey cannot be reached, the link stays and the failure is noted on it (SUH-09, SUH-13).
+     *
+     * @return {@code true} if the matches were synced
+     */
+    public boolean load(UUID team) {
+        boolean synced = false;
+        try {
+            sync.sync(team);
+            synced = true;
+        } catch (DomainError e) {
+            LOG.warnf("Sync for team %s not possible: %s", team, e.getMessage());
+        } catch (RuntimeException e) {
+            LOG.errorf(e, "Sync for team %s failed", team);
+        }
+        try {
+            league.refresh(team);
+        } catch (RuntimeException e) {
+            LOG.warnf("League of team %s not loaded: %s", team, e.getMessage());
+        }
+        return synced;
+    }
+
     /** Syncs all linked teams of the current season. Returns the number of successful ones. */
     public int syncAll() {
         int successful = 0;

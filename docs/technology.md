@@ -11,6 +11,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Registering a tile | Backend: CDI bean that implements `TileDefinition` (metadata, `visibleFor`). Frontend: route `loadChildren` in `app.routes.ts`, icon in `core/icon.ts` |
 | «Now» | Inject `java.time.Clock`. In the dev/test profile controllable via `PUT /api/test/clock` |
 | Test helpers | Build property `stv.test-support` (`true` only in `%dev`/`%test`). Resources with `@IfBuildProperty`, not present in the prod profile |
+| Outside world | swiss unihockey and routing sit behind an interface with a real client and a simulator. A switch (`SuSource`, `RoutingSwitch`) picks at runtime: the simulator while `Simulation` is on (test data set), the real client otherwise. Production has no simulators. `POST /api/test/reset?dataset=` switches (E-85) |
 | Login | Cookie `stv_session` (HttpOnly, SameSite=Lax), sessions in the database. Resources without `@Public` require a session (401) |
 | Errors | `DomainError` → Problem Details (`application/problem+json`), validation → 400 with `fields` |
 | Domain rules | One class `…Rules` per area without database access (e.g. `TeamRules`, `SeasonRules`), with unit tests. Services load, rules decide, resources stay thin (F-01) |
@@ -33,6 +34,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Roles | At least player, coach, helper/parent, admin. Tiles and actions are visible based on role. |
 | Tile concept | A tile provides metadata (title, icon, route, required role) and registers itself centrally. The dashboard renders the overview from it. |
 | Delivery | Responsive web app, installable as a PWA. |
+| Hosting | Hosted test environments on Fly.io: one container (Dockerfile) built with profile `preview`, with a throwaway PostgreSQL inside the container. See [deployment.md](deployment.md) (E-91). |
 | Notifications outside the app | E-mail over SMTP with `quarkus-mailer`; push with Web Push (VAPID) through the service worker of the PWA, encryption (RFC 8291) and signature (RFC 8292) with the JDK, without a library. In `dev`/`test` a simulator replaces both (F-19). |
 | Design | Tokens as CSS custom properties, see [design-principles.md](design-principles.md). |
 
@@ -41,7 +43,7 @@ Technology decisions and guardrails for the architecture. The foundation (F-00) 
 | Area | Question |
 |---|---|
 | Login | E-mail and password, magic link or Keycloak/OIDC. |
-| Hosting | Where the platform runs in production, and where the preview for verification runs. |
+| Hosting | Where production with real data runs (test environment and previews: E-91). |
 | Notifications | E-mail, push via the PWA, or both. |
 | Multi-tenancy | Are several clubs needed in one installation? |
 

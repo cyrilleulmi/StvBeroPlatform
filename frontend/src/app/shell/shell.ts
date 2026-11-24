@@ -1,6 +1,21 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  NavigationEnd,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { NotificationsService } from '../core/notifications.service';
@@ -31,15 +46,50 @@ export class Shell {
   protected readonly texts = TEXTS;
   protected readonly unread = this.notifications.unread;
 
+  private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
+
   constructor() {
+    const router = inject(Router);
+    let fromHistory = false;
+    let previousPath: string | null = null;
     // The frame is created before the first NavigationEnd, so the first call also loads the counter.
-    inject(Router)
-      .events.pipe(
-        filter((e) => e instanceof NavigationEnd),
+    router.events
+      .pipe(
+        filter((e) => e instanceof NavigationStart || e instanceof NavigationEnd),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe(() => void this.notifications.refreshCounter());
+      .subscribe((e) => {
+        if (e instanceof NavigationStart) {
+          fromHistory = e.navigationTrigger === 'popstate';
+          return;
+        }
+        void this.notifications.refreshCounter();
+        const path = e.urlAfterRedirects.split(/[?#]/)[0];
+        // A new page (not the first one, not only a changed filter in the query): start at its top
+        // and move focus to the content, so keyboard and screen reader users land on the new page
+        // instead of the link they left (WCAG 2.4.3).
+        if (previousPath !== null && path !== previousPath) {
+          if (!fromHistory) window.scrollTo(0, 0);
+          this.main().nativeElement.focus({ preventScroll: true });
+        }
+        previousPath = path;
+      });
   }
+
+  /** Skip link: jump past the navigation without changing the URL (the base href would load «/#main»). */
+  protected skipToContent(event: Event): void {
+    event.preventDefault();
+    this.main().nativeElement.focus();
+  }
+
+  /** Teams the person coaches in the current season: «<Team> verwalten» on desktop (E-92). */
+  protected readonly coachedTeams = computed(() => {
+    const seen = new Map<string, { id: string; name: string }>();
+    for (const m of this.auth.me()?.memberships ?? []) {
+      if (m.teamRole === 'COACH') seen.set(m.team.id, m.team);
+    }
+    return [...seen.values()];
+  });
 
   protected readonly entries = computed<NavEntry[]>(() => {
     const n = TEXTS.navigation;

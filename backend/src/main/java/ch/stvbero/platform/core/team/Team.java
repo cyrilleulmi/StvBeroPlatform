@@ -27,10 +27,6 @@ public class Team extends PanacheEntityBase {
     @Id
     public UUID id;
 
-    /** Team ID at swiss unihockey (F-07). */
-    @Column(name = "su_team_id")
-    public Integer suTeamId;
-
     /** Minimums for the warnings (F-16), see {@link WarningMinimums}. */
     @Column(name = "min_goalies")
     public int minGoalies = WarningMinimums.DEFAULTS.goalies();
@@ -44,8 +40,34 @@ public class Team extends PanacheEntityBase {
     @Column(name = "min_per_line")
     public int minPerLine = WarningMinimums.DEFAULTS.perLine();
 
+    /** Match day settings (TML-02, TML-03, AUF-32), see {@link MatchDaySettings}. */
+    @Column(name = "match_duration_minutes")
+    public int matchDurationMinutes = MatchDaySettings.DEFAULTS.matchDurationMinutes();
+
+    @Column(name = "arrival_lead_minutes")
+    public int arrivalLeadMinutes = MatchDaySettings.DEFAULTS.arrivalLeadMinutes();
+
+    @Column(name = "meeting_point_location")
+    public String meetingPointLocation;
+
     @OneToMany(mappedBy = "team", cascade = CascadeType.PERSIST)
     public List<TeamSeason> seasons = new ArrayList<>();
+
+    public MatchDaySettings matchDaySettings() {
+        return new MatchDaySettings(matchDurationMinutes, arrivalLeadMinutes, meetingPointLocation);
+    }
+
+    public void setMatchDaySettings(MatchDaySettings settings) {
+        matchDurationMinutes = settings.matchDurationMinutes();
+        arrivalLeadMinutes = settings.arrivalLeadMinutes();
+        meetingPointLocation = settings.meetingPoint() == null || settings.meetingPoint().isBlank()
+                ? null : settings.meetingPoint().strip();
+    }
+
+    /** Team ID at swiss unihockey in this season: the primary link (SUH-11), or {@code null}. */
+    public Integer suTeamIdIn(Season season) {
+        return SuLink.primary(id, season.id).map(link -> link.suTeamId).orElse(null);
+    }
 
     public WarningMinimums minimums() {
         return new WarningMinimums(minGoalies, minFieldPlayersMatchDay, minFieldPlayersPractice, minPerLine);

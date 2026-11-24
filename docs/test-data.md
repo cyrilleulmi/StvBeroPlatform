@@ -1,6 +1,6 @@
 # Test data (seed)
 
-The seed is the fixed starting state for development, automated tests and the test agent. `POST /api/test/reset` restores exactly this state.
+There are two data sets (E-85). The **test data set** is the fixed starting state for automated tests and the test agent: `POST /api/test/reset` restores exactly this state. The **club data set** is what a developer sees after starting the app: the real teams of the club with live matches. This file describes the test data set first; the club data set is described under [Data sets](#data-sets).
 
 The data is chosen so that the core cases become visible: shared practice of two teams, dual roles, lines, goalies, «Ohne Linie», all four response states, match day with call-up.
 
@@ -9,6 +9,19 @@ The data is chosen so that the core cases become visible: shared practice of two
 - IDs are fixed. Tests and the test agent may use them, e.g. for deep links.
 - Whoever changes the seed updates this file in the same PR. Existing IDs and counter values only change for a good reason, because tests rely on them.
 - Names are made up.
+
+## Data sets
+
+| | Test data set | Club data set |
+|---|---|---|
+| Loaded by | `POST /api/test/reset` (also `?dataset=TEST`), start in the `test` profile, start in `dev` with `STV_SIMULATION=true` | Start in the `dev` profile, `POST /api/test/reset?dataset=CLUB`, button «Vereinsdaten laden» on `/dev-login` |
+| Clock | Fixed: Monday, 16.11.2026, 06:00 | Runs: the real time |
+| swiss unihockey | [Simulator](#simulated-swiss-unihockey-data) | The real interface `wc.swissunihockey.ch`, cached for one hour in `.local/su-cache` |
+| Routing | [Simulator](#simulated-routing) | Real: Google Maps with a key, otherwise OpenStreetMap (DRV-15) |
+| Content | Three invented teams, 17 people, everything below | Ten real teams, 106 invented people, see [Club data set](#club-data-set) |
+| Used by | All automated tests, the test agent | Trying things out by hand |
+
+`GET /api/test/dataset` says which one is loaded (`dataset`), whether the outside world is simulated (`simulated`), whether the club data is still loading (`loading`) and which service calculates routes (`routing`). The E2E tests reset to the test data set, so after a test run the running app holds the test data set until someone loads the club data again.
 
 ## Clock
 
@@ -36,6 +49,7 @@ All IDs are UUIDs. The first digit shows the type, the last two the number.
 | Notification | `90000000-0000-4000-8000-0000000000NN` |
 | Push device | `a0000000-0000-4000-8000-0000000000NN` |
 | Car (driver list) | `b0000000-0000-4000-8000-0000000000NN` |
+| Link to swiss unihockey | `c0000000-0000-4000-8000-0000000000NN` (number of the team) |
 
 ## Seed contents
 
@@ -58,6 +72,8 @@ The seed grows with the features. What is in the seed today:
 | F-18 | Anna has a calendar address with the fixed token `seed-anna-calendar-000000000000000000000005` (created 15.11.2026 20:00), so her feed is `/api/calendar/seed-anna-calendar-000000000000000000000005.ics` (through the frontend: `http://localhost:4200/api/calendar/…`). Everybody else gets a random address on the first visit of «Profil». Expected feed in scenario S56 |
 | F-19 | **Kim** switched e-mails off (`notification_preference`); everybody else has e-mails on by default, to `<loginKey>@example.ch`. **Lea** has push on one phone: device `a0000000-0000-4000-8000-000000000001`, «Chrome auf Android», endpoint `https://push.example.test/seed-lea-phone`, registered 15.11.2026 20:00. Nobody else has a push device. The seed notifications 01–18 have no e-mails or pushes. Scenarios S57–S59 |
 | F-20 | Driver list of match day 04 (see [Event 04](#event-04-match-day-sun-22112026-team-1)): car 01 of Petra with 3 seats, full with Anna, Lea, Mia; car 02 of Sara with 3 seats, empty. Jana («dabei») has no seat. No route is stored: it is calculated by the [routing simulator](#simulated-routing) on the first view. Match day 05 has no cars |
+| E-92 | The history of the driver plan (DRV-26) starts with one entry «Eingetragen: <Name> fährt am Spieltag So 22.11.» per seed car of match day 04 (Petra Keller and Sara Brun, by the driver, 15.11.2026 20:00 like the responses); the club data set has one such entry per car. No swaps and no other trips in the seed. |
+| E-93 | **Sara** is on holiday Mon 14.12.–Sun 20.12.2026 (absence `d0000000-0000-4000-8000-000000000001`, «Ferien», note «Skiferien», entered 15.11.2026 20:00). Her practices Tue 15.12. (series 01) and Thu 17.12. (series 02) are «nicht dabei» with the comment «Abwesend: Ferien · Skiferien», set by the absence. Nobody else has an absence. Scenarios S64–S67 |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -79,9 +95,13 @@ A local database created before F-10 must be reset once with `scripts/db-start.s
 
 | No. | Team | swiss unihockey |
 |---|---|---|
-| 01 | Team 1 | linked with team ID `900001` (simulated) |
+| 01 | Team 1 | linked in 2026/27 with team ID `900001` «Herren KF 3. Liga» (simulated), link `c0000000-0000-4000-8000-000000000001`, last synced 16.11.2026 04:30 |
 | 02 | Team 2 | not linked |
 | 03 | Team 3 | not linked |
+
+Every team has the default match day settings (TML-02, TML-03, AUF-32): a match takes 50 minutes, arrival 70 minutes before the first match, no usual meeting point.
+
+Every team has the four standard event variants (VAR-01) with their defaults, with one exception: in the test data set the match day variants of all three teams make a **call-up** (VAR-11), so that the call-up can be tested; a team created during a test does not. The automatic departure is on (TML-09): match day 04 keeps its meeting time 08:00 because it was entered by hand. IDs of the standard variants are derived from team and kind (`md5(<team id> || <kind>)` as UUID). Everyone can drive and has 5 places (DRV-18). There are no special line-ups, nobody travels on her own, and no team is invited without obligation; tests create these.
 
 ## Groups
 
@@ -328,6 +348,18 @@ Both with Google Maps link `https://www.google.com/maps/search/?api=1&query=Spor
 
 Match days newly created by the sync are called «Spieltag», have the venue from swiss unihockey, start with the first start time and end 75 minutes after the last one.
 
+### Teams of the club
+
+The link dialog asks the simulator for the teams of the club (SUH-02). After reset it lists:
+
+| Team ID | Name | Linked with |
+|---|---|---|
+| `900001` | Herren KF 3. Liga | Team 1 |
+| `900002` | Damen KF 2. Liga | – |
+| `900003` | Junioren B | – |
+
+`PUT /api/test/swiss-unihockey/club` sets other teams (`teams`) or an outage of the list (`"unavailable": true`); the matches of a team ID are set with `PUT /api/test/swiss-unihockey/matches`.
+
 ### League of Team 1
 
 The league page (F-17) shows the cached data; the seed holds it as loaded on Mon 16.11.2026 04:30 (`loadedAt`), the simulator delivers the same for team ID `900001` (`league` in `PUT /api/test/swiss-unihockey/matches`). The simulator keeps the matches of the league view apart from the matches of the sync, so that a sync after the reset still changes nothing; the real client uses the same match list for both.
@@ -413,8 +445,8 @@ Every scenario starts with `POST /api/test/reset`.
 | S33 | Match day from swiss unihockey | Simulator for `900001`: match 01, 02 and two matches on Sun 06.12.2026 10:00 and 12:30 in «Sporthalle Nord», Beromünster. Trigger sync | One new match day Sun 06.12. with both matches, venue with Google Maps link | SUH-04, SUH-07 |
 | S34 | Match missing at swiss unihockey | Simulator for `900001` only match 01. Trigger sync | Match 02 stays, marked «swiss unihockey liefert dieses Spiel nicht mehr.», coach can delete it | SUH-06 |
 | S35 | swiss unihockey not reachable | Simulator for `900001` with `"unavailable": true`. Trigger sync | Message «swiss unihockey ist im Moment nicht erreichbar. …», API 502, nothing changed | SUH-09 |
-| S19 | Theme | As `anna` at `/profil` choose «GitHub Dark», reload | Stays dark. «System» follows the system setting: light «Hell», dark «GitHub Dark» | NF-06, NF-08 |
-| S36 | Theme Düne | As `anna` at `/profil` choose «Düne», go to `/`, reload | `data-theme` on the document is `dune`, the colors also apply when the system is dark, and stay after reload. No contrast finding | NF-08 |
+| S19 | Theme | As `anna` at `/profil` choose «Dunkel», reload | Stays dark. «System» follows the system setting: light «Hell», dark «Dunkel» | NF-06, NF-08 |
+| S36 | Theme Dunkel | As `anna` at `/profil` choose «Dunkel» while the system is light, go to `/`, reload | `data-theme` on the document is `dark`, the colors also apply when the system is light, and stay after reload. No contrast finding | NF-08 |
 | S37 | Coach manages another team | As `marc` (coach of Team 2): `/termine?team=<Team 1>`, open event 02, «Termin bearbeiten», save; `/verwaltung/teams/<Team 1>` → «Team ansehen» → «Linien einteilen», assign Anna to Linie 2; event 01: «Antwort für Nina Roth eintragen» | All saved, Mia's comment «Krank» visible in event 01 | RR-03, E-69 |
 | S38 | Coach does not delete | As `petra`: `/teams/<Team 1>/linien`, `/verwaltung/teams/<Team 1>`, `/verwaltung/personen/<Anna>` | No «löschen», no «<Name> entfernen», no section «swiss unihockey», no admin checkbox; `/verwaltung` without «Saisons». API: delete line and remove member 403 | RR-04, RR-08 |
 | S39 | Start with the next two practices | As `anna` open `/` | «Nächster Termin»: event 01 (Tue 17.11.). Below «Weitere Trainings»: event 02 (Thu 19.11.). `eva`: event 01, then Tue 01.12. (event 03 cancelled, match day 05 is no practice). `lea`: event 02 with «Team 1» only. `ruth` (coach Team 3): Wed 18.11., then Wed 25.11. | F-13 |
@@ -443,3 +475,73 @@ Every scenario starts with `POST /api/test/reset`.
 | S61 | Full car | As `jana` at event 04: Petra's car shows «voll» and no «mitfahren»; API `PUT …/cars/b0000000-0000-4000-8000-000000000001/passengers/<Jana>` | 409 rule DRV-03 | DRV-03 |
 | S62 | Routing outage | `PUT /api/test/routing` `{"unavailable":true}`, change the meeting point of event 04, open it as `petra` | Hint «Die Strecke lässt sich gerade nicht berechnen …», no credits; «Kilometer erfassen» 21.5 → «21.5 km von Hand erfasst», credit 43.0 km | DRV-07 |
 | S63 | Cancelled match day | Cancel event 04, open it | Notice, cars kept, no credits, list read-only; `/fahrten` empty | DRV-10 |
+| S64 | Combined calendar | As `lea` open `/termine/kalender?monat=2026-11` | Team 1 and Team 2 chosen, 22.11. (match day 04) and 28.11. (match day 05) with one event each; no «Alle Teams» | KAL-03 |
+| S65 | Coach calendar | As `petra` open `/termine/kalender` | Only Team 1 chosen, 28.11. empty; «Alle Teams» shows match day 05 and the Wednesday practices of Team 3 | KAL-04 |
+| S66 | Enter an absence | As `anna` enter «Verletzung» 17.–20.11.2026, note «Knie» | «Eingetragen. 2 Trainings sind abgesagt.»; events 01 and 02 «nicht dabei» «Abwesend: Verletzung · Knie»; match day 04 unchanged | ABS-03 |
+| S67 | Holiday in the seed | As `sara` open `/profil/abwesenheiten`, then delete the absence | «Ferien», «2 Trainings abgesagt»; after deleting the practices of 15.12. and 17.12. are «offen» | ABS-05 |
+
+## Club data set
+
+The unihockey section of STV Beromünster as swiss unihockey lists it for «Eintracht Beromünster» (club ID `417058`), season 2026/27 (01.06.2026–31.05.2027; archive 2025/26). **All people are invented**: players and coaches are never taken from swiss unihockey (SUH-15). The clock runs, so dates are relative to today.
+
+### Teams
+
+| No. | Team | swiss unihockey | In the data set |
+|---|---|---|---|
+| 01 | Herren KF 3. Liga | `428216` | **linked**; one upcoming match is stored 30 minutes too early, so that the next «Jetzt abgleichen» shows a change happening |
+| 02 | Herren KF 4. Liga II | `428649` | open; eight match days **entered by hand** (works without swiss unihockey) |
+| 03 | Damen KF 1. Liga | `428361` | **linked**; warnings already visible, cars on the next match day |
+| 04 | Damen KF 3. Liga II | `432100` | open |
+| 05 | Junioren A | `428055` | **linked** |
+| 06 | Junioren B | `428960` | open (at swiss unihockey two of its matches are «Abgesagt») |
+| 07 | Junioren C | `428603` | open |
+| 08 | Junioren D | `422353` | open |
+| 09 | Junioren E | `432685` | open |
+| 10 | Juniorinnen B | `430452` | open |
+
+Team IDs in the app are `10000000-0000-4000-8000-0000000000NN` with the number above. The seven open teams are there to try out the link dialog. In the archive 2025/26 «Herren KF 3. Liga» and «Damen KF 2. Liga» exist; the women were linked with another team at swiss unihockey then (`419730`), which shows that links belong to a season (SUH-11).
+
+Every team has the usual meeting point «Oberstufenschulhaus Beromünster» (the home hall, AUF-32), a match duration of 50 minutes and an arrival lead of 70 minutes.
+
+Event variants (VAR-11): only «Herren KF 3. Liga», the first men's team, makes a **call-up** on its match days; all other teams work with the responses alone. The automatic departure is on everywhere, so the match days from swiss unihockey get their meeting time by themselves as soon as they are looked at.
+
+Special line-ups (LIN-13): «Herren KF 3. Liga» and «Damen KF 1. Liga» each have «Überzahl 1» (three places: «Center», «Flügel links», «Flügel rechts»), «Überzahl 2» (the third place empty) and «Unterzahl» (two places without a position).
+
+Driving (DRV-18): the adults can drive with 5 places; the players of the six junior teams cannot. One player of the men has 7 places, one of the women 4, and one of the women cannot drive.
+
+### People
+
+The key for `/dev-login` is the first name in lower case (`petra`, `reto`, `luca`, …). `/dev-login` lists everyone by team with the coaches on top.
+
+| Key | Name | Role |
+|---|---|---|
+| `alex` | Alex Admin | Admin |
+| `reto` | Reto Amrein | Coach of Herren KF 3. Liga and Herren KF 4. Liga II |
+| `bruno` | Bruno Felder | Coach of Herren KF 4. Liga II |
+| `petra` | Petra Keller | Coach of Damen KF 1. Liga, player in Damen KF 3. Liga II (dual role) |
+| `monika` | Monika Stalder | Coach of Damen KF 3. Liga II |
+| `marc` | Marc Huber | Coach of Junioren A |
+| `ruth` | Ruth Meier | Coach of Junioren B |
+| `thomas` | Thomas Egli | Coach of Junioren C and Junioren D |
+| `daniela` | Daniela Koch | Coach of Junioren D and Junioren E |
+| `nadia` | Nadia Lang | Coach of Juniorinnen B |
+
+Players: the four adult teams have 12 each (Linie 1 and Linie 2 with four, two goalies, two without a line), the six junior teams 8 each (three, three, one goalie, one without a line). Two players of «Herren KF 3. Liga» (`luca`, `noah`) also play in «Herren KF 4. Liga II». In total 106 people.
+
+### Events
+
+- **Practices:** every team trains once or twice a week from 17.08.2026 to 30.04.2027 (Christmas break 21.12.–03.01.) in «Oberstufenschulhaus Beromünster». The men's teams share the Tuesday practice, the women's teams the Thursday practice (19:00). On Thursday «Damen KF 1. Liga» is expected and «Damen KF 3. Liga II» is invited without obligation («freiwillig», TER-15): of the second team only a few responded. The next Tuesday practice of the men is changed the same way for this one event: «Herren KF 3. Liga» is expected, «Herren KF 4. Liga II» is invited. Practices of the last four and the next two weeks have responses; the Thursday practice of «Herren KF 3. Liga» and the Monday practice of «Damen KF 1. Liga» record attendance, with records for the last eight weeks (statistics, F-15).
+- **Match days from swiss unihockey** (linked teams): loaded in the background right after the start, visible a few seconds later. They start with the usual meeting point and no meeting time, so their timeline shows a suggested departure (TML-04).
+- **Match days entered by hand** («Herren KF 4. Liga II», events `40000000-0000-4000-8000-00000000000N`, N = 1 to 8): Sundays 9, 6, 3 and 1 weeks ago and in 1, 4, 7 and 10 weeks, two matches each, in real halls of the league with invented opponents. The past ones have a meeting time, results and two cars each (Bruno Felder drives most often); the next one has a meeting time, a draft call-up, a full car, a car with free seats and players without a seat; the later ones have only the usual meeting point.
+- **Vereinsessen:** an event of the type «Anderes» for the adult teams, on a Friday about three weeks from now.
+
+### What is prepared for the warnings
+
+After loading, «Damen KF 1. Liga» is changed and synced once more, so that the warnings of SUH-12 are visible without waiting for swiss unihockey to change something:
+
+- the first match of its next match day shows «Von swiss unihockey geändert» with the time (30 minutes earlier before) and the opponent («UHC Beispiel (alter Gegner)» before), until a coach clicks «Gesehen»;
+- an invented third match «Unihockey Erfunden» is marked «swiss unihockey liefert dieses Spiel nicht mehr».
+
+### Without swiss unihockey
+
+If swiss unihockey cannot be reached while loading, the linked teams have no match days, their links say «Letzter Abgleich am … fehlgeschlagen» and coaches and admins see the hint on the start page (SUH-13). Everything else works, including driver list, timeline and season plan of «Herren KF 4. Liga II» (routes need the routing service; without it the kilometres can be entered by hand, DRV-07).

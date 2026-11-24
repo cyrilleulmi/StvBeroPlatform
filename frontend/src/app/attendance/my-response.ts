@@ -21,7 +21,8 @@ type Choice = ResponseInput['status'];
 /**
  * Response buttons of the logged-in person (`my-response`): «dabei» and «nicht dabei» with one tap
  * (ANM-08), «nicht dabei» then offers an optional reason (ANM-05), «vielleicht» requires a
- * comment (ANM-04). Disabled for cancelled or past events, with an explanation (TER-06).
+ * comment (ANM-04). If the event variant requires a reason (VAR-12), «nicht dabei» asks for it first
+ * and is only saved with one. Disabled for cancelled or past events, with an explanation (TER-06).
  */
 @Component({
   selector: 'app-my-response',
@@ -48,13 +49,27 @@ type Choice = ResponseInput['status'];
             [disabled]="!!locked() || running() !== null"
             (click)="choose(w)"
           >
-            <app-icon [name]="icon[w]" [size]="18" />
+            <app-icon [name]="icon[w]" [size]="16" />
             {{ texts.button[w] }}
           </button>
         }
       </div>
       @if (locked(); as text) {
         <p class="secondary-text" [id]="id('lock')">{{ text }}</p>
+      }
+      <!-- Match days: «dabei» and travelling on one's own, so that no seat is planned (ANM-13) -->
+      @if (travel() && current().status === 'ATTENDING' && !locked()) {
+        <label class="travel">
+          <input
+            name="travels-individually"
+            type="checkbox"
+            data-testid="travels-individually"
+            [checked]="!!current().travelsIndividually"
+            [disabled]="running() !== null"
+            (change)="setTravel($any($event.target).checked)"
+          />
+          {{ travelTexts.checkbox }}
+        </label>
       }
       @if (details()) {
         @if (current().comment; as k) {
@@ -89,6 +104,7 @@ type Choice = ResponseInput['status'];
         <div class="field">
           <label [for]="id('comment')">{{ texts.comment }}</label>
           <input
+            [name]="id('comment')"
             #commentField
             type="text"
             maxlength="200"
@@ -134,10 +150,15 @@ type Choice = ResponseInput['status'];
     >
       <form class="form" (submit)="saveReason($event)" novalidate>
         <h2 [id]="id('reason-title')">{{ texts.declinedTitle }}</h2>
-        <p class="secondary-text" [id]="id('reason-text')">{{ texts.declinedText }}</p>
+        <p class="secondary-text" [id]="id('reason-text')">
+          {{ reasonRequired() ? texts.declinedTextRequired : texts.declinedText }}
+        </p>
         <div class="field">
-          <label [for]="id('reason')">{{ texts.reason }}</label>
+          <label [for]="id('reason')">{{
+            reasonRequired() ? texts.reasonRequiredLabel : texts.reason
+          }}</label>
           <input
+            [name]="id('reason')"
             #reasonField
             type="text"
             maxlength="200"
@@ -159,7 +180,7 @@ type Choice = ResponseInput['status'];
             [disabled]="running() !== null"
             [attr.aria-busy]="running() === 'DECLINED' ? 'true' : null"
           >
-            {{ texts.saveReason }}
+            {{ reasonRequired() ? texts.declineWithReason : texts.saveReason }}
           </button>
           <button
             type="button"
@@ -167,7 +188,7 @@ type Choice = ResponseInput['status'];
             [disabled]="running() !== null"
             (click)="close(reasonDialog)"
           >
-            {{ texts.skip }}
+            {{ reasonRequired() ? texts.cancel : texts.skip }}
           </button>
         </div>
       </form>
@@ -190,6 +211,11 @@ export class MyResponse {
   readonly locked = input<string | null>(null);
   /** Show own comment, «eingetragen von» and «kurzfristig» (detail of an event). */
   readonly details = input(false);
+  /** Match day: offer «Ich reise individuell an» with «dabei» (ANM-13). */
+  readonly travel = input(false);
+  /** The event variant requires a reason with «nicht dabei» (VAR-12, ANM-05). */
+  readonly reasonRequired = input(false);
+  protected readonly travelTexts = TEXTS.individual;
 
   /** After every save, so that the page reloads counters and overview. */
   readonly changed = output<EventResponse>();
@@ -219,8 +245,9 @@ export class MyResponse {
       this.open(this.maybeDialog());
       return;
     }
-    if (w === 'DECLINED' && previous.status === 'DECLINED') {
-      this.comment.set(previous.comment ?? '');
+    if (w === 'DECLINED' && (previous.status === 'DECLINED' || this.reasonRequired())) {
+      // With a required reason nothing is saved before the reason is there (VAR-12)
+      this.comment.set(previous.status === 'DECLINED' ? (previous.comment ?? '') : '');
       this.open(this.reasonDialog());
       return;
     }
@@ -251,7 +278,14 @@ export class MyResponse {
   protected async saveReason(domEvent: Event): Promise<void> {
     domEvent.preventDefault();
     const comment = this.comment().trim();
-    if (await this.save({ status: 'DECLINED', comment: comment || null }, true)) {
+    if (this.reasonRequired() && !comment) {
+      this.commentError.set(TEXTS.response.reasonRequired);
+      this.focus('reason');
+      return;
+    }
+    // With a required reason the response itself is saved here: «Antwort gespeichert» instead of «Grund gespeichert»
+    const reasonOnly = !this.reasonRequired() || this.current().status === 'DECLINED';
+    if (await this.save({ status: 'DECLINED', comment: comment || null }, reasonOnly)) {
       this.reasonDialog()?.nativeElement.close();
     } else {
       this.focus('reason');
@@ -260,6 +294,15 @@ export class MyResponse {
 
   protected close(dialog: HTMLDialogElement): void {
     dialog.close();
+  }
+
+  /** «Ich reise individuell an»: saved with the response «dabei» (ANM-13). */
+  protected async setTravel(on: boolean): Promise<void> {
+    if (this.locked() || this.running()) return;
+    const saved = await this.save({ status: 'ATTENDING', travelsIndividually: on }, false, true);
+    if (saved) {
+      this.message.set(on ? TEXTS.individual.savedSelf : TEXTS.individual.removedSelf);
+    }
   }
 
   protected onDialogClose(): void {
@@ -276,7 +319,7 @@ export class MyResponse {
   }
 
   /** Saves and reports the result. Errors on the comment appear at the field (ANM-04). */
-  private async save(input: ResponseInput, reasonOnly = false): Promise<boolean> {
+  private async save(input: ResponseInput, reasonOnly = false, quiet = false): Promise<boolean> {
     this.running.set(input.status);
     this.message.set(null);
     this.error.set(null);
@@ -284,11 +327,13 @@ export class MyResponse {
     try {
       const updated = await this.responses.set(this.eventId(), input);
       this.current.set(updated);
-      this.message.set(
-        reasonOnly
-          ? TEXTS.response.reasonSaved
-          : TEXTS.response.saved(TEXTS.response.status[updated.status as ResponseStatus]),
-      );
+      if (!quiet) {
+        this.message.set(
+          reasonOnly
+            ? TEXTS.response.reasonSaved
+            : TEXTS.response.saved(TEXTS.response.status[updated.status as ResponseStatus]),
+        );
+      }
       this.changed.emit(updated);
       return true;
     } catch (e) {

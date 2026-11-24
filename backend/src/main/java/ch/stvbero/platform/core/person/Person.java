@@ -26,4 +26,12 @@ public class Person extends PanacheEntityBase {
 
     /** Admin is a property of the person, not a team role (RR-04). */
     public boolean admin;
+
+    /** Can drive a car to match days (DRV-18). */
+    @Column(name = "can_drive")
+    public boolean canDrive = true;
+
+    /** Places of her car, herself included (DRV-18). */
+    @Column(name = "car_seats")
+    public int carSeats = 5;
 }

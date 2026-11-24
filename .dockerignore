@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.angular
+**/target
+.git
+.local
+.claude
+.github
+docs
+e2e
+scripts
+status
+*.md

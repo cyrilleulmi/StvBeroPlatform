@@ -1,0 +1,46 @@
+# Test environment of develop on Fly.io (E-91). Called by the CI after a green run on a push to develop
+# (ci.yml, job «Test environment»); by hand: Actions → «Test environment» → «Run workflow».
+# A workflow_run trigger would only work from the default branch (main), so the CI calls this file instead.
+# Does nothing until the hosting is set up (docs/deployment.md).
+name: Test environment
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-test
+      cancel-in-progress: false
+    timeout-minutes: 30
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: ${{ vars.FLY_APP }}
+      FLY_ORG: ${{ vars.FLY_ORG }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: config
+        run: scripts/deploy.sh check >> "$GITHUB_OUTPUT"
+
+      - if: steps.config.outputs.configured != 'true'
+        run: echo "::notice::Hosting is not set up yet, nothing deployed. See docs/deployment.md."
+
+      - if: steps.config.outputs.configured == 'true'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - if: steps.config.outputs.configured == 'true'
+        id: deploy
+        run: scripts/deploy.sh test
+
+      - if: failure() && steps.config.outputs.configured == 'true'
+        name: Diagnose Fly.io access
+        run: scripts/deploy.sh diagnose
+
+      - if: steps.config.outputs.configured == 'true'
+        run: echo "### Test environment ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

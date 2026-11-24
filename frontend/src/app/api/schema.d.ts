@@ -25,6 +25,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/absences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own absences that are not over yet (ABS-06) */
+        get: operations["listMyAbsences"];
+        put?: never;
+        /**
+         * Enter an absence; upcoming practices in this time are declined (ABS-01 to ABS-03)
+         * @description Every upcoming practice of the person's teams that touches a day of the absence gets «nicht dabei» with
+         *     the reason as comment («Abwesend: Ferien · Skiferien»). An own «nicht dabei» stays; «dabei» and
+         *     «vielleicht» are replaced. Other events (match days, other events) are not changed. No notification.
+         */
+        post: operations["createMyAbsence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/absences/{absenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change an own absence; the responses follow (ABS-05)
+         * @description Practices no longer covered are «offen» again if the absence had declined them. Practices covered newly
+         *     are declined like for a new absence. A response the person gave by hand after the absence stays.
+         */
+        put: operations["updateMyAbsence"];
+        post?: never;
+        /** Delete an own absence; upcoming practices it declined are pending again (ABS-05) */
+        delete: operations["deleteMyAbsence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/calendar": {
         parameters: {
             query?: never;
@@ -63,6 +110,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/calendar/filter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Which events the calendar feed delivers; the address stays the same (CAL-10 to CAL-14)
+         * @description Event types (at least one, otherwise 422 with rule CAL-10, field `types`), participations besides «dabei»
+         *     (empty: only events with «dabei») and teams whose events are left out. Teams the person was never a
+         *     member of are ignored. The feed applies the filter from the next fetch on.
+         */
+        put: operations["changeMyCalendarFilter"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calendar/{token}.ics": {
         parameters: {
             query?: never;
@@ -73,14 +142,73 @@ export interface paths {
         /**
          * iCalendar feed of a person, reachable with the token alone (CAL-02 to CAL-08)
          * @description Public, because calendar apps cannot log in (CAL-06). The token grants read access to this feed only;
-         *     it is not a session. Content: all events of the person's teams (member in the season of the event)
-         *     that ended at most 30 days ago or are still to come, cancelled ones with `STATUS:CANCELLED`. `UID` is
+         *     it is not a session. Content: the events of the person's teams (member in the season of the event)
+         *     that ended at most 30 days ago or are still to come and pass the person's filter (CAL-10 to CAL-15),
+         *     cancelled ones with `STATUS:CANCELLED`. `UID` is
          *     the event ID plus `@stvbero`, so moved events replace their entry. Times are local times in
          *     Europe/Zurich with a `VTIMEZONE`. The description holds meeting point, matches, notes, the person's
          *     own response and the link into the app, never responses or comments of other people (CAL-08).
          */
         get: operations["getCalendarFeed"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Who manages the event like a coach (RR-09, RR-13)
+         * @description Everyone who may see the event sees who has a special permission (RR-13). `candidates` (members of the
+         *     teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+         */
+        get: operations["getEventGrants"];
+        /**
+         * Set the special permissions of one event; coaches and admins (RR-11, RR-12)
+         * @description Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+         *     have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+         *     holders are notified (BEN-08). Cancelled or past events: 409.
+         */
+        put: operations["changeEventGrants"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Who manages all events of the series like a coach (RR-10)
+         * @description Everyone who may see the series sees who has a special permission (RR-13). `candidates` (members of the
+         *     teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+         */
+        get: operations["getSeriesGrants"];
+        /**
+         * Set the special permissions of a series; they apply to all its events (RR-10, RR-11)
+         * @description Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+         *     have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+         *     holders are notified (BEN-08). They apply to all events of the series, also later ones.
+         */
+        put: operations["changeSeriesGrants"];
         post?: never;
         delete?: never;
         options?: never;
@@ -255,6 +383,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/match-day-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change match duration, arrival lead and usual meeting point of the team (TML-02, TML-03, AUF-32, admin, coach)
+         * @description `matchDurationMinutes` (default 50) is how long a match takes; `arrivalLeadMinutes` (default 70) how long
+         *     before the first match the team wants to arrive at the venue. Both feed the timeline of every match day
+         *     and the suggested departure (TML). `meetingPoint` is where the team usually meets: match days created by
+         *     the sync start with it (AUF-32); `null` or empty removes it. The settings apply to the team, not per
+         *     season.
+         */
+        put: operations["setMatchDaySettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/event-variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Event variants of a team: the four standard ones, then the team's own (VAR-01, VAR-02)
+         * @description Members of the team, coaches and admins. An event variant says how a kind of event looks and behaves in
+         *     the team: name, colour, call-up or responses only, the sections of the event page and their order,
+         *     automatic departure and the defaults for new events. Every team has the standard variants `PRACTICE`,
+         *     `MATCH_DAY`, `SU_MATCH_DAY` (match days from the sync) and `OTHER`.
+         */
+        get: operations["listEventVariants"];
+        put?: never;
+        /**
+         * Add an event variant of the team's own (VAR-02, admin, coach)
+         * @description `eventType` is required and stays. At most 12 variants per team (409, rule VAR-02). The name is unique in
+         *     the team (422, rule VAR-02). Sections must fit the event type and include `DETAILS` (400).
+         */
+        post: operations["createEventVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/event-variants/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change name, colour, call-up, sections and defaults of an event variant (VAR-04 to VAR-09, admin, coach)
+         * @description `eventType` is ignored: the type of a variant stays. Fields left out keep their value. The change applies
+         *     to all events of the variant at once (VAR-10). `callUp` only has an effect for match day variants.
+         */
+        put: operations["updateEventVariant"];
+        post?: never;
+        /**
+         * Delete an event variant of the team's own (VAR-02, admin, coach)
+         * @description Its events stay and fall back to the standard variant of their type. A standard variant cannot be deleted
+         *     (409, rule VAR-01).
+         */
+        delete: operations["deleteEventVariant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/members": {
         parameters: {
             query?: never;
@@ -382,6 +595,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/special-lineups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Special line-ups of a team in the current season, with the players that can be set (LIN-13)
+         * @description Members of the team, coaches and admins. Special line-ups are named line-ups for situations such as power
+         *     play («Überzahl») and penalty kill («Unterzahl»), with a free number of places. They do not replace the
+         *     lines. A place whose player is no longer a player of the team is delivered empty.
+         */
+        get: operations["getSpecialLineups"];
+        put?: never;
+        /**
+         * Create a special line-up with its places (LIN-13 to LIN-15, admin, coach)
+         * @description 1 to 10 places, each with an optional label and at most one player of the team. A player at most once per
+         *     line-up, or not a player of the team: 422 (rule LIN-14). Name already used in the team: 422 (rule LIN-13).
+         *     More than 12 line-ups, or an archived season: 409.
+         */
+        post: operations["createSpecialLineup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/special-lineups/{lineupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                lineupId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change name, number of places, labels and players of a special line-up (LIN-15, admin, coach)
+         * @description The places of the request replace the existing ones. Same rules as `createSpecialLineup`.
+         */
+        put: operations["updateSpecialLineup"];
+        post?: never;
+        /** Delete a special line-up (LIN-15, admin, coach) */
+        delete: operations["deleteSpecialLineup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/persons": {
         parameters: {
             query?: never;
@@ -427,6 +694,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/persons/{personId}/driving": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Whether a person can drive and the places of her car (DRV-18)
+         * @description The person herself, coaches and admins. Defaults are «can drive» and 5 places.
+         */
+        get: operations["getDriving"];
+        /**
+         * Change whether a person can drive and the places of her car (DRV-18)
+         * @description The person herself, coaches and admins. `carSeats` counts the driver: 5 places are the driver and four
+         *     others. The values are the defaults for the proposal (DRV-19) and for entering a car.
+         */
+        put: operations["setDriving"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events": {
         parameters: {
             query?: never;
@@ -449,6 +743,29 @@ export interface paths {
          *     season 409 (SAI-02). Without `responseDeadlineHours`, 24 hours apply (TER-10).
          */
         post: operations["createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Events of the chosen teams in a period of at most six weeks, with the own absences (KAL-01 to KAL-04)
+         * @description Past and upcoming events together, sorted by start. Without `team` and `all` the default teams are shown:
+         *     coaches the teams they coach, everyone else all own teams of the current season (a player in two teams
+         *     sees both together). `all=true` and teams of which the caller is not a member are for coaches and admins
+         *     (403 otherwise); players see only events of teams they belong to in the season of the event.
+         */
+        get: operations["getCalendarView"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -695,6 +1012,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/matches/{matchId}/confirm-su-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                matchId: components["parameters"]["matchId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a change by swiss unihockey as seen; the warning disappears (SUH-12, coach)
+         * @description The sync applies changed matches right away (SUH-05) and remembers what the match looked like before
+         *     (`suChange` of the match). Coaches of the team and admins confirm that they have seen the change; until
+         *     then the match day shows the warning `MATCH_CHANGED`. 409 (rule SUH-12) if the match has no open change.
+         */
+        post: operations["confirmSuChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Timeline of a match day: departure, arrival, matches, cool down, approximate return (TML-01)
+         * @description Everyone who may see the match day. Not a match day: 409 (rule DRV-01). `items` in order of time:
+         *     `DEPARTURE` at the meeting time, or at the suggested departure while no meeting time is set
+         *     (`departureSuggested`); `ARRIVAL` after the driving time of the route (DRV-05); `WARM_UP` until the first
+         *     match; each `MATCH` for the match duration of the team; `BREAK` between two matches; `COOL_DOWN` of 20
+         *     minutes after the last match; `RETURN` after the driving time back. The suggested departure is the first
+         *     match minus the arrival lead of the team minus the driving time, rounded down to five minutes (TML-04).
+         *     Without a meeting point or without a driving time there is no departure suggestion, no arrival and no
+         *     return; `hints` says why. Matches that swiss unihockey no longer delivers are left out. With several teams
+         *     the longest match duration and the longest arrival lead apply. Calculates the route first if needed.
+         */
+        get: operations["getTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/timeline/apply-departure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take over the suggested departure as meeting time of the match day (TML-04, coach)
+         * @description Coaches of the team and admins, for a planned match day that is not over. 409 (rule TML-04) if there is
+         *     no suggestion (no meeting point or no driving time).
+         */
+        post: operations["applySuggestedDeparture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/special-lineups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Special line-ups of the team of a match day with the responses of the players (LIN-16)
+         * @description Everyone who may see the match day. Every place with its player, her response and, with a published
+         *     call-up, whether she is called up. `gap` marks a place whose player is not coming: she declined, or the
+         *     call-up is published and she is not called up. Not a match day: 409 (rule LIN-16).
+         */
+        get: operations["getEventLineups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{eventId}/call-up": {
         parameters: {
             query?: never;
@@ -918,6 +1337,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/driver-list/route/duration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Overwrite the driving time by hand (DRV-21, coach)
+         * @description Only coaches and admins (otherwise 403). 1 to 600 minutes (400). The time is used everywhere instead of the
+         *     calculated one (driver list, season plan, timeline) and stays when the route is recalculated; it is dropped
+         *     when meeting point or venue change. Same 409 cases as `addCar`.
+         */
+        put: operations["setRouteDuration"];
+        post?: never;
+        /** Use the calculated driving time again (DRV-21, coach) */
+        delete: operations["clearRouteDuration"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{eventId}/driver-list/route/recalculate": {
         parameters: {
             query?: never;
@@ -935,6 +1379,84 @@ export interface paths {
          *     or finds nothing, the route has the status UNAVAILABLE or NOT_FOUND (still 200). Same 409 cases as `addCar`.
          */
         post: operations["recalculateRoute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/individual/{personId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark a person as travelling on her own: oneself, or someone else as coach or admin (DRV-20)
+         * @description The person needs no seat: she is listed under `individual`, not under `withoutSeat`, and leaves a seat she
+         *     had. A driver cannot be marked until her car is removed (409, rule DRV-20). Not a member of a team of the
+         *     match day: 422 (rule DRV-02). Same 409 cases as `addCar`. The same mark is set with a response
+         *     (`travelsIndividually`, ANM-13).
+         */
+        put: operations["setIndividualTravel"];
+        post?: never;
+        /** The person no longer travels on her own (DRV-20) */
+        delete: operations["removeIndividualTravel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, coach)
+         * @description Only coaches and admins (otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
+         *     responded «dabei», without those who travel on their own (DRV-20). Existing cars stay and are filled
+         *     first. Further drivers are chosen among these people if they can drive (DRV-18), the one with the fewest
+         *     trips in the season first, then by name; each brings her usual places minus herself. Only as many cars as
+         *     needed are proposed. `withoutSeat` lists who is left over if there are not enough drivers. Same 409 cases
+         *     as `addCar`.
+         */
+        post: operations["proposeDriverList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/driver-list/proposal/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enter a proposed driver list (DRV-19, coach)
+         * @description Only coaches and admins (otherwise 403). Per entry: the car of the driver is created with `seats` if she
+         *     has none, then the passengers are put into it. Every rule of the driver list applies (DRV-02, DRV-03); if
+         *     one entry is refused, nothing is entered. The people affected are notified as usual (DRV-11).
+         */
+        post: operations["applyDriverProposal"];
         delete?: never;
         options?: never;
         head?: never;
@@ -960,6 +1482,205 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Driver plan of a team for a season: all match days with their cars, and the trips per member (DRV-14, DRV-17)
+         * @description Members of the team in the season, coaches (of any team, E-69) and admins; otherwise 403. `matchDays` are
+         *     all match days of the team in the season by start, each with its cars as in the driver list of the match
+         *     day, the route if known, and `changeable` if the caller can enter drivers right now (ready, not cancelled,
+         *     not over; after the end only coaches and admins). `shares` lists every member of the team with the trips
+         *     on match days that are over (`trips`, `kilometres`) and on upcoming ones (`plannedTrips`,
+         *     `plannedKilometres`), so that the trips can be shared fairly (DRV-17); a cancelled match day counts
+         *     nothing (DRV-10). `members` only for coaches and admins. Routes not yet calculated are calculated first,
+         *     at most twelve per call.
+         */
+        get: operations["getDriverPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/cars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enter one driver for several match days at once (DRV-14)
+         * @description Often one person plans the drivers of a whole season. Members of the team enter themselves (without
+         *     `driverId`), coaches and admins also others. Per match day the rules of the driver list apply (DRV-01,
+         *     DRV-02): the match day must be ready, not cancelled and, for members, not over; the driver must be a
+         *     member of the team. Match days on which the person already drives stay as they are. If one match day
+         *     refuses, nothing is entered. `eventIds` must be match days of this team in the season (400 on `eventIds`
+         *     otherwise).
+         */
+        post: operations["planDriver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give the trip of a match day to another member, as a takeover or against her trip on another match day: ask first or enter directly (DRV-25)
+         * @description The driver herself (without `driverId`), coaches and admins for any driver (otherwise 403). `partnerId` must
+         *     be another member of the team, `eventId` and `partnerEventId` match days of the team in the season (400).
+         *     409 (rule DRV-25) if the driver does not drive on `eventId`, the partner already drives there, the partner
+         *     does not drive on `partnerEventId` or the driver already drives there; also the 409 cases of `addCar`, and
+         *     when a request for this trip is already open. `direct: true` carries it out right away: only the driver of
+         *     the cars changes, the new driver leaves her seat and her mark «individual» on that match day; the partner is
+         *     notified. `direct: false` asks the partner (notification `DRIVER_LIST_CHANGED`).
+         */
+        post: operations["startDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a swap request, it is carried out (DRV-25)
+         * @description The partner, coaches and admins (otherwise 403). 409 if the cars no longer fit the request (rule DRV-25). 404 if the request is no longer open.
+         */
+        post: operations["acceptDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a swap request (DRV-25)
+         * @description The partner, coaches and admins (otherwise 403). The requester is notified.
+         */
+        post: operations["declineDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw an own swap request (DRV-25)
+         * @description The requester, coaches and admins (otherwise 403). The partner is notified.
+         */
+        post: operations["withdrawDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a trip without an event in the app (DRV-28)
+         * @description Members add their own trips (without `driverId`), coaches and admins also for others (otherwise 403); the
+         *     driver must be a member of the team (400). The return trip is credited (twice `distanceKm`).
+         */
+        post: operations["addExtraTrip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/trips/{tripId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                tripId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove another trip (DRV-28)
+         * @description The driver, whoever added it, coaches and admins (otherwise 403).
+         */
+        delete: operations["removeExtraTrip"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1015,6 +1736,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/swiss-unihockey/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Teams of the club at swiss unihockey in the current season, with the team they are linked with (SUH-02, admin, coach)
+         * @description The choice in the link dialog: the teams swiss unihockey lists for the club (`STV_SU_CLUB_ID`) in the
+         *     current season, in its order. `linkedTeamId` and `linkedTeamName` name the team of the app a team is
+         *     already linked with. 502 if swiss unihockey is unavailable (SUH-09); the dialog then takes the team ID by
+         *     hand.
+         */
+        get: operations["listSuClubTeams"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/swiss-unihockey/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * State of the connection: linked teams, last successful sync, links whose last sync failed (SUH-13, admin, coach)
+         * @description For the hint to coaches and admins: if the last sync of a link failed (swiss unihockey not reachable or
+         *     unexpected data), `failures` names the team, the time and a German sentence. The app keeps running with
+         *     the data it has (SUH-09).
+         */
+        get: operations["getSuStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/swiss-unihockey": {
         parameters: {
             query?: never;
@@ -1024,15 +1790,65 @@ export interface paths {
             };
             cookie?: never;
         };
-        get?: never;
         /**
-         * Link a team to swiss unihockey or remove the link (SUH-02, admin)
-         * @description The team ID can be found on swissunihockey.ch in the address of the team page. A team ID belongs to
-         *     at most one team (otherwise 409). Removing the link leaves already imported match days unchanged.
+         * Links of the team to swiss unihockey in the current season, with the state of the last sync (SUH-11, SUH-13)
+         * @description Members of the team, coaches and admins. A team has none, one or several links per season (SUH-11): the
+         *     team at swiss unihockey changes from season to season. `canManage` for coaches and admins.
          */
-        put: operations["linkSu"];
+        get: operations["getSuConnection"];
+        put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/swiss-unihockey/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link the team with a team at swiss unihockey and load its matches and league right away (SUH-02, SUH-11, admin, coach)
+         * @description The link applies to the current season. A team at swiss unihockey belongs to at most one team per season
+         *     (409, rule SUH-02); the team must belong to the current season (409, rule SUH-03). Without `name` the
+         *     name is looked up in the club's teams. After linking, the matches are synced and the league is loaded
+         *     immediately. If swiss unihockey cannot be reached, the link is kept, `lastSyncOk` is `false` and the next
+         *     sync tries again (SUH-09, SUH-13).
+         */
+        post: operations["addSuLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/swiss-unihockey/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a link (SUH-11, admin, coach)
+         * @description Imported match days stay. If the team has no link left in the season, the imported matches of its
+         *     upcoming match days are marked `missingAtSu`, so that a coach can remove them (SUH-12).
+         */
+        delete: operations["removeSuLink"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1050,12 +1866,14 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Run the sync now instead of waiting for the daily run (SUH-03, admin)
-         * @description Syncs the team's matches in the current season. Matches on the same day in the same hall become
-         *     one match day (SUH-04). Changed matches are taken over; meeting point, notes, responses and call-up
-         *     are kept (SUH-05, SUH-06), and all members of the team are notified (BEN-06). Matches that swiss
-         *     unihockey no longer delivers are marked, not deleted. Manually entered match days stay
-         *     untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
+         * Run the sync now instead of waiting for the daily run (SUH-03, admin, coach)
+         * @description Syncs the team's matches in the current season, from all its links (SUH-11). Matches on the same day in
+         *     the same hall become one match day (SUH-04); a new match day starts with the usual meeting point of the
+         *     team (AUF-32). Changed matches are taken over; meeting point, notes, responses and call-up
+         *     are kept (SUH-05, SUH-06), all members of the team are notified (BEN-06), and coaches and admins see a
+         *     warning with the values before and after until one of them confirms it (SUH-12). Matches that swiss
+         *     unihockey no longer delivers, or lists as «Abgesagt», are marked, not deleted. Manually entered match
+         *     days stay untouched (SUH-10). 409 if the team is not linked or does not belong to the current season.
          *     502 if swiss unihockey is unavailable or delivers something unexpected: then nothing changes (SUH-09).
          *     The same sync runs daily for all linked teams.
          */
@@ -1248,10 +2066,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Reset the database to the seed, the clock to default and the simulator
-         * @description For the seed see docs/test-data.md. Only profiles dev and test.
+         * Reset the database to a data set and the simulators
+         * @description Without `dataset` (or `TEST`): the test data set of docs/test-data.md with the fixed clock and the
+         *     simulators for swiss unihockey and routing, as all automated tests expect. `CLUB`: the club data set with
+         *     the real teams, the running clock, live data from swiss unihockey and real routes; the matches of the
+         *     linked teams are loaded in the background (`GET /api/test/dataset`). Only profiles dev and test.
          */
         post: operations["testReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which data set is loaded, whether the outside world is simulated and whether the club data is still loading */
+        get: operations["testGetDataSet"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1396,6 +2234,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/test/swiss-unihockey/club": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the teams of the club the simulator lists for the link dialog, or an outage (SUH-02)
+         * @description After `POST /api/test/reset` the simulator lists team ID 900001 «Herren KF 3. Liga», 900002 «Damen KF 2.
+         *     Liga» and 900003 «Junioren B» (docs/test-data.md). `unavailable` makes the list fail (SUH-09); the
+         *     matches of a team ID are set with `PUT /api/test/swiss-unihockey/matches`.
+         */
+        put: operations["testSetSuClub"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/test/routing": {
         parameters: {
             query?: never;
@@ -1448,6 +2308,65 @@ export interface components {
                 message: string;
             }[];
         };
+        /**
+         * @description «Ferien», «Verletzung», «Anderes» (ABS-01)
+         * @enum {string}
+         */
+        AbsenceReason: "VACATION" | "INJURY" | "OTHER";
+        AbsenceInput: {
+            /**
+             * Format: date
+             * @description First day away
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Last day away (inclusive)
+             */
+            to: string;
+            reason: components["schemas"]["AbsenceReason"];
+            /** @description Optional note; required for OTHER */
+            note?: string;
+        };
+        /** @description An absence of the logged-in person (ABS-01, ABS-06) */
+        Absence: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            reason: components["schemas"]["AbsenceReason"];
+            note?: string;
+            /** @description Upcoming practices this absence declined (ABS-03) */
+            declinedPractices: number;
+        };
+        CalendarTeam: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            myTeamRole?: components["schemas"]["TeamRole"];
+        };
+        /** @description Calendar view of a period (KAL) */
+        CalendarView: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Teams to choose from: own teams, for coaches and admins all teams of the current season */
+            teams: components["schemas"]["CalendarTeam"][];
+            /** @description Teams shown without a choice: coaches their coached teams, everyone else all own teams (KAL-03, KAL-04) */
+            defaultTeamIds: string[];
+            /** @description Teams shown now */
+            teamIds: string[];
+            /** @description All teams are shown (KAL-04) */
+            allTeams: boolean;
+            /** @description The caller may show all teams: coaches and admins (KAL-04) */
+            canShowAllTeams: boolean;
+            events: components["schemas"]["EventSummary"][];
+            /** @description Own absences in the period (ABS-07) */
+            absences: components["schemas"]["Absence"][];
+        };
         /** @description Personal address of the calendar feed (CAL-01). Whoever knows it sees the person's events. */
         CalendarSubscription: {
             /**
@@ -1455,6 +2374,53 @@ export interface components {
              * @example /api/calendar/q3XyR0p8vUu6Yc1yZf9xwGx0N2m7oVbE4hT5sK1dLaA.ics
              */
             feedPath: string;
+            filter: components["schemas"]["CalendarFilter"];
+        };
+        /** @description Special permissions of an event or a series (RR-09 to RR-14) */
+        EventGrants: {
+            /** @description By last name */
+            grants: components["schemas"]["EventGrant"][];
+            /** @description The caller may change them (coach or admin in her own right, RR-11) */
+            canManage: boolean;
+            /** @description Members of the teams who can get a special permission (RR-12); only with canManage */
+            candidates?: components["schemas"]["PersonSummary"][] | null;
+        };
+        EventGrant: {
+            person: components["schemas"]["PersonSummary"];
+            /** @description The permission comes from the series and applies to all its events (RR-10) */
+            viaSeries: boolean;
+        };
+        EventGrantsInput: {
+            /** @description Replaces the previous ones; empty removes all */
+            personIds: string[];
+        };
+        /**
+         * @description Participation for the filter of the feed (CAL-11, CAL-12). «dabei» is always in the feed and has no value.
+         *     `PENDING` no response in an expected team, `OPTIONAL_PENDING` no response as an invited («freiwillig»)
+         *     member, `MAYBE` «vielleicht», `DECLINED` «nicht dabei» or not called up in a published call-up.
+         * @enum {string}
+         */
+        CalendarResponse: "PENDING" | "OPTIONAL_PENDING" | "MAYBE" | "DECLINED";
+        /** @description Which events the feed delivers (CAL-10 to CAL-14). A new address delivers everything. */
+        CalendarFilter: {
+            types: components["schemas"]["EventType"][];
+            /** @description Participations in the feed besides «dabei» */
+            responses: components["schemas"]["CalendarResponse"][];
+            /** @description The person's teams in the current season, sorted by name */
+            teams: components["schemas"]["CalendarFilterTeam"][];
+        };
+        CalendarFilterTeam: {
+            /** Format: uuid */
+            teamId: string;
+            /** @example Team 1 */
+            name: string;
+            /** @description Whether the events of this team are in the feed (CAL-13) */
+            included: boolean;
+        };
+        CalendarFilterInput: {
+            types: components["schemas"]["EventType"][];
+            responses: components["schemas"]["CalendarResponse"][];
+            excludedTeamIds: string[];
         };
         /**
          * @description Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
@@ -1547,6 +2513,41 @@ export interface components {
             firstName: string;
             lastName: string;
             admin: boolean;
+            /** @description Teams of the current season, by team name */
+            teams: components["schemas"]["TestPersonTeam"][];
+        };
+        TestPersonTeam: {
+            /** Format: uuid */
+            teamId: string;
+            teamName: string;
+            teamRole: components["schemas"]["TeamRole"];
+        };
+        /**
+         * @description TEST the fixed seed with simulators and a fixed clock; CLUB the club with its real teams, live data from swiss unihockey and the running clock (docs/test-data.md)
+         * @enum {string}
+         */
+        DataSet: "TEST" | "CLUB";
+        DataSetState: {
+            dataset: components["schemas"]["DataSet"];
+            /** @description swiss unihockey and routing are simulated */
+            simulated: boolean;
+            /** @description The club data is still being loaded from swiss unihockey */
+            loading: boolean;
+            /** @description Which service calculates routes: SIMULATOR, GOOGLE, OPEN_ROUTE_SERVICE or OPEN_STREET_MAP */
+            routing: string;
+        };
+        SuClubPreset: {
+            /** @description Teams of the club the simulator lists; omitted: they stay as they are */
+            teams?: components["schemas"]["SuClubTeamInput"][] | null;
+            /**
+             * @description Simulates an outage of the team list (SUH-09)
+             * @default false
+             */
+            unavailable: boolean | null;
+        };
+        SuClubTeamInput: {
+            suTeamId: number;
+            name: string;
         };
         Season: {
             /** Format: uuid */
@@ -1579,7 +2580,10 @@ export interface components {
             id: string;
             /** @example Team 1 */
             name: string;
-            /** @example 900001 */
+            /**
+             * @description Team ID at swiss unihockey in this season; with several links the first one (SUH-11)
+             * @example 900001
+             */
             suTeamId?: number | null;
             myTeamRole?: components["schemas"]["TeamRole"] | null;
         };
@@ -1591,6 +2595,26 @@ export interface components {
             lineup: components["schemas"]["Lineup"];
             /** @description Only for coaches and admins (F-16) */
             warningMinimums?: components["schemas"]["WarningMinimums"];
+            /** @description Only for coaches and admins (TML-02) */
+            matchDaySettings?: components["schemas"]["MatchDaySettings"];
+        };
+        /** @description Match day settings of a team (TML-02, TML-03, AUF-32). Defaults: a match takes 50 minutes, arrival 70 minutes before the first match, no usual meeting point. */
+        MatchDaySettings: {
+            /**
+             * Format: int32
+             * @example 50
+             */
+            matchDurationMinutes: number;
+            /**
+             * Format: int32
+             * @example 70
+             */
+            arrivalLeadMinutes: number;
+            /**
+             * @description Usual meeting point; new match days from swiss unihockey start with it
+             * @example Oberstufenschulhaus Beromünster
+             */
+            meetingPoint?: string | null;
         };
         /** @description Minimums of a team for the warnings (F-16). Defaults 1 goalie, 10 field players for match days, 6 for practices, 3 per line. 0 switches the warning off. */
         WarningMinimums: {
@@ -1604,10 +2628,10 @@ export interface components {
             perLine: number;
         };
         /**
-         * @description GOALIES fewer goalies than the minimum («Kein Goalie angemeldet»), FIELD_PLAYERS fewer field players (all players outside the goalies, including «Ohne Linie»), LINE a line with at least one but fewer players than the line minimum («Linie 2 nur zu 1»)
+         * @description GOALIES fewer goalies than the minimum («Kein Goalie angemeldet»), FIELD_PLAYERS fewer field players (all players outside the goalies, including «Ohne Linie»), LINE a line with at least one but fewer players than the line minimum («Linie 2 nur zu 1»), MATCH_CHANGED `count` matches changed by swiss unihockey and not confirmed yet, MATCH_MISSING `count` matches swiss unihockey no longer delivers (SUH-12; both belong to the match day, `minimum` is 0)
          * @enum {string}
          */
-        WarningType: "GOALIES" | "FIELD_PLAYERS" | "LINE";
+        WarningType: "GOALIES" | "FIELD_PLAYERS" | "LINE" | "MATCH_CHANGED" | "MATCH_MISSING";
         /** @description A warning for one team of the event (F-16). Counts players with «dabei» (overview) or the selected players (call-up). The frontend builds the German text from it. */
         Warning: {
             type: components["schemas"]["WarningType"];
@@ -1670,6 +2694,69 @@ export interface components {
             })[];
             noLine: components["schemas"]["PersonSummary"][];
         };
+        /** @description A special line-up of a team (LIN-13, LIN-14): a named line-up for a situation such as power play or penalty kill, with a free number of places */
+        SpecialLineup: {
+            /** Format: uuid */
+            id: string;
+            /** @example Überzahl 1 */
+            name: string;
+            places: components["schemas"]["SpecialLineupPlace"][];
+        };
+        SpecialLineupPlace: {
+            /** Format: int32 */
+            position: number;
+            /** @example Center */
+            label?: string;
+            /** @description Missing while the place is empty */
+            person?: components["schemas"]["PersonSummary"];
+        };
+        /** @description The special line-ups of a team in the current season (LIN-15) */
+        SpecialLineups: {
+            /** Format: uuid */
+            teamId: string;
+            /** @description The caller may create, change and delete line-ups (coach, admin) */
+            canEdit: boolean;
+            /** @description In the order they were created */
+            lineups: components["schemas"]["SpecialLineup"][];
+            /** @description Players of the team, by name */
+            players: components["schemas"]["PersonSummary"][];
+        };
+        SpecialLineupInput: {
+            name: string;
+            places: components["schemas"]["SpecialLineupPlaceInput"][];
+        };
+        SpecialLineupPlaceInput: {
+            label?: string | null;
+            /**
+             * Format: uuid
+             * @description Player of the team; missing: the place stays empty
+             */
+            personId?: string | null;
+        };
+        /** @description The special line-ups of the team of a match day, with the responses of the players (LIN-16) */
+        EventLineups: {
+            /** Format: uuid */
+            eventId: string;
+            lineups: components["schemas"]["EventLineup"][];
+        };
+        EventLineup: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            places: components["schemas"]["EventLineupPlace"][];
+        };
+        EventLineupPlace: {
+            /** Format: int32 */
+            position: number;
+            label?: string;
+            person?: components["schemas"]["PersonSummary"];
+            /** @description Response of the player to the match day; missing for an empty place */
+            response?: components["schemas"]["ResponseStatus"];
+            /** @description With a published call-up: whether she is called up; otherwise missing */
+            calledUp?: boolean;
+            /** @description The player is not coming: declined, or not called up (LIN-16) */
+            gap: boolean;
+        };
         Location: {
             /**
              * @example Sporthalle Seefeld
@@ -1685,9 +2772,10 @@ export interface components {
             latitude?: number | null;
             longitude?: number | null;
         };
+        /** @description Where and when the team meets (AUF-12). The time can still be open (`null`): match days from swiss unihockey start with the usual meeting point of the team (AUF-32), the timeline suggests a departure (TML-04). */
         MeetingPoint: {
             /** Format: date-time */
-            time: string;
+            time?: string | null;
             /** @example Parkplatz Sporthalle Nord */
             location: string;
         };
@@ -1722,6 +2810,12 @@ export interface components {
             seriesId?: string | null;
             /** @description Only for coaches and admins (F-16): number of warnings from the responses, as in the overview. 0 for past, cancelled and other events */
             warningCount?: number;
+            /** @description The event variant that applies to the event: name and colour for the list (VAR-03, VAR-05) */
+            variant?: components["schemas"]["EventVariant"];
+            /** @description Teams invited without obligation (TER-15) */
+            optionalTeamIds?: string[];
+            /** @description How the caller takes part; missing if she is in no team of the event (TER-15) */
+            myParticipation?: components["schemas"]["Participation"];
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -1730,9 +2824,9 @@ export interface components {
             meetingPoint?: components["schemas"]["MeetingPoint"] | null;
             /** @description Only for MATCH_DAY, sorted by start time */
             matches?: components["schemas"]["Match"][];
-            /** @description Only for MATCH_DAY. Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23). */
+            /** @description Only for MATCH_DAY whose variant makes a call-up (VAR-06). Anyone who is not a coach of the team or an admin sees NONE before publishing (AUF-23). */
             callUpStatus?: components["schemas"]["CallUpStatus"];
-            /** @description Only for MATCH_DAY and team role PLAYER */
+            /** @description Only for MATCH_DAY whose variant makes a call-up (VAR-06), and team role PLAYER */
             myCallUp?: components["schemas"]["MyCallUp"] | null;
             /** @description For showing coach actions */
             canEdit?: boolean;
@@ -1744,6 +2838,10 @@ export interface components {
             canRecordAttendance?: boolean;
             /** @description Own recorded attendance; only for team role PLAYER, with the check on and a recorded value (PRS-06) */
             myAttendance?: components["schemas"]["AttendanceStatus"] | null;
+            /** @description Only for MATCH_DAY. Rank of the own team in the league table last loaded (AUF-34) */
+            standing?: components["schemas"]["Standing"] | null;
+            /** @description Only if true: the caller manages this event like a coach because of a special permission (RR-09). The coach actions are then shown for this event only. */
+            myGrant?: boolean;
         };
         EventInput: {
             type: components["schemas"]["EventType"];
@@ -1763,6 +2861,93 @@ export interface components {
             meetingPoint?: components["schemas"]["MeetingPoint"] | null;
             /** @description Switch «Präsenz erfassen» (PRS-01). Missing: off for a new event, unchanged for an existing one. */
             attendanceCheck?: boolean;
+            /**
+             * Format: uuid
+             * @description Event variant of one of the teams that fits the type (VAR-03), otherwise 400. Missing or `null`: the standard variant of the type
+             */
+            variantId?: string | null;
+            /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
+            optionalTeamIds?: string[] | null;
+        };
+        /**
+         * @description How a person takes part in an event (TER-15): EXPECTED if she belongs to a team that is expected, OPTIONAL if all her teams of the event are invited without obligation
+         * @enum {string}
+         */
+        Participation: "EXPECTED" | "OPTIONAL";
+        /**
+         * @description One of the four standard variants every team has, or a variant of the team's own (VAR-01, VAR-02)
+         * @enum {string}
+         */
+        VariantKind: "PRACTICE" | "MATCH_DAY" | "SU_MATCH_DAY" | "OTHER" | "CUSTOM";
+        /**
+         * @description Fixed palette (VAR-04). In the frontend each value is a pair of design tokens per theme (`--tag-<name>`, `--tag-<name>-soft`)
+         * @enum {string}
+         */
+        VariantColor: "GREEN" | "TEAL" | "BLUE" | "VIOLET" | "PINK" | "RED" | "ORANGE" | "YELLOW" | "GREY";
+        /**
+         * @description Section of the event page (VAR-07): RESPONSES «Anmeldungen», MATCHES «Spiele», CALL_UP «Aufgebot», TIMELINE «Zeitplan», DRIVER_LIST «Fahrerliste», LINEUPS «Aufstellungen», ATTENDANCE «Präsenz», DETAILS «Details». Practices and other events have RESPONSES, ATTENDANCE and DETAILS
+         * @enum {string}
+         */
+        EventSection: "RESPONSES" | "MATCHES" | "CALL_UP" | "TIMELINE" | "DRIVER_LIST" | "LINEUPS" | "ATTENDANCE" | "DETAILS";
+        /** @description How a kind of event looks and behaves in a team (VAR) */
+        EventVariant: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            kind: components["schemas"]["VariantKind"];
+            eventType: components["schemas"]["EventType"];
+            /** @example Training */
+            name: string;
+            color: components["schemas"]["VariantColor"];
+            /** @description A call-up is made (VAR-06); only has an effect for match days. Default false */
+            callUp: boolean;
+            /** @description The meeting time follows the suggested departure (VAR-08, TML-09); only for match days. Default true */
+            autoDeparture: boolean;
+            /**
+             * Format: int32
+             * @description Default response deadline of new events, in hours (VAR-09)
+             */
+            responseDeadlineHours: number;
+            /** @description Default of the attendance check of new events (VAR-09) */
+            attendanceCheck: boolean;
+            /** @description «nicht dabei» needs a reason (VAR-12, ANM-05). Default false */
+            declineReasonRequired: boolean;
+            /** @description Sections of the event page, in the order they are shown (VAR-07) */
+            sections: components["schemas"]["EventSection"][];
+            /** @description One of the four standard variants: cannot be deleted (VAR-01) */
+            standard: boolean;
+        };
+        EventVariantInput: {
+            name: string;
+            /** @description Required for a new variant, ignored when changing one */
+            eventType?: components["schemas"]["EventType"];
+            color: components["schemas"]["VariantColor"];
+            callUp?: boolean | null;
+            autoDeparture?: boolean | null;
+            /** Format: int32 */
+            responseDeadlineHours?: number | null;
+            attendanceCheck?: boolean | null;
+            /** @description «nicht dabei» needs a reason (VAR-12) */
+            declineReasonRequired?: boolean | null;
+            /** @description Shown sections in their order; must fit the event type and include DETAILS. Missing: unchanged, or the defaults for a new variant */
+            sections?: components["schemas"]["EventSection"][] | null;
+        };
+        /** @description Rank of the own team in the league table last loaded (AUF-34, F-17) */
+        Standing: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: int32 */
+            rank: number;
+            /**
+             * Format: int32
+             * @description Number of teams in the table
+             */
+            teams: number;
+            /** @example Herren KF 3. Liga */
+            league?: string;
+            /** @example Gruppe 2 */
+            group?: string;
         };
         Series: components["schemas"]["SeriesInput"] & {
             /** Format: uuid */
@@ -1795,6 +2980,8 @@ export interface components {
             responseDeadlineHours: number;
             /** @description Switch «Präsenz erfassen» for all events of the series (PRS-01). Missing: off for a new series, unchanged for an existing one. */
             attendanceCheck?: boolean;
+            /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
+            optionalTeamIds?: string[] | null;
         };
         SeriesException: {
             /** Format: date */
@@ -1817,12 +3004,16 @@ export interface components {
              * @default false
              */
             lateCancellation: boolean;
+            /** @description The person travels to the match day on her own and needs no seat (ANM-13); missing if not */
+            travelsIndividually?: boolean;
         };
         ResponseInput: {
             /** @enum {string} */
             status: "ATTENDING" | "DECLINED" | "MAYBE";
             /** @description Required for MAYBE (ANM-04), optional for DECLINED (ANM-05) */
             comment?: string | null;
+            /** @description Match days: with ATTENDING, `true` marks the person as travelling on her own, `false` removes the mark (ANM-13, DRV-20). Missing: unchanged. Any other status removes the mark */
+            travelsIndividually?: boolean | null;
         };
         Overview: {
             /** @description Only for coaches and admins (F-16), missing for everyone else. Empty for past, cancelled and other events. By team, then goalies, field players, lines. */
@@ -1845,6 +3036,8 @@ export interface components {
             }[];
         };
         OverviewTeam: {
+            /** @description The team is invited without obligation: players without a response are not counted as pending, and the team has no warnings (TER-15) */
+            optional: boolean;
             team: {
                 /** Format: uuid */
                 id: string;
@@ -1890,7 +3083,101 @@ export interface components {
              * @default false
              */
             missingAtSu: boolean;
+            /** @description Unconfirmed change by swiss unihockey (SUH-12); `null` if there is none */
+            suChange?: components["schemas"]["SuChange"] | null;
+            /**
+             * Format: int32
+             * @description Rank of the opponent in the league table last loaded (AUF-34); `null` if unknown
+             */
+            opponentRank?: number | null;
         };
+        /** @description What swiss unihockey changed about an imported match since a coach or admin last confirmed it (SUH-12). The change itself is already applied; `changes` holds the values before and after as texts for display. */
+        SuChange: {
+            /** Format: date-time */
+            changedAt: string;
+            changes: components["schemas"]["SuChangeItem"][];
+        };
+        SuChangeItem: {
+            field: components["schemas"]["SuChangeField"];
+            /** @example So 22.11. 09:30 */
+            before: string;
+            /** @example So 22.11. 10:15 */
+            after: string;
+        };
+        /** @enum {string} */
+        SuChangeField: "START_TIME" | "VENUE" | "OPPONENT" | "HOME_AWAY";
+        /** @description Timeline of a match day (TML). Times that cannot be worked out are missing; `hints` says why. */
+        Timeline: {
+            /** Format: uuid */
+            eventId: string;
+            cancelled: boolean;
+            hints: components["schemas"]["TimelineHint"][];
+            /**
+             * Format: date-time
+             * @description When the team leaves: the meeting time, otherwise the suggestion
+             */
+            departure?: string;
+            /** @description The departure is the suggestion; no meeting time is set yet (TML-04) */
+            departureSuggested: boolean;
+            /** @description The meeting time was set by the automatic departure, not by hand (TML-09) */
+            departureAuto: boolean;
+            /**
+             * Format: date-time
+             * @description Arrival target minus driving time, rounded down to five minutes (TML-04)
+             */
+            suggestedDeparture?: string;
+            /**
+             * Format: date-time
+             * @description When the team wants to be at the venue: first match minus the arrival lead (TML-03)
+             */
+            arriveBy?: string;
+            /**
+             * Format: int32
+             * @description Driving time from the meeting point to the venue
+             */
+            driveMinutes?: number;
+            /**
+             * Format: double
+             * @description One-way distance
+             */
+            distanceKm?: number;
+            /** Format: int32 */
+            matchDurationMinutes: number;
+            /** Format: int32 */
+            arrivalLeadMinutes: number;
+            /**
+             * Format: int32
+             * @example 20
+             */
+            coolDownMinutes: number;
+            /** @description Coach or admin can take over the suggestion as meeting time right now */
+            canApplySuggestion: boolean;
+            items: components["schemas"]["TimelineItem"][];
+        };
+        /**
+         * @description NO_MATCHES the match day has no matches yet; MEETING_POINT_MISSING no meeting point, so no departure, arrival or return; DRIVE_TIME_UNKNOWN meeting point and venue are set but there is no driving time (no route found, service unavailable, kilometres entered by hand); ARRIVES_LATE with the set meeting time the team arrives later than its arrival lead wants
+         * @enum {string}
+         */
+        TimelineHint: "NO_MATCHES" | "MEETING_POINT_MISSING" | "DRIVE_TIME_UNKNOWN" | "ARRIVES_LATE";
+        /** @description A line of the timeline. `end` and `minutes` only for spans; the match fields only for a match. */
+        TimelineItem: {
+            kind: components["schemas"]["TimelineKind"];
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end?: string;
+            /** Format: int32 */
+            minutes?: number;
+            /** Format: uuid */
+            matchId?: string;
+            opponent?: string;
+            home?: boolean;
+        };
+        /**
+         * @description Kind of a line of the timeline: DEPARTURE the team leaves the meeting point (`minutes`: driving time), ARRIVAL at the venue, WARM_UP time before the first match, MATCH, BREAK between two matches, COOL_DOWN after the last match, RETURN approximate return at the meeting point (`minutes`: driving time)
+         * @enum {string}
+         */
+        TimelineKind: "DEPARTURE" | "ARRIVAL" | "WARM_UP" | "MATCH" | "BREAK" | "COOL_DOWN" | "RETURN";
         MatchInput: {
             opponent: string;
             /** Format: date-time */
@@ -2081,6 +3368,84 @@ export interface components {
                 attendance?: components["schemas"]["AttendanceStatus"] | null;
             }[];
         };
+        /** @description Links of a team to swiss unihockey in the current season (SUH-02, SUH-11) */
+        SuConnection: {
+            /** Format: uuid */
+            teamId: string;
+            teamName: string;
+            /** @description Coach or admin: may link, unlink and sync */
+            canManage: boolean;
+            /** @description The oldest first; the first one feeds the league page (F-17) */
+            links: components["schemas"]["SuLink"][];
+        };
+        SuLink: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @example 428361
+             */
+            suTeamId: number;
+            /** @description Name at swiss unihockey, e.g. «Damen KF 1. Liga» */
+            name?: string | null;
+            /**
+             * Format: date-time
+             * @description Time of the last sync; `null`: never synced
+             */
+            lastSyncAt?: string | null;
+            /** @description `false`: the last sync failed (SUH-13) */
+            lastSyncOk?: boolean | null;
+            /** @description German sentence about the failure, for display */
+            lastSyncError?: string | null;
+        };
+        SuLinkInput: {
+            /**
+             * Format: int32
+             * @example 428361
+             */
+            suTeamId: number;
+            /** @description Name at swiss unihockey; omitted: looked up in the club's teams */
+            name?: string | null;
+        };
+        /** @description A team of the club at swiss unihockey, for the link dialog (SUH-02) */
+        SuClubTeam: {
+            /** Format: int32 */
+            suTeamId: number;
+            /** @example Damen KF 1. Liga */
+            name: string;
+            /**
+             * Format: uuid
+             * @description Team of the app it is linked with this season
+             */
+            linkedTeamId?: string | null;
+            linkedTeamName?: string | null;
+        };
+        /** @description How the connection to swiss unihockey is doing (SUH-13) */
+        SuStatus: {
+            /**
+             * Format: int32
+             * @description Teams of the current season with at least one link
+             */
+            linkedTeams: number;
+            /**
+             * Format: date-time
+             * @description Time of the last successful sync of any team
+             */
+            lastSyncAt?: string | null;
+            /** @description Links whose last sync failed, by team name */
+            failures: components["schemas"]["SuSyncFailure"][];
+        };
+        SuSyncFailure: {
+            /** Format: uuid */
+            teamId: string;
+            teamName: string;
+            /** Format: int32 */
+            suTeamId: number;
+            suTeamName?: string | null;
+            /** Format: date-time */
+            at: string;
+            message: string;
+        };
         SyncResult: {
             /** @description Newly created matches */
             created: number;
@@ -2216,6 +3581,13 @@ export interface components {
             withoutSeat: components["schemas"]["PersonSummary"][];
             /** @description Members of the teams of the match day, by name; only for coaches and admins */
             members?: components["schemas"]["PersonSummary"][];
+            /** @description People who travel on their own and need no seat, by name (DRV-20) */
+            individual: components["schemas"]["PersonSummary"][];
+            /**
+             * Format: int32
+             * @description Seats for passengers the caller usually offers: her places minus herself (DRV-18)
+             */
+            defaultSeats: number;
         };
         /** @description A car with its driver and passengers (DRV-02, DRV-03) */
         Car: {
@@ -2249,6 +3621,7 @@ export interface components {
             distanceKm?: number;
             /**
              * Format: int32
+             * @description Driving time in use: overwritten by hand, otherwise calculated (DRV-21)
              * @example 26
              */
             durationMinutes?: number;
@@ -2258,6 +3631,31 @@ export interface components {
              * @example 46.8
              */
             creditKm?: number;
+            /**
+             * Format: int32
+             * @description Driving time as calculated by the service (DRV-22)
+             */
+            calculatedMinutes?: number;
+            /** @description The driving time was overwritten by hand (DRV-21) */
+            durationManual: boolean;
+            durationChangedBy?: components["schemas"]["PersonSummary"];
+            /**
+             * Format: date-time
+             * @description When the driving time was overwritten
+             */
+            durationChangedAt?: string;
+            /**
+             * @description Service that calculated the route; missing for kilometres entered by hand (DRV-22)
+             * @enum {string}
+             */
+            provider?: "GOOGLE_MAPS" | "OPEN_ROUTE_SERVICE" | "OPEN_STREET_MAP" | "SIMULATOR";
+            /**
+             * Format: date-time
+             * @description When the route was calculated or entered (DRV-22)
+             */
+            calculatedAt: string;
+            /** @description Day and time of departure were taken into account (traffic); the services the app uses calculate without (DRV-22) */
+            departureTimeUsed: boolean;
         };
         /** @description Enter a car (DRV-02): for oneself without `driverId`, for someone else only as coach or admin */
         CarInput: {
@@ -2277,6 +3675,274 @@ export interface components {
         RouteInput: {
             /** Format: double */
             distanceKm: number;
+        };
+        /** @description Driving time of the one-way route overwritten by hand (DRV-21) */
+        DurationInput: {
+            /** Format: int32 */
+            minutes: number;
+        };
+        /** @description Driver plan of a team for a whole season (DRV-14, DRV-17) */
+        DriverPlan: {
+            /** Format: uuid */
+            teamId: string;
+            teamName: string;
+            /** Format: uuid */
+            seasonId: string;
+            /** @example 2026/27 */
+            seasonName: string;
+            /** @description The caller is a member of the team and can enter herself as driver */
+            canJoin: boolean;
+            /** @description Coach or admin: enters drivers for others */
+            canManage: boolean;
+            /** @description Match days of the team in the season, by start */
+            matchDays: components["schemas"]["DriverPlanMatchDay"][];
+            /** @description Trips per member of the team, by name (DRV-17) */
+            shares: components["schemas"]["DriverShare"][];
+            /** @description Members of the team, by name; only for coaches and admins */
+            members?: components["schemas"]["PersonSummary"][];
+            /** @description Who can drive and with how many places, by name (DRV-18) */
+            drivers: components["schemas"]["DriverSetting"][];
+            totals: components["schemas"]["DriverPlanTotals"];
+            /** @description Open swap requests the caller sees: her own and those to her; coaches and admins all (DRV-25) */
+            swaps: components["schemas"]["DriverSwap"][];
+            /** @description Other trips of the team in the season, by date (DRV-28) */
+            extraTrips: components["schemas"]["ExtraTrip"][];
+            /** @description Changes of the plan, newest first, at most 100 (DRV-26) */
+            history: components["schemas"]["DriverPlanHistoryEntry"][];
+        };
+        /** @description Sum of all shares (DRV-27) */
+        DriverPlanTotals: {
+            /** Format: int32 */
+            trips: number;
+            /** Format: int32 */
+            plannedTrips: number;
+            /** Format: double */
+            kilometres: number;
+            /** Format: double */
+            plannedKilometres: number;
+        };
+        /** @description An open request to take over or swap a trip (DRV-25) */
+        DriverSwap: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Match day whose trip is given away
+             */
+            eventId: string;
+            /** @example Spieltag So 22.11. */
+            eventLabel: string;
+            requester: components["schemas"]["PersonSummary"];
+            partner: components["schemas"]["PersonSummary"];
+            /**
+             * Format: uuid
+             * @description Match day of the partner trip in return; missing: takeover
+             */
+            partnerEventId?: string;
+            partnerEventLabel?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description The caller may accept or decline (the partner, coaches, admins) */
+            canAnswer: boolean;
+            /** @description The caller may withdraw (the requester, coaches, admins) */
+            canWithdraw: boolean;
+        };
+        /** @description A trip without an event in the app (DRV-28) */
+        ExtraTrip: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** @example Turnier Tenero */
+            title: string;
+            driver: components["schemas"]["PersonSummary"];
+            /**
+             * Format: double
+             * @description Kilometres one way
+             */
+            distanceKm: number;
+            /**
+             * Format: double
+             * @description Credited kilometres: there and back
+             */
+            creditKm: number;
+            /** @description The date has passed */
+            over: boolean;
+            /** @description The caller may remove it: the driver, who added it, coaches, admins */
+            canRemove: boolean;
+        };
+        /** @description One change of the plan (DRV-26) */
+        DriverPlanHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Match day it concerns; missing for other trips
+             */
+            eventId?: string;
+            /** @enum {string} */
+            kind: "CAR_ADDED" | "CAR_REMOVED" | "SWAPPED" | "TAKEN_OVER" | "SWAP_REQUESTED" | "SWAP_DECLINED" | "SWAP_WITHDRAWN" | "TRIP_ADDED" | "TRIP_REMOVED";
+            /** @description German sentence for display */
+            text: string;
+            by?: components["schemas"]["PersonSummary"];
+            /** Format: date-time */
+            at: string;
+        };
+        /** @description Give away the trip of a match day (DRV-25) */
+        DriverSwapInput: {
+            /** Format: uuid */
+            eventId: string;
+            /**
+             * Format: uuid
+             * @description Driver who gives the trip away; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: uuid */
+            partnerId: string;
+            /**
+             * Format: uuid
+             * @description Match day on which the partner drives and the driver takes over in return; missing: takeover
+             */
+            partnerEventId?: string | null;
+            /** @description `true`: enter right away; `false`: ask the partner first */
+            direct: boolean;
+        };
+        /** @description Add another trip (DRV-28) */
+        ExtraTripInput: {
+            /** Format: date */
+            date: string;
+            title: string;
+            /**
+             * Format: uuid
+             * @description Driver; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: double */
+            distanceKm: number;
+        };
+        DriverPlanMatchDay: {
+            /** Format: uuid */
+            eventId: string;
+            title: string;
+            /** Format: date-time */
+            start: string;
+            /** @description Name of the venue */
+            venue?: string;
+            /** @description Town of the venue */
+            town?: string;
+            cancelled: boolean;
+            /** @description The match day is over */
+            over: boolean;
+            /** @description Meeting point and venue are set, so drivers can be entered (DRV-01) */
+            ready: boolean;
+            missing: ("MEETING_POINT" | "VENUE")[];
+            /**
+             * Format: double
+             * @description One-way distance, if a route is known
+             */
+            distanceKm?: number;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** @description Drivers can be entered right now by the caller */
+            changeable: boolean;
+            cars: components["schemas"]["Car"][];
+            /**
+             * Format: int32
+             * @description Free seats in all cars
+             */
+            freeSeats: number;
+        };
+        /** @description How often a member drives in the season (DRV-17), done and planned */
+        DriverShare: {
+            person: components["schemas"]["PersonSummary"];
+            /**
+             * Format: int32
+             * @description Trips on match days that are over
+             */
+            trips: number;
+            /**
+             * Format: int32
+             * @description Trips on upcoming match days
+             */
+            plannedTrips: number;
+            /**
+             * Format: double
+             * @description Credited kilometres of the trips that are over
+             */
+            kilometres: number;
+            /**
+             * Format: double
+             * @description Kilometres of the planned trips with a known distance
+             */
+            plannedKilometres: number;
+        };
+        DriverPlanInput: {
+            /**
+             * Format: uuid
+             * @description Driver; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: int32 */
+            seats: number;
+            eventIds: string[];
+        };
+        /** @description Whether a person can drive, and the places of her car including herself (DRV-18) */
+        Driving: {
+            /** @default true */
+            canDrive: boolean;
+            /**
+             * Format: int32
+             * @default 5
+             */
+            carSeats: number;
+        };
+        /** @description A member of the team with her driving settings (DRV-18) */
+        DriverSetting: {
+            person: components["schemas"]["PersonSummary"];
+            canDrive: boolean;
+            /**
+             * Format: int32
+             * @description Places in her car, herself included
+             */
+            carSeats: number;
+            /** @description The caller may change this entry: herself, or everyone as coach or admin */
+            canChange: boolean;
+        };
+        /** @description Proposed driver list of a match day (DRV-19). Nothing is changed until it is applied */
+        DriverProposal: {
+            /** Format: uuid */
+            eventId: string;
+            /** @description All cars after the proposal: the existing ones first, then the proposed ones */
+            cars: components["schemas"]["ProposedCar"][];
+            /** @description People left without a seat because there are not enough drivers, by name */
+            withoutSeat: components["schemas"]["PersonSummary"][];
+            /** @description The proposal adds a car or a passenger; otherwise there is nothing to apply */
+            changes: boolean;
+        };
+        ProposedCar: {
+            driver: components["schemas"]["PersonSummary"];
+            /**
+             * Format: int32
+             * @description Seats for passengers
+             */
+            seats: number;
+            /** @description The car is already in the driver list */
+            existing: boolean;
+            /** @description Everyone in the car after the proposal, by name */
+            passengers: components["schemas"]["PersonSummary"][];
+            /** @description The passengers the proposal adds, by name */
+            added: components["schemas"]["PersonSummary"][];
+        };
+        DriverProposalInput: {
+            cars: components["schemas"]["DriverProposalCar"][];
+        };
+        /** @description A car to enter or to fill: the driver, her seats (for a new car) and the passengers to add */
+        DriverProposalCar: {
+            /** Format: uuid */
+            driverId: string;
+            /** Format: int32 */
+            seats: number;
+            passengerIds: string[];
         };
         /** @description Trips and credited kilometres per person in a season (DRV-09) */
         DriverSummary: {
@@ -2326,10 +3992,10 @@ export interface components {
             /** Format: uuid */
             id: string;
             /**
-             * @description Corresponds to BEN-01 to BEN-07 and DRV-11
+             * @description Corresponds to BEN-01 to BEN-08 and DRV-11
              * @enum {string}
              */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED" | "EVENT_GRANTED";
             recipient: components["schemas"]["PersonSummary"];
             /** @example Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet. */
             text: string;
@@ -2392,7 +4058,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED" | "EVENT_GRANTED";
             recipient: components["schemas"]["PersonSummary"];
             text: string;
             /** Format: uuid */
@@ -2519,6 +4185,156 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    listMyAbsences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description By first day */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    createMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Overlaps another absence (ABS-02) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Note missing for OTHER (ABS-02) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Absence"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            /** @description Not an own absence */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Overlaps another absence (ABS-02) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Note missing for OTHER (ABS-02) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteMyAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Not an own absence */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     getMyCalendar: {
         parameters: {
             query?: never;
@@ -2561,6 +4377,33 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
         };
     };
+    changeMyCalendarFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalendarFilterInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSubscription"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
     getCalendarFeed: {
         parameters: {
             query?: never;
@@ -2583,6 +4426,119 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    getEventGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeEventGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventGrantsInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    getSeriesGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeSeriesGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventGrantsInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["RuleViolation"];
         };
     };
     listTiles: {
@@ -2860,6 +4816,145 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    setMatchDaySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchDaySettings"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchDaySettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listEventVariants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventVariant"][];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createEventVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventVariantInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventVariant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    updateEventVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventVariantInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventVariant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    deleteEventVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     addMember: {
         parameters: {
             query?: {
@@ -3100,6 +5195,117 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    getSpecialLineups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialLineups"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createSpecialLineup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecialLineupInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialLineup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    updateSpecialLineup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                lineupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpecialLineupInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpecialLineup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    deleteSpecialLineup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                lineupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     listPersons: {
         parameters: {
             query?: {
@@ -3204,6 +5410,59 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    getDriving: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Driving"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setDriving: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Driving"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Driving"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listEvents: {
         parameters: {
             query?: {
@@ -3255,6 +5514,38 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getCalendarView: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Last day (inclusive), at most 41 days after `from` */
+                to: string;
+                /** @description Teams to show (repeatable) */
+                team?: string[];
+                /** @description All teams of the current season (coaches and admins) */
+                all?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarView"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
         };
@@ -3630,6 +5921,107 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    confirmSuChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                matchId: components["parameters"]["matchId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Match"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Timeline"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    applySuggestedDeparture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taken over */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Timeline"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getEventLineups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventLineups"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     getCallUp: {
         parameters: {
             query?: never;
@@ -3968,6 +6360,61 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    setRouteDuration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DurationInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    clearRouteDuration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     recalculateRoute: {
         parameters: {
             query?: never;
@@ -3993,6 +6440,116 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    setIndividualTravel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    removeIndividualTravel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+                personId: components["parameters"]["personId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    proposeDriverList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverProposal"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    applyDriverProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverProposalInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
     getDriverSummary: {
         parameters: {
             query?: {
@@ -4015,6 +6572,249 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    getDriverPlan: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    planDriver: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanInput"];
+            };
+        };
+        responses: {
+            /** @description Entered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    startDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverSwapInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    acceptDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    declineDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    withdrawDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    addExtraTrip: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtraTripInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    removeExtraTrip: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                tripId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     getTeamStatistics: {
@@ -4080,7 +6880,85 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
-    linkSu: {
+    listSuClubTeams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description In the order of swiss unihockey */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuClubTeam"][];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            /** @description swiss unihockey unavailable or unexpected answer (SUH-09) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getSuStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuStatus"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    getSuConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuConnection"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    addSuLink: {
         parameters: {
             query?: never;
             header?: never;
@@ -4091,29 +6969,46 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    /**
-                     * @description `null` removes the link
-                     * @example 900001
-                     */
-                    suTeamId: number | null;
-                };
+                "application/json": components["schemas"]["SuLinkInput"];
             };
         };
         responses: {
-            /** @description Saved */
-            200: {
+            /** @description Linked */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Team"];
+                    "application/json": components["schemas"]["SuConnection"];
                 };
             };
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    removeSuLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     syncSu: {
@@ -4354,7 +7249,9 @@ export interface operations {
     };
     testReset: {
         parameters: {
-            query?: never;
+            query?: {
+                dataset?: components["schemas"]["DataSet"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4367,6 +7264,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    testGetDataSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSetState"];
+                };
             };
         };
     };
@@ -4579,6 +7497,29 @@ export interface operations {
                     /** @description League view (F-17). Omitted, the league view of this team ID stays as it is */
                     league?: components["schemas"]["SuLeague"] | null;
                 };
+            };
+        };
+        responses: {
+            /** @description Set */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    testSetSuClub: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuClubPreset"];
             };
         };
         responses: {

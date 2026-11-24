@@ -15,6 +15,11 @@ export function warningText(w: Warning, calledUp: boolean, withTeam: boolean): s
     case 'FIELD_PLAYERS':
       text = t.fieldPlayers(w.count, verb);
       break;
+    // Matches changed or no longer delivered by swiss unihockey belong to the match day, not to a team (SUH-12)
+    case 'MATCH_CHANGED':
+      return t.matchChanged(w.count);
+    case 'MATCH_MISSING':
+      return t.matchMissing(w.count);
     default:
       text = t.line(w.groupName ?? '', w.count);
   }

@@ -29,8 +29,8 @@ import java.util.Set;
 public final class SyncRules {
 
     /**
-     * How long a match takes, to determine the end of an imported match day: end = last start time plus this
-     * duration (assumption F-07, matches event 04 in the seed: 11:45 to 13:00).
+     * How long a match counts as running on the league page (F-17). The end of an imported match day uses the
+     * match duration of its team instead (TML-02, default 50 minutes).
      */
     public static final Duration MATCH_DURATION = Duration.ofMinutes(75);
 
@@ -111,12 +111,13 @@ public final class SyncRules {
     }
 
     /**
-     * The start is the first start time (assumption F-03), the end the last one plus {@link #MATCH_DURATION}.
+     * The start is the first start time (assumption F-03), the end the last one plus the match duration of the
+     * team (TML-02).
      */
-    public static Period period(Collection<Instant> startTimes) {
+    public static Period period(Collection<Instant> startTimes, Duration matchDuration) {
         Instant first = startTimes.stream().min(Comparator.naturalOrder()).orElseThrow();
         Instant last = startTimes.stream().max(Comparator.naturalOrder()).orElseThrow();
-        return new Period(first, last.plus(MATCH_DURATION));
+        return new Period(first, last.plus(matchDuration));
     }
 
     /** Only matches that fall into the season are imported. */

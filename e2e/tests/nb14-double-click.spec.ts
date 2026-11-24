@@ -65,7 +65,8 @@ test('Follow-up fix #14 K1: Double click on /dev-login signs in exactly once', a
   await page.goto('/dev-login');
   const throttled = await throttle(page, 'POST', /^\/api\/test\/login$/);
   const anna = page.getByRole('button', { name: /Anna Muster/ });
-  const petra = page.getByRole('button', { name: /Petra Keller/ });
+  // Petra appears in both of her teams (E-85): take her first entry
+  const petra = page.getByTestId('dev-login-person-petra').getByRole('button');
 
   await anna.dblclick();
   await expect(anna).toBeDisabled();

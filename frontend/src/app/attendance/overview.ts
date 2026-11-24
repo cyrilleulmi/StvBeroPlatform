@@ -19,6 +19,7 @@ import type {
 import { NgTemplateOutlet } from '@angular/common';
 import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
+import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 import { Warnings } from './warnings';
@@ -38,22 +39,16 @@ interface Target {
 @Component({
   selector: 'app-overview',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon, NgTemplateOutlet, Warnings],
+  imports: [Icon, NgTemplateOutlet, Warnings, Scoreboard],
   template: `
     <section class="card overview" data-testid="overview" aria-labelledby="overview-title">
       <h2 id="overview-title" class="section-title">{{ t.title }}</h2>
-      <p class="counter total" data-testid="overview-total">
+      <div class="total board" data-testid="overview-total">
         <span class="counter-name">{{ t.total }}</span>
-        <span class="numbers">
-          <span data-counter="attending">{{ t.attending(data().total.attending) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="declined">{{ t.declined(data().total.declined) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="maybe">{{ t.maybe(data().total.maybe) }}</span>
-          <span class="separator"> · </span>
-          <span data-counter="pending">{{ t.pending(data().total.pending) }}</span>
-        </span>
-      </p>
+        <p class="scoreboard numbers">
+          <app-scoreboard [counts]="data().total" />
+        </p>
+      </div>
 
       @if (data().warnings; as w) {
         <!-- Only coaches and admins get warnings from the API (F-16) -->
@@ -74,7 +69,15 @@ interface Target {
           [attr.aria-labelledby]="'overview-team-title-' + block.team.id"
         >
           <div class="team-header">
-            <h3 [id]="'overview-team-title-' + block.team.id">{{ block.team.name }}</h3>
+            <h3 [id]="'overview-team-title-' + block.team.id">
+              {{ block.team.name }}
+              @if (block.optional) {
+                <!-- Invited without obligation: only those who responded are counted (TER-16) -->
+                <span class="chip" data-kind="optional" data-testid="overview-team-optional">{{
+                  texts.participation.teamChip
+                }}</span>
+              }
+            </h3>
             <p
               class="counter"
               [attr.data-testid]="'overview-team-' + block.team.id + '-counter'"
@@ -170,6 +173,11 @@ interface Target {
           @if (e.response.lateCancellation) {
             <span class="chip" data-kind="late-cancellation">{{ a.lateCancellation }}</span>
           }
+          @if (e.response.travelsIndividually) {
+            <span class="chip" data-kind="individual" data-testid="overview-individual">{{
+              texts.individual.short
+            }}</span>
+          }
           @if (e.response.comment; as k) {
             <span class="secondary-text comment">«{{ k }}»</span>
           }
@@ -210,6 +218,7 @@ interface Target {
           <div class="field">
             <label for="on-behalf-comment">{{ a.commentOptional }}</label>
             <input
+              name="on-behalf-comment"
               id="on-behalf-comment"
               type="text"
               maxlength="200"
@@ -250,6 +259,7 @@ interface Target {
 export class OverviewSection {
   private readonly responses = inject(ResponseService);
   protected readonly t = TEXTS.overview;
+  protected readonly texts = TEXTS;
   protected readonly a = TEXTS.response;
   protected readonly icon = RESPONSE_ICON;
   protected readonly key = responseKey;

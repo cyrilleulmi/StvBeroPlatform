@@ -116,6 +116,23 @@ public class TeamResource {
         return teams.setWarningMinimums(auth.person(), teamId, input);
     }
 
+    @PUT
+    @Path("/{teamId}/match-day-settings")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setMatchDaySettings", summary = "Change match duration, arrival lead and usual meeting point of the team (TML-02, TML-03, AUF-32, admin, coach)")
+    @APIResponse(responseCode = "200", description = "Updated",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MatchDaySettings.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public MatchDaySettings setMatchDaySettings(@PathParam("teamId") UUID teamId, @Valid @NotNull MatchDaySettings input) {
+        return teams.setMatchDaySettings(auth.person(), teamId, input);
+    }
+
     @POST
     @Path("/{teamId}/members")
     @Consumes(MediaType.APPLICATION_JSON)

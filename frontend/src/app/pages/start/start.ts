@@ -9,6 +9,8 @@ import { yearOf, eventDate, clockTime } from '../../attendance/time';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
+import { Scoreboard } from '../../core/scoreboard';
+import { SuStatusNotice } from '../../core/su-status-notice';
 import { TEXTS } from '../../core/texts';
 import { startEvents } from './start-events';
 
@@ -20,7 +22,7 @@ import { startEvents } from './start-events';
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse],
+  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse, SuStatusNotice, Scoreboard],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
@@ -37,6 +39,8 @@ export class Start implements OnInit {
   protected readonly next = signal<EventSummary | null>(null);
   /** Further practices after the next event (F-13), cancelled ones skipped. */
   protected readonly practices = signal<EventSummary[]>([]);
+  /** Next match day when the next event is not one (AUF-35). */
+  protected readonly matchDay = signal<EventSummary | null>(null);
   protected readonly eventLoading = signal(true);
   protected readonly eventError = signal<string | null>(null);
 
@@ -53,9 +57,14 @@ export class Start implements OnInit {
     }
   }
 
-  /** «Training Di 17.11. 18:30–20:00 · Team 1 + Team 2» */
-  protected description(t: EventSummary): string {
-    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))} · ${TEXTS.events.joinTeams(t.teams.map((x) => x.name))}`;
+  /** «Di 17.11. · 18:30–20:00»: day and time lead, the teams follow on their own quiet line. */
+  protected when(t: EventSummary): string {
+    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))}`;
+  }
+
+  /** «Team 1 + Team 2» */
+  protected teamNames(t: EventSummary): string {
+    return TEXTS.events.joinTeams(t.teams.map((x) => x.name));
   }
 
   protected cardName(t: EventSummary): string {
@@ -67,6 +76,7 @@ export class Start implements OnInit {
     try {
       const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
       if (this.next()?.id === id) this.next.set(updated);
+      if (this.matchDay()?.id === id) this.matchDay.set(updated);
       this.practices.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
       this.eventError.set(errorText(e));
@@ -79,6 +89,7 @@ export class Start implements OnInit {
       const shown = startEvents(events);
       this.next.set(shown.next);
       this.practices.set(shown.practices);
+      this.matchDay.set(shown.matchDay);
     } catch (e) {
       this.eventError.set(errorText(e));
     } finally {

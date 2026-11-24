@@ -1,6 +1,6 @@
 # API
 
-The contract is in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 79 operations). It describes the target state for the core.
+The contract is in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 114 operations). It describes the target state for the core.
 
 ## Way of working: contract first
 
@@ -39,7 +39,7 @@ Running locally: Swagger UI at `http://localhost:8080/q/swagger-ui`.
 
 ## Test endpoints
 
-Everything under `/api/test/` exists only in the `dev` and `test` profiles. In the `prod` profile these paths return 404 because the resources are not registered (e.g. via `@IfBuildProfile`). Examples: `/api/test/reset`, `/api/test/login` (log in as a seed person with `loginKey`), `/api/test/clock` (fix the backend clock). Purpose and use: [testability.md](../testability.md#test-helpers-in-the-app).
+Everything under `/api/test/` exists only in the `dev` and `test` profiles. In the `prod` profile these paths return 404 because the resources are not registered (e.g. via `@IfBuildProfile`). Examples: `/api/test/reset` (also loads the club data set with `?dataset=CLUB`), `/api/test/login` (log in as a seed person with `loginKey`), `/api/test/clock` (fix the backend clock). Purpose and use: [testability.md](../testability.md#test-helpers-in-the-app).
 
 ## Assumptions in the contract
 

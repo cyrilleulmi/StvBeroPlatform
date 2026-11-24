@@ -37,6 +37,9 @@ public class SeriesService {
     @Inject
     BackendClock clock;
 
+    @Inject
+    ch.stvbero.platform.core.absence.AbsenceService absences;
+
     /** Create a series and its future events (TER-05). */
     @Transactional
     public SeriesDto create(CurrentUser user, SeriesInput input) {
@@ -55,6 +58,8 @@ public class SeriesService {
                 create(s, day).persist();
             }
         }
+        // Practices in the time of an absence are declined by themselves (ABS-04)
+        absences.applyForEvents(events(s).stream().map(event -> event.id).toList());
         return SeriesDto.of(s, user);
     }
 
@@ -102,6 +107,8 @@ public class SeriesService {
         for (LocalDate day : sync.create()) {
             create(s, day).persist();
         }
+        em.flush();
+        absences.applyForEvents(events(s).stream().map(event -> event.id).toList());
         return SeriesDto.of(s, user);
     }
 
@@ -168,6 +175,9 @@ public class SeriesService {
         }
         s.teams.clear();
         s.teams.addAll(teams);
+        List<UUID> optional = Participation.check(teams.stream().map(team -> team.id).toList(), input.optionalTeamIds());
+        s.optionalTeamIds.retainAll(optional);
+        s.optionalTeamIds.addAll(optional);
     }
 
     /** New event of the series on this day. */
@@ -191,6 +201,8 @@ public class SeriesService {
         event.attendanceCheck = s.attendanceCheck;
         event.teams.clear();
         event.teams.addAll(s.teams);
+        event.optionalTeamIds.retainAll(s.optionalTeamIds);
+        event.optionalTeamIds.addAll(s.optionalTeamIds);
     }
 
     /**
@@ -198,7 +210,9 @@ public class SeriesService {
      * notifies all members of the participating teams (BEN-07).
      */
     private void drop(CurrentUser user, Event event, String reason) {
-        Number responseCount = (Number) em.createNativeQuery("select count(*) from response where event_id = ?1")
+        // Declines set by an absence do not count: nobody answered by hand (ABS-04)
+        Number responseCount = (Number) em.createNativeQuery(
+                        "select count(*) from response where event_id = ?1 and absence_id is null")
                 .setParameter(1, event.id).getSingleResult();
         switch (EventRules.onException(responseCount.longValue() > 0)) {
             case REMOVE -> event.delete();

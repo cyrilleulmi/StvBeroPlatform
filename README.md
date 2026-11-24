@@ -9,10 +9,13 @@ Central web platform for floorball (unihockey) at STV Beromünster. It brings to
 ```bash
 scripts/start.sh   # start database, backend (Quarkus, profile dev) and frontend
 scripts/test.sh    # API lint, backend tests, frontend lint/build, E2E tests (mobile + desktop)
+scripts/e2e-isolated.sh   # E2E tests on their own database and ports (:8180, :4210), next to a running app
 python3 scripts/check-links.py   # check relative links in all Markdown files
 ```
 
 Then: http://localhost:4200 – in test mode, log in as a seed person via http://localhost:4200/dev-login ([test-data.md](docs/test-data.md)). Swagger UI: http://localhost:8080/q/swagger-ui.
+
+The app starts with the **club data set**: the ten real teams of the club with their matches loaded live from swiss unihockey (needs internet; without it the app still runs and says that swiss unihockey could not be reached), and invented people. The automated tests switch to the fixed **test data set** with simulators; `/dev-login` shows which one is loaded and switches between them. `STV_SIMULATION=true scripts/start.sh` starts with the test data set.
 
 Prerequisites: Java 21, Maven, Node 22, PostgreSQL binaries (or a database `stv` on `localhost:5432`, user/password `stv`), Google Chrome for the E2E tests.
 
@@ -23,7 +26,8 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 | `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
 | `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
 | `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
-| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `pipeline.sh`, `check-links.py` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `e2e-isolated.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
+| `Dockerfile`, `docker/`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
 
 ## Why our own app?
 
@@ -74,6 +78,10 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | 12 | [Attendance statistics](docs/requirements/12-statistics.md) | STA |
 | 13 | [Calendar subscription](docs/requirements/13-calendar.md) | CAL |
 | 14 | [Driver list](docs/requirements/14-driver-list.md) | DRV |
+| 15 | [Timeline of a match day](docs/requirements/15-timeline.md) | TML |
+| 16 | [Event variants](docs/requirements/16-event-variants.md) | VAR |
+| 17 | [Calendar view](docs/requirements/17-calendar-view.md) | KAL |
+| 18 | [Absences](docs/requirements/18-absences.md) | ABS |
 
 The prefixes are the original German abbreviations and stay unchanged, so that old commits, PRs and issues remain traceable.
 

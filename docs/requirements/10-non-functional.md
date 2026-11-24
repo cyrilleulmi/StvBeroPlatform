@@ -12,8 +12,8 @@ Status legend: see [README](../../README.md#requirement-status).
 | NF-04 | Touch targets are at least 44px. | Decided |
 | NF-05 | The app can be installed as a PWA. | Decided |
 | NF-06 | Light and dark mode are mandatory. The mode follows the system setting and can be switched by hand. | Decided |
-| NF-07 | The basic design «Salbei frisch» is binding for all tiles (see [design-principles.md](../design-principles.md)). Shape, font and spacing apply to all themes; the colors of «Salbei frisch» are the theme «Hell» (NF-08). | Decided |
-| NF-08 | There are three themes: «Hell», «Düne» and «GitHub Dark» (E-67). They differ only in their colors and can be chosen in the profile, plus «System»: in light mode «Hell» applies, in dark mode «GitHub Dark». The choice is stored in the browser. Colors and rules: [design-principles.md](../design-principles.md#themes). | Decided (selection), Accepted («System») |
+| NF-07 | The basic design «Sporthalle» is binding for all tiles (see [design-principles.md](../design-principles.md), E-90). Shape, font, spacing and motion apply to all themes. | Decided |
+| NF-08 | There are two themes: «Hell» and «Dunkel» (E-90, before «Hell», «Düne» and «GitHub Dark», E-67). They differ only in their colors and can be chosen in the profile, plus «System»: in light mode «Hell» applies, in dark mode «Dunkel». The choice is stored in the browser. Colors and rules: [design-principles.md](../design-principles.md#themes). | Decided (selection), Accepted («System») |
 
 ## Structure
 

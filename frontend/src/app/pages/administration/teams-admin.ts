@@ -97,6 +97,7 @@ import { TEXTS } from '../../core/texts';
           <div class="field">
             <label for="team-new-name">{{ texts.teamAdmin.teamName }}</label>
             <input
+              name="team-new-name"
               id="team-new-name"
               type="text"
               maxlength="60"
@@ -203,6 +204,7 @@ export class TeamsAdmin {
     const name = this.newName().trim();
     if (!name) {
       this.nameError.set(TEXTS.teamAdmin.nameRequired);
+      document.getElementById('team-new-name')?.focus();
       return;
     }
     this.nameError.set(null);

@@ -147,7 +147,11 @@ export class Seasons implements OnInit {
     if (!n.from) error['from'] = TEXTS.seasons.dateRequired;
     if (!n.until) error['until'] = TEXTS.seasons.dateRequired;
     this.fieldErrors.set(error);
-    if (Object.keys(error).length > 0) return;
+    const first = Object.keys(error)[0];
+    if (first) {
+      document.getElementById(`season-${first}`)?.focus();
+      return;
+    }
 
     const input: NewSeason = {
       name: n.name.trim(),

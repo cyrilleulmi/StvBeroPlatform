@@ -1,127 +1,145 @@
-# Base design «Salbei frisch»
+# Base design «Sporthalle»
 
-Decided on 15.11.2026 (variant 1b from the style workshop). Binding for all tiles. Since 16.11.2026 there are three [themes](#themes): the colors of «Salbei frisch» (fresh sage) are the theme «Hell», plus «Düne» and «GitHub Dark» (E-67). Shape, typography and spacing apply to all three.
+Decided on 22.11.2026 (E-90), replacing «Salbei frisch» (E-03, E-65 to E-67). Binding for all tiles. There are two [themes](#themes): «Hell» and «Dunkel». Shape, typography, spacing and motion apply to both.
 
-Canvas with all drafts: https://claude.ai/artifact/VXurH5jdUpNqMRcPCYxP1f (page «Stil-Werkstatt», artboard «1b · Salbei frisch»). The link is private and only accessible to Cyrille.
+How it came about: on 21./22.11.2026 several design skills were tried out on proof-of-concept branches (`poc/ux-*`). Cyrille chose the identity of the skill `frontend-design` (Anthropic), had the scoreboard softened and the dark theme made calmer, and had it refined with the skills impeccable, better-interface, Vercel Web Interface Guidelines and emil-design-eng (branch `poc/ux-sporthalle`).
 
 ## Character
 
-- Friendly, a few colors, not intrusive.
-- «Hell»: slightly green-tinted background, white cards – not sterile.
-- «Düne»: warm sand tone with petrol as the main color – light, without green.
-- «GitHub Dark»: almost black background with blue as the main color. It is the dark mode and replaces the dark fir green (E-67).
+- The language of a sports hall: hall-floor grey, white boards, ink, court-line paint, the condensed DIN of hall signage.
+- The response counts are a **scoreboard** («Anzeigetafel»): big digits above their word, one column per response.
+- Court lines as accents: month headings with a line, the active navigation item, the top edge of the scoreboard, the colour line under the date box of an event.
+- «Hell»: grey-blue hall floor, white cards, ultramarine as the main color.
+- «Dunkel»: cool slate, the night version of «Hell». Muted colors, no neon.
 - No club reference in the colors (generic design).
-- Surfaces stay calm. Strong color only where there is something to do (main action, open helper shifts).
+- What a player decides on leads: when, where, «bin ich dabei?». Everything else stays quiet (muted text, frameless icon buttons).
 
 ## Colors (design tokens)
 
-| Token | Hell | Düne | GitHub Dark | Use |
-|---|---|---|---|---|
-| `bg` | `#F0F5F2` | `#F3ECE1` | `#0D1117` | Page background |
-| `surface` | `#FFFFFF` | `#FFFAF3` | `#161B22` | Cards, tiles, navigation |
-| `text` | `#1F2A26` | `#33291F` | `#E6EDF3` | Main text |
-| `muted` | `#56645E` | `#72634F` | `#9198A1` | Secondary text, inactive navigation |
-| `border` | `#DCE6E0` | `#E4D8C6` | `#30363D` | Borders, dividers, progress background |
-| `primary` | `#2C7F69` | `#2B5F75` | `#58A6FF` | Main action, active navigation, progress |
-| `on-primary` | `#FFFFFF` | `#FFFFFF` | `#0C1724` | Text on `primary` |
-| `primary-soft` | `#D7EEE6` | `#E1E4E1` | `#1B2C41` | Date box, icon background, active nav item |
-| `accent-coral` | `#B8503A` | `#AD442D` | `#FF7B72` | Notices «offen», cancellation, helpers |
-| `accent-coral-soft` | `#FCE4DD` | `#F4E1D7` | `#392427` | Helper tile, cancel button active |
-| `accent-mustard` | `#6E6400` | `#7C5E00` | `#E3B341` | Chips («in 2 Tagen»), drills |
-| `accent-mustard-soft` | `#F1EFC4` | `#EDE4D1` | `#342E1F` | Chip/icon background |
-| `accent-blue` | `#2F6C9A` | `#5B4FA8` | `#BC8CFF` | Coaches |
-| `accent-blue-soft` | `#DCEBF6` | `#E8E2E9` | `#2D2741` | Icon background for coaches |
+| Token | Hell | Dunkel | Use |
+|---|---|---|---|
+| `bg` | `#E9EDF0` | `#14181D` | Page background |
+| `surface` | `#FFFFFF` | `#1C2128` | Cards, tiles, navigation |
+| `text` | `#15202B` | `#E3E7EC` | Main text, time and place of an event |
+| `muted` | `#4E5A66` | `#9BA4AE` | Secondary text, inactive navigation |
+| `border` | `#C9D1D9` | `#353D47` | Card borders, dividers |
+| `control-border` | `#75808B` | `#737C86` | Boundary of inputs, selects and outlined buttons (at least 3:1, WCAG 1.4.11) |
+| `primary` | `#2343B0` | `#93A7DE` | Main action, «dabei», active navigation, court lines |
+| `on-primary` | `#FFFFFF` | `#111A33` | Text on `primary` |
+| `primary-soft` | `#DDE4F7` | `#252E47` | Icon background, soft areas |
+| `coral` | `#B02A22` | `#DC8F86` | «nicht dabei», cancellation, destructive buttons |
+| `on-coral` | `#FFFFFF` | `#2B1210` | Text on `coral` |
+| `coral-soft` | `#F9DEDA` | `#3A2729` | Background for `coral` |
+| `mustard` | `#765A00` | `#D0B26A` | «vielleicht», warnings |
+| `mustard-soft` | `#F3E7B8` | `#332D1F` | Warning box, chip background |
+| `blue` | `#6A3DA8` | `#B6A3D9` | Coaches (violet, so that it stays distinct from `primary`) |
+| `blue-soft` | `#EAE2F6` | `#2C2839` | Icon background for coaches |
+| `board` | `#DFE5F6` | `#232A35` | Scoreboard and start times of matches |
+| `board-border` | `#B9C5EA` | `#3B4658` | Border of the scoreboard |
 
-In «Düne» and «GitHub Dark», `primary` itself is bluish. `accent-blue` is violet there, so coaches stay distinguishable.
+### Colours of the event variants (VAR-04)
 
-Mapping tiles → color:
+The event list tells the kinds of events apart by colour (TER-14). There is a palette of nine colours, each a pair of tokens per theme: `--tag-<name>` (text and date) and `--tag-<name>-soft` (background). A variant stores the name of the colour, never a value, so that every choice works in both themes.
 
-- Player attendance → `primary`
-- Coach attendance → `accent-blue`
-- Drill collection → `accent-mustard`
-- Helper scheduling → `accent-coral` (tile with `accent-coral-soft` background)
-- Resources → `primary`
+| Name (UI) | Token | Hell | Dunkel |
+|---|---|---|---|
+| «Grün» | `tag-green` | `#1B7045` / `#DCF1E4` | `#86BF96` / `#1C2A22` |
+| «Türkis» | `tag-teal` | `#0C6A6E` / `#D6EEF0` | `#79B9BA` / `#1A2A2C` |
+| «Blau» | `tag-blue` | `#245C9E` / `#DCE8F8` | `#92B2DB` / `#1C2737` |
+| «Violett» | `tag-violet` | `#6541AD` / `#E8E0F7` | `#B3A0DA` / `#272338` |
+| «Pink» | `tag-pink` | `#9F2E73` / `#F8DCEC` | `#D596B9` / `#33222C` |
+| «Rot» | `tag-red` | `#AA3434` / `#FADEDD` | `#DC8F88` / `#352324` |
+| «Orange» | `tag-orange` | `#96480A` / `#FBE5CF` | `#D6A272` / `#33281D` |
+| «Gelb» | `tag-yellow` | `#6F5900` / `#F5ECC0` | `#CDB46A` / `#302B1B` |
+| «Grau» | `tag-grey` | `#4F5963` / `#E6EAEE` | `#A9B1BA` / `#262B32` |
 
-## Shape («weich», soft)
+Each pair reaches at least 4.5:1 for the full colour on its soft background, on `surface` and on `bg`. The colour is never the only sign: the name of the variant is always next to it. Elements pick their pair with `data-tag="<NAME>"`. «Rot» and «Gelb» of the palette are for kinds of events only; cancellations stay `coral`, «vielleicht» and warnings `mustard`.
 
-- Cards: radius 22px, 1px border in `border`, no drop shadow
-- Tiles: radius 18px, background `surface` with 1px border (tiles «neutral», not tinted)
-- Icon boxes / date box: radius 12px, 38×38 or 56×58, background `*-soft`, icon in full color
-- Buttons: pill (radius 999px), height 52px, font 16px/700
-  - Primary: `primary` / `on-primary`
-  - Secondary: transparent, 1.5px border `border`, text `text`
-- Chips: pill, 12px/700, `*-soft` background with full-color text
-- Bottom navigation: `surface` with top border. Active item as an area in `primary-soft` (radius 16px) with text/icon in `primary`
-- Progress bar: 8px high, radius 4px, track `border`, fill `primary`
+## The scoreboard
+
+- Component `app-scoreboard` (`core/scoreboard.ts`) inside an element with the class `scoreboard`; the panel around it has the class `board`.
+- Panel: background `board`, border `board-border`, a 4px court line in `primary` along the top. It stands out from the white cards but stays in the theme (no near-black board in «Hell»).
+- Digits in the condensed display font, tabular figures, coloured by response: «dabei» `primary`, «nicht dabei» `coral`, «vielleicht» `mustard`, «offen» `text`. Words below in `muted`.
+- The text content stays «8 dabei · 3 nicht dabei · 1 vielleicht · 2 offen» for screen readers and tests; the separators are only hidden visually.
+
+## Shape
+
+- Radius hierarchy: cards and tiles 14px, controls 10px, icon boxes 8px, chips 6px, navigation items 10px, pills 999px.
+- Cards: 1.5px border in `border`, no drop shadow.
+- Buttons: primary filled `primary` / `on-primary`; secondary transparent with a 1.5px border in `control-border`; destructive with border and text in `coral`.
+- Response buttons: the chosen one filled, the others outlined. Labels stay on one line («Nicht dabei» too, at 390px).
+- Icon buttons (pencil «für jemanden antworten»): no frame at rest, muted icon; frame, tint and `primary` on hover. Target still 44px.
+- Date box of an event: `tag-*-soft` background, date in the full colour, a court line in the variant colour underneath.
 
 ## Typography
 
-- Font: **Plus Jakarta Sans** (Google Fonts), weights 400/500/600/700/800
-- Greeting/page title: 26px/800, letter-spacing -0.02em
-- Card title: 18px/700 · section title: 16px/700 · tile title: 15px/700
-- Body text: 14px · secondary text: 12–13px in `muted`
-- Eyebrow («Nächster Termin»): 12px/700, uppercase, letter-spacing 0.06em, color `primary`
+- One family in two widths, local fonts only (no download):
+  - Text: `Bahnschrift`, `Segoe UI`, system-ui, `-apple-system`, `Roboto`, sans-serif.
+  - Display (headings, digits, time and place, button labels): `Bahnschrift`, `DIN Condensed`, `Roboto Condensed`, `sans-serif-condensed`, `Arial Narrow`, condensed to 80%.
+- Devices without these fonts show the system fallback; the layout must hold with it.
+- Page title 34px/700, card title 21px/700, body 15px, secondary text 13–14px in `muted`.
+- Mixed case, no uppercase eyebrows. Tabular figures for times, dates and counts.
+- Headings use `text-wrap: balance`.
 
 ## Spacing and layout
 
-- Page margin on mobile 20px. Spacing between sections 18px. Tile grid 2 columns, gap 12px
-- Card padding 18px, tile padding 14px
-- Touch targets at least 44px
-- Icons: Lucide style (stroke 2px, round caps)
+- Page margin on mobile 20px. Spacing between sections 18px.
+- Card padding 18px.
+- Touch targets at least 44px.
+- Icons: Lucide style (stroke 2px, round caps).
+- Event list entry: title, then «Zeit · Ort» in ink, then the teams muted, one row of chips (variant, «freiwillig», warnings), the counts on one line, then the response buttons.
+
+## Motion
+
+- Tokens: `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--duration-press` 160ms, `--duration-color` 150ms, `--duration-enter` 200ms, `--duration-exit` 150ms.
+- Buttons and tiles give under a press (scale 0.97, tiles 0.98). Colours change in 150ms.
+- Dialogs: 200ms in from scale 0.96, 150ms out; the backdrop fades.
+- Status messages slide in 4px. «Lädt …» shows only after 300ms. Disabled dimming and the busy spinner start after 200ms, so fast saves do not flicker.
+- A changed scoreboard digit drops in (6px, 200ms); never on the first render.
+- Never animated: navigation, route changes, the focus ring, list entrances.
+- With `prefers-reduced-motion: reduce` nothing moves.
+- Hover styles only for `@media (hover: hover)`.
 
 ## Implementation (Angular)
 
 Tokens as CSS custom properties in `frontend/src/styles.css`. The theme is set as `data-theme` on the document. «System» sets no `data-theme` and follows `prefers-color-scheme`:
 
 ```css
-:root, [data-theme="light"] {       /* Hell */
-  --bg: #F0F5F2; --surface: #FFFFFF; --text: #1F2A26; --muted: #56645E; --border: #DCE6E0;
-  --primary: #2C7F69; --on-primary: #FFFFFF; --primary-soft: #D7EEE6;
-  --coral: #B8503A; --coral-soft: #FCE4DD;
-  --mustard: #6E6400; --mustard-soft: #F1EFC4;
-  --blue: #2F6C9A; --blue-soft: #DCEBF6;
-  --radius-card: 22px; --radius-tile: 18px; --radius-icon: 12px; --radius-pill: 999px;
-  --font: 'Plus Jakarta Sans', system-ui, sans-serif;
-}
-[data-theme="dune"] { /* values of the column «Düne» */ }
-[data-theme="github-dark"] { /* values of the column «GitHub Dark» */ }
+:root, [data-theme='light'] { /* Hell */ }
+[data-theme='dark'] { /* Dunkel */ }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) { /* same values as [data-theme="github-dark"] */ }
+  :root:not([data-theme]) { /* same values as [data-theme='dark'] */ }
 }
 ```
 
 ## Themes
 
-Decided on 16.11.2026 (E-65 to E-67, NF-08). Reason: the base design was far too green for Cyrille. After trying out 21 themes, three remain: «Hell», «Düne» and «GitHub Dark».
+Decided on 22.11.2026 (E-90, NF-08). Before: «Hell», «Düne» and «GitHub Dark» (E-67).
 
 | Entry in the profile | `data-theme` | Stored value | Shows |
 |---|---|---|---|
-| «Hell» | `light` | `light` | Colors of «Salbei frisch» |
-| «Düne» | `dune` | `dune` | Warm sand with petrol |
-| «GitHub Dark» | `github-dark` | `github-dark` | Almost black with blue |
-| «System» (default) | none | `system` | «Hell» in light mode, «GitHub Dark» in dark mode |
+| «Hell» | `light` | `light` | Hall floor with ultramarine |
+| «Dunkel» | `dark` | `dark` | Cool slate, muted colours |
+| «System» (default) | none | `system` | «Hell» in light mode, «Dunkel» in dark mode |
 
 Rules:
 
-- A theme changes **only the color tokens**. Shape, typography, spacing and layout are the same everywhere.
-- Every theme sets all 14 color tokens. Components use only the tokens, never fixed colors.
-- The meaning of the tokens stays: `primary` main action and «dabei», `accent-coral` cancellation and «nicht dabei» (reddish), `accent-mustard` «vielleicht» (yellowish), `accent-blue` coaches. `primary` is never red, orange or yellow.
-- Contrast at least 4.5:1 (WCAG AA) for text and accent colors on `bg`, `surface` and the `*-soft` areas, and for `on-primary` on `primary`. The colors of «GitHub Dark» are based on the theme of the same name.
-- «Düne» and «GitHub Dark» apply regardless of the system setting. The choice is stored in the browser (`localStorage`, key `stv-theme`), not in the account. A stored value that no longer exists falls back to «System», without an error. This also applies to the German values from before F-11 (`hell`, `duene`); they are not migrated.
+- A theme changes **only the color tokens**. Shape, typography, spacing, motion and layout are the same everywhere.
+- Every theme sets all color tokens of the table above and the 18 tokens of the event variants (`--tag-*`). Components use only the tokens, never fixed colors.
+- The meaning of the tokens stays: `primary` main action and «dabei», `coral` cancellation and «nicht dabei» (reddish), `mustard` «vielleicht» (yellowish), `blue` coaches. `primary` is never red, orange or yellow.
+- Contrast at least 4.5:1 (WCAG AA) for text and accent colors on `bg`, `surface`, `board` and the `*-soft` areas, and for `on-primary` on `primary`. Control boundaries at least 3:1.
+- «Dunkel» applies regardless of the system setting. The choice is stored in the browser (`localStorage`, key `stv-theme`), not in the account. A stored value that no longer exists falls back to «System», without an error: the German values from before F-11 (`hell`, `duene`) and the themes removed by E-90 (`dune`, `github-dark`). They are not migrated.
+- The color of the browser or status bar follows the theme (`meta[name="theme-color"]`, `manifest.webmanifest`).
 - In the switcher, each choice is shown in its own colors (background, font and the four accent colors as dots).
 - Another theme needs: a block `[data-theme='<id>']` in `styles.css`, an entry in `theme.service.ts`, in the inline script of `index.html` and in the switcher (`pages/profile/profile.ts`), and a test in `e2e/tests/themes.spec.ts`.
 
-It is open what «System» should show in light mode ([O-53](open-points.md)).
+## Responses
 
-## Not yet defined
+| Response | Color | Symbol |
+|---|---|---|
+| «dabei» | `primary` | check |
+| «nicht dabei» | `coral` | cross |
+| «vielleicht» | `mustard` | question mark |
+| «offen» | `muted` | dashed circle |
 
-The responses for signing up and out need a color and symbol mapping. The obvious choice from the existing tokens:
-
-| Response | Proposal |
-|---|---|
-| «dabei» | `primary` |
-| «nicht dabei» | `accent-coral` (already intended for «Absage») |
-| «vielleicht» | `accent-mustard` |
-| «offen» | `muted` |
-
-The status must not be recognizable by color alone. Each response also gets its own symbol.
+The status is never recognizable by color alone: each response has its own symbol and word.

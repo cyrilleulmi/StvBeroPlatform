@@ -59,6 +59,17 @@ export const routes: Routes = [
         loadComponent: () => import('./drivers/trips').then((m) => m.TripsPage),
       },
       {
+        path: 'fahrerliste',
+        title: title('Fahrerliste'),
+        loadComponent: () => import('./drivers/driver-plan-entry').then((m) => m.DriverPlanEntry),
+      },
+      {
+        path: 'swissunihockey',
+        title: title('swiss unihockey'),
+        loadComponent: () =>
+          import('./pages/swiss-unihockey/swiss-unihockey').then((m) => m.SwissUnihockeyPage),
+      },
+      {
         path: 'teams',
         title: title('Teams'),
         loadComponent: () => import('./pages/teams/teams').then((m) => m.Teams),
@@ -72,6 +83,11 @@ export const routes: Routes = [
         path: 'teams/:teamId/linien',
         title: title('Linien'),
         loadComponent: () => import('./pages/teams/lines').then((m) => m.Lines),
+      },
+      {
+        path: 'teams/:teamId/fahrerliste',
+        title: title('Fahrerliste'),
+        loadComponent: () => import('./drivers/driver-plan').then((m) => m.DriverPlanPage),
       },
       {
         path: 'teams/:teamId/liga',
@@ -88,6 +104,11 @@ export const routes: Routes = [
         path: 'profil',
         title: title('Profil'),
         loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
+      },
+      {
+        path: 'profil/abwesenheiten',
+        title: title('Abwesenheiten'),
+        loadComponent: () => import('./pages/profile/absences').then((m) => m.AbsencesPage),
       },
       {
         path: 'profil/statistik',

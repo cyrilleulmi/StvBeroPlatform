@@ -10,14 +10,15 @@ Status legend: see [README](../../README.md#requirement-status).
 | ANM-02 | There is exactly one response per person and event, not one per team. | Accepted |
 | ANM-03 | Possible responses: «dabei» (attending), «nicht dabei» (declined), «vielleicht» (maybe). | Decided |
 | ANM-04 | With «vielleicht» a comment is required. | Decided |
-| ANM-05 | With «nicht dabei» a reason is optional. | Accepted |
+| ANM-05 | With «nicht dabei» a reason is optional, unless the event variant requires one (VAR-12): then «nicht dabei» is only saved with a reason («Bitte gib einen Grund an.», 422 with rule ANM-05), also on behalf of someone. The app asks for the reason before saving. | Accepted (optional), Decided (configurable, E-95) |
 | ANM-06 | As long as someone has not responded, the status is «offen» (pending). Nobody is attending automatically. | Accepted |
-| ANM-07 | Comments and reasons are visible only to coaches (of any team, RR-03), admins and the person themselves. | Accepted |
+| ANM-07 | Comments and reasons are visible only to coaches (of any team, RR-03), admins, people with a special permission for the event (RR-09) and the person themselves. | Accepted |
 | ANM-08 | The most common action («dabei» / «nicht dabei») takes one tap, directly from the event list. | Decided |
 | ANM-09 | A response can be changed at any time, also after the response deadline. | Assumption |
 | ANM-10 | If someone changes from «dabei» to «nicht dabei» or «vielleicht» after the response deadline, it counts as a late cancellation. The coaches are notified. | Accepted |
 | ANM-11 | A coach (of any team, RR-03) can respond on behalf of anyone in the event, e.g. when someone cancelled in person. | Accepted |
 | ANM-12 | For responses on behalf, it is visible who entered them. | Assumption |
+| ANM-13 | On a match day, someone who responds «dabei» can add «Ich reise individuell an» (travels on her own). She then needs no seat in the driver list ([DRV-20](14-driver-list.md)). The mark is visible to everyone who sees the responses, and it goes away when the response is no longer «dabei». Coaches set it on behalf together with the response. | Decided |
 
 ## Event view
 
@@ -26,7 +27,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | ANM-20 | The view shows the members grouped by team. | Decided |
 | ANM-21 | Within a team, players are grouped by line: lines in their order, then goalies, then «Ohne Linie» (no line). | Decided (grouping), Accepted (order) |
 | ANM-22 | Coaches are in a block of their own, with their team shown. They do not appear among the players. | Decided |
-| ANM-23 | Per team and for the whole event the counts are: attending, declined, maybe, pending. Only players are counted. | Accepted |
+| ANM-23 | Per team and for the whole event the counts are: attending, declined, maybe, pending. Only players are counted. Players of a team that is invited without obligation count once they respond, never as pending ([TER-16](03-events.md)). | Accepted |
 | ANM-24 | Each person's status can be seen at a glance. | Accepted |
 | ANM-25 | All members of the participating teams see the status of the others, but not their comments (see ANM-07). | Assumption |
 

@@ -1,22 +1,21 @@
 <h1>{{ texts.start.greeting(auth.me()?.firstName ?? '') }}</h1>
 
+<!-- swiss unihockey not reachable at the last sync: coaches and admins are told (SUH-13) -->
+@if (auth.canManage()) {
+  <app-su-status-notice />
+}
+
 <ng-template #counter let-t>
   @if (t.counts; as z) {
-    <p class="secondary-text counter" data-testid="event-counter">
-      <span data-counter="attending">{{ texts.overview.attending(z.attending) }}</span>
-      ·
-      <span data-counter="declined">{{ texts.overview.declined(z.declined) }}</span>
-      ·
-      <span data-counter="maybe">{{ texts.overview.maybe(z.maybe) }}</span>
-      ·
-      <span data-counter="pending">{{ texts.overview.pending(z.pending) }}</span>
+    <p class="scoreboard counter" data-testid="event-counter">
+      <app-scoreboard [counts]="z" />
     </p>
   }
 </ng-template>
 
 <div class="upcoming">
   <section
-    class="card next"
+    class="card board next"
     data-testid="next-event"
     aria-labelledby="next-event-title"
     [attr.aria-busy]="eventLoading() ? 'true' : null"
@@ -29,10 +28,36 @@
     } @else if (next(); as t) {
       <a class="event-link" [routerLink]="['/termine', t.id]">
         <span class="event-title">{{ t.title }}</span>
-        <span class="secondary-text">{{ description(t) }}</span>
+        <span class="when-where">{{ when(t) }}</span>
         @if (t.location) {
-          <span class="secondary-text">{{ t.location.name }}</span>
+          <span class="place">{{ t.location.name }}</span>
         }
+        <span class="secondary-text">{{ teamNames(t) }}</span>
+      </a>
+      <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
+      <app-my-response
+        [eventId]="t.id"
+        [response]="t.myResponse"
+        [name]="texts.response.myResponseFor(cardName(t))"
+        [reasonRequired]="!!t.variant?.declineReasonRequired"
+        (changed)="reload(t.id)"
+      />
+    } @else {
+      <p class="empty">{{ texts.start.noEvent }}</p>
+    }
+  </section>
+
+  @if (matchDay(); as t) {
+    <!-- The next match day always shows, also when a practice comes first (AUF-35) -->
+    <section class="card next" data-testid="next-match-day" aria-labelledby="next-match-day-title">
+      <h2 id="next-match-day-title" class="eyebrow">{{ texts.start.nextMatchDay }}</h2>
+      <a class="event-link" [routerLink]="['/termine', t.id]">
+        <span class="event-title">{{ t.title }}</span>
+        <span class="when-where">{{ when(t) }}</span>
+        @if (t.location) {
+          <span class="place">{{ t.location.name }}</span>
+        }
+        <span class="secondary-text">{{ teamNames(t) }}</span>
       </a>
       <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
       <app-my-response
@@ -41,10 +66,8 @@
         [name]="texts.response.myResponseFor(cardName(t))"
         (changed)="reload(t.id)"
       />
-    } @else {
-      <p class="empty">{{ texts.start.noEvent }}</p>
-    }
-  </section>
+    </section>
+  }
 
   @if (practices().length > 0) {
     <section class="card next" data-testid="next-practices" aria-labelledby="next-practices-title">
@@ -58,16 +81,18 @@
           >
             <a class="event-link" [routerLink]="['/termine', t.id]">
               <span class="event-title">{{ t.title }}</span>
-              <span class="secondary-text">{{ description(t) }}</span>
+              <span class="when-where">{{ when(t) }}</span>
               @if (t.location) {
-                <span class="secondary-text">{{ t.location.name }}</span>
+                <span class="place">{{ t.location.name }}</span>
               }
+              <span class="secondary-text">{{ teamNames(t) }}</span>
             </a>
             <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
             <app-my-response
               [eventId]="t.id"
               [response]="t.myResponse"
               [name]="texts.response.myResponseFor(cardName(t))"
+              [reasonRequired]="!!t.variant?.declineReasonRequired"
               (changed)="reload(t.id)"
             />
           </li>

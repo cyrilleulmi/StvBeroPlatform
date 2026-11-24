@@ -9,7 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { CalendarSubscription as Subscription } from '../../api/types';
+import {
+  CalendarFilter,
+  CalendarFilterInput,
+  CalendarResponse,
+  EventType,
+  CalendarSubscription as Subscription,
+} from '../../api/types';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
@@ -36,6 +42,7 @@ import { TEXTS } from '../../core/texts';
         <div class="field">
           <label for="calendar-url">{{ texts.address }}</label>
           <input
+            name="calendar-url"
             #urlField
             id="calendar-url"
             type="text"
@@ -65,6 +72,82 @@ import { TEXTS } from '../../core/texts';
       }
       @if (error(); as m) {
         <p class="message-error" role="alert">{{ m }}</p>
+      }
+
+      @if (filter(); as f) {
+        <form class="filter" data-testid="calendar-filter" (submit)="$event.preventDefault()">
+          <h3 class="subtitle">{{ texts.filterTitle }}</h3>
+          <p class="secondary-text">{{ texts.filterIntro }}</p>
+          <fieldset>
+            <legend>{{ texts.filterTypes }}</legend>
+            @for (type of types; track type) {
+              <label class="checkbox">
+                <input
+                  type="checkbox"
+                  [name]="'calendar-type-' + type"
+                  [attr.data-testid]="'calendar-type-' + type"
+                  [checked]="f.types.includes(type)"
+                  [disabled]="saving()"
+                  (change)="toggleType(type, $any($event.target))"
+                />
+                {{ texts.filterTypeLabels[type] }}
+              </label>
+            }
+          </fieldset>
+          <fieldset>
+            <legend>{{ texts.filterResponses }}</legend>
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                name="calendar-response-ATTENDING"
+                checked
+                disabled
+                aria-describedby="calendar-attending-hint"
+              />
+              {{ texts.filterAttending }}
+            </label>
+            <p class="secondary-text hint" id="calendar-attending-hint">
+              {{ texts.filterAttendingHint }}
+            </p>
+            @for (response of responses; track response) {
+              <label class="checkbox">
+                <input
+                  type="checkbox"
+                  [name]="'calendar-response-' + response"
+                  [attr.data-testid]="'calendar-response-' + response"
+                  [checked]="f.responses.includes(response)"
+                  [disabled]="saving()"
+                  (change)="toggleResponse(response, $any($event.target))"
+                />
+                {{ texts.filterResponseLabels[response] }}
+              </label>
+            }
+          </fieldset>
+          @if (f.teams.length > 1) {
+            <fieldset>
+              <legend>{{ texts.filterTeams }}</legend>
+              @for (team of f.teams; track team.teamId) {
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    [name]="'calendar-team-' + team.teamId"
+                    [attr.data-testid]="'calendar-team-' + team.teamId"
+                    [checked]="team.included"
+                    [disabled]="saving()"
+                    (change)="toggleTeam(team.teamId, $any($event.target))"
+                  />
+                  {{ team.name }}
+                </label>
+              }
+            </fieldset>
+          }
+          @if (filterMessage(); as m) {
+            <p class="message-success" role="status">{{ m }}</p>
+          }
+          @if (filterError(); as m) {
+            <p class="message-error" role="alert">{{ m }}</p>
+          }
+        </form>
       }
 
       <h3 class="subtitle">{{ texts.howTo }}</h3>
@@ -191,6 +274,29 @@ import { TEXTS } from '../../core/texts';
     .renew {
       justify-self: start;
     }
+    .filter {
+      display: grid;
+      gap: 10px;
+    }
+    .filter p,
+    .filter h3 {
+      margin: 0;
+    }
+    fieldset {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-icon);
+      padding: 4px 14px 8px;
+      margin: 0;
+      display: grid;
+    }
+    legend {
+      font-weight: 700;
+      padding: 0 4px;
+    }
+    .hint {
+      margin: -8px 0 4px 34px;
+      font-size: 13px;
+    }
     .dialog {
       max-width: min(420px, calc(100vw - 32px));
       color: var(--text);
@@ -226,6 +332,22 @@ export class CalendarSubscriptionSection {
   protected readonly renewing = signal(false);
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly saving = signal(false);
+  protected readonly filterMessage = signal<string | null>(null);
+  protected readonly filterError = signal<string | null>(null);
+
+  /** Order of the checkboxes (CAL-10, CAL-11). */
+  protected readonly types: readonly EventType[] = ['PRACTICE', 'MATCH_DAY', 'OTHER'];
+  protected readonly responses: readonly CalendarResponse[] = [
+    'PENDING',
+    'OPTIONAL_PENDING',
+    'MAYBE',
+    'DECLINED',
+  ];
+
+  protected readonly filter = computed<CalendarFilter | null>(
+    () => this.subscription()?.filter ?? null,
+  );
 
   private readonly urlField = viewChild<ElementRef<HTMLInputElement>>('urlField');
   private readonly renewDialog = viewChild<ElementRef<HTMLDialogElement>>('renewDialog');
@@ -268,6 +390,64 @@ export class CalendarSubscriptionSection {
       this.message.set(null);
       this.error.set(this.texts.copyFailed);
       this.select();
+    }
+  }
+
+  protected toggleType(type: EventType, box: HTMLInputElement): void {
+    const f = this.filter();
+    if (!f) return;
+    const types = box.checked ? [...f.types, type] : f.types.filter((t) => t !== type);
+    if (types.length === 0) {
+      // The last type stays checked: the same rule as in the API (CAL-10)
+      box.checked = true;
+      this.filterMessage.set(null);
+      this.filterError.set(this.texts.filterTypeRequired);
+      return;
+    }
+    void this.save({ ...this.input(f), types }, box);
+  }
+
+  protected toggleResponse(response: CalendarResponse, box: HTMLInputElement): void {
+    const f = this.filter();
+    if (!f) return;
+    const responses = box.checked
+      ? [...f.responses, response]
+      : f.responses.filter((r) => r !== response);
+    void this.save({ ...this.input(f), responses }, box);
+  }
+
+  protected toggleTeam(teamId: string, box: HTMLInputElement): void {
+    const f = this.filter();
+    if (!f) return;
+    const excluded = f.teams
+      .filter((t) => (t.teamId === teamId ? !box.checked : !t.included))
+      .map((t) => t.teamId);
+    void this.save({ ...this.input(f), excludedTeamIds: excluded }, box);
+  }
+
+  private input(f: CalendarFilter): CalendarFilterInput {
+    return {
+      types: f.types,
+      responses: f.responses,
+      excludedTeamIds: f.teams.filter((t) => !t.included).map((t) => t.teamId),
+    };
+  }
+
+  private async save(input: CalendarFilterInput, box: HTMLInputElement): Promise<void> {
+    this.saving.set(true);
+    this.filterMessage.set(null);
+    this.filterError.set(null);
+    try {
+      this.subscription.set(
+        await firstValueFrom(this.http.put<Subscription>('/api/me/calendar/filter', input)),
+      );
+      this.filterMessage.set(this.texts.filterSaved);
+    } catch (e) {
+      this.filterError.set(errorText(e));
+      // Not saved: the box shows the stored state again
+      box.checked = !box.checked;
+    } finally {
+      this.saving.set(false);
     }
   }
 

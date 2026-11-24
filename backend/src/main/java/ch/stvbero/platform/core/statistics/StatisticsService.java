@@ -191,6 +191,8 @@ public class StatisticsService {
                                e.attendance_check and exists (select 1 from attendance_record r where r.event_id = e.id)
                         from event e join event_team et on et.event_id = e.id
                         where et.team_id = ?1 and e.season_id = ?2 and e.status = 'PLANNED'
+                          and not exists (select 1 from event_optional_team o
+                                          where o.event_id = e.id and o.team_id = et.team_id)
                           and e.starts_at >= ?3 and e.starts_at < ?4 and e.starts_at <= ?5
                         """ + (type == null ? "" : " and e.type = ?6 ") + "order by e.starts_at, e.id")
                 .setParameter(1, teamId).setParameter(2, season.id).setParameter(3, start).setParameter(4, end)

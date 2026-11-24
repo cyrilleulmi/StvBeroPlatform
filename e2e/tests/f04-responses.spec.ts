@@ -64,7 +64,7 @@ test('F-04 K1 K2 S1 ANM-20 to ANM-32: Overview of event 01 as in test-data.md', 
   await login(page, 'petra');
   await page.goto(`/termine/${T01}`);
   const overview = page.getByTestId('overview');
-  await expect(overview.getByRole('heading', { level: 2, name: 'Übersicht' })).toBeVisible();
+  await expect(overview.getByRole('heading', { level: 2, name: 'Anmeldungen' })).toBeVisible();
 
   // ANM-23, ANM-32: grand total, Lea counts once
   await expect(page.getByTestId('overview-total')).toContainText(counterText(7, 2, 1, 2));

@@ -224,7 +224,9 @@ export class PersonForm {
     if (this.form.controls.email.invalid)
       error['email'] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
     this.fieldErrors.set(error);
-    if (Object.keys(error).length > 0) {
+    const first = Object.keys(error)[0];
+    if (first) {
+      document.getElementById(`person-${first}`)?.focus();
       return;
     }
 

@@ -31,6 +31,9 @@ public class TeamService {
     @Inject
     BackendClock clock;
 
+    @Inject
+    ch.stvbero.platform.core.absence.AbsenceService absences;
+
     private static final Comparator<TeamDto> BY_NAME = Comparator
             .comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id);
 
@@ -46,9 +49,10 @@ public class TeamService {
                         user.personId(), season.id).stream()
                 .collect(Collectors.toMap(m -> m.team.id, m -> m.teamRole));
         List<TeamSeason> teams = TeamSeason.list("season.id", season.id);
+        Map<UUID, Integer> suTeamIds = SuLink.primaryIds(season.id);
         return teams.stream()
                 .filter(ts -> user.allTeams() || mine.containsKey(ts.team.id))
-                .map(ts -> TeamDto.of(ts, mine.get(ts.team.id)))
+                .map(ts -> TeamDto.of(ts, mine.get(ts.team.id), suTeamIds.get(ts.team.id)))
                 .sorted(BY_NAME)
                 .toList();
     }
@@ -68,8 +72,9 @@ public class TeamService {
         }
         TeamRules.Split split = TeamRules.split(members(memberships));
         // Players by line, then goalies, then «Ohne Linie» (LIN-06, LIN-09)
-        return new TeamDetailDto(team.id, team.nameIn(season), team.suTeamId, mine.orElse(null), split.coaches(),
-                LineService.lineup(team, season, memberships), user.allTeams() ? team.minimums() : null);
+        return new TeamDetailDto(team.id, team.nameIn(season), team.suTeamIdIn(season), mine.orElse(null),
+                split.coaches(), LineService.lineup(team, season, memberships),
+                user.allTeams() ? team.minimums() : null, user.allTeams() ? team.matchDaySettings() : null);
     }
 
     /**
@@ -84,6 +89,18 @@ public class TeamService {
         return team.minimums();
     }
 
+    /**
+     * Change the match day settings (TML-02, TML-03, AUF-32): coaches (of any team, E-69) and admins. They apply to
+     * the team, not per season, and to the timeline of every match day from now on.
+     */
+    @Transactional
+    public MatchDaySettings setMatchDaySettings(CurrentUser user, UUID teamId, MatchDaySettings settings) {
+        user.checkAllTeams();
+        Team team = find(teamId);
+        team.setMatchDaySettings(settings);
+        return team.matchDaySettings();
+    }
+
     @Transactional
     public TeamDto create(CurrentUser user, UUID seasonId, TeamInput input) {
         user.checkAllTeams();
@@ -93,6 +110,10 @@ public class TeamService {
         team.id = UUID.randomUUID();
         team.persist();
         team.addToSeason(season, input.name().strip());
+        // The four standard event variants exist from the start (VAR-01)
+        team.getEntityManager().flush();
+        team.getEntityManager().createNativeQuery(ch.stvbero.platform.core.variant.VariantRules.ENSURE_STANDARD_SQL)
+                .executeUpdate();
         return TeamDto.of(team.in(season).orElseThrow(), null);
     }
 
@@ -131,6 +152,8 @@ public class TeamService {
         Unique.save(Team.getEntityManager(), "team_membership_one_role",
                 () -> DomainError.conflict("Schon im Team", person.firstName + " " + person.lastName
                         + " ist schon in diesem Team. Pro Team gibt es nur eine Funktion.", "PTF-04"));
+        // The practices of the new team in the time of an absence are declined as well (ABS-04)
+        absences.applyForPerson(person.id, practice -> false);
         return TeamMembershipDto.of(membership);
     }
 

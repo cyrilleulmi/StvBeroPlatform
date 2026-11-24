@@ -12,14 +12,21 @@ test.describe('Sign-in', () => {
 
     await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden als …');
-    const list = page.getByRole('list', { name: 'Testpersonen' });
-    await expect(list.getByRole('listitem')).toHaveCount(17);
-    for (const name of ['Alex Admin', 'Petra Keller', 'Marc Huber', 'Ruth Meier', 'Anna Muster', 'Vera Studer']) {
-      await expect(list.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
+    // The people are grouped by team (E-85): 17 people, Petra and Lea appear in both of their teams
+    await expect(page.getByRole('listitem')).toHaveCount(19);
+    for (const [key, name] of [
+      ['alex', 'Alex Admin'],
+      ['petra', 'Petra Keller'],
+      ['marc', 'Marc Huber'],
+      ['ruth', 'Ruth Meier'],
+      ['anna', 'Anna Muster'],
+      ['vera', 'Vera Studer'],
+    ]) {
+      await expect(page.getByTestId(`dev-login-person-${key}`).getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
     }
     await checkAccessibility(page);
 
-    await list.getByRole('button', { name: /^Anna Muster/ }).click();
+    await page.getByTestId('dev-login-person-anna').getByRole('button').click();
 
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hallo Anna');
@@ -32,7 +39,7 @@ test.describe('Sign-in', () => {
     }
 
     await page.goto('/profil');
-    await page.getByRole('button', { name: /^Petra Keller/ }).click();
+    await page.getByTestId('dev-login-person-petra').getByRole('button').click();
 
     await expect(page).toHaveURL('/profil');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Profil');
@@ -44,7 +51,7 @@ test.describe('Sign-in', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden');
     await checkAccessibility(page);
     await page.getByRole('link', { name: 'Zur Anmeldung im Testmodus' }).click();
-    await page.getByRole('button', { name: /^Lea Graf/ }).click();
+    await page.getByTestId('dev-login-person-lea').getByRole('button').click();
 
     await expect(page).toHaveURL('/teams');
   });
@@ -159,13 +166,13 @@ test.describe('Navigation', () => {
 });
 
 test.describe('Design', () => {
-  const LIGHT = 'rgb(240, 245, 242)';
-  /** Background of GitHub Dark: the dark theme, also with «System» in the dark (E-67). */
-  const DARK = 'rgb(13, 17, 23)';
+  const LIGHT = 'rgb(233, 237, 240)';
+  /** Background of Dunkel: the dark theme, also with «System» in the dark (E-90). */
+  const DARK = 'rgb(20, 24, 29)';
   const background = (page: import('@playwright/test').Page) =>
     page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  test('F-00 K6 NF-06 NF-07: Switch Hell/GitHub Dark/System, the choice stays after reload', async ({ page }) => {
+  test('F-00 K6 NF-06 NF-07: Switch Hell/Dunkel/System, the choice stays after reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await login(page, 'anna');
     await page.goto('/profil');
@@ -175,14 +182,14 @@ test.describe('Design', () => {
     await expect(themeSwitch.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(await background(page)).toBe(LIGHT);
 
-    await themeSwitch.getByRole('radio', { name: 'GitHub Dark' }).check();
-    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
+    await themeSwitch.getByRole('radio', { name: 'Dunkel' }).check();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'dark');
     expect(await background(page)).toBe(DARK);
     await checkAccessibility(page);
 
     await page.reload();
-    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'GitHub Dark' })).toBeChecked();
-    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'github-dark');
+    await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'Dunkel' })).toBeChecked();
+    await expect(documentRoot(page)).toHaveAttribute('data-theme', 'dark');
     expect(await background(page)).toBe(DARK);
 
     await page.getByTestId('theme-switch').getByRole('radio', { name: 'Hell' }).check();

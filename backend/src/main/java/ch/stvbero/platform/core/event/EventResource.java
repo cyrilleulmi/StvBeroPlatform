@@ -37,6 +37,15 @@ public class EventResource {
     @Inject
     EventService events;
 
+    @Inject
+    ch.stvbero.platform.core.driver.TimelineService timeline;
+
+    @Inject
+    jakarta.persistence.EntityManager em;
+
+    @Inject
+    EventCalendarService calendar;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "listEvents", summary = "Events of the person's own teams with the person's own response (TER-13)")
@@ -48,6 +57,26 @@ public class EventResource {
                                      @QueryParam("team") UUID team, @QueryParam("type") EventType type,
                                      @QueryParam("view") String view) {
         return events.list(auth.person(), from, to, team, type, view);
+    }
+
+    @GET
+    @Path("/calendar")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getCalendarView",
+            summary = "Events of the chosen teams in a period of at most six weeks, with the own absences (KAL-01 to KAL-04)")
+    @APIResponse(responseCode = "200", description = "OK",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = CalendarViewDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "401", description = "Not logged in",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07): all teams or a team of others as a player",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public CalendarViewDto calendar(@QueryParam("from") LocalDate from, @QueryParam("to") LocalDate to,
+                                    @QueryParam("team") List<UUID> teams, @QueryParam("all") boolean all) {
+        return calendar.view(auth.person(), from, to, teams, all);
     }
 
     @POST
@@ -63,7 +92,8 @@ public class EventResource {
     @APIResponse(responseCode = "409", description = "Conflicts with the current state",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public Response create(@Valid @NotNull EventInput input) {
-        return Response.status(201).entity(events.create(auth.person(), input)).build();
+        EventDto created = events.create(auth.person(), input);
+        return Response.status(201).entity(withAutoDeparture(created)).build();
     }
 
     @GET
@@ -77,7 +107,22 @@ public class EventResource {
     @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto get(@PathParam("eventId") UUID eventId) {
-        return events.get(auth.person(), eventId);
+        return withAutoDeparture(events.get(auth.person(), eventId));
+    }
+
+    /**
+     * Automatic departure (TML-09): a match day without a meeting time entered by hand gets the suggested
+     * departure before it is shown. The route is calculated outside of the transaction of the request.
+     */
+    private EventDto withAutoDeparture(EventDto event) {
+        if (event.type() != EventType.MATCH_DAY || event.status() != EventStatus.PLANNED
+                || event.meetingPoint() == null || !event.variant().autoDeparture()) {
+            return event;
+        }
+        timeline.autoDeparture(event.id());
+        // The event of this request is cached; read it again as it is stored now
+        em.clear();
+        return events.get(auth.person(), event.id());
     }
 
     @PUT
@@ -98,7 +143,7 @@ public class EventResource {
     @APIResponse(responseCode = "422", description = "Domain rule violated",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto update(@PathParam("eventId") UUID eventId, @Valid @NotNull EventInput input) {
-        return events.update(auth.person(), eventId, input);
+        return withAutoDeparture(events.update(auth.person(), eventId, input));
     }
 
     @POST

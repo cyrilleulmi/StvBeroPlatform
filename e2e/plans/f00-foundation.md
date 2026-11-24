@@ -45,9 +45,9 @@ Starting point: reset, signed in as `anna`.
 
 ## K6 · Design tokens and theme
 
-1. As `anna` open `/profil`, switcher `theme-switch` with «Hell»/«Düne»/«GitHub Dark»/«System» (since E-67, before «Hell»/«Dunkel»/«System»).
-2. Choose «GitHub Dark» → `<html data-theme="github-dark">`, screen dark; reload → stays dark.
-3. «Hell» → light, stays after reload. «System» with `prefers-color-scheme: dark` → dark (GitHub Dark).
+1. As `anna` open `/profil`, switcher `theme-switch` with «Hell»/«Dunkel»/«System» (since E-90; E-67 to E-89 «Hell»/«Düne»/«GitHub Dark»/«System»).
+2. Choose «Dunkel» → `<html data-theme="dark">`, screen dark; reload → stays dark.
+3. «Hell» → light, stays after reload. «System» with `prefers-color-scheme: dark` → dark (Dunkel).
 4. Every screen (`/dev-login`, `/`, `/termine`, `/teams`, `/profil`, `/verwaltung`, not found) in dark mode: readable, nothing white on white.
 5. CSS custom properties from design-principles.md present on `:root` (e.g. `--primary`).
 
