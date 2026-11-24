@@ -41,7 +41,7 @@ test('RR-09 RR-11: a coach gives Kim a special permission, Kim edits and sees th
   await page.getByRole('link', { name: 'Bearbeiten' }).click();
   await expect(page).toHaveURL(new RegExp(`/termine/${T01}/bearbeiten$`));
   await expect(page.getByText('Die Teams eines Termins ändern nur Coaches.')).toBeVisible();
-  await expect(page.locator('input[name="event-teamIds"]').first()).toBeDisabled();
+  await expect(page.getByRole('group', { name: 'Teams' }).getByRole('checkbox').first()).toBeDisabled();
 
   // Not for other events
   await page.goto(`/termine/${T02}`);
