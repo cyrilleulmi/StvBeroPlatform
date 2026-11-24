@@ -193,6 +193,11 @@ export class EventForm {
   /** Who may create and edit: coaches (in any team) and admins (TER-11). */
   protected readonly canCreate = computed(() => this.auth.canManage());
 
+  /** A special permission does not reach the teams of the event (RR-11): they stay as they are. */
+  protected readonly teamsLocked = computed(
+    () => this.mode() === 'event' && !!this.event()?.myGrant && !this.auth.canManage(),
+  );
+
   /** Whether the form is shown. Otherwise a notice is shown there (`notice()`). */
   protected readonly editable = computed(() => {
     switch (this.mode()) {
@@ -209,7 +214,8 @@ export class EventForm {
     if (this.loading() || this.error()) return null;
     if (this.mode() === 'event' && this.event() && !this.event()!.canEdit) {
       const t = this.event()!;
-      const coach = t.teams.some((x) => x.myTeamRole === 'COACH') || this.auth.canManage();
+      const coach =
+        t.teams.some((x) => x.myTeamRole === 'COACH') || this.auth.canManage() || !!t.myGrant;
       return coach ? TEXTS.eventForm.notEditable : TEXTS.common.noPermission;
     }
     return this.editable() ? null : TEXTS.common.noPermission;

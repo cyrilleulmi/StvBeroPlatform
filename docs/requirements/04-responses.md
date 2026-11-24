@@ -10,9 +10,9 @@ Status legend: see [README](../../README.md#requirement-status).
 | ANM-02 | There is exactly one response per person and event, not one per team. | Accepted |
 | ANM-03 | Possible responses: «dabei» (attending), «nicht dabei» (declined), «vielleicht» (maybe). | Decided |
 | ANM-04 | With «vielleicht» a comment is required. | Decided |
-| ANM-05 | With «nicht dabei» a reason is optional. | Accepted |
+| ANM-05 | With «nicht dabei» a reason is optional, unless the event variant requires one (VAR-12): then «nicht dabei» is only saved with a reason («Bitte gib einen Grund an.», 422 with rule ANM-05), also on behalf of someone. The app asks for the reason before saving. | Accepted (optional), Decided (configurable, E-95) |
 | ANM-06 | As long as someone has not responded, the status is «offen» (pending). Nobody is attending automatically. | Accepted |
-| ANM-07 | Comments and reasons are visible only to coaches (of any team, RR-03), admins and the person themselves. | Accepted |
+| ANM-07 | Comments and reasons are visible only to coaches (of any team, RR-03), admins, people with a special permission for the event (RR-09) and the person themselves. | Accepted |
 | ANM-08 | The most common action («dabei» / «nicht dabei») takes one tap, directly from the event list. | Decided |
 | ANM-09 | A response can be changed at any time, also after the response deadline. | Assumption |
 | ANM-10 | If someone changes from «dabei» to «nicht dabei» or «vielleicht» after the response deadline, it counts as a late cancellation. The coaches are notified. | Accepted |

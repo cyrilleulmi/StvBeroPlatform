@@ -22,6 +22,7 @@ public record EventVariantDto(
         @Schema(description = "The meeting time follows the suggested departure (VAR-08); only for match days") boolean autoDeparture,
         @Schema(description = "Default response deadline of new events, in hours (VAR-09)") int responseDeadlineHours,
         @Schema(description = "Default of the attendance check of new events (VAR-09)") boolean attendanceCheck,
+        @Schema(description = "«nicht dabei» needs a reason (VAR-12, ANM-05)") boolean declineReasonRequired,
         @Schema(description = "Sections of the event page, in the order they are shown (VAR-07)") List<Section> sections,
         @Schema(description = "One of the four standard variants: cannot be deleted (VAR-01)") boolean standard) {
 }

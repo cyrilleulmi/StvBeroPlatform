@@ -13,6 +13,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | BEN-05 | A published call-up is changed. | The affected players | Assumption |
 | BEN-06 | An imported match is moved or changed. | All members of the team | Accepted |
 | BEN-07 | An event is cancelled or moved. | All members of the participating teams | Assumption |
+| BEN-08 | Someone gets a special permission for an event or a series (type `EVENT_GRANTED`, subject «Sonderberechtigung», [RR-14](07-roles-permissions.md)). | The person, not the one who gave it | Assumption |
 | DRV-11 | A car of the driver list changes (F-20, type `DRIVER_LIST_CHANGED`, subject «Fahrerliste geändert»). | The people affected, never the one who made the change ([14 · Driver list](14-driver-list.md)) | Decided |
 
 ## Further requirements
@@ -22,6 +23,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | BEN-10 | Notifications go out by e-mail and by push via the PWA (both), in addition to the list in the app (E-71, F-19). | Decided |
 | BEN-11 | Notifications are built so that the channel can be swapped and further channels can be added. | Decided |
 | BEN-12 | A notification leads directly to the affected event. | Assumption |
+| BEN-22 | Late cancellations (BEN-02) and a cancelling called-up player (BEN-04) also go to the people with a special permission for the event (RR-09), and the text ends with the reason or comment, if there is one: «… Grund: «Krank»» (ANM-07: only these recipients may see it). | Assumption |
 | BEN-13 | There is at most one reminder per trigger. Nobody is reminded of the same event more than once. | Assumption |
 
 ## Channels: e-mail and push (F-19)

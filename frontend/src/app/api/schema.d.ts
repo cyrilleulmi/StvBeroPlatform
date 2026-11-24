@@ -110,6 +110,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/calendar/filter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Which events the calendar feed delivers; the address stays the same (CAL-10 to CAL-14)
+         * @description Event types (at least one, otherwise 422 with rule CAL-10, field `types`), participations besides «dabei»
+         *     (empty: only events with «dabei») and teams whose events are left out. Teams the person was never a
+         *     member of are ignored. The feed applies the filter from the next fetch on.
+         */
+        put: operations["changeMyCalendarFilter"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calendar/{token}.ics": {
         parameters: {
             query?: never;
@@ -120,14 +142,73 @@ export interface paths {
         /**
          * iCalendar feed of a person, reachable with the token alone (CAL-02 to CAL-08)
          * @description Public, because calendar apps cannot log in (CAL-06). The token grants read access to this feed only;
-         *     it is not a session. Content: all events of the person's teams (member in the season of the event)
-         *     that ended at most 30 days ago or are still to come, cancelled ones with `STATUS:CANCELLED`. `UID` is
+         *     it is not a session. Content: the events of the person's teams (member in the season of the event)
+         *     that ended at most 30 days ago or are still to come and pass the person's filter (CAL-10 to CAL-15),
+         *     cancelled ones with `STATUS:CANCELLED`. `UID` is
          *     the event ID plus `@stvbero`, so moved events replace their entry. Times are local times in
          *     Europe/Zurich with a `VTIMEZONE`. The description holds meeting point, matches, notes, the person's
          *     own response and the link into the app, never responses or comments of other people (CAL-08).
          */
         get: operations["getCalendarFeed"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Who manages the event like a coach (RR-09, RR-13)
+         * @description Everyone who may see the event sees who has a special permission (RR-13). `candidates` (members of the
+         *     teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+         */
+        get: operations["getEventGrants"];
+        /**
+         * Set the special permissions of one event; coaches and admins (RR-11, RR-12)
+         * @description Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+         *     have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+         *     holders are notified (BEN-08). Cancelled or past events: 409.
+         */
+        put: operations["changeEventGrants"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Who manages all events of the series like a coach (RR-10)
+         * @description Everyone who may see the series sees who has a special permission (RR-13). `candidates` (members of the
+         *     teams, RR-12) only for coaches and admins, who may change them (`canManage`).
+         */
+        get: operations["getSeriesGrants"];
+        /**
+         * Set the special permissions of a series; they apply to all its events (RR-10, RR-11)
+         * @description Replaces the people with a special permission. Only coaches and admins in their own right, not those who
+         *     have a special permission (RR-11, 403). Only members of the teams (RR-12, 422 field `personIds`). New
+         *     holders are notified (BEN-08). They apply to all events of the series, also later ones.
+         */
+        put: operations["changeSeriesGrants"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2293,6 +2374,53 @@ export interface components {
              * @example /api/calendar/q3XyR0p8vUu6Yc1yZf9xwGx0N2m7oVbE4hT5sK1dLaA.ics
              */
             feedPath: string;
+            filter: components["schemas"]["CalendarFilter"];
+        };
+        /** @description Special permissions of an event or a series (RR-09 to RR-14) */
+        EventGrants: {
+            /** @description By last name */
+            grants: components["schemas"]["EventGrant"][];
+            /** @description The caller may change them (coach or admin in her own right, RR-11) */
+            canManage: boolean;
+            /** @description Members of the teams who can get a special permission (RR-12); only with canManage */
+            candidates?: components["schemas"]["PersonSummary"][] | null;
+        };
+        EventGrant: {
+            person: components["schemas"]["PersonSummary"];
+            /** @description The permission comes from the series and applies to all its events (RR-10) */
+            viaSeries: boolean;
+        };
+        EventGrantsInput: {
+            /** @description Replaces the previous ones; empty removes all */
+            personIds: string[];
+        };
+        /**
+         * @description Participation for the filter of the feed (CAL-11, CAL-12). «dabei» is always in the feed and has no value.
+         *     `PENDING` no response in an expected team, `OPTIONAL_PENDING` no response as an invited («freiwillig»)
+         *     member, `MAYBE` «vielleicht», `DECLINED` «nicht dabei» or not called up in a published call-up.
+         * @enum {string}
+         */
+        CalendarResponse: "PENDING" | "OPTIONAL_PENDING" | "MAYBE" | "DECLINED";
+        /** @description Which events the feed delivers (CAL-10 to CAL-14). A new address delivers everything. */
+        CalendarFilter: {
+            types: components["schemas"]["EventType"][];
+            /** @description Participations in the feed besides «dabei» */
+            responses: components["schemas"]["CalendarResponse"][];
+            /** @description The person's teams in the current season, sorted by name */
+            teams: components["schemas"]["CalendarFilterTeam"][];
+        };
+        CalendarFilterTeam: {
+            /** Format: uuid */
+            teamId: string;
+            /** @example Team 1 */
+            name: string;
+            /** @description Whether the events of this team are in the feed (CAL-13) */
+            included: boolean;
+        };
+        CalendarFilterInput: {
+            types: components["schemas"]["EventType"][];
+            responses: components["schemas"]["CalendarResponse"][];
+            excludedTeamIds: string[];
         };
         /**
          * @description Extensible (PTF-06). Clients treat unknown values like a member without special permissions.
@@ -2712,6 +2840,8 @@ export interface components {
             myAttendance?: components["schemas"]["AttendanceStatus"] | null;
             /** @description Only for MATCH_DAY. Rank of the own team in the league table last loaded (AUF-34) */
             standing?: components["schemas"]["Standing"] | null;
+            /** @description Only if true: the caller manages this event like a coach because of a special permission (RR-09). The coach actions are then shown for this event only. */
+            myGrant?: boolean;
         };
         EventInput: {
             type: components["schemas"]["EventType"];
@@ -2781,6 +2911,8 @@ export interface components {
             responseDeadlineHours: number;
             /** @description Default of the attendance check of new events (VAR-09) */
             attendanceCheck: boolean;
+            /** @description «nicht dabei» needs a reason (VAR-12, ANM-05). Default false */
+            declineReasonRequired: boolean;
             /** @description Sections of the event page, in the order they are shown (VAR-07) */
             sections: components["schemas"]["EventSection"][];
             /** @description One of the four standard variants: cannot be deleted (VAR-01) */
@@ -2796,6 +2928,8 @@ export interface components {
             /** Format: int32 */
             responseDeadlineHours?: number | null;
             attendanceCheck?: boolean | null;
+            /** @description «nicht dabei» needs a reason (VAR-12) */
+            declineReasonRequired?: boolean | null;
             /** @description Shown sections in their order; must fit the event type and include DETAILS. Missing: unchanged, or the defaults for a new variant */
             sections?: components["schemas"]["EventSection"][] | null;
         };
@@ -3858,10 +3992,10 @@ export interface components {
             /** Format: uuid */
             id: string;
             /**
-             * @description Corresponds to BEN-01 to BEN-07 and DRV-11
+             * @description Corresponds to BEN-01 to BEN-08 and DRV-11
              * @enum {string}
              */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED" | "EVENT_GRANTED";
             recipient: components["schemas"]["PersonSummary"];
             /** @example Anna Muster hat sich kurzfristig für Training Di 17.11. abgemeldet. */
             text: string;
@@ -3924,7 +4058,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED";
+            type: "REMINDER" | "LATE_CANCELLATION" | "CALL_UP_PUBLISHED" | "CALL_UP_CHANGED" | "CALLED_UP_PLAYER_DECLINED" | "MATCH_CHANGED" | "EVENT_CANCELLED" | "EVENT_RESCHEDULED" | "DRIVER_LIST_CHANGED" | "EVENT_GRANTED";
             recipient: components["schemas"]["PersonSummary"];
             text: string;
             /** Format: uuid */
@@ -4243,6 +4377,33 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
         };
     };
+    changeMyCalendarFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalendarFilterInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarSubscription"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
     getCalendarFeed: {
         parameters: {
             query?: never;
@@ -4265,6 +4426,119 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    getEventGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeEventGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventGrantsInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
+        };
+    };
+    getSeriesGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeSeriesGrants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventGrantsInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGrants"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["RuleViolation"];
         };
     };
     listTiles: {
