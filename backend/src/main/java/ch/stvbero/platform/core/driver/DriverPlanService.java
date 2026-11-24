@@ -17,6 +17,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,8 +56,17 @@ public class DriverPlanService {
     @Inject
     DriverListService drivers;
 
+    @Inject
+    DriverSwaps swaps;
+
+    @Inject
+    ExtraTrips extraTrips;
+
+    @Inject
+    DriverPlanHistory history;
+
     private record Context(Team team, Season season, List<TeamMembership> members, boolean member,
-                           boolean canManage, UUID caller) {
+                           boolean canManage, UUID caller, CurrentUser user) {
     }
 
     private record Car(UUID id, UUID eventId, UUID driver, int seats) {
@@ -109,6 +119,69 @@ public class DriverPlanService {
         return get(user, teamId, seasonId);
     }
 
+    /** Asks for a swap or carries it out directly (DRV-25). */
+    public DriverPlanDto swap(CurrentUser user, UUID teamId, UUID seasonId, DriverPlanDto.SwapInput input) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = writableContext(user, teamId, seasonId);
+            swaps.start(user, c.team().id, c.season().id, memberIds(c), matchDayIds(c), input);
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /** Answers an open swap request: {@code accept}, {@code decline} or {@code withdraw} (DRV-25). */
+    public DriverPlanDto answerSwap(CurrentUser user, UUID teamId, UUID seasonId, UUID swapId, String answer) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = writableContext(user, teamId, seasonId);
+            switch (answer) {
+                case "accept" -> swaps.accept(user, c.team().id, c.season().id, swapId);
+                case "decline" -> swaps.decline(user, c.team().id, c.season().id, swapId);
+                default -> swaps.withdraw(user, c.team().id, c.season().id, swapId);
+            }
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /** Adds another trip (DRV-28). */
+    public DriverPlanDto addTrip(CurrentUser user, UUID teamId, UUID seasonId, DriverPlanDto.TripInput input) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = writableContext(user, teamId, seasonId);
+            UUID driver = input.driverId() == null ? user.personId() : input.driverId();
+            if (!memberIds(c).contains(driver)) {
+                throw DomainError.invalidField("driverId", "Diese Person ist nicht im Team.");
+            }
+            extraTrips.add(user, c.team().id, c.season().id, driver, input);
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /** Removes another trip (DRV-28). */
+    public DriverPlanDto removeTrip(CurrentUser user, UUID teamId, UUID seasonId, UUID tripId) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = writableContext(user, teamId, seasonId);
+            extraTrips.remove(user, c.team().id, c.season().id, tripId);
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /** Context for a change: the season must not be archived. */
+    private Context writableContext(CurrentUser user, UUID teamId, UUID seasonId) {
+        Context c = context(user, teamId, seasonId);
+        c.season().checkWritable();
+        return c;
+    }
+
+    private static Set<UUID> memberIds(Context c) {
+        Set<UUID> ids = new HashSet<>();
+        c.members().forEach(m -> ids.add(m.person.id));
+        return ids;
+    }
+
+    private Set<UUID> matchDayIds(Context c) {
+        Set<UUID> ids = new HashSet<>();
+        matchDays(c).forEach(event -> ids.add(event.id));
+        return ids;
+    }
+
     private Context context(CurrentUser user, UUID teamId, UUID seasonId) {
         Team team = Team.<Team>findByIdOptional(teamId)
                 .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es nicht."));
@@ -124,7 +197,7 @@ public class DriverPlanService {
         if (!user.allTeams() && !member) {
             throw DomainError.forbidden();
         }
-        return new Context(team, season, members, member, user.allTeams(), user.personId());
+        return new Context(team, season, members, member, user.allTeams(), user.personId(), user);
     }
 
     private List<Event> matchDays(Context c) {
@@ -201,10 +274,20 @@ public class DriverPlanService {
                     event.location == null ? null : event.location.name,
                     event.location == null ? null : event.location.address, cancelled, over, missing.isEmpty(),
                     missing, DriverRules.kilometres(distance),
-                    DriverRules.minutes(route.map(Routes.Stored::durationSeconds).orElse(null)), changeable, cars,
+                    DriverRules.minutes(route.map(Routes.Stored::effectiveDurationSeconds).orElse(null)), changeable, cars,
                     freeSeats));
         }
 
+        LocalDate today = extraTrips.today();
+        List<DriverPlanDto.ExtraTrip> others = new ArrayList<>();
+        for (ExtraTrips.Stored trip : extraTrips.of(c.team().id, c.season().id)) {
+            boolean tripOver = trip.over(today);
+            trips.add(new DriverPlanRules.Trip(trip.driverId(), false, tripOver, trip.distanceMeters()));
+            others.add(new DriverPlanDto.ExtraTrip(trip.id(), trip.date(), trip.title(), person.apply(trip.driverId()),
+                    DriverRules.kilometres(trip.distanceMeters()),
+                    DriverRules.kilometres(DriverRules.credit(trip.distanceMeters(), EventStatus.PLANNED)), tripOver,
+                    writable && ExtraTrips.canRemove(c.user(), trip)));
+        }
         Map<UUID, DriverPlanRules.Share> totals = DriverPlanRules.shares(trips);
         List<DriverPlanDto.Share> shares = c.members().stream().map(m -> m.person.id).distinct()
                 .map(id -> {
@@ -223,7 +306,14 @@ public class DriverPlanService {
                 .map(p -> new DriverPlanDto.Driver(PersonSummary.of(p), p.canDrive, p.carSeats,
                         c.canManage() || p.id.equals(c.caller())))
                 .sorted(Comparator.comparing(DriverPlanDto.Driver::person, PersonSummary.ORDER)).toList();
+        DriverPlanDto.Totals sum = new DriverPlanDto.Totals(
+                shares.stream().mapToInt(DriverPlanDto.Share::trips).sum(),
+                shares.stream().mapToInt(DriverPlanDto.Share::plannedTrips).sum(),
+                Math.round(shares.stream().mapToDouble(DriverPlanDto.Share::kilometres).sum() * 10) / 10.0,
+                Math.round(shares.stream().mapToDouble(DriverPlanDto.Share::plannedKilometres).sum() * 10) / 10.0);
         return new DriverPlanDto(c.team().id, c.team().nameIn(c.season()), c.season().id, c.season().name,
-                c.member() && writable, c.canManage() && writable, matchDays, shares, members, drivers);
+                c.member() && writable, c.canManage() && writable, matchDays, shares, members, drivers, sum,
+                swaps.visible(c.user(), c.team().id, c.season().id), others,
+                history.of(c.team().id, c.season().id, ids));
     }
 }

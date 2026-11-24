@@ -45,6 +45,13 @@ async function changeEvent04(page: Page, meetingPoint: string): Promise<void> {
   expect(response.status()).toBe(200);
 }
 
+/** Drivers and passengers are entered on the season page, in the opened match day (DRV-23, DRV-24). */
+async function openEditor(page: Page, eventId: string): Promise<void> {
+  await page.goto(`/teams/${TEAM_1}/fahrerliste`);
+  await page.getByTestId(`plan-edit-${eventId}`).click();
+  await expect(page.getByTestId(`plan-editor-${eventId}`).getByTestId('driver-list')).toBeVisible();
+}
+
 test.beforeEach(async ({ request }) => {
   await reset(request);
 });
@@ -95,7 +102,7 @@ test('DRV-01: the list needs meeting point and venue and exists only for match d
 
 test('DRV-02: a member enters herself as driver with free seats and removes herself again', async ({ page }) => {
   await login(page, 'kim');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   const list = driverList(page);
   await list.getByLabel('Freie Plätze in deinem Auto').selectOption('2');
   await list.getByRole('button', { name: 'Ich fahre', exact: true }).click();
@@ -117,7 +124,7 @@ test('DRV-02: a member enters herself as driver with free seats and removes hers
 
 test('DRV-02: coaches enter and change drivers on behalf of others', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   const list = driverList(page);
   const form = list.getByRole('form', { name: 'Fahrerin oder Fahrer eintragen' });
   await form.getByLabel('Person').selectOption({ label: 'Nina Roth' });
@@ -146,14 +153,14 @@ test('DRV-02: coaches enter and change drivers on behalf of others', async ({ pa
   expect(created.status()).toBe(201);
   const id = (await created.json()).id;
   expect((await page.request.post(`/api/events/${id}/driver-list/cars`, { data: { seats: 3 } })).status()).toBe(200);
-  await page.goto(`/termine/${id}`);
+  await openEditor(page, id);
   await expect(car(page, 'Petra Keller')).toBeVisible();
   await checkAccessibility(page);
 });
 
 test('DRV-03: members ride along in a car with free seats and leave it; a full car offers no seat', async ({ page }) => {
   await login(page, 'jana');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   const list = driverList(page);
   await expect(car(page, 'Petra Keller').getByRole('button', { name: /mitfahren/ })).toHaveCount(0);
   await car(page, 'Sara Brun').getByRole('button', { name: 'Bei Sara Brun mitfahren' }).click();
@@ -169,7 +176,7 @@ test('DRV-03: members ride along in a car with free seats and leave it; a full c
 
 test('DRV-03: coaches assign and move passengers; a person sits in at most one car', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   const list = driverList(page);
   // Petra's car is full: no assignment there
   await expect(car(page, 'Petra Keller').getByLabel('Mitfahrende für Petra Keller wählen')).toHaveCount(0);
@@ -196,14 +203,14 @@ test.describe('Seat change rejected by the API', () => {
   }) => {
     // Petra's car is full with 3 passengers: fewer than 3 seats are not offered
     await login(page, 'petra');
-    await page.goto(`/termine/${T04}`);
+    await openEditor(page, T04);
     const petraSeats = car(page, 'Petra Keller').getByLabel('Plätze im Auto von Petra Keller');
     await expect(petraSeats).toHaveValue('3');
     await expect(petraSeats.getByRole('option')).toHaveText(['3', '4', '5', '6', '7', '8']);
 
     // Sara's empty car offers 1 to 8; meanwhile Jana and Kim get in (another session), the page is stale
     await login(page, 'sara');
-    await page.goto(`/termine/${T04}`);
+    await openEditor(page, T04);
     const saraSeats = car(page, 'Sara Brun').getByLabel('Plätze im Auto von Sara Brun');
     await expect(saraSeats).toHaveValue('3');
     await expect(saraSeats.getByRole('option')).toHaveCount(8);
@@ -334,7 +341,7 @@ test('DRV-10: a cancelled match day keeps its list but credits no kilometres', a
 
 test('DRV-11: the driver is notified in the app when someone rides along', async ({ page }) => {
   await login(page, 'jana');
-  await page.goto(`/termine/${T04}`);
+  await openEditor(page, T04);
   await car(page, 'Sara Brun').getByRole('button', { name: 'Bei Sara Brun mitfahren' }).click();
   await expect(driverList(page).getByRole('status')).toHaveText('Du fährst bei Sara Brun mit.');
 

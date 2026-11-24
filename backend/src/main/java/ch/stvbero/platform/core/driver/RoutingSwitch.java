@@ -32,4 +32,9 @@ public class RoutingSwitch implements Routing {
     public Optional<Result> route(Place from, Place to) {
         return current().route(from, to);
     }
+
+    @Override
+    public RouteProvider provider() {
+        return current().provider();
+    }
 }

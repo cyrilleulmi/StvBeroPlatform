@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -68,5 +69,115 @@ public class DriverPlanResource {
     public DriverPlanDto plan(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
                               @Valid @NotNull DriverPlanDto.Input input) {
         return plan.plan(auth.person(), teamId, season, input);
+    }
+
+    @POST
+    @Path("/swaps")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "startDriverSwap",
+            summary = "Give the trip of a match day to another member, as a takeover or against her trip on another "
+                    + "match day: ask first or enter directly (DRV-25)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto swap(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
+                              @Valid @NotNull DriverPlanDto.SwapInput input) {
+        return plan.swap(auth.person(), teamId, season, input);
+    }
+
+    @POST
+    @Path("/swaps/{swapId}/accept")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "acceptDriverSwap", summary = "Accept a swap request: it is carried out (DRV-25)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto accept(@PathParam("teamId") UUID teamId, @PathParam("swapId") UUID swapId,
+                                @QueryParam("season") UUID season) {
+        return plan.answerSwap(auth.person(), teamId, season, swapId, "accept");
+    }
+
+    @POST
+    @Path("/swaps/{swapId}/decline")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "declineDriverSwap", summary = "Decline a swap request (DRV-25)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto decline(@PathParam("teamId") UUID teamId, @PathParam("swapId") UUID swapId,
+                                 @QueryParam("season") UUID season) {
+        return plan.answerSwap(auth.person(), teamId, season, swapId, "decline");
+    }
+
+    @POST
+    @Path("/swaps/{swapId}/withdraw")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "withdrawDriverSwap", summary = "Withdraw an own swap request (DRV-25)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto withdraw(@PathParam("teamId") UUID teamId, @PathParam("swapId") UUID swapId,
+                                  @QueryParam("season") UUID season) {
+        return plan.answerSwap(auth.person(), teamId, season, swapId, "withdraw");
+    }
+
+    @POST
+    @Path("/trips")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "addExtraTrip", summary = "Add a trip without an event in the app (DRV-28)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto addTrip(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
+                                 @Valid @NotNull DriverPlanDto.TripInput input) {
+        return plan.addTrip(auth.person(), teamId, season, input);
+    }
+
+    @DELETE
+    @Path("/trips/{tripId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "removeExtraTrip", summary = "Remove another trip (DRV-28)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state (DRV-25)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto removeTrip(@PathParam("teamId") UUID teamId, @PathParam("tripId") UUID tripId,
+                                    @QueryParam("season") UUID season) {
+        return plan.removeTrip(auth.person(), teamId, season, tripId);
     }
 }

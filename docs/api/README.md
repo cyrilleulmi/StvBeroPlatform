@@ -1,6 +1,6 @@
 # API
 
-The contract is in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 91 operations). It describes the target state for the core.
+The contract is in [openapi.yaml](openapi.yaml) (OpenAPI 3.1, 114 operations). It describes the target state for the core.
 
 ## Way of working: contract first
 

@@ -35,6 +35,22 @@
         </li>
       }
     </ul>
+    <!-- Desktop: coaches find the administration of their teams directly (E-92) -->
+    @if (coachedTeams().length > 0) {
+      <div class="manage-teams" role="group" [attr.aria-label]="texts.navigation.manageTeams" data-testid="nav-manage-teams">
+        @for (team of coachedTeams(); track team.id) {
+          <a
+            [routerLink]="['/verwaltung/teams', team.id]"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            [attr.data-testid]="'nav-manage-team-' + team.id"
+          >
+            <app-icon name="settings" />
+            <span>{{ texts.navigation.manageTeam(team.name) }}</span>
+          </a>
+        }
+      </div>
+    }
   </nav>
   <main class="content" id="main" tabindex="-1" #main>
     <router-outlet />

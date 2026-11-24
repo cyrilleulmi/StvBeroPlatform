@@ -338,6 +338,9 @@ public class Seed {
     /** Sara's holidays (ABS): Mon 14.12.–Sun 20.12.2026, declines the practices of Tue 15.12. and Thu 17.12. */
     public static final String SARA_ABSENCE_ID = "d0000000-0000-4000-8000-000000000001";
 
+    @Inject
+    ch.stvbero.platform.core.driver.DriverPlanHistory driverPlanHistory;
+
     /** Empties all tables (except the Flyway history), fills in the seed and sets the clock to the default. */
     @Transactional
     public void reset() {
@@ -581,6 +584,8 @@ public class Seed {
                     .setParameter(1, carId(car.nr())).setParameter(2, eventId(car.event()))
                     .setParameter(3, personId(car.driver())).setParameter(4, car.seats())
                     .setParameter(5, zurich(RESPONDED_AT)).executeUpdate();
+            em.flush();
+            driverPlanHistory.seedCarAdded(eventId(car.event()), personId(car.driver()), zurich(RESPONDED_AT));
             for (int person : car.passengers()) {
                 em.createNativeQuery("""
                                 insert into car_passenger (car_id, event_id, person_id, added_at) values (?, ?, ?, ?)""")

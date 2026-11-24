@@ -2,13 +2,17 @@ package ch.stvbero.platform.core.driver;
 
 import ch.stvbero.platform.core.person.PersonSummary;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +30,71 @@ public record DriverPlanDto(
         @Schema(description = "Match days of the team in the season, by start") List<MatchDay> matchDays,
         @Schema(description = "Trips per member of the team, by name (DRV-17)") List<Share> shares,
         @Schema(description = "Members of the team, by name; only for coaches and admins") List<PersonSummary> members,
-        @Schema(description = "Who can drive and with how many places, by name (DRV-18)") List<Driver> drivers) {
+        @Schema(description = "Who can drive and with how many places, by name (DRV-18)") List<Driver> drivers,
+        @Schema(description = "Sum of the distribution (DRV-27)") Totals totals,
+        @Schema(description = "Open swap requests the caller sees: her own and those to her; coaches and admins all (DRV-25)") List<Swap> swaps,
+        @Schema(description = "Other trips of the team in the season, by date (DRV-28)") List<ExtraTrip> extraTrips,
+        @Schema(description = "Changes of the plan, newest first (DRV-26)") List<HistoryEntry> history) {
+
+    /** Sum of all shares (DRV-27). */
+    @Schema(name = "DriverPlanTotals")
+    public record Totals(int trips, int plannedTrips, double kilometres, double plannedKilometres) {
+    }
+
+    /** An open request to take over or swap a trip (DRV-25). */
+    @Schema(name = "DriverSwap")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Swap(UUID id,
+                       @Schema(description = "Match day whose trip is given away") UUID eventId,
+                       @Schema(description = "«Spieltag So 22.11.»") String eventLabel,
+                       @Schema(description = "Driver who gives the trip away") PersonSummary requester,
+                       @Schema(description = "Who is asked to take it over") PersonSummary partner,
+                       @Schema(description = "Match day of the partner's trip in return; missing: takeover") UUID partnerEventId,
+                       String partnerEventLabel,
+                       OffsetDateTime createdAt,
+                       @Schema(description = "The caller may accept or decline (the partner, coaches, admins)") boolean canAnswer,
+                       @Schema(description = "The caller may withdraw (the requester, coaches, admins)") boolean canWithdraw) {
+    }
+
+    /** A trip without an event in the app (DRV-28). */
+    @Schema(name = "ExtraTrip")
+    public record ExtraTrip(UUID id, LocalDate date, String title, PersonSummary driver,
+                            @Schema(description = "Kilometres one way") double distanceKm,
+                            @Schema(description = "Credited kilometres: there and back") double creditKm,
+                            @Schema(description = "The date has passed") boolean over,
+                            @Schema(description = "The caller may remove it: the driver, who added it, coaches, admins") boolean canRemove) {
+    }
+
+    /** One change of the plan (DRV-26). */
+    @Schema(name = "DriverPlanHistoryEntry")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record HistoryEntry(UUID id, @Schema(description = "Match day it concerns; missing for other trips") UUID eventId,
+                               DriverPlanHistory.Kind kind,
+                               @Schema(description = "German sentence for display") String text,
+                               @Schema(description = "Who made the change") PersonSummary by,
+                               OffsetDateTime at) {
+    }
+
+    /** Request: give away the trip of a match day (DRV-25). */
+    @Schema(name = "DriverSwapInput")
+    public record SwapInput(
+            @NotNull(message = "Bitte den Spieltag wählen.") UUID eventId,
+            @Schema(description = "Driver who gives the trip away; missing: the caller herself") UUID driverId,
+            @NotNull(message = "Bitte wählen, wer die Fahrt übernimmt.") UUID partnerId,
+            @Schema(description = "Match day on which the partner drives and the driver takes over in return; missing: takeover") UUID partnerEventId,
+            @Schema(description = "`true`: enter right away; `false`: ask the partner first") boolean direct) {
+    }
+
+    /** Request: add another trip (DRV-28). */
+    @Schema(name = "ExtraTripInput")
+    public record TripInput(
+            @NotNull(message = "Bitte das Datum angeben.") LocalDate date,
+            @NotBlank(message = "Bitte angeben, wofür die Fahrt war.")
+            @Size(max = 80, message = "Höchstens 80 Zeichen.") String title,
+            @Schema(description = "Driver; missing: the caller herself") UUID driverId,
+            @NotNull(message = ExtraTrips.DISTANCE_TEXT) @DecimalMin(value = "0.1", message = ExtraTrips.DISTANCE_TEXT)
+            @DecimalMax(value = "2000", message = ExtraTrips.DISTANCE_TEXT) Double distanceKm) {
+    }
 
     /** A member of the team with her driving settings (DRV-18). */
     @Schema(name = "DriverSetting")

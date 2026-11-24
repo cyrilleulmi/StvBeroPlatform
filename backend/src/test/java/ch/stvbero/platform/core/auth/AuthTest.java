@@ -96,7 +96,9 @@ public class AuthTest {
     @Test
     void nf11TileAttendanceIsRegistered() {
         given().cookie("stv_session", login("anna")).get("/api/tiles").then().statusCode(200)
-                .body("id", contains("anwesenheit"))
+                .body("id", contains("anwesenheit", "fahrerliste", "swissunihockey"))
+                .body("[1].route", equalTo("/fahrerliste"))
+                .body("[2].route", equalTo("/swissunihockey"))
                 .body("[0].title", equalTo("Anwesenheit"))
                 .body("[0].route", equalTo("/termine"))
                 .body("[0].icon", equalTo("calendar-check"))

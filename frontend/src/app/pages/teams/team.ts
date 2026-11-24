@@ -113,6 +113,9 @@ import { TEXTS } from '../../core/texts';
                 data-testid="team-league-link"
                 >{{ texts.league.open }}</a
               >
+              <a class="su-page-link" routerLink="/swissunihockey" data-testid="team-su-page-link">{{
+                texts.suPage.title
+              }}</a>
             } @else {
               <p class="secondary-text">{{ texts.league.notLinked }}</p>
               @if (auth.canManage()) {
@@ -120,6 +123,9 @@ import { TEXTS } from '../../core/texts';
                   texts.league.linkInAdministration
                 }}</a>
               }
+              <a class="su-page-link" routerLink="/swissunihockey" data-testid="team-su-page-link">{{
+                texts.suPage.title
+              }}</a>
             }
           </section>
         }

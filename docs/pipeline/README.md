@@ -159,7 +159,7 @@ So after a usage reset, it takes at most a little over 2 hours until the pipelin
 - GitHub events have an hourly limit per task and account. Anything above it is discarded. That is what the optional schedule trigger is for.
 - In cloud sessions the GitHub GraphQL API is blocked. `gh pr …` and `gh issue …` do not work there. The agents use `scripts/pipeline.sh`, which only uses the REST API.
 - No Docker daemon runs in the cloud. PostgreSQL starts directly via `scripts/db-start.sh`, so Testcontainers and Quarkus Dev Services are off.
-- There is no preview URL yet (hosting open, O-02). To try something out, open a cloud session on the PR branch and use the start command from the test report.
+- Every pull request gets a preview on Fly.io; the link is in a comment of the pull request (E-91, [deployment.md](../deployment.md)). The agents do not use it: they test locally in the cloud session.
 
 ## Further documents
 

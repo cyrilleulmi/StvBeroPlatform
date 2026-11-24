@@ -178,6 +178,9 @@ public class ClubSeed {
                     LocalTime.of(14, 30), LocalTime.of(16, 20), "UHC Musterdorf", "Unihockey Beispielstadt", null, null));
 
     @Inject
+    ch.stvbero.platform.core.driver.DriverPlanHistory driverPlanHistory;
+
+    @Inject
     EntityManager em;
 
     @Inject
@@ -581,6 +584,8 @@ public class ClubSeed {
         Instant at = matchDayStart.minusSeconds(2L * 24 * 3600);
         sql("insert into car (id, event_id, driver_id, seats, created_at) values (?, ?, ?, ?, ?)", Seed.carId(nr),
                 event, Seed.personId(driver), seats, at);
+        em.flush();
+        driverPlanHistory.seedCarAdded(event, Seed.personId(driver), at);
         int added = 0;
         for (int person : candidates) {
             if (added == 2) {
