@@ -15,8 +15,10 @@
 
 <div class="upcoming">
   <section
-    class="card board next"
+    class="card next event-tint"
     data-testid="next-event"
+    [attr.data-tag]="next()?.variant?.color ?? null"
+    [attr.data-filled]="next() && filled().has(next()!.id) ? 'true' : null"
     aria-labelledby="next-event-title"
     [attr.aria-busy]="eventLoading() ? 'true' : null"
   >
@@ -49,7 +51,13 @@
 
   @if (matchDay(); as t) {
     <!-- The next match day always shows, also when a practice comes first (AUF-35) -->
-    <section class="card next" data-testid="next-match-day" aria-labelledby="next-match-day-title">
+    <section
+      class="card next event-tint"
+      data-testid="next-match-day"
+      aria-labelledby="next-match-day-title"
+      [attr.data-tag]="t.variant?.color ?? null"
+      [attr.data-filled]="filled().has(t.id) ? 'true' : null"
+    >
       <h2 id="next-match-day-title" class="eyebrow">{{ texts.start.nextMatchDay }}</h2>
       <a class="event-link" [routerLink]="['/termine', t.id]">
         <span class="event-title">{{ t.title }}</span>
@@ -70,12 +78,14 @@
   }
 
   @if (practices().length > 0) {
-    <section class="card next" data-testid="next-practices" aria-labelledby="next-practices-title">
+    <section class="more-practices" data-testid="next-practices" aria-labelledby="next-practices-title">
       <h2 id="next-practices-title" class="eyebrow">{{ texts.start.morePractices }}</h2>
       <ul class="practices">
         @for (t of practices(); track t.id) {
           <li
-            class="next"
+            class="card next event-tint"
+            [attr.data-tag]="t.variant?.color ?? null"
+            [attr.data-filled]="filled().has(t.id) ? 'true' : null"
             [attr.data-testid]="'start-practice-' + t.id"
             [attr.aria-label]="cardName(t)"
           >

@@ -825,6 +825,22 @@ button:disabled,
   flex: none;
 }
 
+/* An event card in the colour of its kind (VAR-05, E-103): the court line along the top always, the tint
+   only for the next practice and the next match day (`data-filled`), the way the start screen marks what
+   comes next. The chip with the name of the kind sits on white, so it still reads as a chip. */
+.event-tint {
+  border-top: 4px solid var(--tag, var(--primary));
+}
+
+.event-tint[data-filled='true'] {
+  background: color-mix(in srgb, var(--tag-soft, var(--primary-soft)) 55%, var(--surface));
+}
+
+.event-tint .tag-chip {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--tag, var(--border));
+}
+
 /* ---- Entering and leaving (emil-design-eng) ---- */
 
 /* Dialogs are modal, so they stay centred: enter in 200ms from scale(0.96) and transparent, leave faster

@@ -105,17 +105,17 @@
   overflow-wrap: anywhere;
 }
 
-/* On the scoreboard the secondary text is lighter; a little more air between the blocks. */
-.board.next {
+/* The event cards (E-103): a little more air between the blocks, the teams a little smaller */
+.card.next {
   gap: 14px;
   padding: 20px 18px 18px;
 }
 
-.board .event-link {
+.card.next .event-link {
   gap: 4px;
 }
 
-.board .secondary-text {
+.card.next .secondary-text {
   font-size: 14px;
 }
 
@@ -130,17 +130,22 @@
   min-width: 0;
 }
 
+/* Further practices: a heading, then one card per practice */
+.more-practices {
+  display: grid;
+  gap: 8px;
+}
+
+.more-practices > .eyebrow {
+  margin: 6px 0 0;
+}
+
 .practices {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 16px;
-}
-
-.practices > li + li {
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  gap: 12px;
 }
 
 .counter {

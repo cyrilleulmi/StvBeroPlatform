@@ -15,6 +15,7 @@ import type { EventSummary, Team } from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
+import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
 import { yearOf, month, monthKey, eventDate, clockTime } from './time';
@@ -33,7 +34,7 @@ interface Month {
 @Component({
   selector: 'app-events',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse],
+  imports: [RouterLink, Icon, MyResponse, Scoreboard],
   template: `
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
@@ -116,23 +117,21 @@ interface Month {
       <p class="message-error" role="alert">{{ message }}</p>
     }
 
-    <section
-      class="card"
-      aria-labelledby="events-list-title"
-      [attr.aria-busy]="loading() ? 'true' : null"
-    >
+    <section aria-labelledby="events-list-title" [attr.aria-busy]="loading() ? 'true' : null">
       <h2 id="events-list-title" class="visually-hidden">
         {{ past() ? texts.events.pastEvents : texts.events.upcomingEvents }}
       </h2>
       @if (loading()) {
-        <p class="empty">{{ texts.common.loading }}</p>
+        <p class="card empty">{{ texts.common.loading }}</p>
       } @else if (shown().length === 0) {
-        <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
-        @if (hiddenCount(); as n) {
-          <p class="secondary-text" data-testid="optional-hidden">
-            {{ texts.participation.hidden(n) }}
-          </p>
-        }
+        <div class="card">
+          <p class="empty">{{ past() ? texts.events.emptyPast : texts.events.empty }}</p>
+          @if (hiddenCount(); as n) {
+            <p class="secondary-text" data-testid="optional-hidden">
+              {{ texts.participation.hidden(n) }}
+            </p>
+          }
+        </div>
       } @else {
         @if (hiddenCount(); as n) {
           <p class="secondary-text" data-testid="optional-hidden">
@@ -141,103 +140,78 @@ interface Month {
         }
         @for (m of months(); track m.key) {
           <h3 class="month" [id]="'month-' + m.key">{{ m.name }}</h3>
-          <ul class="list" [attr.aria-labelledby]="'month-' + m.key">
+          <!-- Every event as a card like on the start screen, in the colour of its kind (VAR-05, TER-14) -->
+          <ul class="cards" [attr.aria-labelledby]="'month-' + m.key">
             @for (t of m.events; track t.id) {
               <li
-                class="event-entry"
+                class="card event-card event-tint"
+                [attr.data-filled]="filled().has(t.id) ? 'true' : null"
                 [attr.data-testid]="'event-card-' + t.id"
                 [attr.aria-label]="cardName(t)"
                 [attr.data-status]="t.status"
                 [attr.data-variant]="t.variant?.kind"
+                [attr.data-tag]="t.status === 'CANCELLED' ? null : (t.variant?.color ?? null)"
                 [attr.data-participation]="t.myParticipation ?? null"
               >
-                <a class="row-link event" [routerLink]="['/termine', t.id]">
-                  <span class="date" aria-hidden="true" [attr.data-tag]="t.variant?.color">
-                    <span class="weekday">{{ date(t.start).slice(0, 2) }}</span>
-                    <span class="day">{{ date(t.start).slice(3, 9) }}</span>
-                  </span>
-                  <span class="content">
-                    <span class="row-title" [class.struck-through]="t.status === 'CANCELLED'">
-                      {{ t.title }}
-                    </span>
-                    <!-- When and where lead (they decide whether one can come), the teams follow quietly -->
-                    <span class="when-where">
-                      <span class="when">{{ period(t) }}</span>
-                      @if (t.location) {
-                        · {{ t.location.name }}
-                      }
-                    </span>
-                    <span class="secondary-text">{{ teams(t) }}</span>
-                    <!-- One row of markers: kind of event (VAR-05, TER-14), voluntary, status, warnings -->
-                    <span class="status-row">
-                      @if (t.variant; as v) {
-                        <span
-                          class="tag-chip"
-                          data-testid="event-variant"
-                          [attr.data-tag]="v.color"
-                          >{{ v.name }}</span
-                        >
-                      }
-                      @if (t.myParticipation === 'OPTIONAL') {
-                        <span class="chip" data-kind="optional" data-testid="event-optional">{{
-                          texts.participation.optional
-                        }}</span>
-                      }
-                      @if (t.status === 'CANCELLED') {
-                        <span class="chip" data-kind="cancelled" data-testid="event-status">{{
-                          texts.events.cancelled
-                        }}</span>
-                      } @else {
-                        @if (t.rescheduled) {
-                          <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
-                            texts.events.rescheduled
-                          }}</span>
-                        }
-                        <!-- Only coaches and admins get a warning count from the API (F-16) -->
-                        @if (t.warningCount; as n) {
-                          <span
-                            class="chip warning-chip"
-                            data-kind="warning"
-                            data-testid="event-warnings"
-                            [attr.data-warning-count]="n"
-                          >
-                            <app-icon name="triangle-alert" [size]="14" />
-                            {{ texts.warnings.count(n) }}
-                          </span>
-                        }
-                      }
-                    </span>
-                    @if (t.status === 'CANCELLED') {
-                      @if (t.cancellationReason) {
-                        <span class="secondary-text">{{ t.cancellationReason }}</span>
-                      }
-                    } @else {
-                      @if (t.counts; as z) {
-                        <span class="secondary-text counter" data-testid="event-counter">
-                          <span data-counter="attending">{{
-                            texts.overview.attending(z.attending)
-                          }}</span>
-                          ·
-                          <span data-counter="declined">{{
-                            texts.overview.declined(z.declined)
-                          }}</span>
-                          ·
-                          <span data-counter="maybe">{{ texts.overview.maybe(z.maybe) }}</span>
-                          ·
-                          <span data-counter="pending">{{
-                            texts.overview.pending(z.pending)
-                          }}</span>
-                        </span>
-                      }
-                    }
-                    @if (past() && isMember(t)) {
-                      <span class="secondary-text" [attr.data-response]="t.myResponse.status">{{
-                        texts.response.yourResponse(texts.response.status[t.myResponse.status])
+                <a class="event-link" [routerLink]="['/termine', t.id]">
+                  <span class="event-title" [class.struck-through]="t.status === 'CANCELLED'">{{ t.title }}</span>
+                  <!-- When and where lead (they decide whether one can come), the teams follow quietly -->
+                  <span class="when-where">{{ date(t.start) }} · {{ period(t) }}</span>
+                  @if (t.location) {
+                    <span class="place">{{ t.location.name }}</span>
+                  }
+                  <span class="secondary-text">{{ teams(t) }}</span>
+                  <app-icon class="chevron" name="chevron-right" [size]="22" />
+                </a>
+                <!-- One row of markers: kind of event (VAR-05, TER-14), voluntary, status, warnings -->
+                <span class="status-row">
+                  @if (t.variant; as v) {
+                    <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{ v.name }}</span>
+                  }
+                  @if (t.myParticipation === 'OPTIONAL') {
+                    <span class="chip" data-kind="optional" data-testid="event-optional">{{
+                      texts.participation.optional
+                    }}</span>
+                  }
+                  @if (t.status === 'CANCELLED') {
+                    <span class="chip" data-kind="cancelled" data-testid="event-status">{{
+                      texts.events.cancelled
+                    }}</span>
+                  } @else {
+                    @if (t.rescheduled) {
+                      <span class="chip" data-kind="rescheduled" data-testid="event-status">{{
+                        texts.events.rescheduled
                       }}</span>
                     }
-                  </span>
-                  <app-icon name="chevron-right" [size]="20" />
-                </a>
+                    <!-- Only coaches and admins get a warning count from the API (F-16) -->
+                    @if (t.warningCount; as n) {
+                      <span
+                        class="chip warning-chip"
+                        data-kind="warning"
+                        data-testid="event-warnings"
+                        [attr.data-warning-count]="n"
+                      >
+                        <app-icon name="triangle-alert" [size]="14" />
+                        {{ texts.warnings.count(n) }}
+                      </span>
+                    }
+                  }
+                </span>
+                @if (t.status === 'CANCELLED') {
+                  @if (t.cancellationReason) {
+                    <p class="secondary-text reason">{{ t.cancellationReason }}</p>
+                  }
+                } @else if (t.counts; as z) {
+                  <!-- The counts as on the start screen: big digits, «8 dabei · 3 nicht dabei …» for screen readers -->
+                  <p class="scoreboard counter" data-testid="event-counter">
+                    <app-scoreboard [counts]="z" />
+                  </p>
+                }
+                @if (past() && isMember(t)) {
+                  <p class="secondary-text" [attr.data-response]="t.myResponse.status">{{
+                    texts.response.yourResponse(texts.response.status[t.myResponse.status])
+                  }}</p>
+                }
                 @if (!past() && isMember(t)) {
                   <app-my-response
                     class="card-response"
@@ -392,6 +366,21 @@ export class Events {
   protected isMember(t: EventSummary): boolean {
     return t.teams.some((x) => !!x.myTeamRole);
   }
+
+  /**
+   * The next practice and the next match day of the upcoming events: their cards are filled with the colour
+   * of their kind, the others only have the line on top (E-103). Cancelled events do not count.
+   */
+  protected readonly filled = computed(() => {
+    const ids = new Set<string>();
+    if (this.past()) return ids;
+    const planned = this.shown().filter((t) => t.status !== 'CANCELLED');
+    for (const type of ['PRACTICE', 'MATCH_DAY'] as const) {
+      const first = planned.find((t) => t.type === type);
+      if (first) ids.add(first.id);
+    }
+    return ids;
+  });
 
   /** Name of the list entry, e.g. «Training Di 17.11. 18:30». */
   protected cardName(t: EventSummary): string {
