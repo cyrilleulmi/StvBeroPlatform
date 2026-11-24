@@ -553,7 +553,7 @@ export interface paths {
         put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Take a person out of the team (admin, coach, E-101). Existing responses are kept.
+         * Take a person out of the team (admin, coach, E-103). Existing responses are kept.
          * @description Archived seasons are read-only (409, SAI-02).
          */
         delete: operations["removeMember"];
@@ -2955,7 +2955,7 @@ export interface components {
             previousTeams: components["schemas"]["MembershipTeam"][];
             /** @description Every person of the club, by last name */
             people: components["schemas"]["MembershipRow"][];
-            /** @description The caller may take people out of a team (admins and coaches, E-101) */
+            /** @description The caller may take people out of a team (admins and coaches, E-103) */
             canRemove: boolean;
             /** @description The season can be changed (not archived, SAI-02) */
             writable: boolean;

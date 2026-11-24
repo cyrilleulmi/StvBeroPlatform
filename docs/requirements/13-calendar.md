@@ -1,6 +1,6 @@
 # 13 · Calendar subscription
 
-Members subscribe to their events in the calendar of their phone (F-18, decision E-80). The app delivers a personal iCalendar feed; the calendar app fetches it by itself. Each person chooses which of her events the feed delivers (E-93), so that the subscription works like the calendar sync of Spond: only what she takes part in. Out of scope: writing back from the calendar, one feed per team, several addresses per person.
+Members subscribe to their events in the calendar of their phone (F-18, decision E-80). The app delivers a personal iCalendar feed; the calendar app fetches it by itself. Each person chooses which of her events the feed delivers (E-94), so that the subscription works like the calendar sync of Spond: only what she takes part in. Out of scope: writing back from the calendar, one feed per team, several addresses per person.
 
 Status legend: see [README](../../README.md#requirement-status).
 
@@ -23,7 +23,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | CAL-08 | The feed contains no comments of other people and no responses of other people. | Decided |
 | CAL-09 | A feed test validates the output against the iCalendar format (ical4j) and checks one seed event (match day 04 for Anna) field by field. | Decided |
 
-## Filter (E-93)
+## Filter (E-94)
 
 | ID | Requirement | Status |
 |---|---|---|

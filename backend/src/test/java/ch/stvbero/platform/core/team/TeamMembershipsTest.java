@@ -76,7 +76,7 @@ class TeamMembershipsTest {
         assertEquals("FEMALE", petra.get("gender"));
         assertEquals(1987, petra.get("birthYear"));
         assertTrue(json.getBoolean("writable"));
-        // Coaches take people out of a team as well (E-101)
+        // Coaches take people out of a team as well (E-103)
         assertTrue(json.getBoolean("canRemove"));
     }
 
@@ -123,7 +123,7 @@ class TeamMembershipsTest {
     void ptf17MovingOnAndTheBatchIsAllOrNothing() {
         batch(login("anna"), "{\"remove\":[{\"teamId\":\"" + TEAM_1 + "\",\"personId\":\"" + ANNA + "\"}]}").statusCode(403);
 
-        // Moving on: into Team 3 and out of Team 1 in one step, by a coach (E-101)
+        // Moving on: into Team 3 and out of Team 1 in one step, by a coach (E-103)
         String alex = login("petra");
         batch(alex, """
                 {"add":[{"teamId":"%s","personId":"%s","teamRole":"PLAYER"}],

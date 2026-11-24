@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * E-99 · Assistant «Neues Team» (PTF-13, PTF-14) and «Termine überarbeiten» (TER-18 to TER-21). Seed from
+ * E-101 · Assistant «Neues Team» (PTF-13, PTF-14) and «Termine überarbeiten» (TER-18 to TER-21). Seed from
  * docs/test-data.md: series 02 «Training» Thu 19:00–20:30 of Team 1 (20.08.2026–29.04.2027); its event 02 on Thu
  * 19.11. has Anna's response. Default "now": Mon 16.11.2026 06:00.
  */
@@ -71,7 +71,7 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(page.getByTestId('membership-status')).toHaveText('Kim Baumann ist Spielerin oder Spieler in Team 4.');
   await expect(page.getByTestId('membership-in-team')).toHaveText('Im Team: 1 Coach · 1 Spielerin oder Spieler');
   await expect(rows).toHaveCount(17);
-  // Another tap takes her out again, also for a coach (E-101); the row stays where it is
+  // Another tap takes her out again, also for a coach (E-103); the row stays where it is
   await cell(KIM).click();
   await expect(cell(KIM)).toHaveAttribute('data-role', 'none');
   await expect(page.getByTestId('membership-status')).toHaveText('Kim Baumann ist nicht mehr in Team 4.');

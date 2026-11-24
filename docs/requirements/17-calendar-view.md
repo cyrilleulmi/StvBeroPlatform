@@ -1,6 +1,6 @@
 # 17 · Calendar view
 
-A month calendar in the app (E-92), next to the list of events. Not to be confused with the calendar subscription ([13](13-calendar.md)), which brings the events into the phone's own calendar.
+A month calendar in the app (E-93), next to the list of events. Not to be confused with the calendar subscription ([13](13-calendar.md)), which brings the events into the phone's own calendar.
 
 Status legend: see [README](../../README.md#requirement-status).
 

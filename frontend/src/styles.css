@@ -431,7 +431,7 @@ a {
 }
 
 /* Success after an action («… fährt nicht mehr.», «Gespeichert.») does not pop up: the change itself shows on the
-   page, and a box that appears and goes pushes everything below it (E-97). It stays a live region for screen
+   page, and a box that appears and goes pushes everything below it (E-99). It stays a live region for screen
    readers and tests (docs/testability.md, rule 6). Errors stay visible. */
 .message-success[role='status'] {
   position: absolute;
@@ -825,7 +825,7 @@ button:disabled,
   flex: none;
 }
 
-/* An event card in the colour of its kind (VAR-05, E-103): the court line along the top always, the tint
+/* An event card in the colour of its kind (VAR-05, E-105): the court line along the top always, the tint
    only for the next practice and the next match day (`data-filled`), the way the start screen marks what
    comes next. The chip with the name of the kind sits on white, so it still reads as a chip. */
 .event-tint {

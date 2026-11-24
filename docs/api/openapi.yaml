@@ -757,7 +757,7 @@ paths:
     delete:
       tags: [Teams]
       operationId: removeMember
-      summary: Take a person out of the team (admin, coach, E-101). Existing responses are kept.
+      summary: Take a person out of the team (admin, coach, E-103). Existing responses are kept.
       description: Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
@@ -3665,7 +3665,7 @@ components:
           type: array
           description: Every person of the club, by last name
           items: { $ref: '#/components/schemas/MembershipRow' }
-        canRemove: { type: boolean, description: 'The caller may take people out of a team (admins and coaches, E-101)' }
+        canRemove: { type: boolean, description: 'The caller may take people out of a team (admins and coaches, E-103)' }
         writable: { type: boolean, description: 'The season can be changed (not archived, SAI-02)' }
     MembershipTeam:
       type: object

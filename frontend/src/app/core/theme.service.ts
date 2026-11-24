@@ -12,7 +12,7 @@ const ATTRIBUTE: Record<ThemeMode, string | null> = {
 
 /**
  * Theme (NF-06, NF-08): Hell, Dunkel or System. The choice stays stored in the browser.
- * Without a choice the app is Hell, also on a device in dark mode (E-98): Dunkel, or «System» that follows the
+ * Without a choice the app is Hell, also on a device in dark mode (E-100): Dunkel, or «System» that follows the
  * device, has to be chosen in the profile. A stored theme that no longer exists («dune», «github-dark», E-90)
  * falls back to Hell. The inline script in index.html applies the choice before the start.
  */

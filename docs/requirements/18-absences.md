@@ -1,6 +1,6 @@
 # 18 · Absences
 
-Players (and every other member) enter longer absences such as holidays or an injury once, instead of declining every practice by hand (E-92).
+Players (and every other member) enter longer absences such as holidays or an injury once, instead of declining every practice by hand (E-93).
 
 Status legend: see [README](../../README.md#requirement-status).
 

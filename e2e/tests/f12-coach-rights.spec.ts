@@ -104,7 +104,7 @@ test('F-12 K2 PTF-11: Petra sees «Verwaltung», creates a person and adds her t
   await checkAccessibility(page);
 });
 
-test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403 (taking someone out of a team is allowed, E-101)', async ({ page }) => {
+test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403 (taking someone out of a team is allowed, E-103)', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByTestId('add-line')).toBeVisible();

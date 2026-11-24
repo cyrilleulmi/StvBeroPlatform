@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * Driver list «Raster» (E-96: DRV-29 to DRV-33, docs/proposals/driver-list.md). Seed from
+ * Driver list «Raster» (E-98: DRV-29 to DRV-33, docs/proposals/driver-list.md). Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Jana responded «dabei» and has no seat. Every test adds a match day on Sun 06.12. without cars. Default "now":
  * Mon 16.11.2026 06:00.
@@ -125,7 +125,7 @@ test('DRV-33: «Alle entfernen» takes every planned driver off after a question
   await expect(page.getByTestId('remove-all')).toHaveCount(0);
 });
 
-test('E-96: the grid shows the places of each car, the distance of each match day and the totals', async ({ page }) => {
+test('E-98: the grid shows the places of each car, the distance of each match day and the totals', async ({ page }) => {
   const december = await openPlan(page, 'petra');
   await expect(page.getByTestId(`plan-row-${SARA}`).getByTestId('plan-car-seats')).toContainText(/\d/);
   await expect(page.getByTestId(`plan-day-km-${T04}`)).toHaveText('23.4 km');

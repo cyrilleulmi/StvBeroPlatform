@@ -1,7 +1,7 @@
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * Special permissions per event and series (RR-09 to RR-14, E-95): a coach lets Kim (player of Team 1) manage
+ * Special permissions per event and series (RR-09 to RR-14, E-96): a coach lets Kim (player of Team 1) manage
  * event 01 like a coach.
  */
 

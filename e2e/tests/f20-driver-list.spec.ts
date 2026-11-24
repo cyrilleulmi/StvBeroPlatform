@@ -6,7 +6,7 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
  * Petra's full car (Anna, Lea, Mia), Sara's empty car (3 seats) and Jana «dabei» without a seat; the routing
  * simulator knows «Parkplatz Sporthalle Nord» → «Sporthalle Seefeld» (23.4 km, 26 min).
  * On the match day the section shows the places and the people who travel together; «Plätze zuweisen» opens the
- * cars as bubbles (E-96). Default "now": Mon 16.11.2026 06:00.
+ * cars as bubbles (E-98). Default "now": Mon 16.11.2026 06:00.
  */
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';

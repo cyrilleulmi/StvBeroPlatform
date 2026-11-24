@@ -369,7 +369,7 @@ export class Events {
 
   /**
    * The next practice and the next match day of the upcoming events: their cards are filled with the colour
-   * of their kind, the others only have the line on top (E-103). Cancelled events do not count.
+   * of their kind, the others only have the line on top (E-105). Cancelled events do not count.
    */
   protected readonly filled = computed(() => {
     const ids = new Set<string>();

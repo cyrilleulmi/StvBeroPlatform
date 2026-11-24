@@ -67,7 +67,7 @@ test('PTF-16 PTF-17: at the end of a season an admin moves people on in one tabl
   await expect(cell(page, VERA, TEAM_2)).toHaveAttribute('data-role', 'none');
 });
 
-test('PTF-16 E-101: coaches put people into teams, change team roles and take people out', async ({
+test('PTF-16 E-103: coaches put people into teams, change team roles and take people out', async ({
   page,
 }) => {
   await login(page, 'petra');

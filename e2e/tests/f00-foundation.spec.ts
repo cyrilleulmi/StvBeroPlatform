@@ -179,7 +179,7 @@ test.describe('Design', () => {
 
     const themeSwitch = page.getByTestId('theme-switch');
     await expect(themeSwitch).toHaveAccessibleName('Darstellung');
-    // Hell is the default (E-98)
+    // Hell is the default (E-100)
     await expect(themeSwitch.getByRole('radio', { name: 'Hell' })).toBeChecked();
     await expect(documentRoot(page)).toHaveAttribute('data-theme', 'light');
     expect(await background(page)).toBe(LIGHT);
@@ -205,7 +205,7 @@ test.describe('Design', () => {
     await expect(page.getByTestId('theme-switch').getByRole('radio', { name: 'System' })).toBeChecked();
   });
 
-  test('E-98: a device in dark mode still starts in Hell; Dunkel needs a choice', async ({ page }) => {
+  test('E-100: a device in dark mode still starts in Hell; Dunkel needs a choice', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await login(page, 'alex');
     await page.goto('/');

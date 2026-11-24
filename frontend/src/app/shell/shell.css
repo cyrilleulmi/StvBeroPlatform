@@ -196,7 +196,7 @@ a.active span {
   color: var(--text);
 }
 
-/* «<Team> verwalten» only in the desktop navigation (E-91) */
+/* «<Team> verwalten» only in the desktop navigation (E-92) */
 .manage-teams {
   display: none;
 }

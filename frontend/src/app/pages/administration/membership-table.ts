@@ -838,7 +838,7 @@ export class MembershipTable {
 
   /**
    * A tap on a field: into the team with the chosen team role, another team role for someone who is in it, or out
-   * of the team again (E-101). Shows at once; the request follows, and a failure puts the field back.
+   * of the team again (E-103). Shows at once; the request follows, and a failure puts the field back.
    */
   protected toggle(r: ViewRow, c: TeamColumn): void {
     const d = this.data();
@@ -850,7 +850,7 @@ export class MembershipTable {
     if (!before || before !== chosen) {
       after = chosen;
     } else {
-      // The same team role again: out of the team (E-101)
+      // The same team role again: out of the team (E-103)
       after = undefined;
     }
     this.setCell(k, after);
@@ -914,7 +914,7 @@ export class MembershipTable {
     });
   }
 
-  /** Everyone shown leaves the team, after a question (E-101). */
+  /** Everyone shown leaves the team, after a question (E-103). */
   protected bulkRemove(): void {
     const target = this.bulkTarget();
     if (!target) return;

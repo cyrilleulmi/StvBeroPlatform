@@ -59,7 +59,7 @@ for (const t of THEMES) {
   });
 }
 
-test('NF-08 E-98: A stored theme that no longer exists falls back to «Hell»', async ({ page }) => {
+test('NF-08 E-100: A stored theme that no longer exists falls back to «Hell»', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await login(page, 'anna');
   await page.goto('/profil');
@@ -71,7 +71,7 @@ test('NF-08 E-98: A stored theme that no longer exists falls back to «Hell»', 
 });
 
 test('NF-40 E-68 E-90: An old stored theme (hell, duene, dune, github-dark) loads the app with «Hell» and no console errors', async ({ page }) => {
-  // No migration (E-68): old values from before F-11 fall back to «Hell» (E-98).
+  // No migration (E-68): old values from before F-11 fall back to «Hell» (E-100).
   // The console check of the `test` fixture fails the test on any console error.
   await page.emulateMedia({ colorScheme: 'light' });
   await login(page, 'anna');

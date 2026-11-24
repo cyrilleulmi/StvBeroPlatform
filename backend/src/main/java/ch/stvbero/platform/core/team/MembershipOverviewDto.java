@@ -18,7 +18,7 @@ public record MembershipOverviewDto(
         @Schema(description = "Teams of the season by name, then the teams of the season before that are not in this season yet") List<TeamColumn> teams,
         @Schema(description = "Teams of the season before with their names of that time") List<TeamColumn> previousTeams,
         @Schema(description = "Every person of the club, by last name") List<Row> people,
-        @Schema(description = "The caller may take people out of a team (admins and coaches, E-101)") boolean canRemove,
+        @Schema(description = "The caller may take people out of a team (admins and coaches, E-103)") boolean canRemove,
         @Schema(description = "The season can be changed (not archived, SAI-02)") boolean writable) {
 
     @Schema(name = "MembershipTeam")

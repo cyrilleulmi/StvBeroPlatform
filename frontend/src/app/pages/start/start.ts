@@ -42,7 +42,7 @@ export class Start implements OnInit {
   /** Next match day when the next event is not one (AUF-35). */
   protected readonly matchDay = signal<EventSummary | null>(null);
   protected readonly eventLoading = signal(true);
-  /** The next practice and the next match day: filled with the colour of their kind (E-103). */
+  /** The next practice and the next match day: filled with the colour of their kind (E-105). */
   protected readonly filled = computed(() => {
     const all = [this.next(), this.matchDay(), ...this.practices()].filter((t): t is EventSummary => !!t);
     const ids = new Set<string>();

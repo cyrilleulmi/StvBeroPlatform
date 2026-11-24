@@ -1,6 +1,6 @@
 # Proposals for a simpler driver list
 
-Status: **decided (E-96): proposal B «Raster»**, with the changes listed under [Chosen](#chosen). Proposals A and C are dropped; their branches are deleted. Cyrille was not happy with the page «Fahrerliste» of E-91: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
+Status: **decided (E-98): proposal B «Raster»**, with the changes listed under [Chosen](#chosen). Proposals A and C are dropped; their branches are deleted. Cyrille was not happy with the page «Fahrerliste» of E-92: it grew into many forms (plan one driver for several match days, swaps on request, other trips, history, distribution table, who can drive). The driver list should be simple and serve two cases:
 
 1. **Before the season:** assign all trips at once, as fairly as possible, with an assumption of how many people travel (a number set by hand, by default all players and coaches).
 2. **Right before a match day:** add or remove a driver, and put the people into the cars.
@@ -63,7 +63,7 @@ Then http://localhost:4200/dev-login. Good to look at: team «Herren KF 4. Liga 
 
 ## Chosen
 
-Cyrille chose B «Raster» on 23.11.2026 (E-96), with these changes:
+Cyrille chose B «Raster» on 23.11.2026 (E-98), with these changes:
 
 - The match day shows by default only «<n> Plätze für <m> Personen». «Plätze zuweisen», for everyone of the team, opens the cars as bubbles (DRV-23, DRV-32).
 - Every member of the team arranges the cars of a match day for everyone (DRV-32).

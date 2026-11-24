@@ -173,7 +173,7 @@ public class TeamService {
     }
 
     /**
-     * Taking a person out of a team: admins and coaches (PTF-11, E-101). It is not deleting (RR-08): the person, her
+     * Taking a person out of a team: admins and coaches (PTF-11, E-103). It is not deleting (RR-08): the person, her
      * responses and her other teams stay.
      */
     @Transactional
@@ -231,7 +231,7 @@ public class TeamService {
 
     /**
      * Several changes at once (PTF-17), all or nothing: people join teams (someone who is already in the team gets
-     * the new team role) and leave teams (E-101).
+     * the new team role) and leave teams (E-103).
      */
     @Transactional
     public MembershipOverviewDto.BatchResult changeMemberships(CurrentUser user, UUID seasonId, MembershipBatchInput input) {
