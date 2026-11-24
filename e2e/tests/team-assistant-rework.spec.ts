@@ -71,10 +71,13 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(page.getByTestId('membership-status')).toHaveText('Kim Baumann ist Spielerin oder Spieler in Team 4.');
   await expect(page.getByTestId('membership-in-team')).toHaveText('Im Team: 1 Coach · 1 Spielerin oder Spieler');
   await expect(rows).toHaveCount(17);
-  // Removing is for admins (RR-08): another tap changes nothing for a coach
+  // Another tap takes her out again, also for a coach (E-101); the row stays where it is
+  await cell(KIM).click();
+  await expect(cell(KIM)).toHaveAttribute('data-role', 'none');
+  await expect(page.getByTestId('membership-status')).toHaveText('Kim Baumann ist nicht mehr in Team 4.');
+  await expect(rows).toHaveCount(17);
   await cell(KIM).click();
   await expect(cell(KIM)).toHaveAttribute('data-role', 'PLAYER');
-  await expect(people).toContainText('Entfernen können nur Admins.');
   await checkAccessibility(page);
 
   // 3 swiss unihockey: explained, can be skipped

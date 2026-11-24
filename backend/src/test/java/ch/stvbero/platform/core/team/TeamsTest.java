@@ -239,8 +239,8 @@ class TeamsTest {
                 .post("/api/teams/" + TEAM_2 + "/members").then().statusCode(201);
         given().cookie("stv_session", petra).contentType(ContentType.JSON).body("{\"teamRole\":\"COACH\"}")
                 .put("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(200);
-        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(403)
-                .body("title", equalTo("Keine Berechtigung"));
-        given().cookie("stv_session", alex).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(204);
+        // Coaches take people out of a team as well (E-101)
+        given().cookie("stv_session", petra).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(204);
+        given().cookie("stv_session", alex).delete("/api/teams/" + TEAM_2 + "/members/" + TINA).then().statusCode(404);
     }
 }

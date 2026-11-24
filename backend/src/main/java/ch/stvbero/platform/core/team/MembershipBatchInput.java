@@ -13,7 +13,7 @@ import java.util.UUID;
 public record MembershipBatchInput(
         @Schema(nullable = true, description = "People to put into a team; someone who is in it with another team role gets the new one")
         @Size(max = 500) List<@Valid @NotNull Add> add,
-        @Schema(nullable = true, description = "People to remove from a team (admins only, RR-08); someone who is not in it is skipped")
+        @Schema(nullable = true, description = "People to take out of a team; someone who is not in it is skipped")
         @Size(max = 500) List<@Valid @NotNull Remove> remove) {
 
     @Schema(name = "MembershipAdd")

@@ -344,7 +344,7 @@ const key = (personId: string, teamId: string) => `${personId}|${teamId}`;
           <span class="toggle small" data-role="COACH" aria-hidden="true">{{ t.coachMark }}</span> {{ t.legendCoach }}
           <span class="toggle small" data-role="none" aria-hidden="true"></span> {{ t.legendOff }}
           @if (d.writable) {
-            <span>· {{ d.canRemove ? t.legendRemove : t.legendNoRemove }}</span>
+            <span>· {{ t.legendRemove }}</span>
           }
         </p>
       } @else if (!error()) {
@@ -833,7 +833,7 @@ export class MembershipTable {
 
   /**
    * A tap on a field: into the team with the chosen team role, another team role for someone who is in it, or out
-   * of the team again (admins, RR-08). Shows at once; the request follows, and a failure puts the field back.
+   * of the team again (E-101). Shows at once; the request follows, and a failure puts the field back.
    */
   protected toggle(r: ViewRow, c: TeamColumn): void {
     const d = this.data();
@@ -844,11 +844,9 @@ export class MembershipTable {
     let after: TeamRole | undefined;
     if (!before || before !== chosen) {
       after = chosen;
-    } else if (d.canRemove) {
-      after = undefined;
     } else {
-      this.announce.set(this.t.onlyAdminsRemove);
-      return;
+      // The same team role again: out of the team (E-101)
+      after = undefined;
     }
     this.setCell(k, after);
     this.error.set(null);
@@ -911,7 +909,7 @@ export class MembershipTable {
     });
   }
 
-  /** Everyone shown leaves the team (admins, RR-08), after a question. */
+  /** Everyone shown leaves the team, after a question (E-101). */
   protected bulkRemove(): void {
     const target = this.bulkTarget();
     if (!target) return;

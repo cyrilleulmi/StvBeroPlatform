@@ -76,9 +76,8 @@ class TeamMembershipsTest {
         assertEquals("FEMALE", petra.get("gender"));
         assertEquals(1987, petra.get("birthYear"));
         assertTrue(json.getBoolean("writable"));
-        // Removing is for admins (RR-08)
-        assertFalse(json.getBoolean("canRemove"));
-        assertTrue(overview(login("alex")).getBoolean("canRemove"));
+        // Coaches take people out of a team as well (E-101)
+        assertTrue(json.getBoolean("canRemove"));
     }
 
     @Test
@@ -121,14 +120,11 @@ class TeamMembershipsTest {
     }
 
     @Test
-    void ptf17RemovingIsForAdminsAndTheBatchIsAllOrNothing() {
-        String petra = login("petra");
-        String remove = "{\"remove\":[{\"teamId\":\"" + TEAM_1 + "\",\"personId\":\"" + ANNA + "\"}]}";
-        batch(petra, remove).statusCode(403);
-        assertTrue(teams(overview(petra), ANNA).contains(TEAM_1 + ":PLAYER"));
+    void ptf17MovingOnAndTheBatchIsAllOrNothing() {
+        batch(login("anna"), "{\"remove\":[{\"teamId\":\"" + TEAM_1 + "\",\"personId\":\"" + ANNA + "\"}]}").statusCode(403);
 
-        // Moving on: into Team 3 and out of Team 1 in one step
-        String alex = login("alex");
+        // Moving on: into Team 3 and out of Team 1 in one step, by a coach (E-101)
+        String alex = login("petra");
         batch(alex, """
                 {"add":[{"teamId":"%s","personId":"%s","teamRole":"PLAYER"}],
                  "remove":[{"teamId":"%s","personId":"%s"},{"teamId":"%s","personId":"%s"}]}"""

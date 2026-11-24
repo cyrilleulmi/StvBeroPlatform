@@ -104,7 +104,7 @@ test('F-12 K2 PTF-11: Petra sees «Verwaltung», creates a person and adds her t
   await checkAccessibility(page);
 });
 
-test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403', async ({ page }) => {
+test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403 (taking someone out of a team is allowed, E-101)', async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByTestId('add-line')).toBeVisible();
@@ -112,12 +112,9 @@ test('F-12 K3 RR-08: Petra sees no delete actions, the API answers 403', async (
 
   await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await expect(page.getByLabel('Funktion von Anna Muster')).toBeVisible();
-  await expect(page.getByRole('button', { name: /entfernen/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Anna Muster entfernen' })).toBeVisible();
 
-  for (const response of [
-    await page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_LINE_1}`),
-    await page.request.delete(`/api/teams/${TEAM_1}/members/${ANNA}`),
-  ]) {
+  for (const response of [await page.request.delete(`/api/teams/${TEAM_1}/groups/${T1_LINE_1}`)]) {
     expect(response.status()).toBe(403);
     expect((await response.json()).title).toBe('Keine Berechtigung');
   }

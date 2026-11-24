@@ -172,10 +172,13 @@ public class TeamService {
         return TeamMembershipDto.of(membership);
     }
 
-    /** Removing a person from a team counts as deleting: admins only (RR-08, E-69). */
+    /**
+     * Taking a person out of a team: admins and coaches (PTF-11, E-101). It is not deleting (RR-08): the person, her
+     * responses and her other teams stay.
+     */
     @Transactional
     public void removeMember(CurrentUser user, UUID teamId, UUID personId, UUID seasonId) {
-        user.checkAdmin();
+        user.checkAllTeams();
         TeamMembership membership = membership(teamId, personId, seasonId);
         membership.season.checkWritable();
         membership.delete();
@@ -216,7 +219,7 @@ public class TeamService {
                         now.getOrDefault(p.id, List.of()), before.getOrDefault(p.id, List.of())))
                 .toList();
         return new MembershipOverviewDto(SeasonDto.of(season, current),
-                previous == null ? null : SeasonDto.of(previous, current), teams, previousTeams, people, user.admin(),
+                previous == null ? null : SeasonDto.of(previous, current), teams, previousTeams, people, user.allTeams(),
                 !season.isArchived());
     }
 
@@ -228,16 +231,13 @@ public class TeamService {
 
     /**
      * Several changes at once (PTF-17), all or nothing: people join teams (someone who is already in the team gets
-     * the new team role), and admins remove people from teams (RR-08).
+     * the new team role) and leave teams (E-101).
      */
     @Transactional
     public MembershipOverviewDto.BatchResult changeMemberships(CurrentUser user, UUID seasonId, MembershipBatchInput input) {
         user.checkAllTeams();
         List<MembershipBatchInput.Add> adds = input.add() == null ? List.of() : input.add();
         List<MembershipBatchInput.Remove> removes = input.remove() == null ? List.of() : input.remove();
-        if (!removes.isEmpty()) {
-            user.checkAdmin();
-        }
         Season season = Season.orCurrent(seasonId);
         season.checkWritable();
         LocalDate today = LocalDate.ofInstant(clock.now(), BackendClock.ZONE);

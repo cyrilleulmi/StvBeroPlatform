@@ -52,7 +52,7 @@ public class TeamMembershipResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "changeTeamMemberships",
-            summary = "Put several people into teams and remove several at once (PTF-17, admin, coach; removing: admin only, RR-08)")
+            summary = "Put several people into teams and take several out at once (PTF-17, admin, coach)")
     @APIResponse(responseCode = "200", description = "Changed",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = MembershipOverviewDto.BatchResult.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",

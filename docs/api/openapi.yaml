@@ -674,7 +674,7 @@ paths:
     post:
       tags: [Teams]
       operationId: changeTeamMemberships
-      summary: 'Put several people into teams and remove several at once (PTF-17, admin, coach; removing: admin only, RR-08)'
+      summary: Put several people into teams and take several out at once (PTF-17, admin, coach)
       description: |
         All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
         to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
@@ -757,7 +757,7 @@ paths:
     delete:
       tags: [Teams]
       operationId: removeMember
-      summary: Remove a person from the team (admin only, RR-08). Existing responses are kept.
+      summary: Take a person out of the team (admin, coach, E-101). Existing responses are kept.
       description: Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
@@ -3665,7 +3665,7 @@ components:
           type: array
           description: Every person of the club, by last name
           items: { $ref: '#/components/schemas/MembershipRow' }
-        canRemove: { type: boolean, description: 'The caller may remove people from a team (admins, RR-08)' }
+        canRemove: { type: boolean, description: 'The caller may take people out of a team (admins and coaches, E-101)' }
         writable: { type: boolean, description: 'The season can be changed (not archived, SAI-02)' }
     MembershipTeam:
       type: object
@@ -3705,7 +3705,7 @@ components:
         remove:
           type: [array, 'null']
           maxItems: 500
-          description: People to remove from a team (admins only, RR-08); someone who is not in it is skipped
+          description: People to take out of a team; someone who is not in it is skipped
           items: { $ref: '#/components/schemas/MembershipRemove' }
     MembershipAdd:
       type: object

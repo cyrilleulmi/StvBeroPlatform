@@ -500,7 +500,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Put several people into teams and remove several at once (PTF-17, admin, coach; removing: admin only, RR-08)
+         * Put several people into teams and take several out at once (PTF-17, admin, coach)
          * @description All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
          *     to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
          */
@@ -553,7 +553,7 @@ export interface paths {
         put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Remove a person from the team (admin only, RR-08). Existing responses are kept.
+         * Take a person out of the team (admin, coach, E-101). Existing responses are kept.
          * @description Archived seasons are read-only (409, SAI-02).
          */
         delete: operations["removeMember"];
@@ -2955,7 +2955,7 @@ export interface components {
             previousTeams: components["schemas"]["MembershipTeam"][];
             /** @description Every person of the club, by last name */
             people: components["schemas"]["MembershipRow"][];
-            /** @description The caller may remove people from a team (admins, RR-08) */
+            /** @description The caller may take people out of a team (admins and coaches, E-101) */
             canRemove: boolean;
             /** @description The season can be changed (not archived, SAI-02) */
             writable: boolean;
@@ -2983,7 +2983,7 @@ export interface components {
         MembershipBatchInput: {
             /** @description People to put into a team; someone who is in it with another team role gets the new one */
             add?: components["schemas"]["MembershipAdd"][] | null;
-            /** @description People to remove from a team (admins only, RR-08); someone who is not in it is skipped */
+            /** @description People to take out of a team; someone who is not in it is skipped */
             remove?: components["schemas"]["MembershipRemove"][] | null;
         };
         MembershipAdd: {

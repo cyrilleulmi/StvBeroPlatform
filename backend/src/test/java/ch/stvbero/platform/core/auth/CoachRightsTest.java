@@ -16,6 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 
 /**
  * F-12: coaches manage all teams, deleting stays with admins (RR-03, RR-04, RR-06, RR-08, E-69).
@@ -104,12 +105,14 @@ class CoachRightsTest {
     // ------------------------------------------------------------------ Criterion 3: one test per delete endpoint
 
     @Test
-    void k3CoachCannotRemoveMember() {
+    void e101CoachTakesAMemberOutOfATeam() {
         String petra = login("petra");
-        forbidden(as(petra).delete("/api/teams/" + TEAM_1 + "/members/" + ANNA).then());
-        forbidden(as(login("marc")).delete("/api/teams/" + TEAM_2 + "/members/" + PETRA).then());
+        as(petra).delete("/api/teams/" + TEAM_1 + "/members/" + ANNA).then().statusCode(204);
+        as(login("marc")).delete("/api/teams/" + TEAM_2 + "/members/" + PETRA).then().statusCode(204);
         as(petra).get("/api/teams/" + TEAM_1).then().statusCode(200)
-                .body("lineup.groups.players.flatten().firstName", hasItem("Anna"));
+                .body("lineup.groups.players.flatten().firstName", not(hasItem("Anna")));
+        // Players cannot
+        forbidden(as(login("lea")).delete("/api/teams/" + TEAM_1 + "/members/" + PETRA).then());
     }
 
     @Test

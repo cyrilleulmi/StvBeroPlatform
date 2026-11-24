@@ -67,14 +67,14 @@ test('PTF-16 PTF-17: at the end of a season an admin moves people on in one tabl
   await expect(cell(page, VERA, TEAM_2)).toHaveAttribute('data-role', 'none');
 });
 
-test('PTF-16 RR-08: coaches put people into teams and change team roles, removing stays with admins', async ({
+test('PTF-16 E-101: coaches put people into teams, change team roles and take people out', async ({
   page,
 }) => {
   await login(page, 'petra');
   await page.goto('/verwaltung/zuteilung');
   const table = page.getByTestId('membership-table');
   await expect(page.getByTestId('membership-bulk-add')).toBeVisible();
-  await expect(page.getByTestId('membership-bulk-remove')).toHaveCount(0);
+  await expect(page.getByTestId('membership-bulk-remove')).toBeVisible();
 
   await cell(page, ANNA, TEAM_3).click();
   await expect(cell(page, ANNA, TEAM_3)).toHaveAttribute('data-role', 'PLAYER');
@@ -82,7 +82,9 @@ test('PTF-16 RR-08: coaches put people into teams and change team roles, removin
   // It is saved
   await page.reload();
   await expect(cell(page, ANNA, TEAM_3)).toHaveAttribute('data-role', 'PLAYER');
-  // Another tap does not remove her
+  // Another tap takes her out, one more puts her back
+  await cell(page, ANNA, TEAM_3).click();
+  await expect(cell(page, ANNA, TEAM_3)).toHaveAttribute('data-role', 'none');
   await cell(page, ANNA, TEAM_3).click();
   await expect(cell(page, ANNA, TEAM_3)).toHaveAttribute('data-role', 'PLAYER');
   // As a coach instead
