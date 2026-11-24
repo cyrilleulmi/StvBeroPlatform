@@ -1,0 +1,31 @@
+# Fly.io app of the hosted test environments (E-91, docs/deployment.md).
+# The test environment of main uses this app name; every preview is deployed with --app <name>-pr-<nr>
+# by scripts/deploy.sh. Secrets (database, STV_APP_URL) are set by the script, never here.
+app = "stvbero"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+  [build.args]
+    PROFILE = "preview"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Stops when nobody uses it and starts again on the next request (a few seconds). The database sleeps too.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/q/health/ready"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"

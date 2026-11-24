@@ -7,7 +7,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | No. | Question | Remark |
 |---|---|---|
 | O-01 | **Login:** How do members log in? | E-mail and password, magic link or Keycloak/OIDC. |
-| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | |
+| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | Previews and a test environment of `develop` with live club data are decided (E-91, [deployment.md](deployment.md)). Open: production with real data, after the login (O-01). |
 | O-03 | **Data protection:** Which data is stored, who sees what (nDSG)? | For now the app is meant for adults. If minors are added, reassess. |
 | O-04 | **Multi-tenancy:** Are several clubs needed in one installation? | Several teams within the club are part of the core. |
 | O-05 | ~~**Notifications:** E-mail, push via the PWA or both?~~ | Decided: both (E-71, F-19). |
@@ -22,9 +22,9 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | O-10 | Which team roles are needed besides player and coach? | E.g. assistant coach, team manager. See [PTF-06](requirements/01-people-teams-roles.md). |
 | O-11 | By default, how many hours before the event is the response deadline? | See [TER-09](requirements/03-events.md). |
 | O-12 | May responses still be changed after the deadline? | Assumption: yes, with a notice to the coach ([ANM-09](requirements/04-responses.md)). |
-| O-68 | Calendar filter details (E-94) | Assumptions, to confirm: not called up in a published call-up counts like «nicht dabei» (CAL-12); a draft call-up does not count; leaving out a team keeps events that also belong to another of the person's teams (CAL-13); cancelled events follow the filter (CAL-15); every change is saved at once. A real two-way sync with Google or Apple (like Spond) is not planned: the subscription is fetched by the calendar app, Google may take up to a day. |
-| O-69 | Required reason with «nicht dabei» (E-95) | Assumptions, to confirm: the setting is per event variant (not per event or per team); default off; also required when a coach responds on behalf of someone; responses given before keep no reason. |
-| O-70 | Special permissions (E-96) | Assumptions, to confirm: one kind of permission with all coach rights for the event (edit, move, cancel, respond on behalf, comments, call-up, results, driver list, attendance), but not the teams of the event, not the series, no deleting, not passing it on; only members of the teams of the event; also per series; everyone in the event sees who has one; the person is notified when she gets it, not when it is taken away; such people also get late cancellations with the reason. |
+| O-67 | Calendar filter details (E-94) | Assumptions, to confirm: not called up in a published call-up counts like «nicht dabei» (CAL-12); a draft call-up does not count; leaving out a team keeps events that also belong to another of the person's teams (CAL-13); cancelled events follow the filter (CAL-15); every change is saved at once. A real two-way sync with Google or Apple (like Spond) is not planned: the subscription is fetched by the calendar app, Google may take up to a day. |
+| O-68 | Required reason with «nicht dabei» (E-95) | Assumptions, to confirm: the setting is per event variant (not per event or per team); default off; also required when a coach responds on behalf of someone; responses given before keep no reason. |
+| O-69 | Special permissions (E-96) | Assumptions, to confirm: one kind of permission with all coach rights for the event (edit, move, cancel, respond on behalf, comments, call-up, results, driver list, attendance), but not the teams of the event, not the series, no deleting, not passing it on; only members of the teams of the event; also per series; everyone in the event sees who has one; the person is notified when she gets it, not when it is taken away; such people also get late cancellations with the reason. |
 | O-13 | Do players see the status of the others? | Assumption: yes, but no comments ([ANM-25](requirements/04-responses.md)). |
 | O-14 | Does a match day always belong to exactly one team? | Assumption: yes ([AUF-03](requirements/05-match-days-call-up.md)). |
 | O-15 | Does the user interface say «Spielerin» or «Spieler/in»? | «Spielerinnen» was used while working out the requirements, «Spieler/innen» in older documents. |
@@ -66,7 +66,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 
 | No. | Question | Remark |
 |---|---|---|
-| O-30 | Preview URL for trying things out | Depends on hosting (O-02). Until then via a cloud session on the PR branch. |
+| O-30 | ~~Preview URL for trying things out~~ | Decided (E-91): every pull request gets a preview, the link is in a comment of the pull request. |
 | O-31 | ~~Java and migration tool for F-00~~ | Decided: Java 21 and Flyway (E-57). |
 | O-32 | Contrast of the active navigation entry | `primary` on `primary-soft` only reaches 3.97:1 in light mode (WCAG AA requires 4.5:1 for small text). Assumption F-00: icon in `primary`, text in `text`. Alternative: make `primary` slightly darker in light mode. |
 | O-33 | How long does a session last? | Assumption F-00: until logout, without expiry. Depends on the login method (O-01). |
@@ -87,3 +87,4 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | O-24 | ~~Is there a newer interface than `api-v2`?~~ | Yes, see O-20 (E-83): `wc.swissunihockey.ch` (free) and the partner interface. |
 | O-67 | Calendar view and absences details (E-93) | Assumptions, to confirm: the calendar is a view of «Termine» (`/termine/kalender`), not an entry of its own in the main navigation; at least one team stays chosen; an admin without a team starts with all teams; absences decline only practices (no match days, no other events); a new absence replaces «dabei» and «vielleicht», later a response by hand wins; no notification to the coaches and no late cancellation, even shortly before the practice; reasons «Ferien», «Verletzung», «Anderes» (with note); at most one year, no overlapping absences; only the person herself enters and sees her absences (coaches cannot enter one for a player yet); deleting keeps «nicht dabei» on past practices. |
 | O-72 | Picking people, «Teamzuteilung» and series without an end (E-102) | Assumptions, to confirm: gender has the two values «weiblich» and «männlich» and may stay empty; women sort before men, people without details last. Coaches take people out of a team as well (E-103); a tap takes someone out without asking, the actions for all shown people ask first. A tap with the other team role changes the role of someone who is in the team. The actions for all shown people ask first and never touch people who are filtered out. Teams of the season before show as columns until they have a member in the season. Series are kept one year ahead by a job every six hours; a new series has no end by default; a series is not ended by the end of its season. |
+

@@ -286,6 +286,7 @@ export const TEXTS = {
     assignSeats: 'Plätze zuweisen',
     showCars: 'Autos zeigen',
     assignDone: 'Fertig',
+    planHint: 'Fahrerinnen und Fahrer trägst du in der Fahrerliste ein.',
     credit: (km: string) => `Gutschrift pro Auto: ${km} km (hin und zurück)`,
     unavailable:
       'Die Strecke lässt sich gerade nicht berechnen, der Routendienst ist nicht erreichbar. Die Fahrerliste funktioniert trotzdem, nur ohne Kilometer.',

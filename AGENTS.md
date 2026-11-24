@@ -22,6 +22,8 @@ The roles are skills under `.claude/skills/` (`/pipeline-entwicklung`, `/pipelin
 
 Cloud sessions have no Docker daemon. Database: `scripts/db-start.sh`.
 
+Hosting (test environment and previews on Fly.io): [docs/deployment.md](docs/deployment.md). Change `Dockerfile`, `docker/start.sh`, `fly.toml`, `scripts/deploy.sh` and the deploy workflows only through an issue of their own; secrets never go into the repository.
+
 ## Handling requirements
 
 - The status decides how binding a requirement is (legend in the README).

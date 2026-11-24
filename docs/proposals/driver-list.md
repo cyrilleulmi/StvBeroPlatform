@@ -57,7 +57,7 @@ git switch claude/driver-list-a-fahrplan   # or -b-raster, -c-reihum
 scripts/start.sh
 ```
 
-The proposals add migration V19 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
+The proposals add migration V23 (applied on the first start). Switching between the three needs nothing; going back to a branch without V19 needs `scripts/db-start.sh reset` once.
 
 Then http://localhost:4200/dev-login. Good to look at: team «Herren KF 4. Liga II» (eight match days entered by hand) as coach `reto` and as player `silvan`, page «Fahrerliste».
 
