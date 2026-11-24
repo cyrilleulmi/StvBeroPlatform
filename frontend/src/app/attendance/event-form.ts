@@ -618,7 +618,7 @@ export class EventForm {
       startTime: w.start,
       endTime: w.end,
       validFrom: w.validFrom,
-      validUntil: w.validUntil,
+      validUntil: w.validUntil || null,
       location: this.location(this.series()?.location ?? null, false),
       responseDeadlineHours: Number(w.responseDeadline),
       attendanceCheck: w.attendanceCheck,
@@ -648,7 +648,7 @@ export class EventForm {
     if (!w.title.trim()) f.title = required('einen Titel');
     if (this.asSeries()) {
       if (!w.validFrom) f.validFrom = required('ein Datum');
-      if (!w.validUntil) f.validUntil = required('ein Datum');
+      if (w.validUntil && w.validFrom && w.validUntil < w.validFrom) f.validUntil = TEXTS.series.untilBeforeFrom;
     } else if (!w.date) {
       f.date = required('ein Datum');
     }
@@ -773,7 +773,7 @@ export class EventForm {
           start: s.startTime,
           end: s.endTime,
           validFrom: s.validFrom,
-          validUntil: s.validUntil,
+          validUntil: s.validUntil ?? '',
           teamIds: s.teamIds,
           optionalTeamIds: s.optionalTeamIds ?? [],
           location: s.location?.name ?? '',

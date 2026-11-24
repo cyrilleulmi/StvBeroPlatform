@@ -468,6 +468,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everyone of the club with their teams in a season and in the season before (PTF-16, admin, coach)
+         * @description The table behind the page «Teamzuteilung» and the step «Personen» of the assistant «Neues Team». The
+         *     columns are the teams of the season and, after them, the teams of the season before that are not part of
+         *     it yet (`inSeason: false`): such a team joins the season with its first member.
+         */
+        get: operations["listTeamMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-memberships/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put several people into teams and remove several at once (PTF-17, admin, coach; removing: admin only, RR-08)
+         * @description All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
+         *     to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
+         */
+        post: operations["changeTeamMemberships"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/members": {
         parameters: {
             query?: never;
@@ -2671,12 +2714,29 @@ export interface components {
             /** Format: email */
             email?: string | null;
             admin: boolean;
+            gender?: components["schemas"]["Gender"] | null;
+            /**
+             * Format: int32
+             * @description Year of birth («Jahrgang»), optional (PTF-15)
+             */
+            birthYear?: number | null;
         };
+        /**
+         * @description Optional, to sort and filter people when they are put into a team (PTF-15)
+         * @enum {string}
+         */
+        Gender: "FEMALE" | "MALE";
         PersonInput: {
             firstName: string;
             lastName: string;
             /** Format: email */
             email?: string | null;
+            gender?: components["schemas"]["Gender"] | null;
+            /**
+             * Format: int32
+             * @description Year of birth («Jahrgang»), optional (PTF-15); missing or null: not given
+             */
+            birthYear?: number | null;
             /** @description Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69). */
             admin?: boolean;
         };
@@ -2883,6 +2943,78 @@ export interface components {
             /** Format: uuid */
             personId: string;
             teamRole: components["schemas"]["TeamRole"];
+        };
+        /** @description Who is in which team, for the whole club in one season (PTF-16) */
+        MembershipOverview: {
+            season: components["schemas"]["Season"];
+            /** @description The season before, to see where someone was and move people on; missing for the first season */
+            previousSeason?: components["schemas"]["Season"] | null;
+            /** @description Teams of the season by name, then the teams of the season before that are not in this season yet */
+            teams: components["schemas"]["MembershipTeam"][];
+            /** @description Teams of the season before with their names of that time */
+            previousTeams: components["schemas"]["MembershipTeam"][];
+            /** @description Every person of the club, by last name */
+            people: components["schemas"]["MembershipRow"][];
+            /** @description The caller may remove people from a team (admins, RR-08) */
+            canRemove: boolean;
+            /** @description The season can be changed (not archived, SAI-02) */
+            writable: boolean;
+        };
+        MembershipTeam: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description The team is part of the season; otherwise it joins with its first member */
+            inSeason: boolean;
+        };
+        MembershipRow: {
+            person: components["schemas"]["Person"];
+            /** @description Teams of the person in the season */
+            teams: components["schemas"]["MembershipEntry"][];
+            /** @description Teams of the person in the season before */
+            previousTeams: components["schemas"]["MembershipEntry"][];
+        };
+        MembershipEntry: {
+            /** Format: uuid */
+            teamId: string;
+            teamRole: components["schemas"]["TeamRole"];
+        };
+        /** @description Several changes of team memberships at once, e.g. a whole year of juniors moving on (PTF-17) */
+        MembershipBatchInput: {
+            /** @description People to put into a team; someone who is in it with another team role gets the new one */
+            add?: components["schemas"]["MembershipAdd"][] | null;
+            /** @description People to remove from a team (admins only, RR-08); someone who is not in it is skipped */
+            remove?: components["schemas"]["MembershipRemove"][] | null;
+        };
+        MembershipAdd: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            personId: string;
+            teamRole: components["schemas"]["TeamRole"];
+        };
+        MembershipRemove: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            personId: string;
+        };
+        MembershipBatchResult: {
+            /**
+             * Format: int32
+             * @description People newly in a team
+             */
+            added: number;
+            /**
+             * Format: int32
+             * @description Team roles changed
+             */
+            changed: number;
+            /**
+             * Format: int32
+             * @description People removed from a team
+             */
+            removed: number;
         };
         Group: {
             /** Format: uuid */
@@ -3165,6 +3297,11 @@ export interface components {
             /** @description All teams of the series by name, with the name in the season of the series (TER-11) */
             teams: components["schemas"]["Team"][];
             exceptions: components["schemas"]["SeriesException"][];
+            /**
+             * Format: date
+             * @description The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)
+             */
+            eventsUntil?: string | null;
         };
         SeriesInput: {
             /** @enum {string} */
@@ -3180,8 +3317,11 @@ export interface components {
             endTime: string;
             /** Format: date */
             validFrom: string;
-            /** Format: date */
-            validUntil: string;
+            /**
+             * Format: date
+             * @description Last day of the series, optional: without it the series runs on, and its events are created one year ahead as time goes on (TER-22, TER-23)
+             */
+            validUntil?: string | null;
             location?: components["schemas"]["Location"] | null;
             /**
              * @description Hours before the start (TER-09, TER-10)
@@ -5299,6 +5439,63 @@ export interface operations {
                 };
                 content?: never;
             };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listTeamMemberships: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipOverview"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeTeamMemberships: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipBatchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];

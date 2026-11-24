@@ -3,15 +3,16 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { components } from '../../api/schema';
-import type { Person, PersonSummary, Season, Team, TeamDetail, TeamRole } from '../../api/types';
+import type { PersonSummary, Season, Team, TeamDetail } from '../../api/types';
+import { SeriesCard } from '../../attendance/series-card';
 import { SeriesNew } from '../../attendance/series-new';
 import { AuthService } from '../../core/auth.service';
 import { errorText, fieldErrorsOf } from '../../core/error-text';
-import { name, teamRoleText } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { EventVariantsSection } from './event-variants';
 import { MatchDaySettingsForm } from './match-day-settings-form';
+import { MembershipTable } from './membership-table';
 import { SuConnectionSection } from './su-connection';
 
 type Overview = components['schemas']['SeriesOverview'];
@@ -19,7 +20,7 @@ type Overview = components['schemas']['SeriesOverview'];
 /** The steps in order; their keys are the browser address (`?schritt=`, German, NF-40). */
 const STEPS = ['name', 'personen', 'swissunihockey', 'trainings', 'spieltage', 'linien', 'fertig'] as const;
 type Step = (typeof STEPS)[number];
-const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
+
 
 /**
  * Assistant «Neues Team» (`/verwaltung/teams/neu`, PTF-13): leads a coach through what a team needs, one step at a
@@ -29,7 +30,7 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 @Component({
   selector: 'app-team-wizard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, SeriesNew, MatchDaySettingsForm, SuConnectionSection, EventVariantsSection],
+  imports: [RouterLink, Icon, MembershipTable, SeriesCard, SeriesNew, MatchDaySettingsForm, SuConnectionSection, EventVariantsSection],
   template: `
     <div class="header">
       <a class="back" routerLink="/verwaltung/teams">{{ texts.teamAdmin.title }}</a>
@@ -129,65 +130,14 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
           @case ('personen') {
             <h2 id="wizard-step-title" class="section-title">{{ w.peopleTitle }}</h2>
             <p class="secondary-text">{{ w.peopleText }}</p>
-            <div class="people">
-              @for (block of [{ title: w.coaches, list: coaches(), id: 'coaches' }, { title: w.players, list: players(), id: 'players' }]; track block.id) {
-                <div class="people-block" [attr.data-testid]="'wizard-' + block.id">
-                  <h3>{{ block.title }} <span class="count">{{ block.list.length }}</span></h3>
-                  @if (block.list.length === 0) {
-                    <p class="empty">{{ w.nobody }}</p>
-                  } @else {
-                    <ul class="chips" [attr.aria-label]="block.title">
-                      @for (p of block.list; track p.id) {
-                        <li class="person">{{ name(p) }}</li>
-                      }
-                    </ul>
-                  }
-                </div>
-              }
-            </div>
-            <form class="form add" (submit)="addMember($event)" novalidate [attr.aria-label]="texts.teamAdmin.addMemberTitle">
-              <div class="field-row">
-                <div class="field">
-                  <label for="wizard-person">{{ texts.teamAdmin.person }}</label>
-                  <select
-                    id="wizard-person"
-                    name="wizard-person"
-                    (change)="newPerson.set($any($event.target).value)"
-                    [attr.aria-invalid]="personError() ? 'true' : null"
-                    [attr.aria-describedby]="personError() ? 'wizard-person-error' : null"
-                  >
-                    <option value="" [selected]="newPerson() === ''">{{ texts.teamAdmin.selectPerson }}</option>
-                    @for (p of candidates(); track p.id) {
-                      <option [value]="p.id" [selected]="newPerson() === p.id">{{ name(p) }}</option>
-                    }
-                  </select>
-                  @if (personError(); as m) {
-                    <p class="field-error" id="wizard-person-error">{{ m }}</p>
-                  }
-                </div>
-                <div class="field">
-                  <label for="wizard-role">{{ texts.teamAdmin.teamRole }}</label>
-                  <select id="wizard-role" name="wizard-role" (change)="newRole.set($any($event.target).value)">
-                    @for (r of roles; track r) {
-                      <option [value]="r" [selected]="r === newRole()">{{ roleText(r) }}</option>
-                    }
-                  </select>
-                </div>
-              </div>
-              <div class="buttons">
-                <button
-                  type="submit"
-                  class="button button-secondary button-small"
-                  data-testid="wizard-add-member"
-                  [disabled]="busy()"
-                  [attr.aria-busy]="busy() ? 'true' : null"
-                >
-                  {{ texts.teamAdmin.addMember }}
-                </button>
-                <span class="secondary-text">{{ w.peopleMissing }}</span>
-                <a routerLink="/verwaltung/personen/neu" class="summary-link">{{ w.newPerson }}</a>
-              </div>
-            </form>
+            <!-- PTF-15: everyone of the club as a table, by gender and year of birth; one tap puts someone in -->
+            @if (detail(); as t) {
+              <app-membership-table [team]="t.id" [season]="saison()" (changed)="peopleChanged.set(true)" />
+            }
+            <p class="buttons">
+              <span class="secondary-text">{{ w.peopleMissing }}</span>
+              <a routerLink="/verwaltung/personen/neu" class="summary-link">{{ w.newPerson }}</a>
+            </p>
           }
           @case ('swissunihockey') {
             <h2 id="wizard-step-title" class="section-title">{{ w.suTitle }}</h2>
@@ -202,17 +152,18 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
             @if (series().length === 0) {
               <p class="empty">{{ w.trainingsNone }}</p>
             } @else {
-              <ul class="list" [attr.aria-label]="w.trainingsTitle" data-testid="wizard-series">
+              <!-- Every series can be changed right here: time, place, end, holidays (TER-19, TER-20, TER-07) -->
+              <div class="series-list" data-testid="wizard-series">
                 @for (o of series(); track o.series.id) {
-                  <li class="row">
-                    {{ o.series.title }} · {{ day(o.series.weekday) }} {{ o.series.startTime }}–{{ o.series.endTime }}
-                    <span class="secondary-text">· {{ texts.seriesCard.upcoming(o.upcoming) }}</span>
-                  </li>
+                  <app-series-card [overview]="o" (changed)="reloadSeries()" />
                 }
-              </ul>
+              </div>
             }
             @if (detail(); as t) {
-              <app-series-new [teamId]="t.id" [season]="season()" [label]="texts.rework.newSeries" (created)="reloadSeries()" />
+              <details class="more" [open]="series().length === 0">
+                <summary>{{ texts.rework.newSeries }}</summary>
+                <app-series-new [teamId]="t.id" [season]="season()" [label]="texts.rework.newSeries" (created)="reloadSeries()" />
+              </details>
             }
           }
           @case ('spieltage') {
@@ -348,44 +299,12 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
     h3 {
       margin: 0;
     }
-    .people {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-    }
-    .people-block {
-      display: grid;
-      gap: 8px;
-      align-content: start;
-    }
-    h3 {
-      font: 700 15px/1.3 var(--font);
-    }
-    .chips {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .person {
-      padding: 6px 12px;
-      border-radius: var(--radius-pill);
-      border: 1.5px solid var(--control-border);
-      font-weight: 600;
-      font-size: 14px;
-    }
     .form {
       display: grid;
       gap: 12px;
     }
     .form > .button {
       justify-self: start;
-    }
-    .add {
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
     }
     .buttons {
       display: flex;
@@ -436,6 +355,10 @@ const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
       justify-content: space-between;
       gap: 12px;
     }
+    .series-list {
+      display: grid;
+      gap: 12px;
+    }
   `,
 })
 export class TeamWizard {
@@ -445,9 +368,6 @@ export class TeamWizard {
   protected readonly texts = TEXTS;
   protected readonly w = TEXTS.teamWizard;
   protected readonly steps = STEPS;
-  protected readonly roles = TEAM_ROLES;
-  protected readonly name = name;
-  protected readonly roleText = teamRoleText;
 
   /** Query `?team=<id>`: the team that is being set up. */
   readonly team = input<string | undefined>(undefined);
@@ -457,7 +377,6 @@ export class TeamWizard {
   readonly saison = input<string | undefined>(undefined);
 
   protected readonly seasons = signal<Season[]>([]);
-  protected readonly persons = signal<Person[]>([]);
   protected readonly detail = signal<TeamDetail | null>(null);
   protected readonly series = signal<Overview[]>([]);
   protected readonly busy = signal(false);
@@ -466,9 +385,8 @@ export class TeamWizard {
   protected readonly teamName = signal('');
   protected readonly nameError = signal<string | null>(null);
   protected readonly chosenSeason = signal<string | null>(null);
-  protected readonly newPerson = signal('');
-  protected readonly newRole = signal<TeamRole>('PLAYER');
-  protected readonly personError = signal<string | null>(null);
+  /** People were put into the team in the step «Personen»: the other steps load the team again. */
+  protected readonly peopleChanged = signal(false);
 
   protected readonly step = computed<Step>(() => {
     if (!this.team()) return 'name';
@@ -505,10 +423,6 @@ export class TeamWizard {
     for (const g of d.lineup.groups) for (const p of g.players) ids.add(p.id);
     return ids.size;
   });
-  protected readonly candidates = computed(() => {
-    const members = new Set([...this.coaches(), ...this.players()].map((p) => p.id));
-    return this.persons().filter((p) => !members.has(p.id));
-  });
   protected readonly checklist = computed(() => {
     const d = this.detail();
     const settings = d?.matchDaySettings;
@@ -538,6 +452,10 @@ export class TeamWizard {
       untracked(() => {
         this.message.set(null);
         this.error.set(null);
+        if (this.peopleChanged()) {
+          this.peopleChanged.set(false);
+          this.reloadTeam();
+        }
       });
     });
   }
@@ -565,12 +483,7 @@ export class TeamWizard {
 
   private async loadBase(): Promise<void> {
     try {
-      const [seasons, persons] = await Promise.all([
-        firstValueFrom(this.http.get<Season[]>('/api/seasons')),
-        firstValueFrom(this.http.get<Person[]>('/api/persons')),
-      ]);
-      this.seasons.set(seasons);
-      this.persons.set(persons);
+      this.seasons.set(await firstValueFrom(this.http.get<Season[]>('/api/seasons')));
     } catch (e) {
       this.error.set(errorText(e));
     }
@@ -630,37 +543,6 @@ export class TeamWizard {
       const field = fieldErrorsOf(e)['name'];
       if (field) this.nameError.set(field);
       else this.error.set(errorText(e));
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  /** Step 2: a coach or a player more (PTF-03). */
-  protected async addMember(domEvent: Event): Promise<void> {
-    domEvent.preventDefault();
-    const team = this.detail();
-    const personId = this.newPerson();
-    if (!team || this.busy()) return;
-    if (!personId) {
-      this.personError.set(TEXTS.teamAdmin.personRequired);
-      document.getElementById('wizard-person')?.focus();
-      return;
-    }
-    this.personError.set(null);
-    this.busy.set(true);
-    this.error.set(null);
-    try {
-      await firstValueFrom(
-        this.http.post(`/api/teams/${team.id}/members`, { personId, teamRole: this.newRole() }, { params: this.seasonQuery() }),
-      );
-      const person = this.persons().find((p) => p.id === personId);
-      this.message.set(TEXTS.teamAdmin.added(person ? name(person) : '', teamRoleText(this.newRole()), team.name));
-      this.newPerson.set('');
-      // The next one is usually a player
-      this.newRole.set('PLAYER');
-      await this.loadTeam(team.id);
-    } catch (e) {
-      this.error.set(errorText(e));
     } finally {
       this.busy.set(false);
     }

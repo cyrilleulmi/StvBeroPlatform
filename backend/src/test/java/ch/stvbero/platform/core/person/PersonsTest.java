@@ -62,6 +62,41 @@ class PersonsTest {
     }
 
     @Test
+    void ptf15GenderAndYearOfBirthAreOptional() {
+        // The seed: Petra is a woman born 1987, Alex has no details
+        given().cookie("stv_session", alex).get("/api/persons").then().statusCode(200)
+                .body("find { it.id == '" + PETRA + "' }.gender", equalTo("FEMALE"))
+                .body("find { it.id == '" + PETRA + "' }.birthYear", equalTo(1987))
+                .body("find { it.id == '" + ALEX + "' }.gender", nullValue());
+
+        String id = given().cookie("stv_session", alex).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nico\",\"lastName\":\"Lang\",\"gender\":\"MALE\",\"birthYear\":2009}")
+                .post("/api/persons").then().statusCode(201)
+                .body("gender", equalTo("MALE"))
+                .body("birthYear", equalTo(2009))
+                .extract().path("id");
+        given().cookie("stv_session", alex).get("/api/persons/" + id).then().statusCode(200)
+                .body("gender", equalTo("MALE"))
+                .body("birthYear", equalTo(2009));
+
+        // Without them they are not given
+        given().cookie("stv_session", alex).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nico\",\"lastName\":\"Lang\"}")
+                .put("/api/persons/" + id).then().statusCode(200)
+                .body("gender", nullValue())
+                .body("birthYear", nullValue());
+
+        // A year outside 1900 to 2100 and an unknown gender are refused
+        given().cookie("stv_session", alex).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nico\",\"lastName\":\"Lang\",\"birthYear\":1800}")
+                .put("/api/persons/" + id).then().statusCode(400)
+                .body("fields.field", contains("birthYear"));
+        given().cookie("stv_session", alex).contentType(ContentType.JSON)
+                .body("{\"firstName\":\"Nico\",\"lastName\":\"Lang\",\"gender\":\"OTHER\"}")
+                .put("/api/persons/" + id).then().statusCode(400);
+    }
+
+    @Test
     void personDetailShowsMembershipsOfAllSeasons() {
         given().cookie("stv_session", alex).get("/api/persons/" + PETRA).then().statusCode(200)
                 .body("memberships.team.name", contains("Team 1", "Team 2"))

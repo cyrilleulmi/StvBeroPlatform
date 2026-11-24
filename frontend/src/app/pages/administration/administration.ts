@@ -72,6 +72,12 @@ export class Administration {
       icon: 'users',
     },
     {
+      route: '/verwaltung/zuteilung',
+      title: TEXTS.administration.assignment,
+      text: TEXTS.administration.assignmentText,
+      icon: 'users',
+    },
+    {
       route: '/verwaltung/saisons',
       title: TEXTS.administration.seasons,
       text: TEXTS.administration.seasonsText,

@@ -27,6 +27,14 @@ public class Person extends PanacheEntityBase {
     /** Admin is a property of the person, not a team role (RR-04). */
     public boolean admin;
 
+    /** Optional, for sorting and filtering people when they are put into a team (PTF-15). */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    public Gender gender;
+
+    /** Year of birth («Jahrgang»), optional (PTF-15). */
+    @Column(name = "birth_year")
+    public Integer birthYear;
+
     /** Can drive a car to match days (DRV-18). */
     @Column(name = "can_drive")
     public boolean canDrive = true;

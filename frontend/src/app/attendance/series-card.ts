@@ -34,8 +34,11 @@ const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRID
         <div>
           <h3 [id]="'series-' + s.id + '-title'">{{ s.title }} · {{ day(s.weekday) }} {{ s.startTime }}–{{ s.endTime }}</h3>
           <p class="secondary-text">
-            {{ s.location?.name ?? '' }}{{ s.location ? ' · ' : '' }}{{ texts.series.periodText(date(s.validFrom), date(s.validUntil)) }}
+            {{ s.location?.name ?? '' }}{{ s.location ? ' · ' : '' }}{{ texts.series.periodText(date(s.validFrom), s.validUntil ? date(s.validUntil) : null) }}
           </p>
+          @if (s.eventsUntil && (!s.validUntil || s.eventsUntil < s.validUntil)) {
+            <p class="secondary-text" data-testid="series-events-until">{{ texts.series.eventsUntil(date(s.eventsUntil)) }}</p>
+          }
         </div>
         <span class="chip" [attr.data-kind]="overview().upcoming === 0 ? 'ended' : 'running'" data-testid="series-upcoming">
           {{ c.upcoming(overview().upcoming) }}{{ next() ? ' · ' + c.next(next()!) : '' }}
@@ -327,7 +330,7 @@ export class SeriesCard {
       startTime: s.startTime,
       endTime: s.endTime,
       location: s.location?.name ?? '',
-      validUntil: s.validUntil,
+      validUntil: s.validUntil ?? '',
     });
     this.hFrom.set(this.today());
     this.hUntil.set(this.today());
@@ -354,7 +357,7 @@ export class SeriesCard {
       startTime: d.startTime,
       endTime: d.endTime,
       validFrom: s.validFrom,
-      validUntil: d.validUntil,
+      validUntil: d.validUntil || null,
       location: name ? (s.location && s.location.name === name ? s.location : { name }) : null,
       responseDeadlineHours: s.responseDeadlineHours,
       attendanceCheck: s.attendanceCheck,

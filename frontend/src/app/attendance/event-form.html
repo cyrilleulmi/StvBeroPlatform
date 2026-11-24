@@ -137,6 +137,9 @@
               [attr.aria-invalid]="fieldErrors()[f.field] ? 'true' : null"
               [attr.aria-describedby]="errorId(f.field)"
             />
+            @if (f.field === 'validUntil') {
+              <p class="secondary-text field-hint">{{ texts.eventForm.validUntilHint }}</p>
+            }
             @if (fieldErrors()[f.field]; as m) {
               <p class="field-error" [id]="'event-' + f.field + '-error'">{{ m }}</p>
             }

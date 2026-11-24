@@ -650,6 +650,51 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/team-memberships:
+    get:
+      tags: [Teams]
+      operationId: listTeamMemberships
+      summary: Everyone of the club with their teams in a season and in the season before (PTF-16, admin, coach)
+      description: |
+        The table behind the page «Teamzuteilung» and the step «Personen» of the assistant «Neues Team». The
+        columns are the teams of the season and, after them, the teams of the season before that are not part of
+        it yet (`inSeason: false`): such a team joins the season with its first member.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembershipOverview' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/team-memberships/batch:
+    post:
+      tags: [Teams]
+      operationId: changeTeamMemberships
+      summary: 'Put several people into teams and remove several at once (PTF-17, admin, coach; removing: admin only, RR-08)'
+      description: |
+        All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
+        to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MembershipBatchInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembershipBatchResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/teams/{teamId}/members:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -3340,6 +3385,15 @@ components:
           properties:
             email: { type: [string, 'null'], format: email }
             admin: { type: boolean }
+            gender:
+              oneOf:
+                - $ref: '#/components/schemas/Gender'
+                - type: 'null'
+            birthYear: { type: [integer, 'null'], format: int32, description: 'Year of birth («Jahrgang»), optional (PTF-15)' }
+    Gender:
+      type: string
+      enum: [FEMALE, MALE]
+      description: 'Optional, to sort and filter people when they are put into a team (PTF-15)'
     PersonInput:
       type: object
       required: [firstName, lastName]
@@ -3347,6 +3401,11 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 60 }
         lastName: { type: string, minLength: 1, maxLength: 60 }
         email: { type: [string, 'null'], format: email }
+        gender:
+          oneOf:
+            - $ref: '#/components/schemas/Gender'
+            - type: 'null'
+        birthYear: { type: [integer, 'null'], format: int32, minimum: 1900, maximum: 2100, description: 'Year of birth («Jahrgang»), optional (PTF-15); missing or null: not given' }
         admin:
           type: boolean
           description: Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69).
@@ -3583,6 +3642,91 @@ components:
       properties:
         personId: { type: string, format: uuid }
         teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipOverview:
+      type: object
+      description: Who is in which team, for the whole club in one season (PTF-16)
+      required: [season, teams, previousTeams, people, canRemove, writable]
+      properties:
+        season: { $ref: '#/components/schemas/Season' }
+        previousSeason:
+          description: The season before, to see where someone was and move people on; missing for the first season
+          oneOf:
+            - $ref: '#/components/schemas/Season'
+            - type: 'null'
+        teams:
+          type: array
+          description: Teams of the season by name, then the teams of the season before that are not in this season yet
+          items: { $ref: '#/components/schemas/MembershipTeam' }
+        previousTeams:
+          type: array
+          description: Teams of the season before with their names of that time
+          items: { $ref: '#/components/schemas/MembershipTeam' }
+        people:
+          type: array
+          description: Every person of the club, by last name
+          items: { $ref: '#/components/schemas/MembershipRow' }
+        canRemove: { type: boolean, description: 'The caller may remove people from a team (admins, RR-08)' }
+        writable: { type: boolean, description: 'The season can be changed (not archived, SAI-02)' }
+    MembershipTeam:
+      type: object
+      required: [id, name, inSeason]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        inSeason: { type: boolean, description: The team is part of the season; otherwise it joins with its first member }
+    MembershipRow:
+      type: object
+      required: [person, teams, previousTeams]
+      properties:
+        person: { $ref: '#/components/schemas/Person' }
+        teams:
+          type: array
+          description: Teams of the person in the season
+          items: { $ref: '#/components/schemas/MembershipEntry' }
+        previousTeams:
+          type: array
+          description: Teams of the person in the season before
+          items: { $ref: '#/components/schemas/MembershipEntry' }
+    MembershipEntry:
+      type: object
+      required: [teamId, teamRole]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipBatchInput:
+      type: object
+      description: Several changes of team memberships at once, e.g. a whole year of juniors moving on (PTF-17)
+      properties:
+        add:
+          type: [array, 'null']
+          maxItems: 500
+          description: People to put into a team; someone who is in it with another team role gets the new one
+          items: { $ref: '#/components/schemas/MembershipAdd' }
+        remove:
+          type: [array, 'null']
+          maxItems: 500
+          description: People to remove from a team (admins only, RR-08); someone who is not in it is skipped
+          items: { $ref: '#/components/schemas/MembershipRemove' }
+    MembershipAdd:
+      type: object
+      required: [teamId, personId, teamRole]
+      properties:
+        teamId: { type: string, format: uuid }
+        personId: { type: string, format: uuid }
+        teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipRemove:
+      type: object
+      required: [teamId, personId]
+      properties:
+        teamId: { type: string, format: uuid }
+        personId: { type: string, format: uuid }
+    MembershipBatchResult:
+      type: object
+      required: [added, changed, removed]
+      properties:
+        added: { type: integer, format: int32, description: People newly in a team }
+        changed: { type: integer, format: int32, description: Team roles changed }
+        removed: { type: integer, format: int32, description: People removed from a team }
 
     Group:
       type: object
@@ -3969,9 +4113,13 @@ components:
             exceptions:
               type: array
               items: { $ref: '#/components/schemas/SeriesException' }
+            eventsUntil:
+              type: [string, 'null']
+              format: date
+              description: 'The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)'
     SeriesInput:
       type: object
-      required: [type, title, teamIds, weekday, startTime, endTime, validFrom, validUntil]
+      required: [type, title, teamIds, weekday, startTime, endTime, validFrom]
       properties:
         type:
           type: string
@@ -3988,7 +4136,10 @@ components:
         startTime: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['18:30'] }
         endTime: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['20:00'] }
         validFrom: { type: string, format: date }
-        validUntil: { type: string, format: date }
+        validUntil:
+          type: [string, 'null']
+          format: date
+          description: 'Last day of the series, optional: without it the series runs on, and its events are created one year ahead as time goes on (TER-22, TER-23)'
         location:
           oneOf:
             - $ref: '#/components/schemas/Location'

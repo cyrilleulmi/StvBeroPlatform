@@ -8,6 +8,8 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
  */
 
 const TEAM_1 = '10000000-0000-4000-8000-000000000001';
+const RUTH = '20000000-0000-4000-8000-000000000004';
+const KIM = '20000000-0000-4000-8000-000000000011';
 const SERIES_2 = '70000000-0000-4000-8000-000000000002';
 
 test.beforeEach(async ({ request }) => {
@@ -41,15 +43,38 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(page.getByTestId('wizard-team')).toHaveText('Team 4');
   await expect(page.getByTestId('wizard-progress')).toHaveText('Schritt 2 von 7');
 
-  // 2 People
+  // 2 People (PTF-15): everyone as a table, women first, then by year of birth; one tap puts someone in
   const people = step(page, 'personen');
-  await people.getByLabel('Person', { exact: true }).selectOption({ label: 'Ruth Meier' });
-  await people.getByLabel('Funktion').selectOption({ label: 'Coach' });
-  await people.getByRole('button', { name: 'Aufnehmen' }).click();
-  await expect(page.getByTestId('wizard-coaches')).toContainText('Ruth Meier');
-  await people.getByLabel('Person', { exact: true }).selectOption({ label: 'Kim Baumann' });
-  await people.getByRole('button', { name: 'Aufnehmen' }).click();
-  await expect(page.getByTestId('wizard-players')).toContainText('Kim Baumann');
+  const teamId = new URL(page.url()).searchParams.get('team')!;
+  const cell = (personId: string) => page.getByTestId(`membership-cell-${personId}-${teamId}`);
+  const rows = people.locator('[data-testid^="membership-row-"]');
+  await expect(rows).toHaveCount(17);
+  await expect(rows.first()).toContainText('Petra Keller');
+  await expect(rows.last()).toContainText('Alex Admin');
+  // Filters: men only, then a year of birth
+  await people.getByRole('radio', { name: 'Männer' }).check();
+  await expect(page.getByTestId('membership-count')).toContainText('1 von 17 Personen');
+  await expect(rows).toHaveText([/Marc Huber/]);
+  await people.getByRole('button', { name: 'Filter zurücksetzen' }).click();
+  await people.getByLabel('Jahrgang ab').selectOption('2000');
+  await expect(page.getByTestId('membership-count')).toContainText('3 von 17 Personen');
+  await people.getByRole('button', { name: 'Filter zurücksetzen' }).click();
+  // A coach, then players with one tap each; the rows stay where they are
+  await people.getByRole('radio', { name: 'Coach' }).check();
+  await cell(RUTH).click();
+  await expect(cell(RUTH)).toHaveAttribute('data-role', 'COACH');
+  await people.getByRole('radio', { name: 'Spielerin oder Spieler' }).check();
+  await cell(KIM).click();
+  await expect(cell(KIM)).toHaveAttribute('data-role', 'PLAYER');
+  await expect(cell(KIM)).toHaveAttribute('aria-pressed', 'true');
+  await expect(cell(KIM)).toHaveAccessibleName('Kim Baumann in Team 4: Spielerin oder Spieler');
+  await expect(page.getByTestId('membership-status')).toHaveText('Kim Baumann ist Spielerin oder Spieler in Team 4.');
+  await expect(page.getByTestId('membership-in-team')).toHaveText('Im Team: 1 Coach · 1 Spielerin oder Spieler');
+  await expect(rows).toHaveCount(17);
+  // Removing is for admins (RR-08): another tap changes nothing for a coach
+  await cell(KIM).click();
+  await expect(cell(KIM)).toHaveAttribute('data-role', 'PLAYER');
+  await expect(people).toContainText('Entfernen können nur Admins.');
   await checkAccessibility(page);
 
   // 3 swiss unihockey: explained, can be skipped
@@ -62,7 +87,19 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await form.getByLabel('Wochentag').selectOption({ label: 'Mittwoch' });
   await form.getByLabel('Ort (Halle)').fill('Turnhalle Dorf');
   await form.getByRole('button', { name: 'Serie erstellen' }).click();
-  await expect(page.getByTestId('wizard-series')).toContainText('Training · Mittwoch 18:30–20:00');
+  const series = page.getByTestId('wizard-series');
+  await expect(series).toContainText('Training · Mittwoch 18:30–20:00');
+  // Without an end the series runs on; its events exist one year ahead (TER-22, TER-23)
+  await expect(series).toContainText('ohne Enddatum');
+  await expect(series.getByTestId('series-events-until')).toContainText('Termine angelegt bis 16.11.2027');
+  // It can be changed right here: an end, after the app said what happens (TER-19)
+  await series.getByRole('button', { name: 'Ändern' }).click();
+  await series.getByLabel('Endet am (freiwillig)').fill('2027-03-31');
+  await series.getByTestId('series-check').click();
+  await expect(series.getByTestId('series-preview')).toContainText('fallen weg');
+  await series.getByTestId('series-apply').click();
+  await expect(series).toContainText('31.03.2027');
+  await expect(series.getByTestId('series-events-until')).toHaveCount(0);
   await checkAccessibility(page);
 
   // 5 Match days

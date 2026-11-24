@@ -40,6 +40,11 @@ export const ADMINISTRATION_ROUTES: Routes = [
     loadComponent: () => import('./team-admin').then((m) => m.TeamAdmin),
   },
   {
+    path: 'zuteilung',
+    title: title('Teamzuteilung'),
+    loadComponent: () => import('./team-assignment').then((m) => m.TeamAssignment),
+  },
+  {
     path: 'saisons',
     title: title('Saisons'),
     loadComponent: () => import('./seasons').then((m) => m.Seasons),

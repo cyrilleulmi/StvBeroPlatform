@@ -11,8 +11,8 @@ const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRID
 type Field = 'title' | 'startTime' | 'endTime' | 'validFrom' | 'validUntil';
 
 /**
- * A new weekly series of a team (TER-05): practice by default, from today (or the start of the season) to the end of
- * the season. Used in the assistant «Neues Team» (PTF-13) and on «Termine überarbeiten» (TER-21).
+ * A new weekly series of a team (TER-05): practice by default, from today (or the start of the season), without an
+ * end unless one is given (TER-22, TER-23). Used in the assistant «Neues Team» (PTF-13) and on «Termine überarbeiten» (TER-21).
  */
 @Component({
   selector: 'app-series-new',
@@ -167,7 +167,8 @@ export class SeriesNew {
       const today = this.today();
       untracked(() => {
         const from = season && season.startDate > today ? season.startDate : today;
-        this.values.update((v) => ({ ...v, validFrom: from, validUntil: season?.endDate ?? '' }));
+        // Without an end by default: the series runs on, one year ahead (TER-22, TER-23)
+        this.values.update((v) => ({ ...v, validFrom: from }));
       });
     });
   }
@@ -190,11 +191,11 @@ export class SeriesNew {
     const v = this.values();
     const errors: Partial<Record<Field, string>> = {};
     if (!this.title().trim()) errors.title = this.t.required;
-    for (const f of ['startTime', 'endTime', 'validFrom', 'validUntil'] as const) {
+    for (const f of ['startTime', 'endTime', 'validFrom'] as const) {
       if (!v[f]) errors[f] = this.t.required;
     }
     if (!errors.endTime && !errors.startTime && v.endTime <= v.startTime) errors.endTime = TEXTS.series.untilBeforeFrom;
-    if (!errors.validUntil && !errors.validFrom && v.validUntil < v.validFrom) errors.validUntil = TEXTS.series.untilBeforeFrom;
+    if (v.validUntil && !errors.validFrom && v.validUntil < v.validFrom) errors.validUntil = TEXTS.series.untilBeforeFrom;
     this.errors.set(errors);
     const first = Object.keys(errors)[0];
     if (first) {
@@ -209,7 +210,7 @@ export class SeriesNew {
       startTime: v.startTime,
       endTime: v.endTime,
       validFrom: v.validFrom,
-      validUntil: v.validUntil,
+      validUntil: v.validUntil || null,
       location: this.location().trim() ? { name: this.location().trim() } : null,
       // Like a new series in the event form: answers until 24 hours before (TER-09)
       responseDeadlineHours: 24,

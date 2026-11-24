@@ -360,9 +360,13 @@ public class Seed {
                     .executeUpdate();
         }
         for (SeedPerson p : PERSONS) {
-            em.createNativeQuery("insert into person (id, first_name, last_name, email, admin) values (?, ?, ?, ?, ?)")
+            // PTF-15: Marc is the only man, Alex has no details; the others are women born 1986 to 2002
+            String gender = p.nr() == 1 ? null : p.nr() == 3 ? "MALE" : "FEMALE";
+            Integer birthYear = p.nr() == 1 ? null : 1985 + p.nr();
+            em.createNativeQuery("insert into person (id, first_name, last_name, email, admin, gender, birth_year) values (?, ?, ?, ?, ?, cast(? as varchar), cast(? as integer))")
                     .setParameter(1, personId(p.nr())).setParameter(2, p.firstName()).setParameter(3, p.lastName())
                     .setParameter(4, p.loginKey() + "@example.ch").setParameter(5, p.admin())
+                    .setParameter(6, gender).setParameter(7, birthYear)
                     .executeUpdate();
             em.createNativeQuery("insert into account (id, person_id, login_key) values (?, ?, ?)")
                     .setParameter(1, accountId(p.nr())).setParameter(2, personId(p.nr())).setParameter(3, p.loginKey())
@@ -473,12 +477,12 @@ public class Seed {
         for (SeedSeries s : SERIES) {
             em.createNativeQuery("""
                             insert into series (id, season_id, type, title, weekday, start_time, end_time, valid_from,
-                                               valid_until, location_name, response_deadline_hours)
-                            values (?, ?, 'PRACTICE', 'Training', ?, ?, ?, ?, ?, ?, ?)""")
+                                               valid_until, location_name, response_deadline_hours, generated_until)
+                            values (?, ?, 'PRACTICE', 'Training', ?, ?, ?, ?, ?, ?, ?, ?)""")
                     .setParameter(1, seriesId(s.nr())).setParameter(2, seasonId(2)).setParameter(3, s.weekday())
                     .setParameter(4, s.start()).setParameter(5, s.end()).setParameter(6, s.startDate())
                     .setParameter(7, s.endDate()).setParameter(8, s.location())
-                    .setParameter(9, EventRules.DEFAULT_RESPONSE_DEADLINE)
+                    .setParameter(9, EventRules.DEFAULT_RESPONSE_DEADLINE).setParameter(10, s.endDate())
                     .executeUpdate();
             for (int team : s.teams()) {
                 em.createNativeQuery("insert into series_team (series_id, team_id) values (?, ?)")

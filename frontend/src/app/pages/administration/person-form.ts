@@ -78,6 +78,33 @@ type Field = 'firstName' | 'lastName' | 'email';
               <p class="field-error" id="person-email-error">{{ m }}</p>
             }
           </div>
+          <!-- PTF-15: optional, to sort and filter people when they are put into a team -->
+          <div class="field-row">
+            <div class="field">
+              <label for="person-gender">{{ texts.people.gender }}</label>
+              <select id="person-gender" formControlName="gender">
+                <option value="">{{ texts.people.genderNone }}</option>
+                <option value="FEMALE">{{ texts.people.genderFemale }}</option>
+                <option value="MALE">{{ texts.people.genderMale }}</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="person-birthYear">{{ texts.people.birthYear }}</label>
+              <input
+                id="person-birthYear"
+                type="number"
+                inputmode="numeric"
+                min="1900"
+                max="2100"
+                formControlName="birthYear"
+                [attr.aria-invalid]="fieldErrors()['birthYear'] ? 'true' : null"
+                [attr.aria-describedby]="fieldErrors()['birthYear'] ? 'person-birthYear-error' : null"
+              />
+              @if (fieldErrors()['birthYear']; as m) {
+                <p class="field-error" id="person-birthYear-error">{{ m }}</p>
+              }
+            </div>
+          </div>
           <!-- Only admins grant or remove the admin flag (RR-04, E-69) -->
           @if (auth.isAdmin()) {
             <label class="checkbox">
@@ -147,6 +174,8 @@ export class PersonForm {
     firstName: ['', [Validators.required, Validators.maxLength(60)]],
     lastName: ['', [Validators.required, Validators.maxLength(60)]],
     email: ['', [Validators.email]],
+    gender: ['' as '' | 'FEMALE' | 'MALE'],
+    birthYear: [''],
     admin: [false],
   });
 
@@ -199,6 +228,8 @@ export class PersonForm {
         firstName: person.firstName,
         lastName: person.lastName,
         email: person.email ?? '',
+        gender: person.gender ?? '',
+        birthYear: person.birthYear ? String(person.birthYear) : '',
         admin: person.admin,
       });
     } catch (e) {
@@ -223,6 +254,9 @@ export class PersonForm {
     if (!f.lastName.trim()) error['lastName'] = TEXTS.people.required('einen Nachnamen');
     if (this.form.controls.email.invalid)
       error['email'] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+    const year = String(f.birthYear ?? '').trim();
+    if (year && !(/^\d{4}$/.test(year) && Number(year) >= 1900 && Number(year) <= 2100))
+      error['birthYear'] = TEXTS.people.birthYearInvalid;
     this.fieldErrors.set(error);
     const first = Object.keys(error)[0];
     if (first) {
@@ -234,6 +268,8 @@ export class PersonForm {
       firstName: f.firstName.trim(),
       lastName: f.lastName.trim(),
       email: f.email.trim() || null,
+      gender: f.gender || null,
+      birthYear: year ? Number(year) : null,
       // Coaches do not send the flag: the backend keeps it as it is (RR-04, E-69).
       ...(this.auth.isAdmin() ? { admin: f.admin } : {}),
     };

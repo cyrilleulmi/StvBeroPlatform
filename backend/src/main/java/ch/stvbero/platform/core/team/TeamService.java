@@ -9,6 +9,7 @@ import ch.stvbero.platform.core.person.Person;
 import ch.stvbero.platform.core.person.PersonSummary;
 import ch.stvbero.platform.core.person.PersonService;
 import ch.stvbero.platform.core.season.Season;
+import ch.stvbero.platform.core.season.SeasonDto;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -178,6 +179,109 @@ public class TeamService {
         TeamMembership membership = membership(teamId, personId, seasonId);
         membership.season.checkWritable();
         membership.delete();
+    }
+
+    // ------------------------------------------------------------------ The whole club (PTF-16, PTF-17)
+
+    /**
+     * Everyone of the club with their teams in the season and in the season before (PTF-16). The columns are the
+     * teams of the season and, after them, the teams of the season before that are not part of it yet: they join
+     * with their first member, so a new season can be filled without creating every team again.
+     */
+    public MembershipOverviewDto memberships(CurrentUser user, UUID seasonId) {
+        user.checkAllTeams();
+        Season season = Season.orCurrent(seasonId);
+        Season current = Season.current().orElse(null);
+        Season previous = Season.<Season>find("startDate < ?1 order by startDate desc", season.startDate)
+                .firstResult();
+        Comparator<MembershipOverviewDto.TeamColumn> byName = Comparator
+                .comparing(MembershipOverviewDto.TeamColumn::name, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(MembershipOverviewDto.TeamColumn::id);
+        List<TeamSeason> inSeason = TeamSeason.list("season.id", season.id);
+        List<TeamSeason> inPrevious = previous == null ? List.of() : TeamSeason.list("season.id", previous.id);
+        java.util.Set<UUID> here = inSeason.stream().map(ts -> ts.team.id).collect(Collectors.toSet());
+        List<MembershipOverviewDto.TeamColumn> teams = new java.util.ArrayList<>(inSeason.stream()
+                .map(ts -> new MembershipOverviewDto.TeamColumn(ts.team.id, ts.name, true)).sorted(byName).toList());
+        teams.addAll(inPrevious.stream().filter(ts -> !here.contains(ts.team.id))
+                .map(ts -> new MembershipOverviewDto.TeamColumn(ts.team.id, ts.name, false)).sorted(byName).toList());
+        List<MembershipOverviewDto.TeamColumn> previousTeams = inPrevious.stream()
+                .map(ts -> new MembershipOverviewDto.TeamColumn(ts.team.id, ts.name, here.contains(ts.team.id)))
+                .sorted(byName).toList();
+
+        Map<UUID, List<MembershipOverviewDto.Entry>> now = entries(season);
+        Map<UUID, List<MembershipOverviewDto.Entry>> before = previous == null ? Map.of() : entries(previous);
+        List<MembershipOverviewDto.Row> people = Person.<Person>list("order by lower(lastName), lower(firstName), id")
+                .stream()
+                .map(p -> new MembershipOverviewDto.Row(ch.stvbero.platform.core.person.PersonDto.of(p),
+                        now.getOrDefault(p.id, List.of()), before.getOrDefault(p.id, List.of())))
+                .toList();
+        return new MembershipOverviewDto(SeasonDto.of(season, current),
+                previous == null ? null : SeasonDto.of(previous, current), teams, previousTeams, people, user.admin(),
+                !season.isArchived());
+    }
+
+    private static Map<UUID, List<MembershipOverviewDto.Entry>> entries(Season season) {
+        return TeamMembership.<TeamMembership>list("season.id", season.id).stream()
+                .collect(Collectors.groupingBy(m -> m.person.id,
+                        Collectors.mapping(m -> new MembershipOverviewDto.Entry(m.team.id, m.teamRole), Collectors.toList())));
+    }
+
+    /**
+     * Several changes at once (PTF-17), all or nothing: people join teams (someone who is already in the team gets
+     * the new team role), and admins remove people from teams (RR-08).
+     */
+    @Transactional
+    public MembershipOverviewDto.BatchResult changeMemberships(CurrentUser user, UUID seasonId, MembershipBatchInput input) {
+        user.checkAllTeams();
+        List<MembershipBatchInput.Add> adds = input.add() == null ? List.of() : input.add();
+        List<MembershipBatchInput.Remove> removes = input.remove() == null ? List.of() : input.remove();
+        if (!removes.isEmpty()) {
+            user.checkAdmin();
+        }
+        Season season = Season.orCurrent(seasonId);
+        season.checkWritable();
+        LocalDate today = LocalDate.ofInstant(clock.now(), BackendClock.ZONE);
+        int added = 0;
+        int changed = 0;
+        int removed = 0;
+        java.util.Set<UUID> joined = new java.util.LinkedHashSet<>();
+        for (MembershipBatchInput.Add add : adds) {
+            Team team = find(add.teamId());
+            Person person = PersonService.find(add.personId());
+            TeamMembership existing = TeamMembership.<TeamMembership>find(
+                    "team.id = ?1 and person.id = ?2 and season.id = ?3", team.id, person.id, season.id).firstResult();
+            if (existing != null) {
+                if (existing.teamRole != add.teamRole()) {
+                    existing.teamRole = add.teamRole();
+                    // Only players are in a line (LIN-10)
+                    if (add.teamRole() != TeamRole.PLAYER) {
+                        existing.groups.clear();
+                    }
+                    changed++;
+                }
+                continue;
+            }
+            team.addToSeason(season, latestName(team));
+            TeamMembership.create(person, team, season, add.teamRole(), TeamRules.joinedOn(today, season.startDate))
+                    .persist();
+            Team.getEntityManager().flush();
+            joined.add(person.id);
+            added++;
+        }
+        for (MembershipBatchInput.Remove remove : removes) {
+            TeamMembership existing = TeamMembership.<TeamMembership>find(
+                    "team.id = ?1 and person.id = ?2 and season.id = ?3", remove.teamId(), remove.personId(), season.id)
+                    .firstResult();
+            if (existing != null) {
+                existing.delete();
+                removed++;
+            }
+        }
+        // The practices of the new teams in the time of an absence are declined as well (ABS-04)
+        for (UUID personId : joined) {
+            absences.applyForPerson(personId, practice -> false);
+        }
+        return new MembershipOverviewDto.BatchResult(added, changed, removed);
     }
 
     /** Team memberships of the signed-in person in the given season, by team name (PTF-12). */

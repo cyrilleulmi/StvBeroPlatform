@@ -57,7 +57,7 @@ type ExceptionField = 'from' | 'until' | 'reason';
             <dt>{{ texts.events.time }}</dt>
             <dd>{{ texts.events.period(s.startTime, s.endTime) }}</dd>
             <dt>{{ texts.series.period }}</dt>
-            <dd>{{ texts.series.periodText(date(s.validFrom), date(s.validUntil)) }}</dd>
+            <dd>{{ texts.series.periodText(date(s.validFrom), s.validUntil ? date(s.validUntil) : null) }}</dd>
             <dt>{{ texts.events.teams }}</dt>
             <dd>{{ teams() }}</dd>
             @if (s.location) {
