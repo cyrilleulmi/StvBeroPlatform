@@ -233,8 +233,8 @@ test('TML-01: the timeline of match day 04 runs from the departure to the return
   const items = page.getByTestId('timeline-items').getByRole('listitem');
   await expect(items).toHaveText([
     /08:00.*Abfahrt.*26 Min\. Fahrt/s,
-    /08:26.*Ankunft/s,
-    /08:26.*Zeit vor dem 1\. Spiel.*08:26–09:30 · 64 Min\./s,
+    // Arrival and the time before the first match are one point
+    /08:26.*Ankunft.*64 Min\. vor dem 1\. Spiel/s,
     /09:30.*Spiel 1: Team 1 – UHC Musterdorf.*09:30–10:20 · 50 Min\./s,
     /10:20.*Zeit zwischen den Spielen.*10:20–11:45 · 85 Min\./s,
     /11:45.*Spiel 2: Unihockey Beispielstadt – Team 1.*11:45–12:35 · 50 Min\./s,

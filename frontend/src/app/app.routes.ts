@@ -106,6 +106,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile),
       },
       {
+        path: 'profil/abwesenheiten',
+        title: title('Abwesenheiten'),
+        loadComponent: () => import('./pages/profile/absences').then((m) => m.AbsencesPage),
+      },
+      {
         path: 'profil/statistik',
         title: title('Meine Statistik'),
         loadComponent: () =>

@@ -31,6 +31,9 @@ public class TeamService {
     @Inject
     BackendClock clock;
 
+    @Inject
+    ch.stvbero.platform.core.absence.AbsenceService absences;
+
     private static final Comparator<TeamDto> BY_NAME = Comparator
             .comparing(TeamDto::name, String.CASE_INSENSITIVE_ORDER).thenComparing(TeamDto::id);
 
@@ -149,6 +152,8 @@ public class TeamService {
         Unique.save(Team.getEntityManager(), "team_membership_one_role",
                 () -> DomainError.conflict("Schon im Team", person.firstName + " " + person.lastName
                         + " ist schon in diesem Team. Pro Team gibt es nur eine Funktion.", "PTF-04"));
+        // The practices of the new team in the time of an absence are declined as well (ABS-04)
+        absences.applyForPerson(person.id, practice -> false);
         return TeamMembershipDto.of(membership);
     }
 
