@@ -325,7 +325,7 @@ test('DRV-14: one person enters herself for several match days of the season at 
   await login(page, 'kim');
   await page.goto(`/teams/${TEAM_1}`);
   await page.getByTestId('team-driver-plan-link').click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste der Saison' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
   await expect(page.getByTestId('driver-plan-season')).toHaveText('Team 1 · Saison 2026/27');
 
   // Match day 04 as in its own driver list
@@ -385,7 +385,7 @@ test('DRV-14: a coach plans the season for someone else', async ({ page }) => {
   await page.getByTestId(`plan-match-day-${december}`).getByRole('link', { name: /^Zum Spieltag/ }).click();
   await expect(page.getByTestId('driver-list')).toContainText('Kim Baumann');
   await page.getByTestId('driver-plan-link').click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste der Saison' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
 });
 
 test.describe('No permission', () => {

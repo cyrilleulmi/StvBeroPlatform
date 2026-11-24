@@ -56,7 +56,7 @@ public class LiveRouting implements Routing {
     Duration timeout;
 
     private Service service;
-    private Routing delegate;
+    private java.util.function.BiFunction<Place, Place, Optional<Result>> delegate;
 
     @PostConstruct
     void start() {
@@ -83,6 +83,15 @@ public class LiveRouting implements Routing {
 
     @Override
     public Optional<Result> route(Place from, Place to) {
-        return delegate.route(from, to);
+        return delegate.apply(from, to);
+    }
+
+    @Override
+    public RouteProvider provider() {
+        return switch (service) {
+            case GOOGLE -> RouteProvider.GOOGLE_MAPS;
+            case OPEN_ROUTE_SERVICE -> RouteProvider.OPEN_ROUTE_SERVICE;
+            case OPEN_STREET_MAP -> RouteProvider.OPEN_STREET_MAP;
+        };
     }
 }

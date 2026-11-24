@@ -20,4 +20,7 @@ public interface Routing {
      * @throws RoutingUnavailable if the service is not configured, does not answer or answers unexpectedly
      */
     Optional<Result> route(Place from, Place to);
+
+    /** Which service calculates (DRV-22). */
+    RouteProvider provider();
 }

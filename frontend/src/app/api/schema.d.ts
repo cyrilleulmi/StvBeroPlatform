@@ -1186,6 +1186,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{eventId}/driver-list/route/duration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Overwrite the driving time by hand (DRV-21, coach)
+         * @description Only coaches and admins (otherwise 403). 1 to 600 minutes (400). The time is used everywhere instead of the
+         *     calculated one (driver list, season plan, timeline) and stays when the route is recalculated; it is dropped
+         *     when meeting point or venue change. Same 409 cases as `addCar`.
+         */
+        put: operations["setRouteDuration"];
+        post?: never;
+        /** Use the calculated driving time again (DRV-21, coach) */
+        delete: operations["clearRouteDuration"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{eventId}/driver-list/route/recalculate": {
         parameters: {
             query?: never;
@@ -1362,6 +1387,149 @@ export interface paths {
          */
         post: operations["planDriver"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give the trip of a match day to another member, as a takeover or against her trip on another match day: ask first or enter directly (DRV-25)
+         * @description The driver herself (without `driverId`), coaches and admins for any driver (otherwise 403). `partnerId` must
+         *     be another member of the team, `eventId` and `partnerEventId` match days of the team in the season (400).
+         *     409 (rule DRV-25) if the driver does not drive on `eventId`, the partner already drives there, the partner
+         *     does not drive on `partnerEventId` or the driver already drives there; also the 409 cases of `addCar`, and
+         *     when a request for this trip is already open. `direct: true` carries it out right away: only the driver of
+         *     the cars changes, the new driver leaves her seat and her mark «individual» on that match day; the partner is
+         *     notified. `direct: false` asks the partner (notification `DRIVER_LIST_CHANGED`).
+         */
+        post: operations["startDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a swap request, it is carried out (DRV-25)
+         * @description The partner, coaches and admins (otherwise 403). 409 if the cars no longer fit the request (rule DRV-25). 404 if the request is no longer open.
+         */
+        post: operations["acceptDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a swap request (DRV-25)
+         * @description The partner, coaches and admins (otherwise 403). The requester is notified.
+         */
+        post: operations["declineDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/swaps/{swapId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw an own swap request (DRV-25)
+         * @description The requester, coaches and admins (otherwise 403). The partner is notified.
+         */
+        post: operations["withdrawDriverSwap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a trip without an event in the app (DRV-28)
+         * @description Members add their own trips (without `driverId`), coaches and admins also for others (otherwise 403); the
+         *     driver must be a member of the team (400). The return trip is credited (twice `distanceKm`).
+         */
+        post: operations["addExtraTrip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{teamId}/driver-plan/trips/{tripId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                tripId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove another trip (DRV-28)
+         * @description The driver, whoever added it, coaches and admins (otherwise 403).
+         */
+        delete: operations["removeExtraTrip"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3190,6 +3358,7 @@ export interface components {
             distanceKm?: number;
             /**
              * Format: int32
+             * @description Driving time in use: overwritten by hand, otherwise calculated (DRV-21)
              * @example 26
              */
             durationMinutes?: number;
@@ -3199,6 +3368,31 @@ export interface components {
              * @example 46.8
              */
             creditKm?: number;
+            /**
+             * Format: int32
+             * @description Driving time as calculated by the service (DRV-22)
+             */
+            calculatedMinutes?: number;
+            /** @description The driving time was overwritten by hand (DRV-21) */
+            durationManual: boolean;
+            durationChangedBy?: components["schemas"]["PersonSummary"];
+            /**
+             * Format: date-time
+             * @description When the driving time was overwritten
+             */
+            durationChangedAt?: string;
+            /**
+             * @description Service that calculated the route; missing for kilometres entered by hand (DRV-22)
+             * @enum {string}
+             */
+            provider?: "GOOGLE_MAPS" | "OPEN_ROUTE_SERVICE" | "OPEN_STREET_MAP" | "SIMULATOR";
+            /**
+             * Format: date-time
+             * @description When the route was calculated or entered (DRV-22)
+             */
+            calculatedAt: string;
+            /** @description Day and time of departure were taken into account (traffic); the services the app uses calculate without (DRV-22) */
+            departureTimeUsed: boolean;
         };
         /** @description Enter a car (DRV-02): for oneself without `driverId`, for someone else only as coach or admin */
         CarInput: {
@@ -3218,6 +3412,11 @@ export interface components {
         RouteInput: {
             /** Format: double */
             distanceKm: number;
+        };
+        /** @description Driving time of the one-way route overwritten by hand (DRV-21) */
+        DurationInput: {
+            /** Format: int32 */
+            minutes: number;
         };
         /** @description Driver plan of a team for a whole season (DRV-14, DRV-17) */
         DriverPlan: {
@@ -3240,6 +3439,123 @@ export interface components {
             members?: components["schemas"]["PersonSummary"][];
             /** @description Who can drive and with how many places, by name (DRV-18) */
             drivers: components["schemas"]["DriverSetting"][];
+            totals: components["schemas"]["DriverPlanTotals"];
+            /** @description Open swap requests the caller sees: her own and those to her; coaches and admins all (DRV-25) */
+            swaps: components["schemas"]["DriverSwap"][];
+            /** @description Other trips of the team in the season, by date (DRV-28) */
+            extraTrips: components["schemas"]["ExtraTrip"][];
+            /** @description Changes of the plan, newest first, at most 100 (DRV-26) */
+            history: components["schemas"]["DriverPlanHistoryEntry"][];
+        };
+        /** @description Sum of all shares (DRV-27) */
+        DriverPlanTotals: {
+            /** Format: int32 */
+            trips: number;
+            /** Format: int32 */
+            plannedTrips: number;
+            /** Format: double */
+            kilometres: number;
+            /** Format: double */
+            plannedKilometres: number;
+        };
+        /** @description An open request to take over or swap a trip (DRV-25) */
+        DriverSwap: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Match day whose trip is given away
+             */
+            eventId: string;
+            /** @example Spieltag So 22.11. */
+            eventLabel: string;
+            requester: components["schemas"]["PersonSummary"];
+            partner: components["schemas"]["PersonSummary"];
+            /**
+             * Format: uuid
+             * @description Match day of the partner trip in return; missing: takeover
+             */
+            partnerEventId?: string;
+            partnerEventLabel?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description The caller may accept or decline (the partner, coaches, admins) */
+            canAnswer: boolean;
+            /** @description The caller may withdraw (the requester, coaches, admins) */
+            canWithdraw: boolean;
+        };
+        /** @description A trip without an event in the app (DRV-28) */
+        ExtraTrip: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** @example Turnier Tenero */
+            title: string;
+            driver: components["schemas"]["PersonSummary"];
+            /**
+             * Format: double
+             * @description Kilometres one way
+             */
+            distanceKm: number;
+            /**
+             * Format: double
+             * @description Credited kilometres: there and back
+             */
+            creditKm: number;
+            /** @description The date has passed */
+            over: boolean;
+            /** @description The caller may remove it: the driver, who added it, coaches, admins */
+            canRemove: boolean;
+        };
+        /** @description One change of the plan (DRV-26) */
+        DriverPlanHistoryEntry: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Match day it concerns; missing for other trips
+             */
+            eventId?: string;
+            /** @enum {string} */
+            kind: "CAR_ADDED" | "CAR_REMOVED" | "SWAPPED" | "TAKEN_OVER" | "SWAP_REQUESTED" | "SWAP_DECLINED" | "SWAP_WITHDRAWN" | "TRIP_ADDED" | "TRIP_REMOVED";
+            /** @description German sentence for display */
+            text: string;
+            by?: components["schemas"]["PersonSummary"];
+            /** Format: date-time */
+            at: string;
+        };
+        /** @description Give away the trip of a match day (DRV-25) */
+        DriverSwapInput: {
+            /** Format: uuid */
+            eventId: string;
+            /**
+             * Format: uuid
+             * @description Driver who gives the trip away; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: uuid */
+            partnerId: string;
+            /**
+             * Format: uuid
+             * @description Match day on which the partner drives and the driver takes over in return; missing: takeover
+             */
+            partnerEventId?: string | null;
+            /** @description `true`: enter right away; `false`: ask the partner first */
+            direct: boolean;
+        };
+        /** @description Add another trip (DRV-28) */
+        ExtraTripInput: {
+            /** Format: date */
+            date: string;
+            title: string;
+            /**
+             * Format: uuid
+             * @description Driver; missing: the caller herself
+             */
+            driverId?: string | null;
+            /** Format: double */
+            distanceKm: number;
         };
         DriverPlanMatchDay: {
             /** Format: uuid */
@@ -5459,6 +5775,61 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    setRouteDuration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DurationInput"];
+            };
+        };
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    clearRouteDuration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The driver list after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     recalculateRoute: {
         parameters: {
             query?: never;
@@ -5677,6 +6048,188 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["RuleViolation"];
+        };
+    };
+    startDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverSwapInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    acceptDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    declineDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    withdrawDriverSwap: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                swapId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    addExtraTrip: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtraTripInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    removeExtraTrip: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                tripId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     getTeamStatistics: {

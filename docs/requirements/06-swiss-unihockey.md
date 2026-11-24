@@ -23,6 +23,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | SUH-13 | If the last sync of a link failed, the app says so: on the link («Letzter Abgleich am … fehlgeschlagen») and as a hint on the start page of coaches and admins. Everything else keeps working (SUH-09). | Decided |
 | SUH-14 | Responses of swiss unihockey can be cached for a while (`STV_SU_CACHE_DIR`, `STV_SU_CACHE_TTL`), so that restarts in development do not ask the free interface each time. Off in production. | Assumption |
 | SUH-15 | People are never synced with swiss unihockey: players and coaches are managed in the app only. | Decided |
+| SUH-16 | The page «swiss unihockey» (`/swissunihockey`, tile on the start page, link on the team) shows for every own team (coaches and admins: every team of the current season) its links to swiss unihockey with a link to the team page at swissunihockey.ch («Auf swissunihockey.ch ansehen») and to the league in the app (`/teams/:id/liga`). Coaches and admins link, unlink and sync right there (SUH-02, SUH-11). A team without a link says to players «Nicht verbunden. Frag den Coach zum Einrichten.» | Decided |
 
 ## What is known about the interface
 
