@@ -39,6 +39,8 @@ export class Start implements OnInit {
   protected readonly next = signal<EventSummary | null>(null);
   /** Further practices after the next event (F-13), cancelled ones skipped. */
   protected readonly practices = signal<EventSummary[]>([]);
+  /** Next match day when the next event is not one (AUF-35). */
+  protected readonly matchDay = signal<EventSummary | null>(null);
   protected readonly eventLoading = signal(true);
   protected readonly eventError = signal<string | null>(null);
 
@@ -74,6 +76,7 @@ export class Start implements OnInit {
     try {
       const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
       if (this.next()?.id === id) this.next.set(updated);
+      if (this.matchDay()?.id === id) this.matchDay.set(updated);
       this.practices.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
       this.eventError.set(errorText(e));
@@ -86,6 +89,7 @@ export class Start implements OnInit {
       const shown = startEvents(events);
       this.next.set(shown.next);
       this.practices.set(shown.practices);
+      this.matchDay.set(shown.matchDay);
     } catch (e) {
       this.eventError.set(errorText(e));
     } finally {

@@ -77,4 +77,9 @@ public class RoutingSimulator implements Routing {
     private static String key(String from, String to) {
         return from.strip().toLowerCase(Locale.ROOT) + "\n" + to.strip().toLowerCase(Locale.ROOT);
     }
+
+    @Override
+    public RouteProvider provider() {
+        return RouteProvider.SIMULATOR;
+    }
 }

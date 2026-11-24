@@ -171,6 +171,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
                   [meId]="auth.me()?.id ?? null"
                   [canEditEvent]="!!t.canEdit"
                   [version]="version()"
+                  [manage]="false"
                   (changed)="reload()"
                 />
               }

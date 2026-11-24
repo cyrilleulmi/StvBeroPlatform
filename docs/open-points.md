@@ -7,7 +7,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | No. | Question | Remark |
 |---|---|---|
 | O-01 | **Login:** How do members log in? | E-mail and password, magic link or Keycloak/OIDC. |
-| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | |
+| O-02 | **Hosting:** Where does the platform run in production, where does the preview for verification run? | Previews and a test environment of `develop` with live club data are decided (E-91, [deployment.md](deployment.md)). Open: production with real data, after the login (O-01). |
 | O-03 | **Data protection:** Which data is stored, who sees what (nDSG)? | For now the app is meant for adults. If minors are added, reassess. |
 | O-04 | **Multi-tenancy:** Are several clubs needed in one installation? | Several teams within the club are part of the core. |
 | O-05 | ~~**Notifications:** E-mail, push via the PWA or both?~~ | Decided: both (E-71, F-19). |
@@ -65,7 +65,7 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 
 | No. | Question | Remark |
 |---|---|---|
-| O-30 | Preview URL for trying things out | Depends on hosting (O-02). Until then via a cloud session on the PR branch. |
+| O-30 | ~~Preview URL for trying things out~~ | Decided (E-91): every pull request gets a preview, the link is in a comment of the pull request. |
 | O-31 | ~~Java and migration tool for F-00~~ | Decided: Java 21 and Flyway (E-57). |
 | O-32 | Contrast of the active navigation entry | `primary` on `primary-soft` only reaches 3.97:1 in light mode (WCAG AA requires 4.5:1 for small text). Assumption F-00: icon in `primary`, text in `text`. Alternative: make `primary` slightly darker in light mode. |
 | O-33 | How long does a session last? | Assumption F-00: until logout, without expiry. Depends on the login method (O-01). |
@@ -84,3 +84,5 @@ Until they are clarified, sensible assumptions apply and are named with the resu
 | O-61 | Calendar subscription details (F-18) | Assumptions F-18, to confirm: the address is created on the first visit of «Profil» (no extra button «Abo einrichten»); the feed holds events that ended at most 30 days ago; cancelled entries are titled «Abgesagt: …» in addition to `STATUS:CANCELLED`, because Google Kalender shows cancelled entries of subscriptions; the description shows the own response with the own comment; the title is «<Titel> · <Teams>», with the type in front if the title does not name it («Spieltag: Cup · Team 1»); a link «Im Kalender öffnen» (`webcal:`) next to «Adresse kopieren». Open for production: the public address of the app (`STV_APP_URL`) and that app and API are served from the same origin. |
 | O-62 | Notification channels details (F-19) | Assumptions F-19, to confirm: no digest, every notification is sent on its own (from the issue); failed deliveries are retried after 1, 5, 30 and 120 minutes, then given up; a push lives one day at the push service if the device is offline; if a second person signs in on the same device and switches push on, the device moves to her; the profile lists the other devices with push («Chrome auf Android, seit 15.11.2026») with «Entfernen»; the e-mail subject is «<Kurzform>: <Termin>» (e.g. «Abgesagt: Training Di 24.11.», a rescheduling only «Verschoben: Training»); e-mails also go to people who never opened the app. Open for production: the mail provider and sender address (O-02) and the VAPID keys (`STV_MAIL_FROM`, `STV_SMTP_*`, `STV_VAPID_*`, see [08-notifications.md](requirements/08-notifications.md#configuration-for-production)). |
 | O-24 | ~~Is there a newer interface than `api-v2`?~~ | Yes, see O-20 (E-83): `wc.swissunihockey.ch` (free) and the partner interface. |
+| O-67 | Calendar view and absences details (E-93) | Assumptions, to confirm: the calendar is a view of «Termine» (`/termine/kalender`), not an entry of its own in the main navigation; at least one team stays chosen; an admin without a team starts with all teams; absences decline only practices (no match days, no other events); a new absence replaces «dabei» and «vielleicht», later a response by hand wins; no notification to the coaches and no late cancellation, even shortly before the practice; reasons «Ferien», «Verletzung», «Anderes» (with note); at most one year, no overlapping absences; only the person herself enters and sees her absences (coaches cannot enter one for a player yet); deleting keeps «nicht dabei» on past practices. |
+

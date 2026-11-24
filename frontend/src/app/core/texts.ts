@@ -16,6 +16,8 @@ export const TEXTS = {
     notifications: 'Benachrichtigungen',
     unread: 'ungelesen',
     skipToContent: 'Zum Inhalt springen',
+    manageTeams: 'Meine Teams verwalten',
+    manageTeam: (team: string) => `${team} verwalten`,
   },
   notifications: {
     title: 'Benachrichtigungen',
@@ -31,6 +33,7 @@ export const TEXTS = {
     tilesTitle: 'Was möchtest du tun?',
     noTiles: 'Für dich gibt es noch keine Kacheln.',
     nextEvent: 'Nächster Termin',
+    nextMatchDay: 'Nächster Spieltag',
     noEvent: 'Keine kommenden Termine',
     morePractices: 'Weitere Trainings',
     allEvents: 'Alle Termine',
@@ -244,9 +247,38 @@ export const TEXTS = {
     route: 'Strecke',
     routeFromTo: (from: string, to: string) => `${from} → ${to}`,
     distance: (km: string, minutes: number | null | undefined) =>
-      minutes ? `${km}\ km · etwa ${minutes}\ Min. Fahrzeit` : `${km}\ km`,
+      minutes ? `${km} km · etwa ${minutes} Min. Fahrzeit` : `${km} km`,
     manual: 'von Hand erfasst',
-    credit: (km: string) => `Gutschrift pro Auto: ${km}\ km (hin und zurück)`,
+    durationManual: 'Fahrzeit angepasst',
+    durationOnly: (minutes: number) => `etwa ${minutes} Min. Fahrzeit`,
+    setDuration: 'Fahrzeit anpassen',
+    durationAuto: 'Automatisch berechnen',
+    durationTitle: 'Fahrzeit anpassen',
+    durationText:
+      'Fahrzeit für die einfache Strecke vom Treffpunkt zum Spielort. Sie gilt statt der berechneten, auch für den Zeitplan.',
+    durationField: 'Fahrzeit in Minuten',
+    durationSave: 'Fahrzeit speichern',
+    durationSaved: 'Die Fahrzeit ist angepasst.',
+    durationReset: 'Die Fahrzeit wird wieder automatisch berechnet.',
+    durationFormat: 'Bitte eine Zahl von 1 bis 600 Minuten eingeben.',
+    infoTitle: 'So wird die Fahrzeit berechnet',
+    providers: {
+      GOOGLE_MAPS: 'Google Maps',
+      OPEN_ROUTE_SERVICE: 'OpenRouteService',
+      OPEN_STREET_MAP: 'OpenStreetMap (OSRM)',
+      SIMULATOR: 'dem Simulator des Testmodus',
+    } as Record<string, string>,
+    infoProvider: (provider: string) => `Berechnet mit ${provider}, vom Treffpunkt zum Spielort.`,
+    infoByHand: 'Die Kilometer sind von Hand erfasst.',
+    infoDepartureUsed: 'Abfahrtstag und -zeit sind berücksichtigt (mit Verkehr).',
+    infoDepartureNotUsed: 'Abfahrtstag und -zeit sind nicht berücksichtigt: die Fahrzeit gilt ohne Verkehr.',
+    infoCalculatedAt: (when: string) => `Berechnet am ${when}.`,
+    infoManual: (who: string, when: string, calculated: number | null) =>
+      `Von Hand angepasst${who ? ' von ' + who : ''}${when ? ' am ' + when : ''}` +
+      (calculated === null ? '.' : `, berechnet wären etwa ${calculated} Min.`),
+    toPlan: 'Zur Fahrerliste',
+    planHint: 'Fahrerinnen und Fahrer trägst du in der Fahrerliste ein.',
+    credit: (km: string) => `Gutschrift pro Auto: ${km} km (hin und zurück)`,
     unavailable:
       'Die Strecke lässt sich gerade nicht berechnen, der Routendienst ist nicht erreichbar. Die Fahrerliste funktioniert trotzdem, nur ohne Kilometer.',
     notFound:
@@ -267,7 +299,7 @@ export const TEXTS = {
     seatsFree: (free: number, seats: number) =>
       `${free} von ${seats} ${seats === 1 ? 'Platz' : 'Plätzen'} frei`,
     full: 'voll',
-    carCredit: (km: string) => `Gutschrift ${km}\ km`,
+    carCredit: (km: string) => `Gutschrift ${km} km`,
     passengersOf: (driver: string) => `Mitfahrende bei ${driver}`,
     noPassengers: 'Noch niemand fährt mit.',
     you: '(du)',
@@ -298,7 +330,8 @@ export const TEXTS = {
     enter: 'Eintragen',
     withoutSeat: 'Ohne Platz',
     withoutSeatCalledUp: 'Aufgebotene Spielerinnen ohne Platz.',
-    withoutSeatAttending: 'Spielerinnen mit «dabei» ohne Platz. Das Aufgebot ist noch nicht veröffentlicht.',
+    withoutSeatAttending:
+      'Spielerinnen mit «dabei» ohne Platz. Das Aufgebot ist noch nicht veröffentlicht.',
     everyoneSeated: 'Alle haben einen Platz.',
     summaryLink: 'Fahrten der Saison',
     // Feedback
@@ -308,7 +341,9 @@ export const TEXTS = {
     riding: (who: string | null, driver: string) =>
       `${who ? `${who} fährt` : 'Du fährst'} bei ${driver} mit.`,
     left: (who: string | null, driver: string) =>
-      who ? `${who} fährt nicht mehr bei ${driver} mit.` : `Du fährst nicht mehr bei ${driver} mit.`,
+      who
+        ? `${who} fährt nicht mehr bei ${driver} mit.`
+        : `Du fährst nicht mehr bei ${driver} mit.`,
     carRemoved: (driver: string) => `Das Auto von ${driver} ist entfernt.`,
   },
   trips: {
@@ -319,12 +354,13 @@ export const TEXTS = {
     name: 'Name',
     trips: 'Fahrten',
     kilometres: 'Kilometer',
-    km: (km: string) => `${km}\ km`,
+    km: (km: string) => `${km} km`,
     withoutDistance: (n: number) => `${n} ${n === 1 ? 'Fahrt' : 'Fahrten'} ohne Kilometer`,
     nobody: 'In dieser Saison ist noch niemand gefahren.',
     mine: 'Deine Fahrten',
     myTitle: 'Meine Fahrten',
-    myHint: 'Wie oft du an Spieltage gefahren bist und wie viele Kilometer dir gutgeschrieben sind.',
+    myHint:
+      'Wie oft du an Spieltage gefahren bist und wie viele Kilometer dir gutgeschrieben sind.',
     myLink: 'Fahrten ansehen',
     toProfile: 'Zum Profil',
   },
@@ -334,7 +370,7 @@ export const TEXTS = {
     listName: 'Zeitplan des Spieltags',
     settings: (duration: number, lead: number) =>
       `Ein Spiel dauert ${duration} Minuten. Ankunft ${lead} Minuten vor dem ersten Spiel.`,
-    route: (km: string, minutes: number) => `${km}\ km, etwa ${minutes}\ Min. Fahrt pro Weg`,
+    route: (km: string, minutes: number) => `${km} km, etwa ${minutes} Min. Fahrt pro Weg`,
     kind: {
       DEPARTURE: 'Abfahrt',
       ARRIVAL: 'Ankunft',
@@ -345,8 +381,9 @@ export const TEXTS = {
       RETURN: 'Rückkehr (ungefähr)',
     },
     match: (n: number, pairing: string) => `Spiel ${n}: ${pairing}`,
-    minutes: (n: number) => `${n}\ Min.`,
-    drive: (n: number) => `${n}\ Min. Fahrt`,
+    minutes: (n: number) => `${n} Min.`,
+    drive: (n: number) => `${n} Min. Fahrt`,
+    beforeFirstMatch: (n: number) => `${n} Min. vor dem 1. Spiel`,
     span: (from: string, until: string) => `${from}–${until}`,
     suggested: 'Vorschlag',
     auto: 'automatisch gesetzt',
@@ -365,9 +402,76 @@ export const TEXTS = {
     },
   },
   /** DRV-14, DRV-17 */
+  suPage: {
+    title: 'swiss unihockey',
+    intro: 'Hier kommst du direkt zu den Infos deiner Teams auf swissunihockey.ch: Spiele, Tabelle und Resultate.',
+    noTeam: 'Du bist in dieser Saison in keinem Team.',
+    notLinked: 'Nicht verbunden. Frag den Coach zum Einrichten.',
+    notLinkedCoach: 'Dieses Team ist noch nicht mit swiss unihockey verbunden. Verknüpfe es gleich hier.',
+    linksOf: (team: string) => `Verknüpfungen von ${team}`,
+    teamNumber: (id: number) => `Team ${id}`,
+    openAtSu: 'Auf swissunihockey.ch ansehen',
+    openAtSuFor: (name: string) => `${name} auf swissunihockey.ch ansehen (öffnet ein neues Fenster)`,
+    league: 'Liga in der App ansehen',
+    link: 'Verbindung einrichten',
+    edit: 'Verbindung bearbeiten',
+  },
   driverPlan: {
-    title: 'Fahrerliste der Saison',
+    title: 'Fahrerliste',
     link: 'Fahrerliste der Saison',
+    team: 'Team',
+    edit: 'Bearbeiten',
+    editFor: (label: string) => `Spieltag ${label} bearbeiten`,
+    closeEdit: 'Fertig',
+    swapTitle: 'Fahrt abgeben oder tauschen',
+    swapText:
+      'Gib deine Fahrt an jemanden ab oder tausche sie gegen eine Fahrt der anderen Person. Du kannst zuerst fragen oder es direkt eintragen, wenn ihr euch schon einig seid.',
+    swapDriver: 'Wessen Fahrt',
+    swapMatchDay: 'Fahrt am',
+    swapPartner: 'An wen',
+    swapReturn: 'Im Tausch gegen',
+    swapNoReturn: 'Nichts, nur abgeben',
+    swapAsk: 'Tausch anfragen',
+    swapDirect: 'Direkt tauschen',
+    swapNothing: 'Im Moment hast du keine Fahrt, die du abgeben kannst.',
+    swapChoose: 'Bitte wählen',
+    swapEventMissing: 'Bitte die Fahrt wählen.',
+    swapPartnerMissing: 'Bitte wählen, wer die Fahrt übernimmt.',
+    swapAsked: (partner: string) => `${partner} ist gefragt und bekommt eine Mitteilung.`,
+    swapDone: 'Getauscht. Die Fahrerliste ist angepasst.',
+    swapsTitle: 'Offene Anfragen',
+    swapRequest: (requester: string, partner: string, event: string, partnerEvent: string | null) =>
+      `${requester} fragt ${partner}: Fahrt am ${event}` + (partnerEvent ? ` gegen ${partnerEvent}` : ' übernehmen'),
+    accept: 'Annehmen',
+    decline: 'Ablehnen',
+    withdraw: 'Zurückziehen',
+    accepted: 'Angenommen. Die Fahrerliste ist angepasst.',
+    declined: 'Abgelehnt.',
+    withdrawn: 'Die Anfrage ist zurückgezogen.',
+    tripsTitle: 'Weitere Fahrten',
+    tripsText:
+      'Fahrten für etwas, das kein Termin in der App ist, zum Beispiel ein Turnier. Sie zählen wie ein Spieltag: hin und zurück.',
+    noTrips: 'Noch keine weiteren Fahrten.',
+    trip: (title: string, date: string, driver: string) => `${date} · ${title} · ${driver}`,
+    tripKm: (km: string) => `${km} km pro Weg`,
+    tripDate: 'Datum',
+    tripTitle: 'Wofür',
+    tripDriver: 'Wer ist gefahren',
+    tripKmField: 'Kilometer (einfacher Weg)',
+    tripAdd: 'Fahrt hinzufügen',
+    tripAdded: 'Die Fahrt ist hinzugefügt.',
+    tripRemove: 'Entfernen',
+    tripRemoveFor: (title: string) => `Fahrt «${title}» entfernen`,
+    tripRemoved: 'Die Fahrt ist entfernt.',
+    tripDateInvalid: 'Bitte ein Datum angeben.',
+    tripTitleInvalid: 'Bitte angeben, wofür die Fahrt war.',
+    tripKmInvalid: 'Bitte eine Zahl von 0.1 bis 2000 eingeben.',
+    historyTitle: 'Verlauf',
+    historyText: 'Was sich in der Fahrerliste geändert hat, das Neuste zuerst.',
+    noHistory: 'Noch keine Änderungen.',
+    historyBy: (who: string, when: string) => (who ? `${who} · ${when}` : when),
+    totalRow: 'Total',
+    noTeam: 'Du bist in dieser Saison in keinem Team. Die Fahrerliste gehört immer zu einem Team.',
     backToTeam: (team: string) => team,
     explanation:
       'Alle Spieltage der Saison auf einen Blick. Du kannst dich gleich für mehrere Spieltage eintragen.',
@@ -382,7 +486,7 @@ export const TEXTS = {
       free === 0 ? `${driver} · voll` : `${driver} · ${free} von ${seats} Plätzen frei`,
     passengers: (names: string) => `Mit: ${names}`,
     distance: (km: string, minutes: number | null) =>
-      minutes === null ? `${km}\ km` : `${km}\ km · ${minutes}\ Min.`,
+      minutes === null ? `${km} km` : `${km} km · ${minutes} Min.`,
     openPlan: 'Fahrerliste öffnen',
     open: 'Zum Spieltag',
     openFor: (label: string) => `Zum Spieltag ${label}`,
@@ -660,7 +764,8 @@ export const TEXTS = {
     sectionText: 'Tabelle, kommende Spiele und Resultate von swiss unihockey.',
     open: 'Liga ansehen',
     backTo: (team: string) => `Zurück zu ${team}`,
-    notLinked: 'Dieses Team ist nicht mit swiss unihockey verknüpft. Darum gibt es keine Ligadaten.',
+    notLinked:
+      'Dieses Team ist nicht mit swiss unihockey verknüpft. Darum gibt es keine Ligadaten.',
     linkInAdministration: 'In der Verwaltung verknüpfen',
     leagueGroup: (league: string | null, group: string | null) =>
       [league, group].filter((x) => !!x).join(' · '),
@@ -748,6 +853,79 @@ export const TEXTS = {
     dark: 'Dunkel',
     system: 'System',
     logout: 'Abmelden',
+  },
+  /** KAL */
+  calendarView: {
+    title: 'Kalender',
+    link: 'Kalender',
+    listLink: 'Liste',
+    absencesLink: 'Abwesenheiten',
+    month: 'Monat',
+    previous: 'Vorheriger Monat',
+    next: 'Nächster Monat',
+    today: 'Heute',
+    teams: 'Teams',
+    myTeams: 'Meine Teams',
+    allTeams: 'Alle Teams',
+    lastTeam: 'Mindestens ein Team bleibt gewählt.',
+    weekdays: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+    weekdayNames: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+    grid: (month: string) => `Kalender ${month}`,
+    day: (date: string, count: number, absent: boolean) =>
+      `${date}: ${count === 0 ? 'keine Termine' : count === 1 ? '1 Termin' : `${count} Termine`}${absent ? ', abwesend' : ''}`,
+    more: (n: number) => `+${n}`,
+    dayEvents: (date: string) => `Termine am ${date}`,
+    noEvents: 'An diesem Tag gibt es keine Termine.',
+    absent: (reason: string) => `Du bist abwesend: ${reason}`,
+    absentShort: 'abwesend',
+    shown: (teams: string) => `Angezeigt: ${teams}`,
+  },
+  /** ABS */
+  absences: {
+    title: 'Abwesenheiten',
+    intro:
+      'Trag ein, wenn du länger weg bist, zum Beispiel in den Ferien oder wegen einer Verletzung. Trainings in dieser Zeit sagen wir automatisch für dich ab, mit dem Grund als Kommentar.',
+    profileHint: 'Ferien oder Verletzung? Trainings in dieser Zeit werden automatisch abgesagt.',
+    profileLink: 'Abwesenheiten verwalten',
+    toProfile: 'Zum Profil',
+    newTitle: 'Abwesenheit eintragen',
+    editTitle: 'Abwesenheit bearbeiten',
+    from: 'Erster Tag',
+    to: 'Letzter Tag',
+    reason: 'Grund',
+    reasons: { VACATION: 'Ferien', INJURY: 'Verletzung', OTHER: 'Anderes' } as Record<
+      string,
+      string
+    >,
+    note: 'Bemerkung (freiwillig)',
+    noteRequired: 'Bemerkung',
+    noteMissing: 'Bei «Anderes» braucht es eine Bemerkung.',
+    fromMissing: 'Bitte den ersten Tag wählen.',
+    toMissing: 'Bitte den letzten Tag wählen.',
+    create: 'Eintragen',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    listTitle: 'Deine Abwesenheiten',
+    empty: 'Du hast keine Abwesenheiten eingetragen.',
+    period: (from: string, to: string) => (from === to ? from : `${from} – ${to}`),
+    entry: (reason: string, period: string) => `${reason} ${period}`,
+    declined: (n: number) =>
+      n === 0
+        ? 'Keine Trainings abgesagt'
+        : n === 1
+          ? '1 Training abgesagt'
+          : `${n} Trainings abgesagt`,
+    created: (n: number) =>
+      `Eingetragen. ${n === 0 ? 'Kein Training betroffen.' : n === 1 ? '1 Training ist abgesagt.' : `${n} Trainings sind abgesagt.`}`,
+    updated: (n: number) =>
+      `Gespeichert. ${n === 0 ? 'Kein Training betroffen.' : n === 1 ? '1 Training ist abgesagt.' : `${n} Trainings sind abgesagt.`}`,
+    edit: (entry: string) => `${entry} bearbeiten`,
+    delete: (entry: string) => `${entry} löschen`,
+    editShort: 'Bearbeiten',
+    deleteShort: 'Löschen',
+    deleteTitle: 'Abwesenheit löschen?',
+    deleteText: 'Die Trainings, die diese Abwesenheit abgesagt hat, sind danach wieder offen.',
+    deleted: 'Die Abwesenheit ist gelöscht.',
   },
   calendar: {
     title: 'Kalender abonnieren',
@@ -951,7 +1129,8 @@ export const TEXTS = {
   /** TML-02, TML-03, AUF-32 */
   matchDaySettings: {
     title: 'Spieltage',
-    explanation: 'Diese Angaben gelten für den Zeitplan der Spieltage und den Vorschlag für die Abfahrt.',
+    explanation:
+      'Diese Angaben gelten für den Zeitplan der Spieltage und den Vorschlag für die Abfahrt.',
     duration: 'Dauer eines Spiels (Minuten)',
     durationInvalid: 'Bitte eine Zahl von 10 bis 240 eingeben.',
     lead: 'Ankunft vor dem ersten Spiel (Minuten)',
@@ -1094,7 +1273,9 @@ export const TEXTS = {
       'Du kannst kommen und dich anmelden, musst aber nicht. Du bekommst keine Erinnerung.',
     filter: 'Freiwillige Termine anzeigen',
     hidden: (n: number) =>
-      n === 1 ? '1 freiwilliger Termin ist ausgeblendet.' : `${n} freiwillige Termine sind ausgeblendet.`,
+      n === 1
+        ? '1 freiwilliger Termin ist ausgeblendet.'
+        : `${n} freiwillige Termine sind ausgeblendet.`,
     legend: 'Wer wird erwartet?',
     hint: 'Erwartete Teams sollen antworten. Freiwillige Teams können kommen und bekommen keine Erinnerung.',
     expected: 'erwartet',
@@ -1112,7 +1293,8 @@ export const TEXTS = {
   },
   lineups: {
     section: 'Spezialaufstellungen',
-    intro: 'Aufstellungen für besondere Situationen, zum Beispiel Überzahl und Unterzahl. Sie ersetzen die Linien nicht.',
+    intro:
+      'Aufstellungen für besondere Situationen, zum Beispiel Überzahl und Unterzahl. Sie ersetzen die Linien nicht.',
     empty: 'Noch keine Spezialaufstellung.',
     add: 'Aufstellung hinzufügen',
     edit: 'Bearbeiten',
@@ -1180,7 +1362,8 @@ export const TEXTS = {
   },
   driving: {
     section: 'Fahren',
-    intro: 'Für den Vorschlag der Fahrerliste: Kannst du an Spieltage fahren, und wie viele Plätze hat dein Auto?',
+    intro:
+      'Für den Vorschlag der Fahrerliste: Kannst du an Spieltage fahren, und wie viele Plätze hat dein Auto?',
     planSection: 'Wer kann fahren',
     planIntro: 'Diese Angaben nutzt «Vorschlag erarbeiten» in der Fahrerliste eines Spieltags.',
     canDrive: 'Kann fahren',

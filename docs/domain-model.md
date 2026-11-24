@@ -36,6 +36,8 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Driving settings** | Per person: can drive, and the places of her car including herself (default yes, 5). Basis of the proposed driver list (DRV-18, DRV-19). |
 | **Individual travel** | Mark per person and match day: she travels on her own and needs no seat (DRV-20). |
 | **Statistics** | Read-only numbers per player of a team over a period: responses and, where recorded, attendance of the past events (STA, F-15). |
+| **Absence** | Longer time a person is away (holidays, injury, other), first and last day inclusive. Declines her upcoming practices in this time with the reason as comment; the declined responses remember the absence and follow it when it changes (ABS, E-93). Private to the person. |
+| **Calendar view** | Month calendar in the app with the events of chosen teams and the own absences (KAL, E-93). |
 | **Calendar subscription** | Personal address of a person with a random token. Behind it is an iCalendar feed with the events of her teams, which calendar apps fetch without login. Renewing replaces the token (CAL, F-18). |
 | **Notification** | Message to one person about a change (BEN-01 to BEN-07). Always in the list in the app; also by e-mail and push (F-19). |
 | **Channel** | Way a notification reaches the person: the app (always), e-mail, push (BEN-10, BEN-11). |
@@ -57,6 +59,8 @@ erDiagram
     EVENT }o--|{ TEAM : "belongs to"
     EVENT ||--o{ RESPONSE : receives
     PERSON ||--o{ RESPONSE : gives
+    PERSON ||--o{ ABSENCE : "is away"
+    ABSENCE |o--o{ RESPONSE : "declined"
     EVENT ||--o{ MATCH : "includes (match day only)"
     EVENT ||--o| CALL_UP : "has (match day only)"
     CALL_UP ||--o{ CALL_UP_ENTRY : includes

@@ -30,8 +30,8 @@ interface Line {
 }
 
 /**
- * Timeline of a match day in the event detail (TML): departure, arrival, time before the first match, the
- * matches with the time between them, cool down and the approximate return. While no meeting time is set,
+ * Timeline of a match day in the event detail (TML): departure, arrival with the time before the first match
+ * (one point), the matches with the time between them, cool down and the approximate return. While no meeting time is set,
  * the departure is a suggestion that coaches and admins can take over (TML-04).
  */
 @Component({
@@ -262,7 +262,10 @@ export class TimelineSection {
     if (!t) return [];
     return t.hints.map((hint) => ({
       key: hint,
-      text: hint === 'ARRIVES_LATE' ? this.s.hint.ARRIVES_LATE(t.arrivalLeadMinutes) : this.s.hint[hint],
+      text:
+        hint === 'ARRIVES_LATE'
+          ? this.s.hint.ARRIVES_LATE(t.arrivalLeadMinutes)
+          : this.s.hint[hint],
     }));
   });
 
@@ -270,7 +273,11 @@ export class TimelineSection {
     const t = this.data();
     if (!t) return [];
     let match = 0;
-    return t.items.map((item, index) => {
+    // Arrival and the time before the first match are one point: «11:29 Ankunft · 71 Min. vor dem 1. Spiel»
+    const items = t.items.filter(
+      (item, index) => !(item.kind === 'WARM_UP' && t.items[index - 1]?.kind === 'ARRIVAL'),
+    );
+    return items.map((item, index) => {
       const span = item.end ? this.s.span(clockTime(item.start), clockTime(item.end)) : null;
       const minutes = item.minutes != null ? this.s.minutes(item.minutes) : null;
       let title: string = this.s.kind[item.kind];
@@ -290,8 +297,13 @@ export class TimelineSection {
         case 'RETURN':
           detail = item.minutes != null ? this.s.drive(item.minutes) : null;
           break;
-        case 'ARRIVAL':
+        case 'ARRIVAL': {
+          const warmUp = t.items[t.items.indexOf(item) + 1];
+          if (warmUp?.kind === 'WARM_UP' && warmUp.minutes != null) {
+            detail = this.s.beforeFirstMatch(warmUp.minutes);
+          }
           break;
+        }
         default:
           detail = [span, minutes].filter(Boolean).join(' · ');
       }

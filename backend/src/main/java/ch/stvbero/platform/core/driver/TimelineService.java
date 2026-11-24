@@ -146,7 +146,7 @@ public class TimelineService {
     }
 
     private Duration drive(Event event) {
-        return matchDayRoutes.current(event).map(Routes.Stored::durationSeconds)
+        return matchDayRoutes.current(event).map(Routes.Stored::effectiveDurationSeconds)
                 .map(seconds -> Duration.ofMinutes(DriverRules.minutes(seconds))).orElse(null);
     }
 

@@ -96,12 +96,14 @@ public class ResponseService {
                 previous == null ? ResponseStatus.PENDING : previous.status(), previous != null && previous.lateCancellation(), newStatus,
                 EventRules.responseDeadline(event.start, event.responseDeadlineHours), now);
         String comment = EventRules.blankToNull(input.comment());
+        // A response given by hand no longer belongs to an absence (ABS-04)
         em.createNativeQuery("""
                         insert into response (event_id, person_id, status, comment, changed_at, entered_by, late_cancellation)
                         values (?, ?, ?, ?, ?, ?, ?)
                         on conflict (event_id, person_id) do update
                         set status = excluded.status, comment = excluded.comment, changed_at = excluded.changed_at,
-                            entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation
+                            entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation,
+                            absence_id = null
                         """)
                 .setParameter(1, event.id).setParameter(2, respondent).setParameter(3, newStatus.name()).setParameter(4, comment)
                 .setParameter(5, now).setParameter(6, enteredBy).setParameter(7, lateCancellation)

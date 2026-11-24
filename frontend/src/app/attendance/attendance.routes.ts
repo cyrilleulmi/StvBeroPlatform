@@ -10,6 +10,11 @@ export const ATTENDANCE_ROUTES: Routes = [
     loadComponent: () => import('./events').then((m) => m.Events),
   },
   {
+    path: 'kalender',
+    title: title('Kalender'),
+    loadComponent: () => import('./calendar').then((m) => m.CalendarPage),
+  },
+  {
     path: 'neu',
     title: title('Termin erfassen'),
     loadComponent: () => import('./event-form').then((m) => m.EventForm),

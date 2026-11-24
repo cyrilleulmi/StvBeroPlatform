@@ -62,6 +62,12 @@ public class DriverListService {
     @Inject
     Notifications notifications;
 
+    @Inject
+    DriverPlanHistory history;
+
+    @Inject
+    ExtraTrips extraTrips;
+
     /** Match day with its members and the caller's position. */
     private record Context(Event event, List<TeamMembership> members, boolean member, boolean canManage,
                            List<DriverRules.Missing> missing) {
@@ -135,6 +141,8 @@ public class DriverListService {
                 .setParameter(4, input.seats()).setParameter(5, clock.now())
                 .executeUpdate();
         notify(messages, user, driver, DriverRules.carAddedText(label, input.seats()), eventId);
+        history.ofMatchDay(eventId, c.event().season.id, DriverPlanHistory.Kind.CAR_ADDED, user.personId(),
+                DriverRules.historyCarAdded(name(person), label));
         notifications.send(messages);
     }
 
@@ -168,6 +176,8 @@ public class DriverListService {
         List<Message> messages = new ArrayList<>();
         passengers.forEach(p -> notify(messages, user, p, DriverRules.carRemovedText(driver, label), eventId));
         notify(messages, user, car.driver(), DriverRules.ownCarRemovedText(label), eventId);
+        history.ofMatchDay(eventId, c.event().season.id, DriverPlanHistory.Kind.CAR_REMOVED, user.personId(),
+                DriverRules.historyCarRemoved(driver, label));
         notifications.send(messages);
     }
 
@@ -427,6 +437,21 @@ public class DriverListService {
         routes.manual(eventId, places[0], places[1], meters);
     }
 
+    /**
+     * Overwrite the driving time, or with {@code null} hand it back to the calculation; coaches and admins
+     * (DRV-21). Applies to the current meeting point and venue.
+     */
+    @Transactional
+    public void setDuration(CurrentUser user, UUID eventId, Integer minutes) {
+        Context c = writable(user, eventId);
+        if (!c.canManage()) {
+            throw DomainError.forbidden();
+        }
+        Place[] places = places(c.event());
+        routes.manualDuration(eventId, places[0], places[1], minutes == null ? null : minutes * 60,
+                user.personId());
+    }
+
     /** Ask the routing service again, coaches and admins (DRV-07). Replaces kilometres entered by hand. */
     public void recalculate(CurrentUser user, UUID eventId) {
         Place[] places = QuarkusTransaction.requiringNew().call(() -> {
@@ -562,9 +587,7 @@ public class DriverListService {
             if (stored.isPresent()) {
                 Routes.Stored s = stored.get();
                 distance = s.distanceMeters();
-                route = new DriverListDto.RouteDto(s.status(), places[0].label(), places[1].label(),
-                        DriverRules.kilometres(s.distanceMeters()), DriverRules.minutes(s.durationSeconds()),
-                        DriverRules.kilometres(DriverRules.credit(s.distanceMeters(), event.status)));
+                route = routeDto(s, places, event.status);
             }
         }
         Double creditKm = DriverRules.kilometres(DriverRules.credit(distance, event.status));
@@ -606,6 +629,19 @@ public class DriverListService {
                 individual, DriverProposalRules.freeSeats(me == null ? DrivingDto.DEFAULT_CAR_SEATS : me.carSeats));
     }
 
+    /** The route with how its driving time came about (DRV-21, DRV-22). */
+    static DriverListDto.RouteDto routeDto(Routes.Stored s, Place[] places, EventStatus status) {
+        Person changedBy = s.manualDurationBy() == null ? null : Person.findById(s.manualDurationBy());
+        return new DriverListDto.RouteDto(s.status(), places[0].label(), places[1].label(),
+                DriverRules.kilometres(s.distanceMeters()), DriverRules.minutes(s.effectiveDurationSeconds()),
+                DriverRules.kilometres(DriverRules.credit(s.distanceMeters(), status)),
+                DriverRules.minutes(s.durationSeconds()), s.manualDurationSeconds() != null,
+                changedBy == null ? null : PersonSummary.of(changedBy),
+                s.manualDurationAt() == null ? null : s.manualDurationAt().atZone(BackendClock.ZONE).toOffsetDateTime(),
+                s.status() == RouteStatus.MANUAL ? null : s.provider(),
+                s.attemptedAt().atZone(BackendClock.ZONE).toOffsetDateTime(), false);
+    }
+
     /** Match days of the season with at least one car. */
     private List<Event> eventsWithCars(UUID seasonId) {
         @SuppressWarnings("unchecked")
@@ -630,6 +666,10 @@ public class DriverListService {
             for (Car car : cars(event.id)) {
                 trips.add(new DriverRules.Trip(event.id, car.driver(), event.status, distance));
             }
+        }
+        // Other trips count like match days (DRV-28)
+        for (ExtraTrips.Stored trip : extraTrips.ofSeason(season.id)) {
+            trips.add(new DriverRules.Trip(trip.id(), trip.driverId(), EventStatus.PLANNED, trip.distanceMeters()));
         }
         Map<UUID, DriverRules.Total> totals = DriverRules.totals(trips);
         boolean everyone = user.allTeams();

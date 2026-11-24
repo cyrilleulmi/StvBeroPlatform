@@ -47,6 +47,28 @@
     }
   </section>
 
+  @if (matchDay(); as t) {
+    <!-- The next match day always shows, also when a practice comes first (AUF-35) -->
+    <section class="card next" data-testid="next-match-day" aria-labelledby="next-match-day-title">
+      <h2 id="next-match-day-title" class="eyebrow">{{ texts.start.nextMatchDay }}</h2>
+      <a class="event-link" [routerLink]="['/termine', t.id]">
+        <span class="event-title">{{ t.title }}</span>
+        <span class="when-where">{{ when(t) }}</span>
+        @if (t.location) {
+          <span class="place">{{ t.location.name }}</span>
+        }
+        <span class="secondary-text">{{ teamNames(t) }}</span>
+      </a>
+      <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
+      <app-my-response
+        [eventId]="t.id"
+        [response]="t.myResponse"
+        [name]="texts.response.myResponseFor(cardName(t))"
+        (changed)="reload(t.id)"
+      />
+    </section>
+  }
+
   @if (practices().length > 0) {
     <section class="card next" data-testid="next-practices" aria-labelledby="next-practices-title">
       <h2 id="next-practices-title" class="eyebrow">{{ texts.start.morePractices }}</h2>

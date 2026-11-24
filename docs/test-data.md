@@ -72,6 +72,8 @@ The seed grows with the features. What is in the seed today:
 | F-18 | Anna has a calendar address with the fixed token `seed-anna-calendar-000000000000000000000005` (created 15.11.2026 20:00), so her feed is `/api/calendar/seed-anna-calendar-000000000000000000000005.ics` (through the frontend: `http://localhost:4200/api/calendar/…`). Everybody else gets a random address on the first visit of «Profil». Expected feed in scenario S56 |
 | F-19 | **Kim** switched e-mails off (`notification_preference`); everybody else has e-mails on by default, to `<loginKey>@example.ch`. **Lea** has push on one phone: device `a0000000-0000-4000-8000-000000000001`, «Chrome auf Android», endpoint `https://push.example.test/seed-lea-phone`, registered 15.11.2026 20:00. Nobody else has a push device. The seed notifications 01–18 have no e-mails or pushes. Scenarios S57–S59 |
 | F-20 | Driver list of match day 04 (see [Event 04](#event-04-match-day-sun-22112026-team-1)): car 01 of Petra with 3 seats, full with Anna, Lea, Mia; car 02 of Sara with 3 seats, empty. Jana («dabei») has no seat. No route is stored: it is calculated by the [routing simulator](#simulated-routing) on the first view. Match day 05 has no cars |
+| E-92 | The history of the driver plan (DRV-26) starts with one entry «Eingetragen: <Name> fährt am Spieltag So 22.11.» per seed car of match day 04 (Petra Keller and Sara Brun, by the driver, 15.11.2026 20:00 like the responses); the club data set has one such entry per car. No swaps and no other trips in the seed. |
+| E-93 | **Sara** is on holiday Mon 14.12.–Sun 20.12.2026 (absence `d0000000-0000-4000-8000-000000000001`, «Ferien», note «Skiferien», entered 15.11.2026 20:00). Her practices Tue 15.12. (series 01) and Thu 17.12. (series 02) are «nicht dabei» with the comment «Abwesend: Ferien · Skiferien», set by the absence. Nobody else has an absence. Scenarios S64–S67 |
 | F-12 | No new records. Coach rights follow from the existing team roles: Petra, Marc and Ruth are coaches and manage all teams; Anna and the other players keep their rights (scenarios S37, S38) |
 
 Series events without a fixed ID have the ID `UUID.nameUUIDFromBytes("termin-<Serie>-<Datum>")`, e.g. for series 02 on 26.11.2026 `termin-2-2026-11-26`. They are called «Training», location as in the series.
@@ -473,6 +475,10 @@ Every scenario starts with `POST /api/test/reset`.
 | S61 | Full car | As `jana` at event 04: Petra's car shows «voll» and no «mitfahren»; API `PUT …/cars/b0000000-0000-4000-8000-000000000001/passengers/<Jana>` | 409 rule DRV-03 | DRV-03 |
 | S62 | Routing outage | `PUT /api/test/routing` `{"unavailable":true}`, change the meeting point of event 04, open it as `petra` | Hint «Die Strecke lässt sich gerade nicht berechnen …», no credits; «Kilometer erfassen» 21.5 → «21.5 km von Hand erfasst», credit 43.0 km | DRV-07 |
 | S63 | Cancelled match day | Cancel event 04, open it | Notice, cars kept, no credits, list read-only; `/fahrten` empty | DRV-10 |
+| S64 | Combined calendar | As `lea` open `/termine/kalender?monat=2026-11` | Team 1 and Team 2 chosen, 22.11. (match day 04) and 28.11. (match day 05) with one event each; no «Alle Teams» | KAL-03 |
+| S65 | Coach calendar | As `petra` open `/termine/kalender` | Only Team 1 chosen, 28.11. empty; «Alle Teams» shows match day 05 and the Wednesday practices of Team 3 | KAL-04 |
+| S66 | Enter an absence | As `anna` enter «Verletzung» 17.–20.11.2026, note «Knie» | «Eingetragen. 2 Trainings sind abgesagt.»; events 01 and 02 «nicht dabei» «Abwesend: Verletzung · Knie»; match day 04 unchanged | ABS-03 |
+| S67 | Holiday in the seed | As `sara` open `/profil/abwesenheiten`, then delete the absence | «Ferien», «2 Trainings abgesagt»; after deleting the practices of 15.12. and 17.12. are «offen» | ABS-05 |
 
 ## Club data set
 
