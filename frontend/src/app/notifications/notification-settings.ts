@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { NotificationSettings, PushDevice } from '../../api/types';
-import { errorText } from '../../core/error-text';
-import { date } from '../../core/format';
+import { NotificationSettings, PushDevice } from '../api/types';
+import { errorText } from '../core/error-text';
+import { date } from '../core/format';
 import {
   PushSupport,
   currentSubscription,
@@ -12,8 +12,8 @@ import {
   permission,
   pushSupport,
   subscribe,
-} from '../../core/push';
-import { TEXTS } from '../../core/texts';
+} from '../core/push';
+import { TEXTS } from '../core/texts';
 
 /**
  * Section «Benachrichtigungen» in the profile (F-19, criteria 2 and 3): one switch for e-mail and one for push on

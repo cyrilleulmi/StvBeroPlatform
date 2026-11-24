@@ -11,7 +11,7 @@ import type {
   DriverSetting,
   PersonSummary,
 } from '../../api/types';
-import { clockTime, eventDate, yearOf } from '../../attendance/time';
+import { clockTime, eventDate, yearOf } from '../../core/time';
 import { AuthService } from '../../core/auth.service';
 import { errorStatus, errorText } from '../../core/error-text';
 import { name } from '../../core/format';

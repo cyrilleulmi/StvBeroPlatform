@@ -19,7 +19,7 @@ import { errorStatus, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, responseKey } from './response';
-import { yearOf, eventDate, clockTime } from './time';
+import { yearOf, eventDate, clockTime } from '../core/time';
 import { Warnings } from './warnings';
 
 /**

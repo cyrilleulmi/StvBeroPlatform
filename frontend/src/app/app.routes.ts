@@ -40,6 +40,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/start/start').then((m) => m.Start),
       },
       {
+        path: 'termine/ueberarbeiten',
+        title: title('Termine überarbeiten'),
+        loadComponent: () =>
+          import('./pages/administration/events-rework').then((m) => m.EventsRework),
+      },
+      {
         path: 'termine',
         loadChildren: () =>
           import('./attendance/attendance.routes').then((m) => m.ATTENDANCE_ROUTES),
@@ -67,7 +73,7 @@ export const routes: Routes = [
         path: 'swissunihockey',
         title: title('swiss unihockey'),
         loadComponent: () =>
-          import('./pages/swiss-unihockey/swiss-unihockey').then((m) => m.SwissUnihockeyPage),
+          import('./swissunihockey/swiss-unihockey').then((m) => m.SwissUnihockeyPage),
       },
       {
         path: 'teams',
@@ -92,13 +98,12 @@ export const routes: Routes = [
       {
         path: 'teams/:teamId/liga',
         title: title('Liga'),
-        loadComponent: () => import('./pages/teams/league').then((m) => m.League),
+        loadComponent: () => import('./swissunihockey/league').then((m) => m.League),
       },
       {
         path: 'benachrichtigungen',
         title: title('Benachrichtigungen'),
-        loadComponent: () =>
-          import('./pages/notifications/notifications').then((m) => m.Notifications),
+        loadComponent: () => import('./notifications/notifications').then((m) => m.Notifications),
       },
       {
         path: 'profil',
@@ -108,7 +113,7 @@ export const routes: Routes = [
       {
         path: 'profil/abwesenheiten',
         title: title('Abwesenheiten'),
-        loadComponent: () => import('./pages/profile/absences').then((m) => m.AbsencesPage),
+        loadComponent: () => import('./attendance/absences').then((m) => m.AbsencesPage),
       },
       {
         path: 'profil/statistik',

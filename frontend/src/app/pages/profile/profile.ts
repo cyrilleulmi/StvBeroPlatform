@@ -5,9 +5,9 @@ import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
-import { CalendarSubscriptionSection } from './calendar-subscription';
-import { NotificationSettingsSection } from './notification-settings';
-import { MyDrivingSection } from './driving';
+import { CalendarSubscriptionSection } from '../../attendance/calendar-subscription';
+import { NotificationSettingsSection } from '../../notifications/notification-settings';
+import { MyDrivingSection } from '../../drivers/driving';
 
 /** One choice in the switch. `preview` is the value of `data-theme` in which the choice shows itself. */
 interface Option {

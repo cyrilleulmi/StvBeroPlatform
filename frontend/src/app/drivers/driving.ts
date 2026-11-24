@@ -9,9 +9,9 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { Driving } from '../../api/types';
-import { errorText } from '../../core/error-text';
-import { TEXTS } from '../../core/texts';
+import type { Driving } from '../api/types';
+import { errorText } from '../core/error-text';
+import { TEXTS } from '../core/texts';
 
 /**
  * Section «Fahren» in the profile (DRV-18): whether the person can drive to match days and how many places

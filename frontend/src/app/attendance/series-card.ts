@@ -10,7 +10,7 @@ import { errorText, fieldErrorsOf } from '../core/error-text';
 import { date } from '../core/format';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
-import { eventDate, yearOf } from './time';
+import { eventDate, yearOf } from '../core/time';
 
 type Overview = components['schemas']['SeriesOverview'];
 type Preview = components['schemas']['SeriesPreview'];

@@ -18,7 +18,7 @@ import { Icon } from '../core/icon';
 import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
-import { yearOf, month, monthKey, eventDate, clockTime } from './time';
+import { yearOf, month, monthKey, eventDate, clockTime } from '../core/time';
 
 interface Month {
   key: string;
@@ -404,21 +404,28 @@ export class Events {
     }
   }
 
+  /** Counts the loads: a slow answer to an earlier filter must not replace the answer to the latest one. */
+  private request = 0;
+
   private async load(team: string | undefined, view: string | undefined): Promise<void> {
+    const nr = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     try {
       const params: Record<string, string> = {};
       if (team) params['team'] = team;
       if (view === 'vergangen') params['view'] = 'past';
-      this.events.set(
-        await firstValueFrom(this.http.get<EventSummary[]>('/api/events', { params })),
+      const events = await firstValueFrom(
+        this.http.get<EventSummary[]>('/api/events', { params }),
       );
+      if (nr === this.request) this.events.set(events);
     } catch (e) {
-      this.events.set([]);
-      this.error.set(errorText(e));
+      if (nr === this.request) {
+        this.events.set([]);
+        this.error.set(errorText(e));
+      }
     } finally {
-      this.loading.set(false);
+      if (nr === this.request) this.loading.set(false);
     }
   }
 }

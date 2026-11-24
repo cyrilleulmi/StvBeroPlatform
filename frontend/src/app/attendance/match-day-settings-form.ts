@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { MatchDaySettings } from '../../api/types';
-import { errorText } from '../../core/error-text';
-import { TEXTS } from '../../core/texts';
+import type { MatchDaySettings } from '../api/types';
+import { errorText } from '../core/error-text';
+import { TEXTS } from '../core/texts';
 
 /**
  * Match duration, arrival before the first match and usual meeting point of a team (TML-02, TML-03, AUF-32), as a

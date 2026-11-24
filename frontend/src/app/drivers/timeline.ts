@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { Timeline, TimelineItem } from '../api/types';
-import { clockTime } from '../attendance/time';
+import { clockTime } from '../core/time';
 import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { formatDecimal } from '../core/number';

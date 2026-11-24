@@ -10,11 +10,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { League as LeagueData, LeagueMatch } from '../../api/types';
-import { clockTime, parts, weekday } from '../../attendance/time';
-import { AuthService } from '../../core/auth.service';
-import { errorStatus, errorText } from '../../core/error-text';
-import { TEXTS } from '../../core/texts';
+import type { League as LeagueData, LeagueMatch } from '../api/types';
+import { clockTime, parts, weekday } from '../core/time';
+import { AuthService } from '../core/auth.service';
+import { errorStatus, errorText } from '../core/error-text';
+import { TEXTS } from '../core/texts';
 
 type Outcome = 'WIN' | 'DRAW' | 'LOSS';
 

@@ -10,12 +10,12 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { Absence, AbsenceInput, AbsenceReason } from '../../api/types';
-import { dayKey } from '../../attendance/time';
-import { AuthService } from '../../core/auth.service';
-import { errorText, fieldErrorsOf } from '../../core/error-text';
-import { date } from '../../core/format';
-import { TEXTS } from '../../core/texts';
+import type { Absence, AbsenceInput, AbsenceReason } from '../api/types';
+import { dayKey } from '../core/time';
+import { AuthService } from '../core/auth.service';
+import { errorText, fieldErrorsOf } from '../core/error-text';
+import { date } from '../core/format';
+import { TEXTS } from '../core/texts';
 
 const REASONS: AbsenceReason[] = ['VACATION', 'INJURY', 'OTHER'];
 

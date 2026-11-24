@@ -2,12 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { SuConnection, SuLink, Team } from '../../api/types';
-import { AuthService } from '../../core/auth.service';
-import { errorText } from '../../core/error-text';
-import { Icon } from '../../core/icon';
-import { TEXTS } from '../../core/texts';
-import { SuConnectionSection } from '../administration/su-connection';
+import type { SuConnection, SuLink, Team } from '../api/types';
+import { AuthService } from '../core/auth.service';
+import { errorText } from '../core/error-text';
+import { Icon } from '../core/icon';
+import { TEXTS } from '../core/texts';
+import { SuConnectionSection } from './su-connection';
 
 /** Address of a team at swissunihockey.ch (SUH-16). */
 export function suTeamUrl(suTeamId: number): string {

@@ -16,7 +16,7 @@ import type { Match, MatchInput, EventDetail } from '../api/types';
 import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
-import { clockTime } from './time';
+import { clockTime } from '../core/time';
 
 const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 /** The number pad of a phone has no colon (iOS), so «5.3» or «5,3» count as «5:3» («5-3» stays invalid, AUF-15). */

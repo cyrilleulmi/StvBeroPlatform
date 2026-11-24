@@ -18,9 +18,9 @@ import type {
   EventVariant,
   EventVariantInput,
   VariantColor,
-} from '../../api/types';
-import { errorText, fieldErrorsOf } from '../../core/error-text';
-import { TEXTS } from '../../core/texts';
+} from '../api/types';
+import { errorText, fieldErrorsOf } from '../core/error-text';
+import { TEXTS } from '../core/texts';
 
 const COLORS: VariantColor[] = [
   'GREEN',

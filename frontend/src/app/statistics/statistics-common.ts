@@ -26,7 +26,8 @@ export function apiParams(
   if (team) params['team'] = team;
   if (from) params['from'] = from;
   if (to) params['to'] = to;
-  const apiType = type ? TYPE_PARAM[type] : undefined;
+  // Only own keys: «?art=constructor» must not find a property of Object.prototype
+  const apiType = type && Object.hasOwn(TYPE_PARAM, type) ? TYPE_PARAM[type] : undefined;
   if (apiType) params['type'] = apiType;
   return params;
 }

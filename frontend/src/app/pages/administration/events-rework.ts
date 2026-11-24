@@ -2,18 +2,18 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { components } from '../api/schema';
-import type { EventSummary, Season, Team, TeamDetail } from '../api/types';
-import { AuthService } from '../core/auth.service';
-import { errorText } from '../core/error-text';
-import { Icon } from '../core/icon';
-import { TEXTS } from '../core/texts';
-import { EventVariantsSection } from '../pages/administration/event-variants';
-import { MatchDaySettingsForm } from '../pages/administration/match-day-settings-form';
-import { SuConnectionSection } from '../pages/administration/su-connection';
-import { SeriesCard } from './series-card';
-import { SeriesNew } from './series-new';
-import { clockTime, eventDate, yearOf } from './time';
+import type { components } from '../../api/schema';
+import type { EventSummary, Season, Team, TeamDetail } from '../../api/types';
+import { AuthService } from '../../core/auth.service';
+import { errorText } from '../../core/error-text';
+import { Icon } from '../../core/icon';
+import { TEXTS } from '../../core/texts';
+import { EventVariantsSection } from '../../attendance/event-variants';
+import { MatchDaySettingsForm } from '../../attendance/match-day-settings-form';
+import { SuConnectionSection } from '../../swissunihockey/su-connection';
+import { SeriesCard } from '../../attendance/series-card';
+import { SeriesNew } from '../../attendance/series-new';
+import { clockTime, eventDate, yearOf } from '../../core/time';
 
 type Overview = components['schemas']['SeriesOverview'];
 
@@ -128,7 +128,7 @@ type Overview = components['schemas']['SeriesOverview'];
       </div>
     }
   `,
-  styleUrl: '../pages/page.css',
+  styleUrl: '../page.css',
   styles: `
     .sections {
       display: grid;

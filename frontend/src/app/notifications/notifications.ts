@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { yearOf, eventDate, clockTime } from '../../attendance/time';
-import type { Notification } from '../../api/types';
-import { AuthService } from '../../core/auth.service';
-import { NotificationsService } from '../../core/notifications.service';
-import { errorText } from '../../core/error-text';
-import { Icon } from '../../core/icon';
-import { TEXTS } from '../../core/texts';
+import { yearOf, eventDate, clockTime } from '../core/time';
+import type { Notification } from '../api/types';
+import { AuthService } from '../core/auth.service';
+import { NotificationsService } from '../core/notifications.service';
+import { errorText } from '../core/error-text';
+import { Icon } from '../core/icon';
+import { TEXTS } from '../core/texts';
 
 /**
  * Own notifications, newest first (BEN). Unread ones are marked with «Neu». A click opens the
@@ -78,7 +78,7 @@ import { TEXTS } from '../../core/texts';
       }
     </section>
   `,
-  styleUrls: ['../page.css', './notifications.css'],
+  styleUrl: './notifications.css',
 })
 export class Notifications implements OnInit {
   private readonly service = inject(NotificationsService);

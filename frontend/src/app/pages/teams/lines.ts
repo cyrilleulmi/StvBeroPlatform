@@ -23,7 +23,7 @@ import { errorStatus, errorText } from '../../core/error-text';
 import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
-import { SpecialLineups } from './special-lineups';
+import { SpecialLineups } from '../../attendance/special-lineups';
 
 /** A group on the screen: line, goalies or «Ohne Linie» (`id` = null). */
 interface DisplayGroup {

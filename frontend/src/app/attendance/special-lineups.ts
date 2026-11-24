@@ -16,10 +16,10 @@ import type {
   SpecialLineup,
   SpecialLineupInput,
   SpecialLineups as SpecialLineupsData,
-} from '../../api/types';
-import { errorText, fieldErrorsOf } from '../../core/error-text';
-import { name } from '../../core/format';
-import { TEXTS } from '../../core/texts';
+} from '../api/types';
+import { errorText, fieldErrorsOf } from '../core/error-text';
+import { name } from '../core/format';
+import { TEXTS } from '../core/texts';
 
 interface PlaceForm {
   label: string;

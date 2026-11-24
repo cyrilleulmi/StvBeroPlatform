@@ -15,10 +15,10 @@ import {
   CalendarResponse,
   EventType,
   CalendarSubscription as Subscription,
-} from '../../api/types';
-import { errorText } from '../../core/error-text';
-import { Icon } from '../../core/icon';
-import { TEXTS } from '../../core/texts';
+} from '../api/types';
+import { errorText } from '../core/error-text';
+import { Icon } from '../core/icon';
+import { TEXTS } from '../core/texts';
 
 /**
  * Section «Kalender abonnieren» in the profile (F-18, CAL-01, CAL-07): personal address of the iCalendar feed,

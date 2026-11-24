@@ -30,7 +30,7 @@ import { AuthService } from '../core/auth.service';
 import { fieldErrorsOf, errorRule, errorStatus, errorText } from '../core/error-text';
 import { FeedbackService } from '../core/feedback.service';
 import { TEXTS } from '../core/texts';
-import { inputParts, zurich } from './time';
+import { inputParts, zurich } from '../core/time';
 
 type Weekday = SeriesInput['weekday'];
 type FormMode = 'new' | 'event' | 'series';

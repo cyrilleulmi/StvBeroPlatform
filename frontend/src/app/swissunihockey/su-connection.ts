@@ -13,10 +13,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { SuClubTeam, SuConnection, SuLink, SyncResult } from '../../api/types';
-import { eventDate, clockTime } from '../../attendance/time';
-import { errorText, fieldErrorsOf } from '../../core/error-text';
-import { TEXTS } from '../../core/texts';
+import type { SuClubTeam, SuConnection, SuLink, SyncResult } from '../api/types';
+import { eventDate, clockTime } from '../core/time';
+import { errorText, fieldErrorsOf } from '../core/error-text';
+import { TEXTS } from '../core/texts';
 
 /**
  * Links of a team to swiss unihockey (SUH-02, SUH-11): the linked teams with the state of their last sync

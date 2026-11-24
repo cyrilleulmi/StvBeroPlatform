@@ -10,12 +10,12 @@ import { AuthService } from '../../core/auth.service';
 import { errorText, fieldErrorsOf } from '../../core/error-text';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
-import { EventVariantsSection } from './event-variants';
-import { MatchDaySettingsForm } from './match-day-settings-form';
+import { EventVariantsSection } from '../../attendance/event-variants';
+import { MatchDaySettingsForm } from '../../attendance/match-day-settings-form';
 import { MembershipTable } from './membership-table';
 import { PersonQuickAdd } from './person-quick-add';
 import { Lines } from '../teams/lines';
-import { SuConnectionSection } from './su-connection';
+import { SuConnectionSection } from '../../swissunihockey/su-connection';
 
 type Overview = components['schemas']['SeriesOverview'];
 

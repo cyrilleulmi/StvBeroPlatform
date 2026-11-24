@@ -24,8 +24,8 @@ import { AuthService } from '../../core/auth.service';
 import { errorStatus, errorText } from '../../core/error-text';
 import { teamRoleText, name } from '../../core/format';
 import { TEXTS } from '../../core/texts';
-import { SuConnectionSection } from './su-connection';
-import { EventVariantsSection } from './event-variants';
+import { SuConnectionSection } from '../../swissunihockey/su-connection';
+import { EventVariantsSection } from '../../attendance/event-variants';
 
 interface Member {
   person: PersonSummary;
