@@ -149,6 +149,46 @@ class EventGrantsTest {
         given().cookie("stv_session", kim).get("/api/events/" + later).then().body("canEdit", equalTo(false));
     }
 
+    /** {@code canEdit} of every event in the list, by event ID. */
+    private static Map<String, Boolean> canEditInList(String session, String query) {
+        JsonPath json = given().cookie("stv_session", session).get("/api/events" + query).then().statusCode(200)
+                .extract().jsonPath();
+        List<String> ids = json.getList("id");
+        List<Boolean> canEdit = json.getList("canEdit");
+        Map<String, Boolean> result = new java.util.HashMap<>();
+        for (int i = 0; i < ids.size(); i++) {
+            result.put(ids.get(i), canEdit.get(i));
+        }
+        return result;
+    }
+
+    @Test
+    void e111ListSaysPerEventWhoMayEditIt() {
+        // Coach and admin: every planned upcoming event; the cancelled event 03 not (TER-06)
+        Map<String, Boolean> petra = canEditInList(login("petra"), "");
+        assertThat(petra.get(T01), equalTo(true));
+        assertThat(petra.get(T02), equalTo(true));
+        assertThat(petra.get("40000000-0000-4000-8000-000000000003"), equalTo(false));
+        Map<String, Boolean> alex = canEditInList(login("alex"), "?team=" + TEAM_1);
+        assertThat(alex.get(T01), equalTo(true));
+        // Past events are over: nobody edits them
+        assertThat(canEditInList(login("petra"), "?view=past").values(), not(hasItem(true)));
+        // A player: nothing
+        assertThat(canEditInList(login("anna"), "").values(), not(hasItem(true)));
+        // Kim with a special permission for event 01 only: that event, not event 02
+        String kim = login("kim");
+        assertThat(canEditInList(kim, "").get(T01), equalTo(false));
+        grant(login("petra"), "/api/events/" + T01, KIM).statusCode(200);
+        Map<String, Boolean> withGrant = canEditInList(kim, "");
+        assertThat(withGrant.get(T01), equalTo(true));
+        assertThat(withGrant.get(T02), equalTo(false));
+        // Through the series: every event of series 01, the same as on the event page
+        grant(login("petra"), "/api/series/" + SERIES_1, KIM).statusCode(200);
+        String later = seriesEvent("2026-12-01");
+        assertThat(canEditInList(kim, "").get(later), equalTo(true));
+        given().cookie("stv_session", kim).get("/api/events/" + later).then().body("canEdit", equalTo(true));
+    }
+
     @Test
     void ben08HolderIsNotifiedAndHearsLateCancellationsWithReason() {
         String petra = login("petra");

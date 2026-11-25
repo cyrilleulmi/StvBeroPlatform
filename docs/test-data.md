@@ -119,7 +119,7 @@ Every team has the four standard event variants (VAR-01) with their defaults, wi
 
 ## People
 
-The **key** is used for `/dev-login` and `POST /api/test/login`.
+The **key** is used for `/dev-login` and `POST /api/test/login`. «Oft gebraucht» on `/dev-login` pins, by role (E-112): Alex (admin), Marc (coach, the first by name who only coaches), Ella (the first player of Marc's team), Petra (coach and player) and Vera (no team this season).
 
 Gender and year of birth (PTF-15): Alex has neither; Marc is a man; everyone else is a woman. The year of birth is 1985 plus the number (Petra 1987, Marc 1988, … Vera 2002). In the club data set the players have the gender of their team, adults are born 1988 to 2004 and juniors two years per team (Junioren A 2006/07 down to Junioren E 2014/15).
 
@@ -457,7 +457,7 @@ Every scenario starts with `POST /api/test/reset`.
 | S40 | Start with a match day first | Clock to 22.11.2026 06:00. As `anna` open `/` | «Nächster Termin»: event 04 (Sun 22.11.). Below two practices: Thu 26.11. and Tue 01.12. (Tue 24.11. is cancelled and skipped). Clock to 28.04.2027 06:00: only Thu 29.04.2027, no «Weitere Trainings» | F-13 |
 | S41 | Record attendance | As `petra` open event 09 → «Präsenz erfassen», set Mia to «entschuldigt», «Präsenz speichern» | «Die Präsenz ist gespeichert.», «Zuletzt gespeichert von Petra Keller am …». Mia sees «Deine Präsenz» «entschuldigt», her response stays «nicht dabei» | PRS-03, PRS-04, PRS-06 |
 | S42 | No attendance without the switch | Clock to 17.11.2026 19:00. As `petra` open event 01 | No section «Präsenz»; `PUT /api/events/<01>/attendance` 409 rule PRS-07 | PRS-07 |
-| S44 | Statistics of Anna | As `petra` open `/termine` → «Statistik» | Team 1, whole season: Anna 26 · 2 · 1 · 0 · 23 · 8 % · 1 · 1 · 0 · 0 · 100 %, base «26 Termine im Zeitraum. Die Präsenzquote beruht auf 1 Termin mit erfasster Präsenz.» Period 01.11.–15.11.2026: Anna 4 · 2 · 1 · 0 · 1 · 50 % · 1. «Spieltage»: 0 events, rates «–» | STA-02–STA-05, STA-09 |
+| S44 | Statistics of Anna | As `petra` open `/verwaltung` → «Statistik» (E-111) | Team 1, whole season: Anna 26 · 2 · 1 · 0 · 23 · 8 % · 1 · 1 · 0 · 0 · 100 %, base «26 Termine im Zeitraum. Die Präsenzquote beruht auf 1 Termin mit erfasster Präsenz.» Period 01.11.–15.11.2026: Anna 4 · 2 · 1 · 0 · 1 · 50 % · 1. «Spieltage»: 0 events, rates «–» | STA-02–STA-05, STA-09 |
 | S45 | Player's events | As `petra` in `/statistik` click «Anna Muster» | 26 events newest first: Thu 12.11. «dabei» (no attendance), Tue 10.11. «nicht dabei» «kurzfristig abgemeldet», Thu 05.11. «dabei» «anwesend», then «offen» | STA-06 |
 | S46 | What counts | Kim in `/statistik`; clock to 25.11.2026 07:00 | Kim 13 events («Im Team seit 01.10.2026.»). On 25.11.: 29 events (17.11., 19.11., match day 22.11. added, cancelled 24.11. left out) | STA-07 |
 | S47 | Own numbers only | As `anna` `/profil` → «Meine Statistik»; `/statistik`; `GET /api/statistics/persons/<Mia>` | Same numbers as S44 under «Meine Statistik». `/statistik`: «Keine Berechtigung», no link «Statistik» in `/termine`; API 403 | STA-08 |
@@ -485,6 +485,8 @@ Every scenario starts with `POST /api/test/reset`.
 | S67 | Holiday in the seed | As `sara` open `/profil/abwesenheiten`, then delete the absence | «Ferien», «2 Trainings abgesagt»; after deleting the practices of 15.12. and 17.12. are «offen» | ABS-05 |
 | S68 | Profile hub | As `petra`, then `alex`, then `sara` open `/profil` | Petra: chips «Team 1 · Coach», «Team 2 · Spielerin»; rows «Meine Statistik», «Abwesenheiten» («Keine Abwesenheit eingetragen»), «Benachrichtigungen» («E-Mail an · Push auf diesem Gerät aus»), «Kalender abonnieren», «Fahren» («Kann fahren · 5 Plätze»). Alex: chip «Admin», no «Meine Statistik». Sara: «Nächste: Ferien 14.12.2026 – 20.12.2026» | E-109 |
 | S69 | Administration hub | As `petra`, then `marc`, then `alex` open `/verwaltung`; as `petra` open «Team 1» and switch «Bereich» | Petra: «Saison 2026/27», «Meine Teams» with Team 1 only and «Mitglieder», «Termine überarbeiten», «Linien einteilen», «Fahrerliste»; «Verein» with «Personen» («17 Personen»), «Alle Teams» («3 Teams in der Saison 2026/27»), «Teamzuteilung», no «Saisons». Marc: «Meine Teams» with Team 2. Alex: no «Meine Teams», «Saisons» («Aktuell: 2026/27»). Team 1: «Mitglieder» first (8 people, one row each), «Termine» (`?bereich=termine`) with «Termine überarbeiten», «Terminvarianten», «Spieltage», «Einstellungen» (`?bereich=einstellungen`) with «Teamname» and «swiss unihockey» | E-110 |
+| S70 | Compact event list | As `petra` open `/termine` at 375px; untick «Team 1»; as `kim` after Petra gave her a special permission for event 01 | One row «Termine» with the icons «Kalender», «Überarbeiten», «Termin erfassen»; chips «Team 1», «Team 2» on, «Team 3» off; untick «Team 1» → `?teams=<Team 2>`, «Team 2» cannot be switched off; pencil «Training Di 17.11. 18:30 bearbeiten» on event 01 and the other planned events, none on the cancelled event 03; `anna` sees no pencil; `kim` sees it on event 01 only | E-111, TER-24, RR-09 |
+| S71 | Test mode login | Open `/dev-login`, search «mus»; load the club data | «Oft gebraucht»: Alex, Marc, Ella, Petra, Vera; «Alle Personen» 17, the search leaves Anna (`?suche=mus`). Club data: Alex, Reto, a player of «Herren KF 3. Liga», Petra; 106 people | E-112 |
 
 ## Club data set
 
@@ -517,7 +519,7 @@ Driving (DRV-18): the adults can drive with 5 places; the players of the six jun
 
 ### People
 
-The key for `/dev-login` is the first name in lower case (`petra`, `reto`, `luca`, …). `/dev-login` lists everyone by team with the coaches on top.
+The key for `/dev-login` is the first name in lower case (`petra`, `reto`, `luca`, …). `/dev-login` lists everyone once by name; «Oft gebraucht» pins Alex (admin), Reto (coach), a player of «Herren KF 3. Liga» and Petra (coach and player); there is nobody without a team (E-112).
 
 | Key | Name | Role |
 |---|---|---|

@@ -27,8 +27,9 @@ test.beforeEach(async ({ request }) => {
 test('F-12 K1 RR-03: Marc (coach of Team 2) edits an event of Team 1', async ({ page }) => {
   await login(page, 'marc');
   await page.goto('/termine');
-  await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Team 1' });
-  await expect(page).toHaveURL(`/termine?team=${TEAM_1}`);
+  // Marc's own team is on; he switches Team 1 on as well (E-111)
+  await page.getByTestId(`team-chip-${TEAM_1}`).check();
+  await expect(page).toHaveURL(`/termine?teams=${TEAM_1},${TEAM_2}`);
   await page.getByTestId(`event-card-${T02}`).getByRole('link').first().click();
   await expect(page).toHaveURL(`/termine/${T02}`);
   await page.getByRole('link', { name: 'Termin bearbeiten' }).click();

@@ -59,7 +59,8 @@
         "event-grants",
         "event-variants",
         "nb75-result-label",
-        "team-assistant-rework"
+        "team-assistant-rework",
+        "events-list"
       ]
     },
     "swissunihockey": {
@@ -123,7 +124,8 @@
         "team-assistant-rework",
         "club-data",
         "profile-hub",
-        "administration-hub"
+        "administration-hub",
+        "dev-login"
       ]
     }
   }

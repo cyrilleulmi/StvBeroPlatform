@@ -773,9 +773,9 @@ export interface paths {
         };
         /**
          * Events of the person's own teams with the person's own response (TER-13)
-         * @description Without `team`, the events of the person's own teams. With `team`, admins and coaches get the
-         *     events of that team even if they are not a member (RR-03, E-69); everyone else only if it is one
-         *     of their teams.
+         * @description Without `team`, the events of the person's own teams. With `team` (repeatable, E-111), the events
+         *     of any of these teams: admins and coaches get them even if they are not a member (RR-03, E-69);
+         *     everyone else only the events of their own teams among them.
          */
         get: operations["listEvents"];
         put?: never;
@@ -3158,6 +3158,8 @@ export interface components {
             optionalTeamIds?: string[];
             /** @description How the caller takes part; missing if she is in no team of the event (TER-15) */
             myParticipation?: components["schemas"]["Participation"];
+            /** @description The caller may edit the event: coach, admin or a special permission for the event or its series (TER-11, RR-09, RR-10), while it is planned, not over and its season not archived. The list shows the edit icon with it (E-111) */
+            canEdit?: boolean;
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -3170,8 +3172,6 @@ export interface components {
             callUpStatus?: components["schemas"]["CallUpStatus"];
             /** @description Only for MATCH_DAY whose variant makes a call-up (VAR-06), and team role PLAYER */
             myCallUp?: components["schemas"]["MyCallUp"] | null;
-            /** @description For showing coach actions */
-            canEdit?: boolean;
             /** @description Switch «Präsenz erfassen» (PRS-01) */
             attendanceCheck?: boolean;
             /** @description Only for coaches and admins. Attendance has been saved (PRS-08), also while the check is off. */
@@ -6015,7 +6015,8 @@ export interface operations {
                 /** @description Default is «now» (backend clock) */
                 from?: string;
                 to?: string;
-                team?: string;
+                /** @description Teams to show (repeatable, E-111) */
+                team?: string[];
                 type?: components["schemas"]["EventType"];
                 view?: "upcoming" | "past";
             };

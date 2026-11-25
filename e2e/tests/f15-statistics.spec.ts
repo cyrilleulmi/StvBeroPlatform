@@ -33,10 +33,14 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('STA-01: coaches reach «Statistik» from the events and from a team page', async ({ page }) => {
+test('STA-01 E-111: coaches reach «Statistik» from «Verwaltung» and from a team page', async ({ page }) => {
   await login(page, 'petra');
+  // Not from the event list any more (E-111)
   await page.goto('/termine');
-  await page.getByRole('link', { name: 'Statistik' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Termine' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Statistik' })).toHaveCount(0);
+  await page.goto('/verwaltung');
+  await page.getByTestId('manage-statistics-link').click();
   await expect(page).toHaveURL('/statistik');
   await expect(page.getByRole('heading', { level: 1, name: 'Statistik' })).toBeVisible();
   await expect(page.getByText('Team 1 · Saison 2026/27')).toBeVisible();

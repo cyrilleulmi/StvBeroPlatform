@@ -51,9 +51,9 @@ public class EventResource {
     @APIResponse(responseCode = "401", description = "Not logged in",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public List<EventSummaryDto> list(@QueryParam("from") LocalDate from, @QueryParam("to") LocalDate to,
-                                     @QueryParam("team") UUID team, @QueryParam("type") EventType type,
+                                     @QueryParam("team") List<UUID> teams, @QueryParam("type") EventType type,
                                      @QueryParam("view") String view) {
-        return events.list(auth.person(), from, to, team, type, view);
+        return events.list(auth.person(), from, to, teams, type, view);
     }
 
     @GET

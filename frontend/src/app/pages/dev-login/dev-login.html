@@ -10,16 +10,12 @@
     <p class="message-error" role="alert">{{ message }}</p>
   }
 
-  <!-- Which data the app holds, and the switch to the other data set (docs/test-data.md) -->
+  <!-- Which data the app holds, and the switch to the other data set (docs/test-data.md); one compact line (E-112) -->
   @if (dataSet(); as d) {
     <section class="data-set" aria-labelledby="data-set-title" data-testid="data-set" [attr.data-dataset]="d.dataset">
       <h2 id="data-set-title">
         {{ t.dataset }}: <span data-testid="data-set-name">{{ t.datasetName[d.dataset] }}</span>
       </h2>
-      <p class="secondary-text">{{ t.datasetText[d.dataset] }}</p>
-      @if (d.loading) {
-        <p class="secondary-text" role="status" aria-busy="true" data-testid="data-set-loading">{{ t.loading }}</p>
-      }
       <div class="data-set-buttons">
         @for (other of dataSets; track other) {
           <button
@@ -33,88 +29,86 @@
           </button>
         }
       </div>
+      <p class="data-set-text">{{ t.datasetText[d.dataset] }}</p>
+      @if (d.loading) {
+        <p class="data-set-text" role="status" aria-busy="true" data-testid="data-set-loading">{{ t.loading }}</p>
+      }
     </section>
   }
 
-  <div class="groups" [attr.aria-busy]="loading() ? 'true' : null">
+  <div class="people" [attr.aria-busy]="loading() ? 'true' : null">
     @if (loading()) {
       <p class="empty">{{ texts.common.loading }}</p>
     } @else {
-      <div class="field">
-        <label for="dev-login-search">{{ t.search }}</label>
-        <input
-          spellcheck="false"
-          name="dev-login-search"
-          id="dev-login-search"
-          type="search"
-          autocomplete="off"
-          [value]="search()"
-          (input)="search.set($any($event.target).value)"
-        />
-      </div>
-
-      @if (groups().length > 3 && !search()) {
-        <nav class="jump" [attr.aria-label]="t.jumpTo">
-          @for (group of groups(); track group.key) {
-            <button type="button" class="jump-link" (click)="jump(group.key)">{{ group.title }}</button>
-          }
-        </nav>
-      }
-
-      @if (shown().length === 0) {
-        <p class="empty" data-testid="dev-login-no-match">{{ t.noMatch }}</p>
-      }
-
-      @for (group of shown(); track group.key; let first = $first) {
-        <section
-          class="group"
-          [id]="'gruppe-' + group.key"
-          [attr.aria-labelledby]="'gruppe-titel-' + group.key"
-          [attr.data-testid]="'dev-login-group-' + group.key"
-        >
-          <h2 [id]="'gruppe-titel-' + group.key" class="group-title">
-            {{ group.title }} <span class="count">{{ t.count(group.entries.length) }}</span>
-          </h2>
-          <ul class="list" [attr.aria-label]="group.title">
-            @for (entry of group.entries; track entry.person.id) {
-              <!-- The first appearance of a person keeps the test ID that the tests know -->
-              <li
-                [attr.data-testid]="
-                  firstGroupOf(entry.person) === group.key
-                    ? 'dev-login-person-' + entry.person.loginKey
-                    : 'dev-login-person-' + entry.person.loginKey + '-' + group.key
-                "
-                [attr.data-role]="entry.coach ? 'coach' : entry.person.admin ? 'admin' : 'player'"
-              >
+      <!-- The people most often needed for trying things out, by role, in both data sets (E-112) -->
+      @if (quick().length > 0) {
+        <section class="quick" aria-labelledby="dev-login-quick-title" data-testid="dev-login-quick">
+          <h2 id="dev-login-quick-title" class="section-title">{{ t.quick }}</h2>
+          <ul class="tiles" [attr.aria-label]="t.quick">
+            @for (q of quick(); track q.role) {
+              <li [attr.data-testid]="'dev-login-quick-' + q.role" [attr.data-role]="role(q.person)">
                 <button
                   type="button"
-                  class="person"
+                  class="tile-button"
                   [disabled]="loggingIn() !== null || switching() !== null"
-                  [attr.aria-busy]="loggingIn() === entry.person.loginKey ? 'true' : null"
-                  (click)="login(entry.person)"
+                  [attr.aria-busy]="loggingIn() === q.person.loginKey ? 'true' : null"
+                  (click)="login(q.person)"
                 >
-                  <span class="name-block">
-                    <span class="name">{{ entry.person.firstName }} {{ entry.person.lastName }}</span>
-                    @if (entry.alsoIn.length > 0) {
-                      <span class="also">{{ t.alsoIn(entry.alsoIn.join(', ')) }}</span>
-                    }
+                  <span class="avatar" aria-hidden="true">{{ q.person.firstName[0] }}{{ q.person.lastName[0] }}</span>
+                  <span class="tile-text">
+                    <span class="name">{{ q.person.firstName }} {{ q.person.lastName }}</span>
+                    <span class="why">{{ q.why }}</span>
                   </span>
-                  <span class="details">
-                    <span class="key">{{ entry.person.loginKey }}</span>
-                    @if (entry.coach) {
-                      <span class="chip" data-kind="coach">{{ t.coach }}</span>
-                    }
-                    @if (entry.person.admin) {
-                      <span class="chip" data-kind="admin">{{ t.admin }}</span>
-                    }
-                  </span>
-                  <app-icon name="chevron-right" [size]="20" />
                 </button>
               </li>
             }
           </ul>
         </section>
       }
+
+      <section class="all" aria-labelledby="dev-login-all-title">
+        <h2 id="dev-login-all-title" class="section-title">
+          {{ t.all }} <span class="count">{{ t.count(people().length) }}</span>
+        </h2>
+        <div class="field">
+          <label for="dev-login-search">{{ t.search }}</label>
+          <input
+            spellcheck="false"
+            name="dev-login-search"
+            id="dev-login-search"
+            type="search"
+            autocomplete="off"
+            [value]="search()"
+            (input)="setSearch($any($event.target).value)"
+          />
+        </div>
+
+        @if (shown().length === 0) {
+          <p class="empty" data-testid="dev-login-no-match">{{ t.noMatch }}</p>
+        } @else {
+          <ul class="list" [attr.aria-label]="t.all">
+            @for (person of shown(); track person.id) {
+              <li [attr.data-testid]="'dev-login-person-' + person.loginKey" [attr.data-role]="role(person)">
+                <button
+                  type="button"
+                  class="person"
+                  [disabled]="loggingIn() !== null || switching() !== null"
+                  [attr.aria-busy]="loggingIn() === person.loginKey ? 'true' : null"
+                  (click)="login(person)"
+                >
+                  <span class="name-block">
+                    <span class="name">{{ person.firstName }} {{ person.lastName }}</span>
+                    <span class="roles">{{ roles(person) }}</span>
+                  </span>
+                  <span class="key">{{ person.loginKey }}</span>
+                  <app-icon name="chevron-right" [size]="20" />
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
     }
   </div>
+
 </main>

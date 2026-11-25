@@ -1071,9 +1071,9 @@ paths:
       operationId: listEvents
       summary: Events of the person's own teams with the person's own response (TER-13)
       description: |
-        Without `team`, the events of the person's own teams. With `team`, admins and coaches get the
-        events of that team even if they are not a member (RR-03, E-69); everyone else only if it is one
-        of their teams.
+        Without `team`, the events of the person's own teams. With `team` (repeatable, E-111), the events
+        of any of these teams: admins and coaches get them even if they are not a member (RR-03, E-69);
+        everyone else only the events of their own teams among them.
       parameters:
         - name: from
           in: query
@@ -1084,7 +1084,10 @@ paths:
           schema: { type: string, format: date }
         - name: team
           in: query
-          schema: { type: string, format: uuid }
+          description: Teams to show (repeatable, E-111)
+          schema:
+            type: array
+            items: { type: string, format: uuid }
         - name: type
           in: query
           schema: { $ref: '#/components/schemas/EventType' }
@@ -3924,6 +3927,12 @@ components:
         myParticipation:
           $ref: '#/components/schemas/Participation'
           description: How the caller takes part; missing if she is in no team of the event (TER-15)
+        canEdit:
+          type: boolean
+          description: >-
+            The caller may edit the event: coach, admin or a special permission for the event or its series
+            (TER-11, RR-09, RR-10), while it is planned, not over and its season not archived. The list shows
+            the edit icon with it (E-111)
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
@@ -3949,7 +3958,6 @@ components:
                 - $ref: '#/components/schemas/MyCallUp'
                 - type: 'null'
               description: Only for MATCH_DAY whose variant makes a call-up (VAR-06), and team role PLAYER
-            canEdit: { type: boolean, description: For showing coach actions }
             attendanceCheck: { type: boolean, description: 'Switch «Präsenz erfassen» (PRS-01)' }
             attendanceRecorded:
               type: boolean

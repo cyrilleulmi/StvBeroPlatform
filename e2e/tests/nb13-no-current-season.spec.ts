@@ -43,7 +43,7 @@ test.describe('without current season', () => {
 
   test('SAI-03: sign-in in test mode without a current season leads to the notice', async ({ page }) => {
     await page.goto('/dev-login?ziel=%2Fprofil');
-    await page.getByRole('button', { name: /Petra Keller/ }).click();
+    await page.getByTestId('dev-login-person-petra').getByRole('button').click();
 
     await expect(page).toHaveURL('/keine-saison?ziel=%2Fprofil');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Noch keine aktuelle Saison');

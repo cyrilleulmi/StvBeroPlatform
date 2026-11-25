@@ -76,7 +76,7 @@ stateDiagram-v2
 | Cancelled or past events can neither be changed nor cancelled again: 409, rule TER-06. | TER-06 |
 | A different start time sets `rescheduled` (stays set afterwards). A series event changed this way no longer takes over later changes of the series. | TER-06 |
 | Response deadline = start minus `responseDeadlineHours` (0 to 336, default 24). Outside this range: «Mindestens 0 Stunden.» or «Höchstens 336 Stunden (14 Tage).», in the form and in the API. | TER-09, TER-10 |
-| List: upcoming = end after "now", ascending; past = end reached, descending. `?team=` shows the user's own events in which this team takes part. If it is not one of the user's teams (e.g. a shared link), it is also added to the «Team» selection so that selection and list match. | TER-13 |
+| List: upcoming = end after "now", ascending; past = end reached, descending. The team chips (E-111, `?teams=<id>,<id>`, the old `?team=<id>` as one team) show the user's own events in which one of these teams takes part (coaches and admins: all events of these teams, E-69); the own teams are on by default and the URL carries nothing then; the last team that is on stays on. A chosen team that is not one of the user's teams (e.g. a shared link) gets a chip as well, so that chips and list match. | TER-13, TER-24 |
 
 ## Series
 

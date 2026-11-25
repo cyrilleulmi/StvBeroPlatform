@@ -8,7 +8,7 @@ Default "now": Mon 16.11.2026 06:00. Seed: match day 04 of Team 1 (matches 09:30
 
 | Scenario | Steps | Expected |
 |---|---|---|
-| Grouped by team | Open `/dev-login` | Card «Datensatz: Testdaten»; groups «Admins», «Team 1», «Team 2», «Team 3», «Ohne Team»; in «Team 1» Petra is first, marked «Coach», with «auch in Team 2»; in «Team 2» she appears again as a player and Marc is first |
+| Test mode login (E-112, `dev-login.spec.ts`) | Open `/dev-login` | Line «Datensatz: Testdaten»; «Oft gebraucht» with Alex, Marc, Ella, Petra («Coach Team 1, Spielerin Team 2»), Vera; «Alle Personen» with 17 people, each once |
 | Search | Type «team 3», then «zzz» | Only Team 3 with Tina; then «Keine Person gefunden.» |
 | Login | Click Petra | Start page «Hallo Petra» |
 
