@@ -2,6 +2,7 @@
   "name": "stvbero-e2e",
   "private": true,
   "scripts": {
+    "typecheck": "tsc --noEmit -p .",
     "test": "playwright test --trace off",
     "test:full": "E2E_FULL=true playwright test --trace off",
     "test:mobile": "playwright test --project=mobile --trace off",
