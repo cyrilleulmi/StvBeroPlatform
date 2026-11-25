@@ -278,7 +278,7 @@ test('DRV-09: the season summary shows everyone to coaches and only themselves t
   await checkAccessibility(page);
 
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/fahren');
   await page.getByTestId('my-trips-link').click();
   await expect(page.getByRole('heading', { level: 2, name: 'Deine Fahrten' })).toBeVisible();
   await expect(page.getByRole('table')).toHaveCount(0);

@@ -325,7 +325,7 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
   page,
 }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/fahren');
   const driving = page.getByTestId('my-driving');
   await expect(driving.getByRole('checkbox', { name: 'Kann fahren' })).toBeChecked();
   await expect(driving.getByLabel('Plätze im Auto (mit dir)')).toHaveValue('5');

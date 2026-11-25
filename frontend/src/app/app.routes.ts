@@ -116,6 +116,24 @@ export const routes: Routes = [
         loadComponent: () => import('./attendance/absences').then((m) => m.AbsencesPage),
       },
       {
+        path: 'profil/benachrichtigungen',
+        title: title('Benachrichtigungen'),
+        loadComponent: () =>
+          import('./pages/profile/profile-notifications').then((m) => m.ProfileNotificationsPage),
+      },
+      {
+        path: 'profil/kalender',
+        title: title('Kalender abonnieren'),
+        loadComponent: () =>
+          import('./pages/profile/profile-calendar').then((m) => m.ProfileCalendarPage),
+      },
+      {
+        path: 'profil/fahren',
+        title: title('Fahren'),
+        loadComponent: () =>
+          import('./pages/profile/profile-driving').then((m) => m.ProfileDrivingPage),
+      },
+      {
         path: 'profil/statistik',
         title: title('Meine Statistik'),
         loadComponent: () =>

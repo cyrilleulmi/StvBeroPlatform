@@ -124,7 +124,7 @@ function section(page: Page) {
 test('F-19 criterion 2: «Benachrichtigungen» in the profile, e-mail on by default, push off', { tag: '@desktop' }, async ({ page }) => {
   await fakePush(page);
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const s = section(page);
   await expect(s).toBeVisible();
   await expect(s.getByText('In der App siehst du alle Benachrichtigungen')).toBeVisible();
@@ -139,7 +139,7 @@ test('F-19 criterion 2: «Benachrichtigungen» in the profile, e-mail on by defa
 
 test('F-19 criterion 2: switch e-mails off and on', async ({ page, request }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const email = section(page).getByRole('switch', { name: 'E-Mail' });
   await email.click();
   await expect(section(page).getByRole('status')).toHaveText('E-Mails sind ausgeschaltet.');
@@ -164,7 +164,7 @@ test('F-19 criterion 2: Kim switched e-mails off; without an e-mail address the 
   request,
 }) => {
   await login(page, 'kim');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   await expect(section(page).getByRole('switch', { name: 'E-Mail' })).not.toBeChecked();
 
   // The administration removes Anna's e-mail address
@@ -174,7 +174,7 @@ test('F-19 criterion 2: Kim switched e-mails off; without an e-mail address the 
   });
   expect(updated.status()).toBe(200);
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const email = section(page).getByRole('switch', { name: 'E-Mail' });
   await expect(email).not.toBeChecked();
   await expect(email).toBeDisabled();
@@ -186,7 +186,7 @@ test('F-19 criterion 3: switching on push asks for permission and registers this
 }) => {
   await fakePush(page, 'granted');
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const push = section(page).getByRole('switch', { name: 'Push auf diesem Gerät' });
   await push.click();
   await expect(section(page).getByRole('status')).toHaveText('Push ist auf diesem Gerät eingeschaltet.');
@@ -211,7 +211,7 @@ test('F-19 criterion 3: switching on push asks for permission and registers this
 test('F-19 criterion 3: several devices; Lea sees her phone and can remove it', async ({ page }) => {
   await fakePush(page, 'granted');
   await login(page, 'lea');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const others = section(page).getByTestId('push-devices');
   await expect(others.getByRole('listitem')).toHaveCount(1);
   await expect(others.getByRole('listitem')).toContainText('Chrome auf Android');
@@ -233,7 +233,7 @@ test('F-19 criterion 3: several devices; Lea sees her phone and can remove it', 
 test('F-19 criterion 3: a denied permission is explained, the switch stays off', async ({ page }) => {
   await fakePush(page, 'denied');
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   const push = section(page).getByRole('switch', { name: 'Push auf diesem Gerät' });
   await push.click();
   const hint = section(page).getByTestId('push-denied-hint');
@@ -256,7 +256,7 @@ test.describe('on an iPhone in Safari', () => {
 
   test('F-19 criterion 3: the hint says to add the app to the home screen first', async ({ page }) => {
     await login(page, 'anna');
-    await page.goto('/profil');
+    await page.goto('/profil/benachrichtigungen');
     const hint = section(page).getByTestId('push-iphone-hint');
     await expect(hint).toContainText('Auf dem iPhone zuerst zum Home-Bildschirm hinzufügen');
     await expect(hint).toContainText('«Zum Home-Bildschirm»');
@@ -375,7 +375,7 @@ test('F-19 criterion 7: a push subscription reported as expired is removed', asy
   const push = of(await notifications(request, 'EVENT_CANCELLED'), LEA).deliveries.find((d) => d.channel === 'PUSH');
   expect(push?.status).toBe('DISCARDED');
   await login(page, 'lea');
-  await page.goto('/profil');
+  await page.goto('/profil/benachrichtigungen');
   await expect(section(page).getByRole('switch', { name: 'E-Mail' })).toBeChecked();
   await expect(section(page).getByTestId('push-devices')).toHaveCount(0);
 });

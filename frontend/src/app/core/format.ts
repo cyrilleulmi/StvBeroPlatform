@@ -40,3 +40,27 @@ export function seasonStatus(s: Season): string {
   if (s.archived) return TEXTS.season.archive;
   return TEXTS.season.planned;
 }
+
+/** «PK» for Petra Keller: the first letter of the first and the last name, for the avatar in the profile. */
+export function initials(p: Pick<PersonSummary, 'firstName' | 'lastName'>): string {
+  const first = (s: string) => Array.from(s.trim())[0] ?? '';
+  return (first(p.firstName) + first(p.lastName)).toLocaleUpperCase('de-CH');
+}
+
+/** One role of the person in a team, e.g. «Team 1 · Coach». */
+export interface RoleLabel {
+  text: string;
+  coach: boolean;
+}
+
+/** The roles of the person in her teams of the current season, by team name («Team 1 · Coach», «Team 2 · Spielerin»). */
+export function roleLabels(
+  memberships: readonly { team: { name: string }; teamRole: TeamRole | string }[],
+): RoleLabel[] {
+  return [...memberships]
+    .sort((a, b) => a.team.name.localeCompare(b.team.name, 'de-CH', { numeric: true }))
+    .map((m) => ({
+      text: TEXTS.profile.membership(m.team.name, teamRoleText(m.teamRole)),
+      coach: m.teamRole === 'COACH',
+    }));
+}

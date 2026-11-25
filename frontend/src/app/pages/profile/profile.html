@@ -1,96 +1,105 @@
-<h1>{{ texts.profile.title }}</h1>
+<h1 class="title">{{ texts.profile.title }}</h1>
 
 @if (auth.me(); as me) {
-  <section class="card person" aria-labelledby="profile-name">
-    <h2 id="profile-name">{{ me.firstName }} {{ me.lastName }}</h2>
-    @if (me.email) {
-      <p class="secondary-text">{{ me.email }}</p>
-    }
-  </section>
-}
-
-@if (isPlayer()) {
-  <section class="card" aria-labelledby="profile-statistics">
-    <h2 id="profile-statistics" class="section-title">{{ texts.statistics.myTitle }}</h2>
-    <p class="secondary-text">{{ texts.statistics.myHint }}</p>
-    <a
-      class="button button-secondary button-small"
-      routerLink="/profil/statistik"
-      data-testid="my-statistics-link"
-      >{{ texts.statistics.myLink }}</a
-    >
-  </section>
-}
-
-<section class="card" aria-labelledby="profile-absences">
-  <h2 id="profile-absences" class="section-title">{{ texts.absences.title }}</h2>
-  <p class="secondary-text">{{ texts.absences.profileHint }}</p>
-  <a
-    class="button button-secondary button-small"
-    routerLink="/profil/abwesenheiten"
-    data-testid="my-absences-link"
-    >{{ texts.absences.profileLink }}</a
-  >
-</section>
-
-<section class="card" aria-labelledby="profile-trips">
-  <h2 id="profile-trips" class="section-title">{{ texts.trips.myTitle }}</h2>
-  <p class="secondary-text">{{ texts.trips.myHint }}</p>
-  <a
-    class="button button-secondary button-small"
-    routerLink="/fahrten"
-    data-testid="my-trips-link"
-    >{{ texts.trips.myLink }}</a
-  >
-</section>
-
-@if (auth.me(); as me) {
-  <!-- Can drive, and the places of the car: for the proposed driver list (DRV-18) -->
-  <app-my-driving [personId]="me.id" />
-}
-
-<app-notification-settings />
-
-<app-calendar-subscription />
-
-<section class="card">
-  <fieldset class="switch" data-testid="theme-switch">
-    <legend>{{ texts.profile.theme }}</legend>
-    <div class="options">
-      @for (o of options; track o.value) {
-        <!-- Each choice shows itself in its own colors: data-theme also works on a single element. -->
-        <label class="option" [attr.data-theme]="o.preview">
-          <input
-            type="radio"
-            name="theme"
-            [value]="o.value"
-            [checked]="theme.mode() === o.value"
-            (change)="theme.set(o.value)"
-          />
-          <span class="name">{{ o.text }}</span>
-          <span class="colors" aria-hidden="true">
-            <span class="color color-primary"></span>
-            <span class="color color-coral"></span>
-            <span class="color color-mustard"></span>
-            <span class="color color-blue"></span>
-          </span>
-        </label>
+  <section class="card identity" aria-labelledby="profile-name" data-testid="profile-identity">
+    <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+    <div class="who">
+      <h2 id="profile-name">{{ fullName() }}</h2>
+      @if (me.email) {
+        <p class="secondary-text email">{{ me.email }}</p>
+      }
+      @if (roles().length > 0 || me.admin) {
+        <ul class="roles" [attr.aria-label]="texts.profile.roles" data-testid="profile-roles">
+          @for (r of roles(); track r.text) {
+            <li class="chip" [attr.data-kind]="r.coach ? 'coach' : null">{{ r.text }}</li>
+          }
+          @if (me.admin) {
+            <li class="chip" data-kind="admin">{{ texts.profile.admin }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="secondary-text" data-testid="profile-roles">{{ texts.profile.noTeam }}</p>
       }
     </div>
-  </fieldset>
-</section>
-
-@if (error(); as message) {
-  <p class="message-error" role="alert">{{ message }}</p>
+  </section>
 }
 
-<button
-  type="button"
-  class="button button-secondary"
-  [disabled]="loggingOut()"
-  [attr.aria-busy]="loggingOut() ? 'true' : null"
-  (click)="logout()"
->
-  <app-icon name="log-out" [size]="20" />
-  {{ texts.profile.logout }}
-</button>
+<section class="group season" aria-labelledby="profile-season" data-testid="profile-season">
+  <h2 id="profile-season" class="group-title">{{ texts.profile.mySeason }}</h2>
+  <div class="card links">
+    <ul class="list">
+      @for (row of seasonRows(); track row.key) {
+        <ng-container *ngTemplateOutlet="rowLink; context: { $implicit: row }" />
+      }
+    </ul>
+  </div>
+</section>
+
+<section class="group settings" aria-labelledby="profile-settings" data-testid="profile-settings">
+  <h2 id="profile-settings" class="group-title">{{ texts.profile.settings }}</h2>
+  <div class="card links">
+    <ul class="list">
+      @for (row of settingRows(); track row.key) {
+        <ng-container *ngTemplateOutlet="rowLink; context: { $implicit: row }" />
+      }
+    </ul>
+  </div>
+
+  <div class="card theme">
+    <fieldset class="switch" data-testid="theme-switch">
+      <legend>{{ texts.profile.theme }}</legend>
+      <div class="options">
+        @for (o of options; track o.value) {
+          <!-- Each choice shows itself in its own colors: data-theme also works on a single element. -->
+          <label class="option" [attr.data-theme]="o.preview">
+            <input
+              type="radio"
+              name="theme"
+              [value]="o.value"
+              [checked]="theme.mode() === o.value"
+              (change)="theme.set(o.value)"
+            />
+            <span class="name">{{ o.text }}</span>
+            <span class="colors" aria-hidden="true">
+              <span class="color color-primary"></span>
+              <span class="color color-coral"></span>
+              <span class="color color-mustard"></span>
+              <span class="color color-blue"></span>
+            </span>
+          </label>
+        }
+      </div>
+    </fieldset>
+  </div>
+</section>
+
+<div class="logout">
+  @if (error(); as message) {
+    <p class="message-error" role="alert">{{ message }}</p>
+  }
+  <button
+    type="button"
+    class="button button-secondary"
+    [disabled]="loggingOut()"
+    [attr.aria-busy]="loggingOut() ? 'true' : null"
+    (click)="logout()"
+  >
+    <app-icon name="log-out" [size]="20" />
+    {{ texts.profile.logout }}
+  </button>
+</div>
+
+<ng-template #rowLink let-row>
+  <li>
+    <a class="row-link" [routerLink]="row.route" [attr.data-testid]="row.testId">
+      <span class="icon-field"><app-icon [name]="row.icon" [size]="20" /></span>
+      <span class="row-text">
+        <span class="row-title">{{ row.title }}</span>
+        <span class="secondary-text state" [attr.data-testid]="'profile-' + row.key + '-state'">{{
+          row.state ?? ''
+        }}</span>
+      </span>
+      <app-icon name="chevron-right" [size]="20" />
+    </a>
+  </li>
+</ng-template>

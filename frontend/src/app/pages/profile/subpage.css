@@ -1,0 +1,13 @@
+/* Sub-pages of the profile (E-109): back link «Zum Profil», the page title, then the section of the module. */
+:host {
+  display: grid;
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+/* A readable column on wide screens: forms do not stretch over the whole content area. */
+@media (min-width: 1024px) {
+  :host {
+    max-width: 640px;
+  }
+}

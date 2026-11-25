@@ -28,7 +28,7 @@ async function feed(baseURL: string | undefined): Promise<string> {
 
 test('CAL-10 CAL-11: only match days, and only where I am in or have not answered', async ({ page, baseURL }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const filter = page.getByTestId('calendar-filter');
   await expect(filter.getByRole('checkbox', { name: 'Trainings' })).toBeChecked();
   // «dabei» is always in the feed
@@ -72,7 +72,7 @@ test('CAL-10 CAL-11: only match days, and only where I am in or have not answere
 
 test('CAL-13: a person in two teams leaves out one team', async ({ page }) => {
   await login(page, 'lea');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const filter = page.getByTestId('calendar-filter');
   const team2 = filter.getByRole('checkbox', { name: 'Team 2' });
   await expect(team2).toBeChecked();
