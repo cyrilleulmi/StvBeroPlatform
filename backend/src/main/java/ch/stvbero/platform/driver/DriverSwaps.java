@@ -17,14 +17,18 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Swaps of trips (DRV-25): a driver gives her trip of a match day to another member of the team, as a takeover or
  * against a trip of the other person on another match day. Asked first or entered directly. Only the driver of the
- * cars changes; seats and passengers stay. All methods run in the caller's transaction.
+ * cars changes; seats and passengers stay. All methods run in the caller's transaction. Answers and direct swaps
+ * that arrive at the same time take effect once: the first one counts, the others get 404 (the request is gone) or
+ * 409 (the cars no longer fit).
  */
 @ApplicationScoped
 public class DriverSwaps {
@@ -73,11 +77,13 @@ public class DriverSwaps {
         }
         Stored swap = new Stored(UUID.randomUUID(), teamId, seasonId, input.eventId(), requester, input.partnerId(),
                 input.partnerEventId(), "OPEN", clock.now());
-        check(user, swap);
         if (input.direct()) {
+            lock(swap);
+            check(user, swap);
             execute(user, swap);
             return;
         }
+        check(user, swap);
         boolean pending = !em.createNativeQuery("""
                         select 1 from driver_swap where event_id = ? and requester_id = ? and status = 'OPEN'""")
                 .setParameter(1, swap.eventId()).setParameter(2, requester).getResultList().isEmpty();
@@ -107,8 +113,9 @@ public class DriverSwaps {
         if (!canAnswer(user, swap)) {
             throw DomainError.forbidden();
         }
-        check(user, swap);
+        lock(swap);
         close(swapId, "ACCEPTED");
+        check(user, swap);
         execute(user, swap);
         send(user, swap.requesterId(), swap.eventId(),
                 DriverRules.swapAcceptedText(name(swap.partnerId()), label(swap.eventId())));
@@ -168,6 +175,16 @@ public class DriverSwaps {
 
     // ------------------------------------------------------------------ Carrying out
 
+    /**
+     * Locks the match days of the swap, always in the same order. Whoever changes their cars at the same time
+     * waits here, so that {@link #check} sees what is really stored when the swap is carried out.
+     */
+    private void lock(Stored swap) {
+        Stream.of(swap.eventId(), swap.partnerEventId()).filter(Objects::nonNull).sorted().forEach(id ->
+                em.createNativeQuery("select id from event where id = ? for update").setParameter(1, id)
+                        .getResultList());
+    }
+
     /** The swap still fits the cars: requester drives the match day, partner not; and the other way round. */
     private void check(CurrentUser user, Stored swap) {
         Event event = matchDay(swap.eventId());
@@ -218,7 +235,6 @@ public class DriverSwaps {
 
     /** The car of {@code from} on the match day gets {@code to} as driver; {@code to} leaves her seat there. */
     private void hand(UUID eventId, UUID from, UUID to) {
-        em.createNativeQuery("select id from event where id = ? for update").setParameter(1, eventId).getResultList();
         UUID car = driverCar(eventId, from).orElseThrow();
         em.createNativeQuery("delete from car_passenger where event_id = ? and person_id = ?")
                 .setParameter(1, eventId).setParameter(2, to).executeUpdate();
@@ -253,9 +269,17 @@ public class DriverSwaps {
                 (UUID) r[5], (UUID) r[6], (String) r[7], Routes.instant(r[8]))).toList();
     }
 
+    /**
+     * Answers the request, if it is still open: of several answers at the same time the first one counts, the
+     * others wait for it here and then learn that the request is gone.
+     */
     private void close(UUID swapId, String status) {
-        em.createNativeQuery("update driver_swap set status = ?, decided_at = ? where id = ?")
+        int answered = em.createNativeQuery("""
+                        update driver_swap set status = ?, decided_at = ? where id = ? and status = 'OPEN'""")
                 .setParameter(1, status).setParameter(2, clock.now()).setParameter(3, swapId).executeUpdate();
+        if (answered == 0) {
+            throw DomainError.notFound(GONE_TEXT);
+        }
     }
 
     private Optional<UUID> driverCar(UUID eventId, UUID driver) {

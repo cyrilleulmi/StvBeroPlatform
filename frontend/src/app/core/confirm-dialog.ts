@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { showModal } from './dialog';
 import { TEXTS } from './texts';
 
 /** What the dialog asks, and what happens on «yes». */
@@ -83,14 +93,14 @@ export class ConfirmDialog {
   protected readonly id = `confirm-${++next}`;
   readonly testId = input('confirm-dialog');
 
+  private readonly changes = inject(ChangeDetectorRef);
   protected readonly question = signal<Confirmation | null>(null);
   protected readonly running = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   ask(question: Confirmation): void {
     this.question.set(question);
-    const dialog = this.dialog().nativeElement;
-    if (!dialog.open) dialog.showModal();
+    showModal(this.dialog().nativeElement, this.changes);
   }
 
   protected close(): void {

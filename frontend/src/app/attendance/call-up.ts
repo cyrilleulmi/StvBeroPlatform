@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -21,6 +22,7 @@ import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, responseKey } from './response';
 import { yearOf, eventDate, clockTime } from '../core/time';
 import { Warnings } from './warnings';
+import { showModal } from '../core/dialog';
 
 /**
  * Call-up of a match day (`/termine/:eventId/aufgebot`, coaches and admins only): all players of the
@@ -202,6 +204,7 @@ import { Warnings } from './warnings';
   styleUrls: ['./overview.css', './call-up.css'],
 })
 export class CallUpPage {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
@@ -289,8 +292,7 @@ export class CallUpPage {
   }
 
   protected openDialog(): void {
-    const d = this.dialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
   }
 
   protected closeDialog(): void {

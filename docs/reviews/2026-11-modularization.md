@@ -130,7 +130,7 @@ Read-only review of all packages. Verdict: conventions B, correctness B−, auth
 
 | # | Kind | Where | What | Effort |
 |---|---|---|---|---|
-| 1 | Bug | `driver/DriverSwaps` (`accept`, `close`) | The check runs before the match day is locked and closing does not require the status «open»: two accepts at the same time answer 500 instead of 409. The swaps have no page since E-98, so only the API is affected. | S |
+| 1 | Bug | `driver/DriverSwaps` (`accept`, `close`) | The check runs before the match day is locked and closing does not require the status «open»: two accepts at the same time answer 500 instead of 409. The swaps have no page since E-98, so only the API is affected. **Fixed on 25.11.2026:** the match days are locked before the check and only an open request can be answered; of several answers at the same time one counts, the others get 404 as the contract says (direct swaps: 409). Declining at the same time used to notify once per request. Tests in `DriverSwapTest`. | S |
 | 2 | Risk | `swissunihockey/SuSync.sync`, `league/LeagueService.refresh` | The request to swiss unihockey runs inside the database transaction that holds the lock on the team: a slow answer blocks a connection and the row. | M |
 | 3 | Risk | `driver/DriverListService` (summary of the season) | Asks the routing service once per match day, without the limit of 12 the plan view has. | S |
 | 4 | Risk | `attendance/event/EventReader` | Every event list loads all team memberships of the season, not only those of the listed teams; the list of past events has no limit. | S–M |

@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -23,6 +24,7 @@ import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 import { Warnings } from './warnings';
+import { showModal } from '../core/dialog';
 
 type Choice = ResponseInput['status'];
 
@@ -257,6 +259,7 @@ interface Target {
   styleUrls: ['./response.css', './overview.css'],
 })
 export class OverviewSection {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly responses = inject(ResponseService);
   protected readonly t = TEXTS.overview;
   protected readonly texts = TEXTS;
@@ -317,8 +320,7 @@ export class OverviewSection {
     this.commentError.set(null);
     this.message.set(null);
     this.error.set(null);
-    const d = this.dialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
   }
 
   protected close(): void {

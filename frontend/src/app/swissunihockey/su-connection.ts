@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -17,6 +18,7 @@ import type { SuClubTeam, SuConnection, SuLink, SyncResult } from '../api/types'
 import { eventDate, clockTime } from '../core/time';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 /**
  * Links of a team to swiss unihockey (SUH-02, SUH-11): the linked teams with the state of their last sync
@@ -256,6 +258,7 @@ import { TEXTS } from '../core/texts';
   `,
 })
 export class SuConnectionSection {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.swissUnihockey;
@@ -330,8 +333,7 @@ export class SuConnectionSection {
     this.manual.set(false);
     this.clubTeams.set([]);
     this.clubLoading.set(true);
-    const d = this.dialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
     try {
       this.clubTeams.set(await firstValueFrom(this.http.get<SuClubTeam[]>('/api/swiss-unihockey/teams')));
     } catch (e) {

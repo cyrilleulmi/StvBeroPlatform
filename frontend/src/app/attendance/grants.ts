@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -14,6 +15,7 @@ import { firstValueFrom } from 'rxjs';
 import type { EventGrants, EventGrantsInput } from '../api/types';
 import { errorText } from '../core/error-text';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 /**
  * «Sonderberechtigungen» of an event (part of the section «Angaben») or a series (a section of its own), RR-09 to
@@ -196,6 +198,7 @@ import { TEXTS } from '../core/texts';
   `,
 })
 export class Grants {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly t = TEXTS.grants;
 
@@ -254,8 +257,7 @@ export class Grants {
     this.chosen.set(new Set(own));
     this.dialogError.set(null);
     this.message.set(null);
-    const el = this.dialog()?.nativeElement;
-    if (el && !el.open) el.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
   }
 
   protected toggle(id: string, on: boolean): void {

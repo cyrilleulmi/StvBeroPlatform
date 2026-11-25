@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -19,6 +20,7 @@ import {
 import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 /**
  * Section «Kalender abonnieren» in the profile (F-18, CAL-01, CAL-07): personal address of the iCalendar feed,
@@ -323,6 +325,7 @@ import { TEXTS } from '../core/texts';
   `,
 })
 export class CalendarSubscriptionSection {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS.calendar;
   protected readonly common = TEXTS.common;
@@ -452,8 +455,7 @@ export class CalendarSubscriptionSection {
   }
 
   protected openRenew(): void {
-    const d = this.renewDialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.renewDialog()?.nativeElement, this.changes);
   }
 
   protected async renew(): Promise<void> {

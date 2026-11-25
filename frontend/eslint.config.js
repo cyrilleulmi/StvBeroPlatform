@@ -50,7 +50,7 @@ const maxLines = (max) => ['error', { max, skipBlankLines: true, skipComments: t
 // cannot grow. Entries may only be lowered or removed (never raised, never added);
 // new files must respect the general limits above.
 const FROZEN_MAX_LINES = {
-  'attendance/event-form.ts': 710,
+  'attendance/event-form.ts': 650,
   'attendance/event-variants.ts': 630,
   'drivers/driver-list.ts': 570,
   'drivers/driver-plan.ts': 930,
@@ -99,6 +99,22 @@ module.exports = defineConfig([
     rules: {
       'max-lines': maxLines(MAX_LINES),
       complexity: ['error', { max: MAX_COMPLEXITY }],
+    },
+  },
+  // Dialogs open through core/dialog.ts, which renders their content first (see there).
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['src/app/core/dialog.ts', 'src/**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='showModal']",
+          message:
+            'Open dialogs with showModal(dialog, changes) from core/dialog.ts: it renders the content first, ' +
+            'so that no field is still empty when the dialog shows.',
+        },
+      ],
     },
   },
   // Exempt from max-lines: the central UI texts and spec files.

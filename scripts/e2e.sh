@@ -93,6 +93,10 @@ for i in $(seq 0 $((WORKERS - 1))); do
   fi
 done
 
+# ---------------------------------------------------------------- types of the tests
+# Playwright only strips the types, so a type error in a test would go unnoticed. Checked first: it takes seconds.
+(cd "$ROOT/e2e" && { [ -d node_modules ] || npm ci --no-audit --no-fund; } && npx tsc --noEmit -p .)
+
 # ---------------------------------------------------------------- build: frontend into the backend
 # Build configuration «preview» (test mode with /dev-login) and backend profile dev (test endpoints). Both go
 # into folders of their own (frontend/dist-e2e, backend/target-e2e), so a running «ng serve», «quarkus:dev» or

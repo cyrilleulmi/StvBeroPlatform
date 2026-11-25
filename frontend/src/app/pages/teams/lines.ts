@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   Injector,
@@ -24,6 +25,7 @@ import { name } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { SpecialLineups } from '../../attendance/special-lineups';
+import { showModal } from '../../core/dialog';
 
 /** A group on the screen: line, goalies or «Ohne Linie» (`id` = null). */
 interface DisplayGroup {
@@ -52,6 +54,7 @@ const NO_LINE = '';
   styleUrls: ['../page.css', './lines.css'],
 })
 export class Lines {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -326,7 +329,7 @@ export class Lines {
 
   protected askDelete(g: DisplayGroup): void {
     this.toDelete.set(g);
-    this.deleteDialog()?.nativeElement.showModal();
+    showModal(this.deleteDialog()?.nativeElement, this.changes);
   }
 
   protected cancelDelete(): void {

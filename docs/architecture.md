@@ -121,6 +121,8 @@ Checks that fail the build when the architecture erodes. All of them run in `scr
 | API contract | the backend differs from `docs/api/openapi.yaml` | `OpenApiContractTest`, `redocly lint` |
 | Bundle size, frontend | the first load exceeds 1 MB | budgets in `frontend/angular.json` |
 | Specs assigned | an E2E spec belongs to no module | `scripts/affected.mjs --check` |
+| Dialogs, frontend | a dialog is opened with `.showModal()` instead of `showModal(dialog, changes)` from `core/dialog.ts`, which renders the content first | `frontend/eslint.config.js` (`no-restricted-syntax`) |
+| Types of the E2E tests | a test has a type error (Playwright itself only strips the types) | `scripts/e2e.sh` (`tsc --noEmit`, before the build) |
 
 **Frozen lists.** The classes and files that were above a limit when it came are listed with their size at that time (`CodeSizeTest.FROZEN`, `FROZEN_MAX_LINES` and `FROZEN_COMPLEXITY` in the ESLint configuration). They may shrink, never grow, and no entry is added. Whoever has to add much to a frozen class first moves a responsibility out of it. The coverage minimum works the same way: raise it when the coverage rises, never lower it to get a change through.
 

@@ -30,7 +30,7 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`, Team 3 `…
 
 | Case | Steps | Expected |
 |---|---|---|
-| K3.1 UI | `/teams/<T1>/linien`, `/teams/<T2>/linien`, `/verwaltung/teams/<T1>`, `/verwaltung/personen/<Anna>` | No «<Linie> löschen», no «<Name> entfernen» |
+| K3.1 UI | `/teams/<T1>/linien`, `/teams/<T2>/linien`, `/verwaltung/teams/<T1>`, `/verwaltung/personen/<Anna>` | No «<Linie> löschen»; «<Name> entfernen» is there since E-103 |
 | K3.2 Delete line | `DELETE /api/teams/<T2>/groups/<Linie 2 T2>` as `petra`; as `marc` on Team 1 | 403, detail «Keine Berechtigung» |
 | K3.3 Remove member | `DELETE /api/teams/<T1>/members/<Nina>` as `petra`; `marc` removes himself from Team 2; `ruth` removes Tina from Team 3 | 403 «Keine Berechtigung» |
 | K3.4 No endpoint | `DELETE /api/persons/<Anna>`, `DELETE /api/events/…006` | 405 (no delete function for person, team, event, series, series exception yet) |
