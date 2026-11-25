@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -21,6 +22,7 @@ import type {
 } from '../api/types';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 const COLORS: VariantColor[] = [
   'GREEN',
@@ -486,6 +488,7 @@ function sectionsOf(type: EventType): EventSection[] {
   `,
 })
 export class EventVariantsSection {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.variants;
@@ -560,8 +563,7 @@ export class EventVariantsSection {
     this.declineReasonRequired.set(v?.declineReasonRequired ?? false);
     this.message.set(null);
     this.error.set(null);
-    const dialog = this.dialog()?.nativeElement;
-    if (dialog && !dialog.open) dialog.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
   }
 
   protected close(): void {

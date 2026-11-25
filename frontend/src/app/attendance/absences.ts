@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -16,6 +17,7 @@ import { AuthService } from '../core/auth.service';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { date } from '../core/format';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 const REASONS: AbsenceReason[] = ['VACATION', 'INJURY', 'OTHER'];
 
@@ -263,6 +265,7 @@ const REASONS: AbsenceReason[] = ['VACATION', 'INJURY', 'OTHER'];
   `,
 })
 export class AbsencesPage {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
@@ -371,8 +374,7 @@ export class AbsencesPage {
 
   protected askDelete(a: Absence): void {
     this.deleting.set(a);
-    const d = this.deleteDialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.deleteDialog()?.nativeElement, this.changes);
   }
 
   protected async confirmDelete(): Promise<void> {

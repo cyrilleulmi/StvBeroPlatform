@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   effect,
@@ -20,6 +21,7 @@ import type {
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
 import { TEXTS } from '../core/texts';
+import { showModal } from '../core/dialog';
 
 interface PlaceForm {
   label: string;
@@ -379,6 +381,7 @@ const MAX_PLACES = 10;
   `,
 })
 export class SpecialLineups {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.lineups;
@@ -431,7 +434,7 @@ export class SpecialLineups {
     this.message.set(null);
     this.error.set(null);
     const dialog = this.dialog()?.nativeElement;
-    if (dialog && !dialog.open) dialog.showModal();
+    showModal(dialog, this.changes);
   }
 
   protected close(): void {

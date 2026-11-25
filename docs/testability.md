@@ -79,7 +79,7 @@ This way the test agent jumps straight to the right place instead of clicking it
 ### 6. Feedback can be found
 
 - Success messages have `role="status"`, error messages `role="alert"`. Error messages are visible and stay for at least 5 seconds; they do not close on the first focus change. Success messages are not shown on the page since E-99 (the change itself shows): they stay in the accessibility tree as a visually hidden live region, so screen readers announce them and tests find them by role and text.
-- Dialogs are `role="dialog"` (or `<dialog>`) with `aria-modal="true"` and a name from their heading.
+- Dialogs are `role="dialog"` (or `<dialog>`) with `aria-modal="true"` and a name from their heading. A dialog becomes visible with its content rendered: fields already show their values (`showModal` in `frontend/src/app/core/dialog.ts`, enforced by ESLint), so a test may fill a field right after opening it.
 - Empty states have a text («Keine kommenden Termine»), never an empty area.
 - Errors from the backend are shown visibly, not only written to the console.
 

@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -31,96 +32,17 @@ import { fieldErrorsOf, errorRule, errorStatus, errorText } from '../core/error-
 import { FeedbackService } from '../core/feedback.service';
 import { TEXTS } from '../core/texts';
 import { inputParts, zurich } from '../core/time';
+import { showModal } from '../core/dialog';
+import {
+  API_FIELDS,
+  EMPTY,
+  WEEKDAYS,
+  type Field,
+  type FormValues,
+  type MatchRow,
+} from './event-form-model';
 
-type Weekday = SeriesInput['weekday'];
 type FormMode = 'new' | 'event' | 'series';
-
-const WEEKDAYS: Weekday[] = [
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRIDAY',
-  'SATURDAY',
-  'SUNDAY',
-];
-
-interface FormValues {
-  type: EventType;
-  title: string;
-  date: string;
-  start: string;
-  end: string;
-  weekday: Weekday;
-  validFrom: string;
-  validUntil: string;
-  teamIds: string[];
-  /** Teams invited without obligation («freiwillig», TER-15). */
-  optionalTeamIds: string[];
-  /** Chosen event variant; empty: the standard variant of the type (VAR-03). */
-  variantId: string;
-  location: string;
-  mapsUrl: string;
-  notes: string;
-  responseDeadline: string;
-  meetingPointTime: string;
-  meetingPointLocation: string;
-  attendanceCheck: boolean;
-}
-
-/** A match in the form of a match day (AUF-14). Empty `id`: new, created on saving. */
-interface MatchRow {
-  key: number;
-  id: string | null;
-  source: Match['source'];
-  opponent: string;
-  time: string;
-  home: boolean;
-  result: string | null;
-  /** Imported and no longer delivered by swiss unihockey: may be removed (SUH-06). */
-  missingAtSu: boolean;
-}
-
-type Field = keyof FormValues;
-
-const EMPTY: FormValues = {
-  type: 'PRACTICE',
-  title: TEXTS.events.type.PRACTICE,
-  date: '',
-  start: '18:30',
-  end: '20:00',
-  weekday: 'TUESDAY',
-  validFrom: '',
-  validUntil: '',
-  teamIds: [],
-  optionalTeamIds: [],
-  variantId: '',
-  location: '',
-  mapsUrl: '',
-  notes: '',
-  responseDeadline: '24',
-  meetingPointTime: '',
-  meetingPointLocation: '',
-  attendanceCheck: false,
-};
-
-/** Field names of the API mapped to the fields of the form. */
-const API_FIELDS: Record<string, Field> = {
-  start: 'start',
-  end: 'end',
-  teamIds: 'teamIds',
-  title: 'title',
-  startTime: 'start',
-  endTime: 'end',
-  validFrom: 'validFrom',
-  validUntil: 'validUntil',
-  responseDeadlineHours: 'responseDeadline',
-  notes: 'notes',
-  'location.name': 'location',
-  'location.mapsUrl': 'mapsUrl',
-  'meetingPoint.time': 'meetingPointTime',
-  'meetingPoint.location': 'meetingPointLocation',
-};
 
 /**
  * Create an event (`/termine/neu`, `?art=serie` for a series), edit and cancel an event
@@ -136,6 +58,7 @@ const API_FIELDS: Record<string, Field> = {
   styleUrl: './event-form.css',
 })
 export class EventForm {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
@@ -434,7 +357,7 @@ export class EventForm {
       before.attendanceRecorded &&
       !this.values().attendanceCheck
     ) {
-      this.attendanceOffDialog()?.nativeElement.showModal();
+      showModal(this.attendanceOffDialog()?.nativeElement, this.changes);
       return;
     }
     await this.submit();
@@ -502,7 +425,7 @@ export class EventForm {
   protected openCancel(): void {
     this.reason.set('');
     this.fieldErrors.update((f) => ({ ...f, reason: undefined }));
-    this.cancelDialog()?.nativeElement.showModal();
+    showModal(this.cancelDialog()?.nativeElement, this.changes);
   }
 
   protected closeCancel(): void {

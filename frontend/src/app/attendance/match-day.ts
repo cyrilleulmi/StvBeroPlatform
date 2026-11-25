@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -17,6 +18,7 @@ import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { clockTime } from '../core/time';
+import { showModal } from '../core/dialog';
 
 const RESULT_PATTERN = /^\d{1,2}:\d{1,2}$/;
 /** The number pad of a phone has no colon (iOS), so «5.3» or «5,3» count as «5:3» («5-3» stays invalid, AUF-15). */
@@ -196,6 +198,7 @@ const RESULT_SEPARATOR = /^(\d{1,2})[.,](\d{1,2})$/;
   styleUrl: './match-day.css',
 })
 export class MatchDay {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.matchDay;
@@ -244,8 +247,7 @@ export class MatchDay {
     this.resultError.set(null);
     this.message.set(null);
     this.error.set(null);
-    const d = this.dialog()?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(this.dialog()?.nativeElement, this.changes);
   }
 
   protected close(): void {

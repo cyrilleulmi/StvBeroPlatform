@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -15,6 +16,7 @@ import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
+import { showModal } from '../core/dialog';
 
 type Choice = ResponseInput['status'];
 
@@ -197,6 +199,7 @@ type Choice = ResponseInput['status'];
   styleUrl: './response.css',
 })
 export class MyResponse {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly responses = inject(ResponseService);
   protected readonly texts = TEXTS.response;
   protected readonly icon = RESPONSE_ICON;
@@ -310,8 +313,7 @@ export class MyResponse {
   }
 
   private open(dialog: ElementRef<HTMLDialogElement> | undefined): void {
-    const d = dialog?.nativeElement;
-    if (d && !d.open) d.showModal();
+    showModal(dialog?.nativeElement, this.changes);
   }
 
   private focus(part: string): void {

@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   computed,
@@ -23,6 +24,7 @@ import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
 import { PlanStore } from './simple/plan-store';
 import { SeatBoard } from './simple/seat-board';
+import { showModal } from '../core/dialog';
 
 /** «23.4» */
 export function km(value: number | null | undefined): string {
@@ -346,6 +348,7 @@ export function km(value: number | null | undefined): string {
   styleUrl: './driver-list.css',
 })
 export class DriverListSection {
+  private readonly changes = inject(ChangeDetectorRef);
   private readonly http = inject(HttpClient);
   protected readonly store = inject(PlanStore);
   protected readonly texts = TEXTS;
@@ -474,8 +477,7 @@ export class DriverListSection {
     // Plain digits in the field, so that the value parses back (no thousands separator).
     this.kmValue.set(r?.distanceKm != null ? r.distanceKm.toFixed(1) : '');
     this.kmError.set(null);
-    const dialog = this.kmDialog()?.nativeElement;
-    if (dialog && !dialog.open) dialog.showModal();
+    showModal(this.kmDialog()?.nativeElement, this.changes);
   }
 
   protected closeKm(): void {
@@ -535,8 +537,7 @@ export class DriverListSection {
     const r = this.data()?.route;
     this.durationValue.set(r?.durationMinutes != null ? String(r.durationMinutes) : '');
     this.durationError.set(null);
-    const dialog = this.durationDialog()?.nativeElement;
-    if (dialog && !dialog.open) dialog.showModal();
+    showModal(this.durationDialog()?.nativeElement, this.changes);
   }
 
   protected closeDuration(): void {
