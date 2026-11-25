@@ -32,7 +32,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-13 K1 K2: Next event is a practice, one more practice follows', async ({ page }) => {
+test('F-13 K1 K2: Next event is a practice, one more practice follows', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/');
   await expect(nextEvent(page).getByRole('link')).toHaveAttribute('href', `/termine/${T01}`);

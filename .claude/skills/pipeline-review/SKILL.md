@@ -28,10 +28,9 @@ Nothing found: note it and stop.
 
 Do not rely on what the PR says. Run it yourself:
 
-- `npx -y @redocly/cli lint docs/api/openapi.yaml`
-- Backend build with all tests (database via `scripts/db-start.sh`)
-- Frontend build and lint
-- E2E tests
+- `scripts/test.sh`: API lint, backend tests with architecture tests and coverage gate, frontend lint, unit tests and build, E2E tests
+
+Also check against [architecture.md](../../../docs/architecture.md): is every behaviour tested at the lowest level that shows it (no rule tested only through the browser, no E2E test that repeats backend cases)? Was a frozen list extended, a minimum lowered or `modules.json` changed without the PR saying why? Each is a Must finding.
 
 If something fails, that is a Must finding, with the error excerpt.
 

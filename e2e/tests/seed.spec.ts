@@ -1,7 +1,7 @@
 import { expect, login, reset, test } from './helpers';
 
 /** Entry test and template: reset, sign in, dashboard visible. */
-test('F-00: Seed, sign in and start', async ({ page, request }) => {
+test('F-00: Seed, sign in and start', { tag: '@desktop' }, async ({ page, request }) => {
   await reset(request);
   await login(page, 'petra');
 

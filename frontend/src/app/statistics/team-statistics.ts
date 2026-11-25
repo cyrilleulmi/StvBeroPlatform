@@ -181,6 +181,9 @@ export class TeamStatisticsPage {
     });
   }
 
+  /** Counts the loads: a slow answer to an earlier filter must not replace the answer to the latest one. */
+  private request = 0;
+
   private async load(params: Record<string, string>): Promise<void> {
     if (!this.auth.canManage()) {
       // Players see only their own numbers (STA-08); the backend refuses anyway (403).
@@ -188,16 +191,20 @@ export class TeamStatisticsPage {
       this.loading.set(false);
       return;
     }
+    const nr = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.data.set(
-        await firstValueFrom(this.http.get<TeamStatistics>('/api/statistics', { params })),
+      const data = await firstValueFrom(
+        this.http.get<TeamStatistics>('/api/statistics', { params }),
       );
+      if (nr === this.request) this.data.set(data);
     } catch (e) {
-      this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
+      if (nr === this.request) {
+        this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
+      }
     } finally {
-      this.loading.set(false);
+      if (nr === this.request) this.loading.set(false);
     }
   }
 }

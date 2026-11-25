@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Tile, EventSummary } from '../../api/types';
 import { MyResponse } from '../../attendance/my-response';
-import { yearOf, eventDate, clockTime } from '../../attendance/time';
+import { yearOf, eventDate, clockTime } from '../../core/time';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
 import { Icon } from '../../core/icon';

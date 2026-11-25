@@ -36,7 +36,7 @@ test('AUF-35: the start page always shows the next match day', async ({ page }) 
   await checkAccessibility(page);
 });
 
-test('SUH-16: the swiss unihockey page links to the team page, players without a link ask the coach', async ({ page }) => {
+test('SUH-16: the swiss unihockey page links to the team page, players without a link ask the coach', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/swissunihockey');
   await expect(page.getByRole('heading', { level: 1, name: 'swiss unihockey' })).toBeVisible();
@@ -108,7 +108,7 @@ test('DRV-21 DRV-22: coaches overwrite the driving time; the info tells how it w
   await expect(page.getByTestId('driver-route-duration')).toHaveCount(0);
 });
 
-test('E-92: coaches find «<Team> verwalten» in the desktop navigation', async ({ page, isMobile }) => {
+test('E-92: coaches find «<Team> verwalten» in the desktop navigation', { tag: '@desktop' }, async ({ page, isMobile }) => {
   await login(page, 'petra');
   await page.goto('/');
   const link = page.getByTestId(`nav-manage-team-${TEAM_1}`);

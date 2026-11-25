@@ -1,24 +1,36 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * E2E tests (docs/testability.md). Every test runs on mobile and on desktop.
- * Backend (profile dev) and frontend are started if they are not already running. The tests reset the
- * database before every test: to keep an app you are trying out by hand, run scripts/e2e-isolated.sh,
- * which gives the tests their own database and ports.
- * The database must be running: scripts/db-start.sh (local) or service container (CI).
+ * E2E tests (docs/testability.md, docs/architecture.md).
+ *
+ * Two runs (E-107):
+ *   fast (default)       every test on mobile; on desktop only the tests tagged `@desktop`, i.e. those that check
+ *                        something the desktop layout does differently, and one smoke test per page.
+ *   full (E2E_FULL=true) every test on mobile and on desktop. The CI runs it after every merge and every night.
+ *
+ * Two ways to start them:
+ *   scripts/e2e.sh       builds the app once and starts one backend with its own database per worker
+ *                        (E2E_STACKS). The tests run in parallel and leave an app you are trying out alone.
+ *   npx playwright test  one worker against the app on :4200/:8080, started here if it is not running. The tests
+ *                        reset its database before every test. The database must be running (scripts/db-start.sh).
  */
+const stacks = (process.env.E2E_STACKS ?? '').split(',').filter(Boolean);
+const full = process.env.E2E_FULL === 'true';
+
 export default defineConfig({
   testDir: './tests',
-  // All tests share one database and reset it: run them one after another.
+  // The tests of one file share a worker and run in order; the files are spread over the workers.
   fullyParallel: false,
-  workers: 1,
+  // Every worker has a backend and a database of its own (tests/helpers.ts): never more workers than stacks.
+  workers: stacks.length || 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   timeout: 30_000,
   expect: { timeout: 10_000 },
   use: {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:4200',
+    // With stacks the address comes per worker from tests/helpers.ts
+    baseURL: stacks.length ? undefined : (process.env.BASE_URL ?? 'http://localhost:4200'),
     channel: 'chrome',
     locale: 'de-CH',
     timezoneId: 'Europe/Zurich',
@@ -33,11 +45,12 @@ export default defineConfig({
     },
     {
       name: 'desktop',
+      grep: full ? undefined : /@desktop/,
       use: { viewport: { width: 1280, height: 800 } },
     },
   ],
-  // scripts/e2e-isolated.sh starts its own backend and frontend on other ports and passes BASE_URL
-  webServer: process.env.E2E_NO_WEBSERVER ? undefined : [
+  // scripts/e2e.sh starts its own backends, with the frontend inside
+  webServer: stacks.length || process.env.E2E_NO_WEBSERVER ? undefined : [
     {
       command: 'mvn -B -q quarkus:dev -Dquarkus.console.enabled=false',
       cwd: '../backend',

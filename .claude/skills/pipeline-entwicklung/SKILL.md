@@ -25,20 +25,19 @@ Nothing found: note it and stop.
 ## 2. Implement a new feature
 
 1. The lock is already set by `beanspruchen`.
-2. **Understand.** The issue, the requirements it names in `docs/requirements/`, [domain-model.md](../../../docs/domain-model.md), [testability.md](../../../docs/testability.md), [navigation.md](../../../docs/ui/navigation.md), [test-data.md](../../../docs/test-data.md), [states.md](../../../docs/states.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-principles.md](../../../docs/design-principles.md).
+2. **Understand.** The issue, the requirements it names in `docs/requirements/`, [domain-model.md](../../../docs/domain-model.md), [testability.md](../../../docs/testability.md), [navigation.md](../../../docs/ui/navigation.md), [test-data.md](../../../docs/test-data.md), [states.md](../../../docs/states.md), [api/openapi.yaml](../../../docs/api/openapi.yaml), [design-principles.md](../../../docs/design-principles.md), [architecture.md](../../../docs/architecture.md) (modules, which test at which level).
 3. **Unclear points:** make a sensible assumption and list it in the PR under «Assumptions». Do not ask. Only if it contradicts a requirement with status «Decided»: set `pipeline:blockiert` on the issue, ask the question, stop.
 4. **Branch** from current `main`: `claude/f<nr>-<shortname>`, e.g. `claude/f04-responses`. If a `claude/f<nr>-…` branch already exists from an aborted run, continue there instead of starting over.
    **Push intermediate states:** commit and push to the branch at least every 30 minutes. The [watchdog](../pipeline-waechter/SKILL.md) uses this to see that the run is still alive. A run without a push for an hour counts as aborted once the lock is 3 hours old, and is restarted.
 5. **Order of implementation:**
    1. API contract: update `openapi.yaml` if needed. `npx -y @redocly/cli lint docs/api/openapi.yaml` without errors and warnings.
-   2. Backend: migration, domain with rules and unit tests, REST resources, permission checks with 403 tests, seed data according to test-data.md.
-   3. Frontend: screens according to navigation.md, rules from testability.md, design tokens.
-   4. E2E tests in `e2e/`: at least one test per acceptance criterion, test name with requirement ID, projects `mobile` and `desktop`, axe check per new screen.
+   2. Backend: migration, domain with rules and unit tests, REST resources, permission checks with 403 tests, seed data according to test-data.md. The code goes into the package of its module; if it needs a module that [modules.json](../../../modules.json) does not allow, use an extension point (architecture.md) or name the new dependency in the PR.
+   3. Frontend: screens according to navigation.md, rules from testability.md, design tokens, in the folder of the module. Unit tests (`*.spec.ts`) for logic: formatting, dates, stores, pure functions.
+   4. E2E tests in `e2e/` for what only the browser shows: at least one test per acceptance criterion that needs the browser, test name with requirement ID, axe check per new screen. Rules, permissions and validations are already tested in the backend; do not repeat every case in the browser. Tag tests that depend on the desktop layout and one test per new screen with `{ tag: '@desktop' }`. List new spec files in `modules.json`.
    5. Update the docs: navigation.md (routes, test IDs), test-data.md (seed, scenarios), states.md (behavior), open-points.md (new questions).
 6. **Check it yourself** before you hand over. Everything must be green:
-   - Backend build with all tests
-   - Frontend build and lint
-   - E2E tests against the running app (database via `scripts/db-start.sh`)
+   - While you work: `scripts/test-affected.sh` runs only what your change can break (`--no-e2e` for seconds instead of minutes)
+   - Before you hand over: `scripts/test.sh` (API lint, backend tests with architecture tests and coverage gate, frontend lint, unit tests and build, E2E tests in parallel on stacks of their own)
    - A short walkthrough of your own with Playwright MCP: each acceptance criterion once on mobile, console without errors
    Fix whatever is red. Never hand over something you know does not work.
 7. **Commit and push.** Commit messages in English, with feature number and requirement IDs, e.g. `F-04: Respond with one tap (ANM-08)`.

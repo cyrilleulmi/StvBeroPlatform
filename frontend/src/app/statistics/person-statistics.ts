@@ -13,7 +13,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { PersonStatistics } from '../api/types';
 import { responseKey } from '../attendance/response';
-import { clockTime, eventDate, yearOf } from '../attendance/time';
+import { clockTime, eventDate, yearOf } from '../core/time';
 import { AuthService } from '../core/auth.service';
 import { errorStatus, errorText } from '../core/error-text';
 import { date, name } from '../core/format';
@@ -256,21 +256,26 @@ export class PersonStatisticsPage {
     return TEXTS.events.card(e.title, eventDate(e.start, this.year()), clockTime(e.start));
   }
 
+  /** Counts the loads: a slow answer to an earlier filter must not replace the answer to the latest one. */
+  private request = 0;
+
   private async load(person: string | undefined, params: Record<string, string>): Promise<void> {
     if (!person) return;
+    const nr = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.data.set(
-        await firstValueFrom(
-          this.http.get<PersonStatistics>(`/api/statistics/persons/${person}`, { params }),
-        ),
+      const data = await firstValueFrom(
+        this.http.get<PersonStatistics>(`/api/statistics/persons/${person}`, { params }),
       );
+      if (nr === this.request) this.data.set(data);
     } catch (e) {
-      this.data.set(null);
-      this.error.set(errorStatus(e) === 404 ? TEXTS.statistics.personNotPlaying : errorText(e));
+      if (nr === this.request) {
+        this.data.set(null);
+        this.error.set(errorStatus(e) === 404 ? TEXTS.statistics.personNotPlaying : errorText(e));
+      }
     } finally {
-      this.loading.set(false);
+      if (nr === this.request) this.loading.set(false);
     }
   }
 }

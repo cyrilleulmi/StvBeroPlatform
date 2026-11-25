@@ -17,6 +17,13 @@
     <quarkus.platform.version>3.40.1</quarkus.platform.version>
     <compiler-plugin.version>3.14.0</compiler-plugin.version>
     <surefire-plugin.version>3.5.3</surefire-plugin.version>
+    <archunit.version>1.4.1</archunit.version>
+    <jacoco.version>0.8.15</jacoco.version>
+    <!-- Coverage gate of the profile «coverage» (docs/architecture.md, E-106): share of covered lines and branches
+         of the whole backend without the test support. A ratchet: raise it when the coverage rises, never lower it
+         to get a change through. -->
+    <coverage.lines.minimum>0.94</coverage.lines.minimum>
+    <coverage.branches.minimum>0.83</coverage.branches.minimum>
   </properties>
 
   <dependencyManagement>
@@ -95,6 +102,13 @@
       <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Module boundaries and conventions as tests (docs/architecture.md, E-106). Test scope only. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
     <!-- F-18 (CAL-09): parses and validates the calendar feed in the tests. Test scope only. -->
     <dependency>
       <groupId>org.mnode.ical4j</groupId>
@@ -140,4 +154,108 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- mvn package -Pe2e -Dquarkus.profile=dev: the app as scripts/e2e.sh starts it for the E2E tests, with the
+         Angular build inside (as in the container, where the Dockerfile copies it). It has a build directory of
+         its own, so target/ of a running quarkus:dev or of a test run stays untouched. -->
+    <profile>
+      <id>e2e</id>
+      <build>
+        <directory>${project.basedir}/target-e2e</directory>
+        <resources>
+          <resource>
+            <directory>src/main/resources</directory>
+          </resource>
+          <resource>
+            <directory>${project.basedir}/../frontend/dist-e2e/browser</directory>
+            <targetPath>META-INF/resources</targetPath>
+          </resource>
+        </resources>
+      </build>
+    </profile>
+    <!-- mvn verify -Pcoverage: measures the coverage of all tests (plain unit tests through the JaCoCo agent,
+         @QuarkusTest through quarkus-jacoco, both into one file), writes target/site/jacoco and fails below the
+         minimum. Used by scripts/test.sh and the CI; the quick loop (mvn test, quarkus:test) runs without it. -->
+    <profile>
+      <id>coverage</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-jacoco</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <!-- The report comes from the plugin below, after the unit tests were added to the data -->
+                <quarkus.jacoco.report>false</quarkus.jacoco.report>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <configuration>
+              <dataFile>${project.build.directory}/jacoco-quarkus.exec</dataFile>
+              <excludes>
+                <exclude>ch/stvbero/platform/testsupport/**</exclude>
+              </excludes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>coverage-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+                <configuration>
+                  <exclClassLoaders>*QuarkusClassLoader</exclClassLoaders>
+                  <destFile>${project.build.directory}/jacoco-quarkus.exec</destFile>
+                  <append>true</append>
+                </configuration>
+              </execution>
+              <execution>
+                <id>coverage-report</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>coverage-gate</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <rule>
+                      <element>BUNDLE</element>
+                      <limits>
+                        <limit>
+                          <counter>LINE</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>${coverage.lines.minimum}</minimum>
+                        </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>${coverage.branches.minimum}</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

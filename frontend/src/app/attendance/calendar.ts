@@ -17,7 +17,7 @@ import { errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { isDayKey, isMonthKey, monthGrid, shiftMonth } from './calendar-dates';
-import { clockTime, dayKey, dayLabel, monthName, yearOf } from './time';
+import { clockTime, dayKey, dayLabel, monthName, yearOf } from '../core/time';
 
 interface Day {
   key: string;
@@ -435,7 +435,11 @@ export class CalendarPage {
     });
   }
 
+  /** Counts the loads: a slow answer to an earlier filter must not replace the answer to the latest one. */
+  private request = 0;
+
   private async load(month: string, teams: string[], all: boolean): Promise<void> {
+    const nr = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     const grid = monthGrid(month);
@@ -446,13 +450,14 @@ export class CalendarPage {
       for (const id of teams) params = params.append('team', id);
     }
     try {
-      this.data.set(
-        await firstValueFrom(this.http.get<CalendarView>('/api/events/calendar', { params })),
+      const data = await firstValueFrom(
+        this.http.get<CalendarView>('/api/events/calendar', { params }),
       );
+      if (nr === this.request) this.data.set(data);
     } catch (e) {
-      this.error.set(errorText(e));
+      if (nr === this.request) this.error.set(errorText(e));
     } finally {
-      this.loading.set(false);
+      if (nr === this.request) this.loading.set(false);
     }
   }
 }

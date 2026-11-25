@@ -27,7 +27,7 @@ import { DriverListSection } from '../drivers/driver-list';
 import { TimelineSection } from '../drivers/timeline';
 import { EventLineupsSection } from './event-lineups';
 import { OverviewSection } from './overview';
-import { yearOf, eventDate, clockTime } from './time';
+import { yearOf, eventDate, clockTime } from '../core/time';
 
 /** Sections of a match day if the variant names none; «Anmeldungen» first (VAR-07). */
 const DEFAULT_SECTIONS: EventSection[] = [

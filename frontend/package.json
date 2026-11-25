@@ -8,7 +8,9 @@
     "start": "ng serve",
     "prebuild": "npm run api-types",
     "build": "ng build",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "test": "ng test --no-watch",
+    "test:watch": "ng test --watch"
   },
   "private": true,
   "packageManager": "npm@10.9.9",
@@ -30,8 +32,10 @@
     "@eslint/js": "^10.0.1",
     "angular-eslint": "22.6.0",
     "eslint": "^10.12.0",
+    "jsdom": "31.0.1",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
-    "typescript-eslint": "8.71.0"
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.1.1"
   }
 }

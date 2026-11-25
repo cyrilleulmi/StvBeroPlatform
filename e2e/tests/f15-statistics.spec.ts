@@ -112,7 +112,7 @@ test('STA-03 STA-04 STA-09: the numbers per player match the seed', async ({ pag
   ]);
 });
 
-test('STA-05: grouped by line, sortable by rate, with the team average', async ({ page }) => {
+test('STA-05: grouped by line, sortable by rate, with the team average', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/statistik?team=${TEAM_1}`);
   const groups = page.getByRole('heading', { level: 2 });
@@ -136,7 +136,7 @@ test('STA-05: grouped by line, sortable by rate, with the team average', async (
   await checkAccessibility(page);
 });
 
-test('STA-06: a click on a player opens her events with response and attendance', async ({ page }) => {
+test('STA-06: a click on a player opens her events with response and attendance', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto(`/statistik?team=${TEAM_1}&von=2026-11-01`);
   await row(page, ANNA).getByRole('link', { name: 'Anna Muster' }).click();
@@ -178,7 +178,7 @@ test('STA-07: only past events count, cancelled ones not, and a player from the 
   );
 });
 
-test('STA-08: players see only their own numbers, under the profile', async ({ page }) => {
+test('STA-08: players see only their own numbers, under the profile', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/termine');
   await expect(page.getByRole('heading', { level: 1, name: 'Termine' })).toBeVisible();

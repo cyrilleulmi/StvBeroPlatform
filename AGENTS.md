@@ -10,6 +10,7 @@ This repository is developed with the help of AI agents. This file says where th
 4. [docs/requirements/](docs/requirements/) – the requirements with IDs (e.g. `ANM-03`).
 5. [docs/design-principles.md](docs/design-principles.md) – binding design.
 6. [docs/technology.md](docs/technology.md) – technology and guard rails.
+   [docs/architecture.md](docs/architecture.md) – modules and what each may depend on ([modules.json](modules.json)), which test belongs to which level, the checks that fail the build. Binding.
 7. [docs/testability.md](docs/testability.md) – binding rules so that test agents can operate the frontend.
 8. [docs/api/openapi.yaml](docs/api/openapi.yaml) – API contract (contract first), conventions in [docs/api/README.md](docs/api/README.md).
 9. [docs/states.md](docs/states.md), [docs/ui/navigation.md](docs/ui/navigation.md), [docs/test-data.md](docs/test-data.md) – behavior, screens, seed.
@@ -40,7 +41,8 @@ Hosting (test environment and previews on Fly.io): [docs/deployment.md](docs/dep
 - Otherwise: make sensible assumptions and implement completely, without questions or intermediate stops. No small intermediate steps.
 - List the assumptions made briefly with the result.
 - Every result runs and can be opened directly (URL or start command), is checked on desktop and mobile, and has seed data to try it out.
-- Tests for backend logic.
+- Tests for backend logic. Every behaviour is tested at the lowest level that can show it ([docs/architecture.md](docs/architecture.md)).
+- While developing: `scripts/test-affected.sh` runs only what the change can break. Before handing over: `scripts/test.sh`.
 
 ## Language
 

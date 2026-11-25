@@ -28,7 +28,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-16 criteria 1, 7, 9: event 02 warns that no goalie, too few field players and Linie 1 too small', async ({
+test('F-16 criteria 1, 7, 9: event 02 warns that no goalie, too few field players and Linie 1 too small', { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, 'petra');

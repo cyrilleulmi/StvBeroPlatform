@@ -15,7 +15,7 @@ test.describe('without current season', () => {
     expect(response.status()).toBe(204);
   });
 
-  test('SAI-03: without a current season the app shows a notice instead of a blank screen', async ({ page }) => {
+  test('SAI-03: without a current season the app shows a notice instead of a blank screen', { tag: '@desktop' }, async ({ page }) => {
     await login(page, 'anna');
 
     await page.goto('/teams');

@@ -7,7 +7,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 test.describe('Sign-in', () => {
-  test('F-00 K3: /dev-login shows all seed people, one click signs in and leads to /', async ({ page }) => {
+  test('F-00 K3: /dev-login shows all seed people, one click signs in and leads to /', { tag: '@desktop' }, async ({ page }) => {
     await page.goto('/dev-login');
 
     await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
@@ -45,7 +45,7 @@ test.describe('Sign-in', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Profil');
   });
 
-  test('F-00 K12: /anmelden explains the procedure and leads to /dev-login in test mode', async ({ page }) => {
+  test('F-00 K12: /anmelden explains the procedure and leads to /dev-login in test mode', { tag: '@desktop' }, async ({ page }) => {
     await page.goto('/anmelden?ziel=%2Fteams');
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden');
@@ -99,7 +99,7 @@ test.describe('Start and tiles', () => {
     await checkAccessibility(page);
   });
 
-  test('F-00: unknown route shows a notice instead of a blank page', async ({ page }) => {
+  test('F-00: unknown route shows a notice instead of a blank page', { tag: '@desktop' }, async ({ page }) => {
     await login(page, 'anna');
     await page.goto('/gibt-es-nicht');
 
@@ -110,7 +110,7 @@ test.describe('Start and tiles', () => {
 });
 
 test.describe('Navigation', () => {
-  test('F-00 K5 NF-03: Navigation at the bottom on mobile, on the left from 1024px, active entry with aria-current', async ({ page, isMobile }) => {
+  test('F-00 K5 NF-03: Navigation at the bottom on mobile, on the left from 1024px, active entry with aria-current', { tag: '@desktop' }, async ({ page, isMobile }) => {
     await login(page, 'anna');
     await page.goto('/');
 

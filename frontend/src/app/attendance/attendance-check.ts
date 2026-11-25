@@ -23,7 +23,7 @@ import { errorStatus, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, responseKey } from './response';
-import { clockTime, eventDate, yearOf } from './time';
+import { clockTime, eventDate, yearOf } from '../core/time';
 
 const STATUSES: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'EXCUSED'];
 

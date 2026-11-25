@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { SuStatus } from '../api/types';
-import { clockTime, eventDate } from '../attendance/time';
+import { clockTime, eventDate } from './time';
 import { Icon } from './icon';
 import { TEXTS } from './texts';
 

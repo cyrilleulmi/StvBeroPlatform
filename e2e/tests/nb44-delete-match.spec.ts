@@ -31,7 +31,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test("NB-44 K1 SUH-06: A match no longer delivered can be removed in the form", async ({
+test("NB-44 K1 SUH-06: A match no longer delivered can be removed in the form", { tag: '@desktop' }, async ({
   page,
 }) => {
   const sim = await page.request.put("/api/test/swiss-unihockey/matches", {

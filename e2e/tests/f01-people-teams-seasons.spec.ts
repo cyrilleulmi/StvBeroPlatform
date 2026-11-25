@@ -20,7 +20,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-01 K1: Seed with seasons, teams, people and team memberships', async ({ page }) => {
+test('F-01 K1: Seed with seasons, teams, people and team memberships', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'alex');
 
   await page.goto('/verwaltung/personen');
@@ -42,7 +42,7 @@ test('F-01 K1: Seed with seasons, teams, people and team memberships', async ({ 
   await checkAccessibility(page);
 });
 
-test('F-01 K2 PTF-11: Admin creates and edits a person', async ({ page }) => {
+test('F-01 K2 PTF-11: Admin creates and edits a person', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/verwaltung');
   await page.getByRole('link', { name: /^Personen/ }).click();
@@ -108,7 +108,7 @@ test('F-01 K3 PTF-04: Add a person with a team role to the team, second addition
   await expect(page.getByTestId(`member-${TINA}`)).toHaveCount(0);
 });
 
-test('F-01 K4 PTF-12: Petra sees both teams with her respective team role', async ({ page }) => {
+test('F-01 K4 PTF-12: Petra sees both teams with her respective team role', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/teams');
 

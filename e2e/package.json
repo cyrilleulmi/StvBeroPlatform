@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "test": "playwright test --trace off",
+    "test:full": "E2E_FULL=true playwright test --trace off",
     "test:mobile": "playwright test --project=mobile --trace off",
-    "test:desktop": "playwright test --project=desktop --trace off"
+    "test:desktop": "E2E_FULL=true playwright test --project=desktop --trace off"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

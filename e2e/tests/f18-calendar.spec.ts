@@ -43,7 +43,7 @@ function entry(feed: string, eventId: string): Map<string, string> {
   return result;
 }
 
-test('F-18 criterion 1 (CAL-01): «Kalender abonnieren» with address, copy button and instructions', async ({
+test('F-18 criterion 1 (CAL-01): «Kalender abonnieren» with address, copy button and instructions', { tag: '@desktop' }, async ({
   page,
   context,
 }) => {

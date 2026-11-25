@@ -120,7 +120,7 @@ The page `/dev-login` lists all seed persons grouped by team, coaches first and 
 
 | Tool | Used for | Where |
 |---|---|---|
-| Playwright Test | Automated end-to-end tests, run in CI and by every agent | `e2e/` |
+| Playwright Test | Automated end-to-end tests, run in CI and by every agent (`scripts/e2e.sh`: in parallel, one backend and database per worker) | `e2e/` |
 | Playwright MCP | Exploratory tests by the test agent | Configuration in [.mcp.json](../.mcp.json) |
 | axe-core (`@axe-core/playwright`) | Automated accessibility check per screen in the E2E tests | `e2e/` |
 
@@ -131,6 +131,8 @@ Conventions for E2E tests:
 - `e2e/tests/nb17-css-selectors.spec.ts` checks this statically: `locator()`, `$()`, `$$()`, `$eval()`, `waitForSelector()` as well as `css=`/`xpath=` outside `helpers.ts` make the test fail.
 - No `waitForTimeout`. Wait for states (`expect(...).toBeVisible()` etc.).
 - Every test starts with `POST /api/test/reset` and logs in via `POST /api/test/login`.
-- Every test runs in two projects: `mobile` (375×812, touch) and `desktop` (1280×800).
+- Two projects: `mobile` (375×812, touch) and `desktop` (1280×800). Every test runs on `mobile`. A test tagged `{ tag: '@desktop' }` also runs on `desktop`: tag it when it checks something the desktop layout does differently, when it asks for the viewport or is skipped on mobile, and one test per page that opens it with the accessibility check. The full run (`scripts/test.sh --full`, `E2E_FULL=true`) runs every test on both; the CI does it after every merge (E-107, [architecture.md](architecture.md#tests)).
+- An E2E test is for what only the browser shows: a journey, the wiring of a page, semantics and accessibility, layout. Rules, permissions and validations are tested in the backend, logic of the frontend in its unit tests ([architecture.md](architecture.md#tests)).
+- Every spec file is listed under `e2e` of its module in [modules.json](../modules.json).
 - The test name states the requirement ID: `test('ANM-04: «vielleicht» requires a comment', …)`. Titles are English; UI text quoted in them stays German in «…».
 - `e2e/tests/seed.spec.ts` is the entry test (reset, login, dashboard visible). It also serves as the template when tests are generated with the Playwright test agents (planner/generator/healer).

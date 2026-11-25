@@ -3,11 +3,20 @@ import { APIRequestContext, Locator, Page, expect, test as base } from '@playwri
 
 /**
  * Shared helpers for all E2E tests.
- * - `test` checks after every test that the browser console stayed free of errors.
+ * - `test` sends every worker to its own app (scripts/e2e.sh) and checks after every test that the browser
+ *   console stayed free of errors.
  * - `expectedConsoleErrors`: patterns for messages a test triggers on purpose (e.g. the
  *   browser entry for an expected 409 response). Default: none.
  */
+/** One app per worker when scripts/e2e.sh started them (E2E_STACKS, comma separated), otherwise none. */
+const STACKS = (process.env.E2E_STACKS ?? '').split(',').filter(Boolean);
+
 export const test = base.extend<{ consoleErrors: string[]; expectedConsoleErrors: RegExp[] }>({
+  // Every worker talks to its own backend and database, so the files can run in parallel while each test
+  // still resets «its» database. Pages, `request` and contexts created in a test all use this address.
+  baseURL: async ({ baseURL }, use, testInfo) => {
+    await use(STACKS.length ? STACKS[testInfo.parallelIndex % STACKS.length] : baseURL);
+  },
   expectedConsoleErrors: [[], { option: true }],
   consoleErrors: [
     async ({ page, expectedConsoleErrors }, use) => {

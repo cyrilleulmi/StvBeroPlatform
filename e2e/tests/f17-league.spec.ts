@@ -34,7 +34,7 @@ test.beforeEach(async ({ request }) => {
   await reset(request);
 });
 
-test('F-17 criterion 1: section «Liga» on the team page, hint for teams without a link', async ({ page }) => {
+test('F-17 criterion 1: section «Liga» on the team page, hint for teams without a link', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'anna');
   await page.goto(`/teams/${TEAM_1}`);
   const section = page.getByRole('region', { name: 'Liga' });

@@ -8,8 +8,9 @@ Central web platform for floorball (unihockey) at STV Beromünster. It brings to
 
 ```bash
 scripts/start.sh   # start database, backend (Quarkus, profile dev) and frontend
-scripts/test.sh    # API lint, backend tests, frontend lint/build, E2E tests (mobile + desktop)
-scripts/e2e-isolated.sh   # E2E tests on their own database and ports (:8180, :4210), next to a running app
+scripts/test.sh    # everything: API lint, backend tests with architecture and coverage, frontend lint/unit tests/build, E2E tests
+scripts/test-affected.sh  # while developing: only the tests the change can break (modules.json)
+scripts/e2e.sh     # E2E tests in parallel on stacks of their own (from :8180), next to a running app
 python3 scripts/check-links.py   # check relative links in all Markdown files
 ```
 
@@ -23,10 +24,11 @@ After F-10 a local database created before F-10 must be reset once with `scripts
 
 | Folder | Content |
 |---|---|
-| `backend/` | Quarkus, Java 21. One package per tile under `ch.stvbero.platform.<tile>`, shared core under `ch.stvbero.platform.core`. Migrations: `src/main/resources/db/migration` (Flyway) |
-| `frontend/` | Angular (standalone, signals). One tile = one lazy-loaded feature |
-| `e2e/` | Playwright Test (`tests/`, `plans/`), projects `mobile` and `desktop` |
-| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `e2e-isolated.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
+| `backend/` | Quarkus, Java 21. One package per module under `ch.stvbero.platform.<module>`, shared core under `ch.stvbero.platform.core` ([docs/architecture.md](docs/architecture.md)). Migrations: `src/main/resources/db/migration` (Flyway) |
+| `frontend/` | Angular (standalone, signals). One folder per module, the pages compose them; unit tests with Vitest |
+| `e2e/` | Playwright Test (`tests/`, `plans/`): every test on `mobile`, the tests tagged `@desktop` also on `desktop` |
+| `modules.json` | The modules and what each may depend on; read by the architecture test, ESLint and `test-affected.sh` |
+| `scripts/` | `db-start.sh`, `start.sh`, `test.sh`, `test-affected.sh`, `e2e.sh`, `pipeline.sh`, `check-links.py`, `deploy.sh` |
 | `Dockerfile`, `docker/`, `fly.toml` | Container and Fly.io app of the hosted test environments, see [docs/deployment.md](docs/deployment.md) |
 
 ## Why our own app?
@@ -50,6 +52,8 @@ In addition: coaches respond as well, but do not appear as players. And a person
 | [docs/later-features.md](docs/later-features.md) | Deliberately postponed and dropped features |
 | [docs/design-principles.md](docs/design-principles.md) | Basic design «Salbei frisch»: colors, shapes, typography |
 | [docs/technology.md](docs/technology.md) | Technology decisions and architecture guard rails |
+| [docs/architecture.md](docs/architecture.md) | Modules and their dependencies, test levels, the checks that fail the build |
+| [docs/reviews/](docs/reviews/2026-11-modularization.md) | Reviews of the project: what was measured, what was changed and why |
 | [docs/open-points.md](docs/open-points.md) | Unresolved questions |
 | [docs/decisions.md](docs/decisions.md) | Log of the decisions made |
 | [docs/pipeline/](docs/pipeline/README.md) | Production pipeline: flow, setup, backlog, definition of done |

@@ -26,7 +26,7 @@ async function next(page: Page, key: string): Promise<void> {
   await expect(step(page, key)).toBeVisible();
 }
 
-test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is ready', async ({ page }) => {
+test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is ready', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/verwaltung/teams');
   await page.getByTestId('team-wizard-link').click();
@@ -151,7 +151,7 @@ test('PTF-13 PTF-14: the assistant leads a coach from the name to a team that is
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 4');
 });
 
-test('TER-21 TER-19: a coach changes a series after the app said what happens to the upcoming events', async ({
+test('TER-21 TER-19: a coach changes a series after the app said what happens to the upcoming events', { tag: '@desktop' }, async ({
   page,
 }) => {
   await login(page, 'petra');
