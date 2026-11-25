@@ -1419,19 +1419,38 @@ export const TEXTS = {
   administration: {
     title: 'Verwaltung',
     areas: 'Bereiche',
+    season: (name: string) => `Saison ${name}`,
+    myTeams: 'Meine Teams',
+    club: 'Verein',
+    myTeamText: 'Mitglieder, Termine, Einstellungen',
+    myTeamActions: (team: string) => `Direkt zu ${team}`,
+    members: 'Mitglieder',
+    rework: 'Termine überarbeiten',
+    lines: 'Linien einteilen',
+    drivers: 'Fahrerliste',
     people: 'Personen',
     peopleText: 'Personen erfassen und bearbeiten',
-    teams: 'Teams verwalten',
-    teamsText: 'Teams und Teamzugehörigkeiten',
+    peopleState: (n: number) => (n === 1 ? '1 Person' : `${n} Personen`),
+    teams: 'Alle Teams',
+    teamsText: 'Teams der Saison ansehen und neue Teams erstellen',
+    teamsState: (n: number, season: string) =>
+      `${n === 1 ? '1 Team' : `${n} Teams`} in der Saison ${season}`,
     assignment: 'Teamzuteilung',
-    assignmentText: 'Wer ist in welchem Team: alle Personen und Teams in einer Tabelle',
+    assignmentText: 'Wer spielt wo? Alle Personen und Teams in einer Tabelle',
     seasons: 'Saisons',
     seasonsText: 'Neue Saison anlegen, aktuelle Saison wechseln, Archiv',
+    seasonsState: (season: string) => `Aktuell: ${season}`,
     toAdministration: 'Verwaltung',
   },
   people: {
     title: 'Personen',
     create: 'Person erfassen',
+    count: (shown: number, total: number | null, searching: boolean) =>
+      searching && total !== null
+        ? `${shown} von ${total} ${total === 1 ? 'Person' : 'Personen'}`
+        : shown === 1
+          ? '1 Person'
+          : `${shown} Personen`,
     edit: 'Person bearbeiten',
     search: 'Suchen',
     empty: 'Keine Personen gefunden.',
@@ -1456,7 +1475,15 @@ export const TEXTS = {
     all: 'Alle Personen',
   },
   teamAdmin: {
-    title: 'Teams verwalten',
+    title: 'Alle Teams',
+    pageTitle: 'Team verwalten',
+    areas: 'Bereich',
+    areaMembers: 'Mitglieder',
+    areaEvents: 'Termine',
+    areaSettings: 'Einstellungen',
+    editLines: 'Linien einteilen',
+    quickLinks: 'Zum Team',
+    reworkText: 'Serien, Termine und Spieltage an einem Ort anpassen',
     season: 'Saison',
     teamsList: 'Teams',
     empty: 'In dieser Saison gibt es noch keine Teams.',

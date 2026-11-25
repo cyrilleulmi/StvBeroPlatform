@@ -51,7 +51,7 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon, NgTemplateOutlet, RouterLink],
   templateUrl: './profile.html',
-  styleUrls: ['./rows.css', './profile.css'],
+  styleUrls: ['../rows.css', './profile.css'],
 })
 export class Profile {
   protected readonly auth = inject(AuthService);

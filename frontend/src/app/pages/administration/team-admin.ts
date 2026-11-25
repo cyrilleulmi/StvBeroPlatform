@@ -11,62 +11,32 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type {
-  MatchDaySettings,
-  TeamRole,
-  Person,
-  PersonSummary,
-  Season,
-  TeamDetail,
-  TeamMembership,
-} from '../../api/types';
+import type { TeamRole, Person, Season, TeamDetail, TeamMembership } from '../../api/types';
+import { MatchDaySettingsForm } from '../../attendance/match-day-settings-form';
+import { EventVariantsSection } from '../../attendance/event-variants';
 import { AuthService } from '../../core/auth.service';
 import { errorStatus, errorText } from '../../core/error-text';
 import { teamRoleText, name } from '../../core/format';
+import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
 import { SuConnectionSection } from '../../swissunihockey/su-connection';
-import { EventVariantsSection } from '../../attendance/event-variants';
-
-interface Member {
-  person: PersonSummary;
-  teamRole: TeamRole;
-}
+import { teamArea, teamAreaLinks } from './team-area';
+import { type Member, TeamMembers } from './team-members';
 
 const TEAM_ROLES: TeamRole[] = ['PLAYER', 'COACH'];
 
 /**
- * Manage a team (admin, coach, PTF-11): rename, add people with a team role (PTF-03, PTF-04),
- * change the team role, remove, link with swiss unihockey (SUH-02) and set the match day settings (TML-02). `?saison=` selects the season; the archive is read-only (SAI-02).
+ * Manage a team (admin, coach, PTF-11) in three areas (E-110, `?bereich=`): «Mitglieder» adds people with a team role
+ * (PTF-03, PTF-04), changes the team role and removes; «Termine» holds the event variants (VAR), the match day
+ * settings (TML-02) and the way to «Termine überarbeiten»; «Einstellungen» renames and links with swiss unihockey
+ * (SUH-02). `?saison=` selects the season; the archive is read-only and shows only the members (SAI-02).
  */
 @Component({
   selector: 'app-team-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SuConnectionSection, EventVariantsSection],
+  imports: [RouterLink, Icon, SuConnectionSection, EventVariantsSection, MatchDaySettingsForm, TeamMembers],
   templateUrl: './team-admin.html',
-  styleUrl: '../page.css',
-  styles: `
-    .team-link,
-    form .button {
-      justify-self: start;
-    }
-    .team-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .member .row-title {
-      min-width: 10em;
-    }
-    .member select {
-      min-height: var(--touch);
-      padding: 0 12px;
-      border: 1.5px solid var(--control-border);
-      border-radius: var(--radius-icon);
-      background: var(--surface);
-      color: var(--text);
-      font: 600 14px/1.2 var(--font);
-    }
-  `,
+  styleUrls: ['../rows.css', './team-admin.css'],
 })
 export class TeamAdmin {
   private readonly http = inject(HttpClient);
@@ -81,31 +51,35 @@ export class TeamAdmin {
   /** Query `?saison=`; without it the current season. */
   // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?saison=` is part of the browser URL and stays German (NF-40)
   readonly season = input<string | undefined>(undefined, { alias: 'saison' });
+  /** Query `?bereich=` (`termine`, `einstellungen`); without it «Mitglieder» (E-110). */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?bereich=` is part of the browser URL and stays German (NF-40)
+  readonly areaParam = input<string | undefined>(undefined, { alias: 'bereich' });
 
   protected readonly team = signal<TeamDetail | null>(null);
   protected readonly seasonData = signal<Season | null>(null);
   protected readonly people = signal<Person[]>([]);
   protected readonly loading = signal(true);
   /**
-   * Which action is running: `rename`, `addMember`, `team-role:<personId>`,
-   * `remove:<personId>` or `matchDaySettings`. Only its button carries `aria-busy`, all carry `disabled`.
+   * Which action is running: `rename`, `addMember`, `team-role:<personId>` or `remove:<personId>`. Only its button
+   * carries `aria-busy`, all carry `disabled`.
    */
   protected readonly runningAction = signal<string | null>(null);
   protected readonly saving = computed(() => this.runningAction() !== null);
+  /** The team could not be loaded. */
+  protected readonly loadError = signal<string | null>(null);
+  /** Result of the last action, shown in the area where it happened. */
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   protected readonly readOnly = computed(() => this.seasonData()?.archived === true);
+
+  protected readonly area = computed(() => teamArea(this.areaParam(), this.readOnly()));
+  protected readonly areaLinks = computed(() => teamAreaLinks(this.readOnly()));
 
   protected readonly teamname = signal('');
   protected readonly teamnameError = signal<string | null>(null);
   protected readonly newPerson = signal('');
   protected readonly newTeamRole = signal<TeamRole>('PLAYER');
   protected readonly personError = signal<string | null>(null);
-  protected readonly matchDuration = signal('');
-  protected readonly matchDurationError = signal<string | null>(null);
-  protected readonly arrivalLead = signal('');
-  protected readonly arrivalLeadError = signal<string | null>(null);
-  protected readonly usualMeetingPoint = signal('');
 
   /** Coaches and players separately (PTF-07). */
   protected readonly coaches = computed<Member[]>(() =>
@@ -133,6 +107,14 @@ export class TeamAdmin {
         untracked(() => void this.load(teamId, seasonId));
       }
     });
+    // A message belongs to the area where the action happened: another area starts without one.
+    effect(() => {
+      this.area();
+      untracked(() => {
+        this.success.set(null);
+        this.error.set(null);
+      });
+    });
   }
 
   protected isMember(personId: string): boolean {
@@ -146,7 +128,7 @@ export class TeamAdmin {
 
   private async load(teamId: string, seasonId: string | undefined): Promise<void> {
     this.loading.set(true);
-    this.error.set(null);
+    this.loadError.set(null);
     try {
       const params: Record<string, string> = seasonId ? { season: seasonId } : {};
       const [seasons, team, people] = await Promise.all([
@@ -157,16 +139,14 @@ export class TeamAdmin {
       this.seasonData.set(seasons.find((s) => (seasonId ? s.id === seasonId : s.current)) ?? null);
       this.team.set(team);
       this.teamname.set(team.name);
-      this.setMatchDaySettings(team.matchDaySettings);
       this.people.set(people);
     } catch (e) {
       this.team.set(null);
-      this.error.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
+      this.loadError.set(errorStatus(e) === 404 ? TEXTS.teams.notFound : errorText(e));
     } finally {
       this.loading.set(false);
     }
   }
-
   private async reload(): Promise<void> {
     const t = await firstValueFrom(
       this.http.get<TeamDetail>(`/api/teams/${this.teamId()}`, { params: this.params() }),
@@ -266,43 +246,5 @@ export class TeamAdmin {
   /** After linking, unlinking or syncing: the team (chip, league link) may look different. */
   protected suChanged(): void {
     void this.reload().catch(() => undefined);
-  }
-
-  /** Match duration, arrival lead and usual meeting point of the team (TML-02, TML-03, AUF-32). */
-  protected saveMatchDaySettings(domEvent: Event): void {
-    domEvent.preventDefault();
-    const duration = Number(this.matchDuration().trim());
-    const lead = Number(this.arrivalLead().trim());
-    const whole = (text: string) => /^[0-9]{1,3}$/.test(text.trim());
-    this.matchDurationError.set(
-      whole(this.matchDuration()) && duration >= 10 && duration <= 240
-        ? null
-        : TEXTS.matchDaySettings.durationInvalid,
-    );
-    this.arrivalLeadError.set(
-      whole(this.arrivalLead()) && lead >= 0 && lead <= 240 ? null : TEXTS.matchDaySettings.leadInvalid,
-    );
-    if (this.matchDurationError() || this.arrivalLeadError()) {
-      document.getElementById(this.matchDurationError() ? 'match-duration' : 'arrival-lead')?.focus();
-      return;
-    }
-    const input: MatchDaySettings = {
-      matchDurationMinutes: duration,
-      arrivalLeadMinutes: lead,
-      meetingPoint: this.usualMeetingPoint().trim() || null,
-    };
-    void this.run('matchDaySettings', async () => {
-      const saved = await firstValueFrom(
-        this.http.put<MatchDaySettings>(`/api/teams/${this.teamId()}/match-day-settings`, input),
-      );
-      this.setMatchDaySettings(saved);
-      return TEXTS.matchDaySettings.saved;
-    });
-  }
-
-  private setMatchDaySettings(settings: MatchDaySettings | undefined): void {
-    this.matchDuration.set(settings ? String(settings.matchDurationMinutes) : '');
-    this.arrivalLead.set(settings ? String(settings.arrivalLeadMinutes) : '');
-    this.usualMeetingPoint.set(settings?.meetingPoint ?? '');
   }
 }

@@ -32,7 +32,7 @@ import { MyDrivingSection } from '../../drivers/driving';
       </a>
     </div>
   `,
-  styleUrls: ['./subpage.css', './rows.css'],
+  styleUrls: ['./subpage.css', '../rows.css'],
 })
 export class ProfileDrivingPage {
   protected readonly auth = inject(AuthService);

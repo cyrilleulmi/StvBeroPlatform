@@ -43,7 +43,7 @@ test('F-12 K1 RR-03: Marc (coach of Team 2) edits an event of Team 1', async ({ 
 test('F-12 K1 RR-03: Marc assigns a player of Team 1 to a line', async ({ page }) => {
   await login(page, 'marc');
   await page.goto('/verwaltung');
-  await page.getByRole('link', { name: /^Teams verwalten/ }).click();
+  await page.getByRole('link', { name: /^Alle Teams/ }).click();
   await page.getByRole('link', { name: 'Team 1' }).click();
   await page.getByRole('link', { name: 'Team ansehen' }).click();
   await expect(page).toHaveURL(`/teams/${TEAM_1}`);
@@ -127,7 +127,7 @@ test('F-12 K4 RR-04: Seasons, reloading the league and the admin flag stay with 
   await expect(page.getByRole('link', { name: /^Saisons/ })).toHaveCount(0);
   await page.goto('/verwaltung/saisons');
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(page.getByLabel('Teamname')).toBeVisible();
   // Linking with swiss unihockey is open to coaches since E-84
   await expect(page.getByTestId('swiss-unihockey')).toBeVisible();
@@ -151,8 +151,9 @@ test('F-12 K5: Alex (admin) still has every delete action', async ({ page }) => 
   await expect(page.getByRole('link', { name: /^Saisons/ })).toBeVisible();
   await page.goto(`/teams/${TEAM_1}/linien`);
   await expect(page.getByRole('button', { name: 'Linie 1 löschen' })).toBeVisible();
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(page.getByTestId('swiss-unihockey')).toBeVisible();
+  await page.goto(`/verwaltung/teams/${TEAM_1}`);
   await page.getByRole('button', { name: 'Anna Muster entfernen' }).click();
   await expect(page.getByRole('status')).toHaveText('Anna Muster ist nicht mehr im Team.');
   await page.goto(`/verwaltung/personen/${ANNA}`);

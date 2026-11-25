@@ -26,7 +26,7 @@ export const ADMINISTRATION_ROUTES: Routes = [
   },
   {
     path: 'teams',
-    title: title('Teams verwalten'),
+    title: title('Alle Teams'),
     loadComponent: () => import('./teams-admin').then((m) => m.TeamsAdmin),
   },
   {

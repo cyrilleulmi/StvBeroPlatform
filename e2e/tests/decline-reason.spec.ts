@@ -20,7 +20,7 @@ function responseButton(area: Locator, choice: 'attending' | 'declined' | 'maybe
 
 test('VAR-12: a coach switches the reason on, players must give one', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   const variants = page.getByTestId('event-variants');
   await variants.getByRole('button', { name: 'Variante «Training» bearbeiten' }).click();
   const dialog = page.getByRole('dialog', { name: 'Terminvariante «Training»' });

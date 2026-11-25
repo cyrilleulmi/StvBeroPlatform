@@ -29,7 +29,7 @@ test('F-01 K1: Seed with seasons, teams, people and team memberships', { tag: '@
   await checkAccessibility(page);
 
   await page.goto('/verwaltung/teams');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Teams verwalten');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Alle Teams');
   await expect(page.getByLabel('Saison')).toHaveValue(SEASON_2026);
   const teams = page.getByRole('list', { name: 'Teams' });
   await expect(teams.getByRole('link')).toHaveText(['Team 1', 'Team 2', 'Team 3']);

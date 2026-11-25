@@ -5,9 +5,28 @@
     [queryParams]="season() ? { saison: season() } : {}"
     >{{ texts.teamAdmin.allTeams }}</a
   >
-  <h1>{{ team()?.name ?? texts.teamAdmin.title }}</h1>
+  <h1>{{ team()?.name ?? texts.teamAdmin.pageTitle }}</h1>
   @if (seasonData(); as s) {
-    <p class="secondary-text">{{ texts.teamAdmin.season }} {{ s.name }}</p>
+    <p class="secondary-text season">{{ texts.teamAdmin.season }} {{ s.name }}</p>
+  }
+  @if (auth.canManage() && team() && !readOnly()) {
+    <ul class="actions quick-links" [attr.aria-label]="texts.teamAdmin.quickLinks">
+      <li>
+        <a class="action-link" [routerLink]="['/teams', team()!.id]">
+          <app-icon name="users" [size]="18" />{{ texts.teamAdmin.viewTeam }}
+        </a>
+      </li>
+      <li>
+        <a class="action-link" [routerLink]="['/teams', team()!.id, 'linien']">
+          <app-icon name="rows-3" [size]="18" />{{ texts.teamAdmin.editLines }}
+        </a>
+      </li>
+      <li>
+        <a class="action-link" [routerLink]="['/teams', team()!.id, 'fahrerliste']">
+          <app-icon name="car" [size]="18" />{{ texts.driverPlan.link }}
+        </a>
+      </li>
+    </ul>
   }
 </div>
 
@@ -19,270 +38,159 @@
       {{ texts.season.archiveNotice(seasonData()!.name) }}
     </p>
   }
-  @if (success(); as message) {
-    <p class="message-success" role="status">{{ message }}</p>
-  }
-  @if (error(); as message) {
-    <p class="message-error" role="alert">{{ message }}</p>
-  }
 
   @if (loading()) {
     <p class="empty" aria-busy="true">{{ texts.common.loading }}</p>
+  } @else if (loadError(); as message) {
+    <p class="message-error" role="alert">{{ message }}</p>
   } @else if (team(); as t) {
-    @if (!readOnly()) {
-      <div class="team-links">
-        <a class="button button-secondary team-link" [routerLink]="['/teams', t.id]">{{
-          texts.teamAdmin.viewTeam
-        }}</a>
-        <a class="button button-secondary team-link" [routerLink]="['/teams', t.id, 'fahrerliste']">{{
-          texts.driverPlan.link
-        }}</a>
-      </div>
-    }
-    @if (!readOnly()) {
-      <form
-        class="card form"
-        (submit)="rename($event)"
-        novalidate
-        aria-label="Team umbenennen"
-      >
-        <div class="field">
-          <label for="team-name">{{ texts.teamAdmin.teamnameField }}</label>
-          <input
-            name="team-name"
-            id="team-name"
-            type="text"
-            maxlength="60"
-            autocomplete="off"
-            [value]="teamname()"
-            (input)="teamname.set($any($event.target).value)"
-            [attr.aria-invalid]="teamnameError() ? 'true' : null"
-            [attr.aria-describedby]="teamnameError() ? 'team-name-error' : null"
-          />
-          @if (teamnameError(); as m) {
-            <p class="field-error" id="team-name-error">{{ m }}</p>
-          }
-        </div>
-        <button
-          type="submit"
-          class="button button-secondary button-small"
-          [disabled]="saving()"
-          [attr.aria-busy]="runningAction() === 'rename' ? 'true' : null"
-        >
-          {{ texts.teamAdmin.rename }}
-        </button>
-      </form>
+    <!-- Three areas, the area in the URL (E-110); in the archive there are only the members -->
+    @if (areaLinks().length > 0) {
+      <nav class="areas" [attr.aria-label]="texts.teamAdmin.areas" data-testid="team-areas">
+        @for (link of areaLinks(); track link.area) {
+          <a
+            [routerLink]="['/verwaltung/teams', t.id]"
+            [queryParams]="link.query"
+            queryParamsHandling="merge"
+            [attr.aria-current]="area() === link.area ? 'page' : null"
+            [attr.data-testid]="'team-area-' + link.area"
+            >{{ link.text }}</a
+          >
+        }
+      </nav>
     }
 
-    <!-- swiss unihockey: coaches and admins (SUH-02, E-84) -->
-    @if (!readOnly()) {
-      <app-su-connection [teamId]="t.id" [teamName]="t.name" (changed)="suChanged()" />
-      <!-- How the kinds of events look and behave in this team (VAR) -->
-      <app-event-variants [teamId]="t.id" />
-    }
+    <div class="area" [attr.data-area]="area()">
+      @if (success(); as message) {
+        <p class="message-success" role="status">{{ message }}</p>
+      }
+      @if (error(); as message) {
+        <p class="message-error" role="alert">{{ message }}</p>
+      }
 
-    <!-- Match day settings: duration of a match, arrival lead, usual meeting point (TML-02, TML-03, AUF-32) -->
-    @if (!readOnly() && t.matchDaySettings) {
-      <form
-        class="card form"
-        (submit)="saveMatchDaySettings($event)"
-        novalidate
-        aria-labelledby="match-day-settings-title"
-        data-testid="match-day-settings"
-      >
-        <h2 id="match-day-settings-title">{{ texts.matchDaySettings.title }}</h2>
-        <p class="secondary-text">{{ texts.matchDaySettings.explanation }}</p>
-        <div class="field-row">
-          <div class="field">
-            <label for="match-duration">{{ texts.matchDaySettings.duration }}</label>
-            <input
-              spellcheck="false"
-              name="match-duration"
-              id="match-duration"
-              type="text"
-              inputmode="numeric"
-              maxlength="3"
-              autocomplete="off"
-              [value]="matchDuration()"
-              (input)="matchDuration.set($any($event.target).value)"
-              [attr.aria-invalid]="matchDurationError() ? 'true' : null"
-              [attr.aria-describedby]="matchDurationError() ? 'match-duration-error' : null"
-            />
-            @if (matchDurationError(); as m) {
-              <p class="field-error" id="match-duration-error">{{ m }}</p>
-            }
-          </div>
-          <div class="field">
-            <label for="arrival-lead">{{ texts.matchDaySettings.lead }}</label>
-            <input
-              spellcheck="false"
-              name="arrival-lead"
-              id="arrival-lead"
-              type="text"
-              inputmode="numeric"
-              maxlength="3"
-              autocomplete="off"
-              [value]="arrivalLead()"
-              (input)="arrivalLead.set($any($event.target).value)"
-              [attr.aria-invalid]="arrivalLeadError() ? 'true' : null"
-              [attr.aria-describedby]="arrivalLeadError() ? 'arrival-lead-error' : null"
-            />
-            @if (arrivalLeadError(); as m) {
-              <p class="field-error" id="arrival-lead-error">{{ m }}</p>
-            }
-          </div>
-        </div>
-        <div class="field">
-          <label for="usual-meeting-point">{{ texts.matchDaySettings.meetingPoint }}</label>
-          <input
-            name="usual-meeting-point"
-            id="usual-meeting-point"
-            type="text"
-            maxlength="120"
-            autocomplete="off"
-            [value]="usualMeetingPoint()"
-            (input)="usualMeetingPoint.set($any($event.target).value)"
-            aria-describedby="usual-meeting-point-help"
-          />
-          <p class="secondary-text" id="usual-meeting-point-help">
-            {{ texts.matchDaySettings.meetingPointHelp }}
-          </p>
-        </div>
-        <button
-          type="submit"
-          class="button button-secondary button-small"
-          [disabled]="saving()"
-          [attr.aria-busy]="runningAction() === 'matchDaySettings' ? 'true' : null"
-        >
-          {{ texts.matchDaySettings.save }}
-        </button>
-      </form>
-    }
-
-    @for (
-      block of [
-        {
-          title: texts.teams.coaches,
-          id: 'coaches',
-          list: coaches(),
-          empty: texts.teams.noCoaches,
-        },
-        {
-          title: texts.teams.players,
-          id: 'players',
-          list: players(),
-          empty: texts.teams.noPlayers,
-        },
-      ];
-      track block.id
-    ) {
-      <section
-        class="card"
-        [attr.aria-labelledby]="'team-' + block.id + '-title'"
-        [attr.data-testid]="'team-' + block.id"
-      >
-        <h2 [id]="'team-' + block.id + '-title'" class="section-title">
-          {{ block.title }} <span class="count">{{ block.list.length }}</span>
-        </h2>
-        @if (block.list.length === 0) {
-          <p class="empty">{{ block.empty }}</p>
-        } @else {
-          <ul class="list" [attr.aria-label]="block.title">
-            @for (m of block.list; track m.person.id) {
-              <li
-                class="row member"
-                [attr.aria-label]="name(m.person)"
-                [attr.data-testid]="'member-' + m.person.id"
-              >
-                <span class="row-title">{{ name(m.person) }}</span>
-                @if (readOnly()) {
-                  <span class="chip" [attr.data-kind]="m.teamRole === 'COACH' ? 'coach' : null">{{
-                    teamRole(m.teamRole)
-                  }}</span>
-                } @else {
+      @switch (area()) {
+        @case ('members') {
+          @if (!readOnly()) {
+            <form class="card add-member" (submit)="addMember($event)" novalidate aria-labelledby="add-member-title">
+              <h2 id="add-member-title" class="section-title">
+                <app-icon name="user-plus" [size]="20" />{{ texts.teamAdmin.addMemberTitle }}
+              </h2>
+              <div class="add-row">
+                <div class="field">
+                  <label for="add-member-person">{{ texts.teamAdmin.person }}</label>
                   <select
-                    [attr.aria-label]="texts.teamAdmin.teamRoleOf(name(m.person))"
-                    [disabled]="saving()"
-                    (change)="changeTeamRole(m, $any($event.target).value)"
+                    id="add-member-person"
+                    (change)="newPerson.set($any($event.target).value)"
+                    [attr.aria-invalid]="personError() ? 'true' : null"
+                    [attr.aria-describedby]="personError() ? 'add-member-person-error' : null"
                   >
-                    @for (f of teamRoles; track f) {
-                      <option [value]="f" [selected]="f === m.teamRole">{{ teamRole(f) }}</option>
+                    <option value="" [selected]="newPerson() === ''">
+                      {{ texts.teamAdmin.selectPerson }}
+                    </option>
+                    @for (p of people(); track p.id) {
+                      <option [value]="p.id" [disabled]="isMember(p.id)" [selected]="newPerson() === p.id">
+                        {{ name(p) }}{{ isMember(p.id) ? ' ' + texts.teamAdmin.alreadyInTeam : '' }}
+                      </option>
                     }
                   </select>
-                  <!-- Removing from a team is deleting: admins only (RR-08) -->
-                  @if (auth.canManage()) {
-                    <button
-                      type="button"
-                      class="button button-secondary button-small"
-                      [disabled]="saving()"
-                      [attr.aria-busy]="
-                        runningAction() === 'remove:' + m.person.id ? 'true' : null
-                      "
-                      (click)="remove(m)"
-                    >
-                      {{ texts.teamAdmin.remove(name(m.person)) }}
-                    </button>
+                  @if (personError(); as m) {
+                    <p class="field-error" id="add-member-person-error">{{ m }}</p>
                   }
-                }
-              </li>
-            }
-          </ul>
-        }
-      </section>
-    }
-
-    @if (!readOnly()) {
-      <form
-        class="card form"
-        (submit)="addMember($event)"
-        novalidate
-        aria-labelledby="add-member-title"
-      >
-        <h2 id="add-member-title">{{ texts.teamAdmin.addMemberTitle }}</h2>
-        <div class="field-row">
-          <div class="field">
-            <label for="add-member-person">{{ texts.teamAdmin.person }}</label>
-            <select
-              id="add-member-person"
-              (change)="newPerson.set($any($event.target).value)"
-              [attr.aria-invalid]="personError() ? 'true' : null"
-              [attr.aria-describedby]="personError() ? 'add-member-person-error' : null"
-            >
-              <option value="" [selected]="newPerson() === ''">
-                {{ texts.teamAdmin.selectPerson }}
-              </option>
-              @for (p of people(); track p.id) {
-                <option
-                  [value]="p.id"
-                  [disabled]="isMember(p.id)"
-                  [selected]="newPerson() === p.id"
+                </div>
+                <div class="field">
+                  <label for="add-member-team-role">{{ texts.teamAdmin.teamRole }}</label>
+                  <select id="add-member-team-role" (change)="newTeamRole.set($any($event.target).value)">
+                    @for (f of teamRoles; track f) {
+                      <option [value]="f" [selected]="newTeamRole() === f">{{ teamRole(f) }}</option>
+                    }
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  class="button button-primary button-small"
+                  [disabled]="saving()"
+                  [attr.aria-busy]="runningAction() === 'addMember' ? 'true' : null"
                 >
-                  {{ name(p) }}{{ isMember(p.id) ? ' ' + texts.teamAdmin.alreadyInTeam : '' }}
-                </option>
-              }
-            </select>
-            @if (personError(); as m) {
-              <p class="field-error" id="add-member-person-error">{{ m }}</p>
-            }
+                  {{ texts.teamAdmin.addMember }}
+                </button>
+              </div>
+            </form>
+          }
+          <!-- Removing from a team: the condition stays as before (RR-08, E-103) -->
+          <app-team-members
+            [coaches]="coaches()"
+            [players]="players()"
+            [readOnly]="readOnly()"
+            [canRemove]="auth.canManage()"
+            [saving]="saving()"
+            [runningAction]="runningAction()"
+            (teamRoleChange)="changeTeamRole($event.member, $event.teamRole)"
+            (remove)="remove($event)"
+          />
+        }
+        @case ('events') {
+          <div class="card links">
+            <ul class="list">
+              <li>
+                <a
+                  class="row-link"
+                  routerLink="/termine/ueberarbeiten"
+                  [queryParams]="{ team: t.id }"
+                  data-testid="team-rework-link"
+                >
+                  <span class="icon-field"><app-icon name="calendar" [size]="20" /></span>
+                  <span class="row-text">
+                    <span class="row-title">{{ texts.administration.rework }}</span>
+                    <span class="secondary-text">{{ texts.teamAdmin.reworkText }}</span>
+                  </span>
+                  <app-icon name="chevron-right" [size]="20" />
+                </a>
+              </li>
+            </ul>
           </div>
-          <div class="field">
-            <label for="add-member-team-role">{{ texts.teamAdmin.teamRole }}</label>
-            <select id="add-member-team-role" (change)="newTeamRole.set($any($event.target).value)">
-              @for (f of teamRoles; track f) {
-                <option [value]="f" [selected]="newTeamRole() === f">{{ teamRole(f) }}</option>
+          <!-- How the kinds of events look and behave in this team (VAR) -->
+          <app-event-variants [teamId]="t.id" />
+          <!-- Match day settings: duration of a match, arrival lead, usual meeting point (TML-02, TML-03, AUF-32) -->
+          @if (t.matchDaySettings) {
+            <section class="card match-days" aria-labelledby="match-day-settings-title">
+              <h2 id="match-day-settings-title">{{ texts.matchDaySettings.title }}</h2>
+              <p class="secondary-text">{{ texts.matchDaySettings.explanation }}</p>
+              <app-match-day-settings [teamId]="t.id" [settings]="t.matchDaySettings" />
+            </section>
+          }
+        }
+        @case ('settings') {
+          <form class="card form" (submit)="rename($event)" novalidate aria-label="Team umbenennen">
+            <div class="field">
+              <label for="team-name">{{ texts.teamAdmin.teamnameField }}</label>
+              <input
+                name="team-name"
+                id="team-name"
+                type="text"
+                maxlength="60"
+                autocomplete="off"
+                [value]="teamname()"
+                (input)="teamname.set($any($event.target).value)"
+                [attr.aria-invalid]="teamnameError() ? 'true' : null"
+                [attr.aria-describedby]="teamnameError() ? 'team-name-error' : null"
+              />
+              @if (teamnameError(); as m) {
+                <p class="field-error" id="team-name-error">{{ m }}</p>
               }
-            </select>
-          </div>
-        </div>
-        <button
-          type="submit"
-          class="button button-primary"
-          [disabled]="saving()"
-          [attr.aria-busy]="runningAction() === 'addMember' ? 'true' : null"
-        >
-          {{ texts.teamAdmin.addMember }}
-        </button>
-      </form>
-    }
+            </div>
+            <button
+              type="submit"
+              class="button button-secondary button-small"
+              [disabled]="saving()"
+              [attr.aria-busy]="runningAction() === 'rename' ? 'true' : null"
+            >
+              {{ texts.teamAdmin.rename }}
+            </button>
+          </form>
+          <!-- swiss unihockey: coaches and admins (SUH-02, E-84) -->
+          <app-su-connection [teamId]="t.id" [teamName]="t.name" (changed)="suChanged()" />
+        }
+      }
+    </div>
   }
 }

@@ -51,17 +51,7 @@
   padding: 0;
 }
 
-/* ---- Groups «Meine Saison» and «Einstellungen» ---- */
-
-.group {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.group-title {
-  font-size: 19px;
-}
+/* ---- Groups «Meine Saison» and «Einstellungen»: ../rows.css ---- */
 
 /* ---- Theme: the three choices in one row, each in its own colours ---- */
 

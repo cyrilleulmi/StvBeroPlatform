@@ -63,7 +63,7 @@ function section(page: Page) {
 /** Trigger the sync of Team 1 via the UI as `alex`. */
 async function syncAsAlex(page: Page): Promise<void> {
   await login(page, 'alex');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(section(page).getByTestId('su-link-900001')).toContainText('Herren KF 3. Liga (Team-ID 900001)');
   await section(page).getByRole('button', { name: 'Jetzt abgleichen' }).click();
 }
@@ -88,7 +88,7 @@ test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the s
   await expect(page.getByTestId(`su-linked-${TEAM_1}`)).toHaveText('swiss unihockey');
   await expect(page.getByTestId(`su-linked-${TEAM_2}`)).toHaveCount(0);
 
-  await page.goto(`/verwaltung/teams/${TEAM_2}`);
+  await page.goto(`/verwaltung/teams/${TEAM_2}?bereich=einstellungen`);
   const su = section(page);
   await expect(su.getByTestId('su-status')).toHaveText('Nicht verknüpft.');
   await expect(su.getByRole('button', { name: 'Jetzt abgleichen' })).toHaveCount(0);
@@ -129,7 +129,7 @@ test('F-07 K1 SUH-02: As alex link a team with swiss unihockey and trigger the s
 
 test('F-07 K1 SUH-02: Unlink', async ({ page }) => {
   await login(page, 'alex');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await section(page).getByRole('button', { name: /^Verknüpfung lösen/ }).click();
   await expect(page.getByRole('status')).toHaveText('Die Verknüpfung ist gelöst. Bisherige Spieltage bleiben.');
   await expect(section(page).getByTestId('su-status')).toHaveText('Nicht verknüpft.');
@@ -139,7 +139,7 @@ test('F-07 K1 SUH-02: Unlink', async ({ page }) => {
 test('F-07 K1 RR-07: Coaches and admins link and sync, players do not', async ({ page }) => {
   // Since E-84 coaches (of any team) link and sync too
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   await expect(section(page).getByRole('button', { name: 'Team verknüpfen' })).toBeVisible();
   expect((await page.request.post(`/api/teams/${TEAM_1}/swiss-unihockey/sync`)).status()).toBe(200);

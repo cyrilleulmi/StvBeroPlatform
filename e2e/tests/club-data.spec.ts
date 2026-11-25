@@ -113,7 +113,7 @@ test('Dev login: people are grouped by team, coaches come first and are marked',
 
 test('SUH-02: a coach links a team through the dialog with the teams of the club', { tag: '@desktop' }, async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_2}`);
+  await page.goto(`/verwaltung/teams/${TEAM_2}?bereich=einstellungen`);
   await expect(page.getByTestId('su-status')).toHaveText('Nicht verknüpft.');
 
   await suSection(page).getByRole('button', { name: 'Team verknüpfen' }).click();
@@ -148,7 +148,7 @@ test.describe('swiss unihockey not reachable', () => {
   test('SUH-09: without the list of teams the dialog takes the team ID by hand', async ({ page, request }) => {
     expect((await request.put('/api/test/swiss-unihockey/club', { data: { unavailable: true } })).status()).toBe(204);
     await login(page, 'alex');
-    await page.goto(`/verwaltung/teams/${TEAM_2}`);
+    await page.goto(`/verwaltung/teams/${TEAM_2}?bereich=einstellungen`);
 
     await suSection(page).getByRole('button', { name: 'Team verknüpfen' }).click();
     const dialog = page.getByRole('dialog');
@@ -163,7 +163,7 @@ test.describe('swiss unihockey not reachable', () => {
   test('SUH-13: a failed sync shows on the link and as a hint on the start page', async ({ page, request }) => {
     await simulator(request, { suTeamId: 900001, unavailable: true, matches: [] });
     await login(page, 'petra');
-    await page.goto(`/verwaltung/teams/${TEAM_1}`);
+    await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
 
     await suSection(page).getByRole('button', { name: 'Jetzt abgleichen' }).click();
     await expect(suSection(page).getByRole('alert')).toContainText('swiss unihockey ist im Moment nicht erreichbar');
@@ -291,7 +291,7 @@ test('TML-04: without a meeting time the departure is a suggestion', async ({ pa
 
 test('TML-02: match duration, arrival lead and the usual meeting point are settings of the team', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   const form = page.getByTestId('match-day-settings');
   await expect(form.getByLabel('Dauer eines Spiels (Minuten)')).toHaveValue('50');
   await expect(form.getByLabel('Ankunft vor dem ersten Spiel (Minuten)')).toHaveValue('70');

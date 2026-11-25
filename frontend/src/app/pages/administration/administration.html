@@ -1,0 +1,79 @@
+<div class="header">
+  <h1>{{ t.title }}</h1>
+  @if (auth.canManage()) {
+    <p class="secondary-text subtitle" data-testid="manage-season">{{ season() ? t.season(season()!.name) : '' }}</p>
+  }
+</div>
+
+@if (auth.canManage()) {
+  <div class="groups" [class.two]="myTeams().length > 0">
+    <!-- Only for coaches: their own teams with the tasks of every week (E-110) -->
+    @if (myTeams().length > 0) {
+      <section class="group" aria-labelledby="manage-my-teams-title" data-testid="manage-my-teams">
+        <h2 id="manage-my-teams-title" class="group-title">{{ t.myTeams }}</h2>
+        @for (team of myTeams(); track team.id) {
+          <section
+            class="card team"
+            [attr.aria-labelledby]="'manage-my-team-title-' + team.id"
+            [attr.data-testid]="'manage-my-team-' + team.id"
+          >
+            <a class="row-link" [routerLink]="['/verwaltung/teams', team.id]">
+              <span class="icon-field"><app-icon name="users" [size]="20" /></span>
+              <span class="row-text">
+                <h3 class="row-title" [id]="'manage-my-team-title-' + team.id">{{ team.name }}</h3>
+                <span class="secondary-text">{{ t.myTeamText }}</span>
+              </span>
+              <app-icon name="chevron-right" [size]="20" />
+            </a>
+            <ul class="actions" [attr.aria-label]="t.myTeamActions(team.name)">
+              <li>
+                <a class="action-link" [routerLink]="['/verwaltung/teams', team.id]">
+                  <app-icon name="users" [size]="18" />{{ t.members }}
+                </a>
+              </li>
+              <li>
+                <a class="action-link" routerLink="/termine/ueberarbeiten" [queryParams]="{ team: team.id }">
+                  <app-icon name="calendar" [size]="18" />{{ t.rework }}
+                </a>
+              </li>
+              <li>
+                <a class="action-link" [routerLink]="['/teams', team.id, 'linien']">
+                  <app-icon name="rows-3" [size]="18" />{{ t.lines }}
+                </a>
+              </li>
+              <li>
+                <a class="action-link" [routerLink]="['/teams', team.id, 'fahrerliste']">
+                  <app-icon name="car" [size]="18" />{{ t.drivers }}
+                </a>
+              </li>
+            </ul>
+          </section>
+        }
+      </section>
+    }
+
+    <section class="group" aria-labelledby="manage-club-title" data-testid="manage-club">
+      <h2 id="manage-club-title" class="group-title">{{ t.club }}</h2>
+      <div class="card links">
+        <ul class="list" [attr.aria-label]="t.club">
+          @for (row of clubRows(); track row.key) {
+            <li>
+              <a class="row-link" [routerLink]="row.route" [attr.data-testid]="'manage-' + row.key + '-link'">
+                <span class="icon-field"><app-icon [name]="row.icon" [size]="20" /></span>
+                <span class="row-text">
+                  <span class="row-title">{{ row.title }}</span>
+                  <span class="secondary-text state" [attr.data-testid]="'manage-' + row.key + '-state'">{{
+                    row.state ?? ''
+                  }}</span>
+                </span>
+                <app-icon name="chevron-right" [size]="20" />
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  </div>
+} @else {
+  <p class="message-error" role="alert">{{ texts.common.noPermission }}</p>
+}

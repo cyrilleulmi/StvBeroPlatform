@@ -122,7 +122,8 @@
         "team-assignment",
         "team-assistant-rework",
         "club-data",
-        "profile-hub"
+        "profile-hub",
+        "administration-hub"
       ]
     }
   }
