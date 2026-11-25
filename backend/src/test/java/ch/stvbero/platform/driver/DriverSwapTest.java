@@ -7,8 +7,14 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static ch.stvbero.platform.core.auth.AuthTest.login;
 import static io.restassured.RestAssured.given;
@@ -143,6 +149,67 @@ class DriverSwapTest {
         String again = swap(kim, null, SARA, null, false).statusCode(200).extract().path("swaps[0].id");
         post(kim, "/swaps/" + again + "/withdraw", null).statusCode(200).body("swaps", empty());
         plan(kim).body("matchDays[0].cars.driver.firstName", contains("Kim", "Petra"));
+    }
+
+    /** Statuses of the same request sent {@code parallel} times at once. */
+    private static List<Integer> atOnce(int parallel, String session, String path, String body) throws Exception {
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(parallel);
+        try {
+            List<Future<Integer>> running = new ArrayList<>();
+            for (int i = 0; i < parallel; i++) {
+                running.add(pool.submit(() -> {
+                    start.await();
+                    return post(session, path, body).extract().statusCode();
+                }));
+            }
+            start.countDown();
+            List<Integer> statuses = new ArrayList<>();
+            for (Future<Integer> one : running) {
+                statuses.add(one.get(30, TimeUnit.SECONDS));
+            }
+            return statuses.stream().sorted().toList();
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    /** Review of 24.11.2026, finding 1: answers at the same time carry the swap out once, the others get 404. */
+    @Test
+    void drv25AcceptingAtTheSameTimeCarriesTheSwapOutOnce() throws Exception {
+        for (int round = 0; round < 4; round++) {
+            reset();
+            String sara = login("sara");
+            String kim = login("kim");
+            String id = swap(sara, null, KIM, null, false).statusCode(200).extract().path("swaps[0].id");
+            assertEquals(List.of(200, 404, 404, 404, 404, 404), atOnce(6, kim, "/swaps/" + id + "/accept", null));
+            JsonPath after = plan(kim).statusCode(200).extract().jsonPath();
+            assertThat(drivers(after, T04), contains("Kim", "Petra"));
+            assertThat(after.getList("swaps"), empty());
+            assertEquals(1, textsFor("Sara").stream().filter(t -> t.contains("hat den Tausch angenommen")).count());
+        }
+    }
+
+    /** The same for declining: one answer counts, nobody is told twice. */
+    @Test
+    void drv25DecliningAtTheSameTimeAnswersOnce() throws Exception {
+        String sara = login("sara");
+        String kim = login("kim");
+        String id = swap(sara, null, KIM, null, false).statusCode(200).extract().path("swaps[0].id");
+        assertEquals(List.of(200, 404, 404, 404, 404, 404), atOnce(6, kim, "/swaps/" + id + "/decline", null));
+        assertEquals(1, textsFor("Sara").stream().filter(t -> t.contains("übernimmt die Fahrt am")).count());
+    }
+
+    /** A direct takeover sent several times at once: once carried out, then the cars no longer fit (409). */
+    @Test
+    void drv25DirectTakeoverAtTheSameTimeIsCarriedOutOnce() throws Exception {
+        for (int round = 0; round < 4; round++) {
+            reset();
+            String sara = login("sara");
+            String body = "{\"eventId\":\"" + T04 + "\",\"partnerId\":\"" + KIM + "\",\"direct\":true}";
+            assertEquals(List.of(200, 409, 409, 409, 409, 409), atOnce(6, sara, "/swaps", body));
+            assertThat(drivers(plan(sara).statusCode(200).extract().jsonPath(), T04), contains("Kim", "Petra"));
+        }
     }
 
     @Test
