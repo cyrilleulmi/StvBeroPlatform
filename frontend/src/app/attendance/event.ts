@@ -27,6 +27,7 @@ import { DriverListSection } from '../drivers/driver-list';
 import { TimelineSection } from '../drivers/timeline';
 import { EventLineupsSection } from './event-lineups';
 import { OverviewSection } from './overview';
+import { PinAction, PinnedChip } from './pin';
 import { yearOf, eventDate, clockTime } from '../core/time';
 
 /** Sections of a match day if the variant names none; «Anmeldungen» first (VAR-07). */
@@ -60,6 +61,8 @@ const DEFAULT_SECTIONS: EventSection[] = [
     DriverListSection,
     EventLineupsSection,
     OverviewSection,
+    PinAction,
+    PinnedChip,
   ],
   template: `
     <div class="header">
@@ -69,12 +72,19 @@ const DEFAULT_SECTIONS: EventSection[] = [
         <p class="secondary-text">
           <span class="when">{{ date(t.start) }} · {{ period() }}</span> · {{ teams() }}
         </p>
-        @if (t.variant; as v) {
+        @if (t.variant || t.pinned) {
           <p class="chips">
-            <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{
-              v.name
-            }}</span>
+            @if (t.variant; as v) {
+              <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{ v.name }}</span>
+            }
+            @if (t.pinned) {
+              <app-pinned-chip [title]="texts.events.pinnedNote" />
+            }
           </p>
+        }
+        <!-- Whoever may edit the event pins it to the start page of its teams (TER-26, TER-27) -->
+        @if (t.canEdit) {
+          <app-pin-action [event]="t" (changed)="pinned($event)" (failed)="fail($event)" />
         }
       }
     </div>
@@ -411,6 +421,18 @@ export class EventPage {
 
   protected date(iso: string): string {
     return eventDate(iso, this.year());
+  }
+
+  /** Pinned or unpinned (TER-26): the new state and a status message, as elsewhere. */
+  protected pinned(change: { event: EventData; message: string }): void {
+    this.event.set(change.event);
+    this.error.set(null);
+    this.success.set(change.message);
+  }
+
+  protected fail(message: string): void {
+    this.success.set(null);
+    this.error.set(message);
   }
 
   /** After a response: event (own response, counters) and overview without reloading the page. */

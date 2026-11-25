@@ -62,6 +62,10 @@ final class EventReader {
     private final Variants variants;
     /** Ranks of the league table for the matches of a match day (AUF-34). */
     private final Standings.Source league;
+    /** Events the caller has a special permission for, directly or through the series (RR-09, RR-10). */
+    private final Set<UUID> granted = new java.util.HashSet<>();
+    /** Per season whether it is archived: asked once per season, not once per event (SAI-02). */
+    private final Map<UUID, Boolean> archived = new HashMap<>();
 
     EventReader(EntityManager em, CurrentUser user, Collection<Event> events, Instant now, Standings.Source league) {
         this.user = user;
@@ -108,7 +112,32 @@ final class EventReader {
                     .setParameter("ids", ids).setParameter("me", user.personId()).getResultList();
             travel.forEach(row -> individual.computeIfAbsent((UUID) row[0], key -> new java.util.HashSet<>())
                     .add((UUID) row[1]));
+            if (!user.allTeams()) {
+                granted.addAll(granted(em, ids, user.personId()));
+            }
         }
+    }
+
+    /** The events among {@code ids} the person has a special permission for, in one query (RR-09, RR-10). */
+    private static List<UUID> granted(EntityManager em, List<UUID> ids, UUID person) {
+        @SuppressWarnings("unchecked")
+        List<UUID> rows = em.createNativeQuery("""
+                        select event_id from event_grant where event_id in (:ids) and person_id = :person
+                        union
+                        select e.id from event e join series_grant g on g.series_id = e.series_id
+                        where e.id in (:ids) and g.person_id = :person""")
+                .setParameter("ids", ids).setParameter("person", person).getResultList();
+        return rows;
+    }
+
+    /**
+     * The caller may edit the event (TER-06, TER-11): coach or admin, or a special permission for it (RR-09); only
+     * while it is planned, not over and its season not archived. One rule for the event list and the event page.
+     */
+    boolean canEdit(Event event) {
+        boolean rights = EventRules.canEdit(user.allTeams(), myTeamRoles(event)) || granted.contains(event.id);
+        return rights && event.status == EventStatus.PLANNED && !event.isOver(now)
+                && !archived.computeIfAbsent(event.season.id, id -> event.season.isArchived());
     }
 
     /** Team roles of the logged-in person in the teams of the event (in the season of the event). */
@@ -130,7 +159,8 @@ final class EventReader {
                 event.location == null ? null : event.location.dto(),
                 time(EventRules.responseDeadline(event.start, event.responseDeadlineHours)), myResponse(event),
                 counts(event), event.series == null ? null : event.series.id, warningCount(event),
-                variants.resolve(event).dto(), optional(event).stream().sorted().toList(), myParticipation(event));
+                variants.resolve(event).dto(), optional(event).stream().sorted().toList(), myParticipation(event),
+                canEdit(event), event.isPinned());
     }
 
     private Set<UUID> optional(Event event) {
@@ -187,7 +217,7 @@ final class EventReader {
      * Event with all details. For match days also the matches by start time, the call-up status (before
      * publication only for coaches and admins, AUF-23) and the player's own call-up status (AUF-24).
      */
-    EventDto full(Event event, boolean canEdit, Instant now) {
+    EventDto full(Event event, Instant now) {
         EventSummaryDto base = summary(event);
         boolean matchDay = event.type == EventType.MATCH_DAY;
         // The place can be known before the time: imported match days start with the usual meeting point of the
@@ -229,9 +259,10 @@ final class EventReader {
         return new EventDto(base.id(), base.type(), base.title(), base.start(), base.end(), base.status(),
                 base.cancellationReason(), base.rescheduled(), base.teams(), base.location(), base.responseDeadline(),
                 base.myResponse(), base.counts(), base.seriesId(), base.warningCount(),
-                event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, canEdit,
+                event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, base.canEdit(),
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance, base.variant(),
-                standing, base.optionalTeamIds(), base.myParticipation(), user.eventGrant() ? Boolean.TRUE : null);
+                standing, base.optionalTeamIds(), base.myParticipation(), user.eventGrant() ? Boolean.TRUE : null,
+                base.pinned());
     }
 
     /**

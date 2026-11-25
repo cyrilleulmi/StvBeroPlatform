@@ -1,5 +1,7 @@
 # Test plan F-13 · Start shows the next two practices
 
+> Changed by E-113 and E-114 (25.11.2026): the start page shows one list by date (TER-25) with the practices of the week of the next practice, the next match day and pinned events. `next-event` and `next-practices` are gone; the cards are in `start-events` (`start-practice-<id>`, `next-match-day`, `start-pinned-<id>`, `start-week`, `start-empty`). K1, K2 and K6 below describe the old rule; the spec tests the new one (scenarios S39, S40), K3, K5, K7–K9 still apply. Pinning: `e2e/tests/event-pin.spec.ts`.
+
 Issue #52 · PR #67 · File `e2e/tests/f13-start-practices.spec.ts` · Requirements ANM (extended), ANM-04, ANM-08 · Scenarios S39, S40 (docs/test-data.md)
 
 Starting point for every case: database running (`scripts/db-start.sh`), backend profile `dev`/`test`, frontend on port 4200, `POST /api/test/reset`, clock at default (Mon 16.11.2026 06:00) unless stated, login via `/dev-login` (`dev-login-person-<key>`) or `POST /api/test/login`. Mobile 375×812, central cases also desktop 1280×800. Screen: `/`.

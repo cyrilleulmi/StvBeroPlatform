@@ -27,5 +27,7 @@ public record EventDto(UUID id, EventType type, String title, OffsetDateTime sta
                         boolean canEdit, boolean attendanceCheck, Boolean attendanceRecorded,
                         boolean canRecordAttendance, AttendanceStatus myAttendance, EventVariantDto variant,
                         StandingDto standing, List<UUID> optionalTeamIds, Participation myParticipation,
-                        Boolean myGrant) {
+                        Boolean myGrant,
+                        @Schema(description = "Pinned to the start page of the members of its teams until it is over (TER-26, E-114)")
+                        boolean pinned) {
 }

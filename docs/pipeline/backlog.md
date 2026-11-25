@@ -431,6 +431,8 @@ F-08 (hardening) follows after F-11.
 
 ## F-13 · Start shows the next two practices
 
+> Changed by E-113 (25.11.2026): the start page shows the practices of the week of the next practice, the next match day and pinned events in one list ([TER-25](../requirements/03-events.md)). Criteria 1 and 2 below are replaced; the others still apply.
+
 **Goal:** On the start screen every player always sees at least her next two practices and can respond right there.
 
 **Today:** The start screen shows only the next own event with response buttons.

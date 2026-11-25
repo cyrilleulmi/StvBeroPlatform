@@ -21,5 +21,9 @@ public record EventSummaryDto(UUID id, EventType type, String title, OffsetDateT
                             UUID seriesId, Integer warningCount, EventVariantDto variant,
                             @Schema(description = "Teams invited without obligation (TER-15)") List<UUID> optionalTeamIds,
                             @Schema(description = "How the caller takes part; missing if she is in no team of the event (TER-15)")
-                            Participation myParticipation) {
+                            Participation myParticipation,
+                            @Schema(description = "The caller may edit the event: coach, admin or a special permission for it, while it is planned and not over (TER-11, RR-09, E-111)")
+                            boolean canEdit,
+                            @Schema(description = "Pinned to the start page of the members of its teams until it is over (TER-26, E-114)")
+                            boolean pinned) {
 }

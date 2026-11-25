@@ -8,7 +8,7 @@ Status legend: see [README](../../README.md#requirement-status).
 
 | ID | Requirement | Status |
 |---|---|---|
-| STA-01 | Coaches (of any team, E-69) and admins have the screen «Statistik» (`/statistik`). It is reachable from the events of the tile «Anwesenheit» (`/termine`) and from a team page (`/teams/:id`). Everyone else gets «Keine Berechtigung», the API 403. | Decided |
+| STA-01 | Coaches (of any team, E-69) and admins have the screen «Statistik» (`/statistik`). It is reachable from «Verwaltung» (`/verwaltung`, group «Verein», since E-111; before from the event list `/termine`) and from a team page (`/teams/:id`). Everyone else gets «Keine Berechtigung», the API 403. | Decided (E-111: entry in «Verwaltung») |
 | STA-02 | Filters, all in the address: team (all teams of the season, F-12; default the first team the person coaches, otherwise the first by name), period (default the whole current season, custom from/to within one season; the season follows from «von»), event type (all, practices, match days). | Decided (filters), Assumption (defaults, one season per period) |
 
 ## Numbers

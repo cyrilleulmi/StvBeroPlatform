@@ -12,8 +12,8 @@ test.describe('Sign-in', () => {
 
     await expect(page.getByTestId('test-mode-notice')).toHaveText('Testmodus');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Anmelden als …');
-    // The people are grouped by team (E-85): 17 people, Petra and Lea appear in both of their teams
-    await expect(page.getByRole('listitem')).toHaveCount(19);
+    // Everybody once in one list (E-112): 17 people
+    await expect(page.getByRole('list', { name: 'Alle Personen' }).getByRole('listitem')).toHaveCount(17);
     for (const [key, name] of [
       ['alex', 'Alex Admin'],
       ['petra', 'Petra Keller'],

@@ -102,6 +102,19 @@ class EventRulesTest {
     }
 
     @Test
+    void ter27OnlyPlannedEventsThatAreNotOverArePinnable() {
+        Instant now = Instant.parse("2026-11-16T05:00:00Z");
+        assertDoesNotThrow(() -> EventRules.checkPinnable(EventStatus.PLANNED, now.plusSeconds(1), now));
+        DomainError cancelled = assertThrows(DomainError.class,
+                () -> EventRules.checkPinnable(EventStatus.CANCELLED, now.plusSeconds(60), now));
+        assertEquals(409, cancelled.status());
+        assertEquals("TER-27", cancelled.rule());
+        DomainError over = assertThrows(DomainError.class, () -> EventRules.checkPinnable(EventStatus.PLANNED, now, now));
+        assertEquals(409, over.status());
+        assertEquals("TER-27", over.rule());
+    }
+
+    @Test
     void ter06RescheduledOnlyWithOtherStartTime() {
         Instant a = Instant.parse("2026-11-19T18:00:00Z");
         assertFalse(EventRules.rescheduled(false, a, a));

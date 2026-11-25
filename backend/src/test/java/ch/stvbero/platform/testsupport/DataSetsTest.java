@@ -37,6 +37,9 @@ class DataSetsTest {
     Simulation simulation;
 
     @Inject
+    SeedPins pins;
+
+    @Inject
     EntityManager em;
 
     @AfterEach
@@ -70,6 +73,7 @@ class DataSetsTest {
     @Test
     void clubDataSetHoldsTheTenTeamsWithInventedPeopleAndThreeLinks() {
         club.reset();
+        pins.club();
 
         given().get("/api/test/clock").then().body("fixed", equalTo(false));
         String alex = login("alex");
@@ -109,6 +113,13 @@ class DataSetsTest {
                 .body("matchDaySettings.meetingPoint", equalTo(ClubSeed.HOME))
                 .body("matchDaySettings.matchDurationMinutes", equalTo(50))
                 .body("matchDaySettings.arrivalLeadMinutes", equalTo(70));
+        // A pinned «Teamessen» of «Damen KF 1. Liga» shows on the start page of its members (TER-26, E-114)
+        JsonPath events = given().cookie("stv_session", login("petra")).get("/api/events").then().statusCode(200)
+                .extract().jsonPath();
+        assertThat(events.getList("findAll { it.pinned }.title"), contains("Teamessen"));
+        assertThat(events.getList("findAll { it.pinned }.teams[0].name"), contains("Damen KF 1. Liga"));
+        given().cookie("stv_session", reto).get("/api/events/" + SeedPins.CLUB_TEAM_DINNER).then().statusCode(200)
+                .body("pinned", equalTo(true)).body("canEdit", equalTo(true));
     }
 
     @Test

@@ -115,6 +115,19 @@ public final class EventRules {
         }
     }
 
+    /**
+     * Cancelled and past events can neither be pinned nor unpinned (409, TER-27). Cancelling keeps the pin; the start
+     * page does not show cancelled events anyway (TER-25).
+     */
+    public static void checkPinnable(EventStatus status, Instant end, Instant now) {
+        if (status == EventStatus.CANCELLED) {
+            throw DomainError.conflict("Termin abgesagt", "Ein abgesagter Termin lässt sich nicht anheften.", "TER-27");
+        }
+        if (!end.isAfter(now)) {
+            throw DomainError.conflict("Termin vorbei", "Ein vergangener Termin lässt sich nicht anheften.", "TER-27");
+        }
+    }
+
     /** A changed start time counts as rescheduling (TER-06). Once rescheduled, the flag stays. */
     public static boolean rescheduled(boolean alreadyRescheduled, Instant oldStart, Instant newStart) {
         return alreadyRescheduled || !oldStart.equals(newStart);

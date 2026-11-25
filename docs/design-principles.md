@@ -69,6 +69,8 @@ Each pair reaches at least 4.5:1 for the full colour on its soft background, on 
 - Buttons: primary filled `primary` / `on-primary`; secondary transparent with a 1.5px border in `control-border`; destructive with border and text in `coral`.
 - Response buttons: the chosen one filled, the others outlined. Labels stay on one line («Nicht dabei» too, at 390px).
 - Icon buttons (pencil «für jemanden antworten»): no frame at rest, muted icon; frame, tint and `primary` on hover. Target still 44px.
+- Filter chips (teams and «Freiwillige» in `/termine`, E-111): a small pill (14px/600, 1.5px `control-border`), a real checkbox underneath; on: `primary` border, `primary-soft` and a tick, so the state is not only a colour. Target 44px high. Several chips stay in one row that scrolls sideways on a phone.
+- Page actions as icons (title row of `/termine`, E-111): 44px, 1.5px `control-border`, the main one filled `primary`; the name in `aria-label` and `title`.
 - Date box of an event: `tag-*-soft` background, date in the full colour, a court line in the variant colour underneath.
 
 ## Typography

@@ -43,13 +43,16 @@ test('E-110: Petra (coach of Team 1) finds her team and its tasks on the hub', {
 
   // «Verein» without «Saisons» (RR-04)
   const club = page.getByRole('region', { name: 'Verein' });
-  await expect(club.getByRole('link')).toHaveText([/^Personen/, /^Alle Teams/, /^Teamzuteilung/]);
+  await expect(club.getByRole('link')).toHaveText([/^Personen/, /^Alle Teams/, /^Teamzuteilung/, /^Statistik/]);
   await expect(page.getByTestId('manage-people-state')).toHaveText('17 Personen');
   await expect(page.getByTestId('manage-teams-state')).toHaveText('3 Teams in der Saison 2026/27');
   await expect(page.getByTestId('manage-assignment-state')).toHaveText(
     'Wer spielt wo? Alle Personen und Teams in einer Tabelle',
   );
   await expect(page.getByTestId('manage-seasons-link')).toHaveCount(0);
+  // «Statistik» moved here from the event list (STA-01, E-111)
+  await expect(page.getByTestId('manage-statistics-link')).toHaveAttribute('href', '/statistik');
+  await expect(page.getByTestId('manage-statistics-state')).toHaveText('Zusagen und Präsenz pro Team und Person');
   await checkAccessibility(page);
 
   // One tap to the events of her team
@@ -74,7 +77,7 @@ test('E-110: Alex (admin without a team) sees «Verein» with «Saisons» and no
   await expect(page.getByTestId('manage-my-teams')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Meine Teams' })).toHaveCount(0);
   const club = page.getByRole('region', { name: 'Verein' });
-  await expect(club.getByRole('link')).toHaveText([/^Personen/, /^Alle Teams/, /^Teamzuteilung/, /^Saisons/]);
+  await expect(club.getByRole('link')).toHaveText([/^Personen/, /^Alle Teams/, /^Teamzuteilung/, /^Statistik/, /^Saisons/]);
   await expect(page.getByTestId('manage-seasons-state')).toHaveText('Aktuell: 2026/27');
   await checkAccessibility(page);
 

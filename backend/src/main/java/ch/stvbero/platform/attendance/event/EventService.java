@@ -55,11 +55,11 @@ public class EventService {
 
     /**
      * Events of the caller's own teams (TER-13). Upcoming ones ascending from "now", past ones descending.
-     * Own teams means: member of a participating team in the season of the event. With a team filter, admins
-     * and coaches see the events of that team even without being a member (RR-03, E-69).
+     * Own teams means: member of a participating team in the season of the event. With a team filter (one or
+     * more teams, E-111), admins and coaches see the events of these teams even without being a member (RR-03, E-69).
      */
-    public List<EventSummaryDto> list(CurrentUser user, LocalDate from, LocalDate to, UUID teamId, EventType type,
-                                     String view) {
+    public List<EventSummaryDto> list(CurrentUser user, LocalDate from, LocalDate to, List<UUID> teamIds,
+                                     EventType type, String view) {
         boolean past = PAST.equals(view);
         if (view != null && !past && !UPCOMING.equals(view)) {
             throw DomainError.invalidField("view", "Die Ansicht ist «kommend» oder «vergangen».");
@@ -70,7 +70,8 @@ public class EventService {
                 where 1 = 1
                 """);
         Map<String, Object> parameters = new HashMap<>();
-        if (teamId == null || !user.allTeams()) {
+        boolean filtered = teamIds != null && !teamIds.isEmpty();
+        if (!filtered || !user.allTeams()) {
             jpql.append("""
                      and exists (select z.id from TeamMembership z
                                  where z.person.id = :person and z.season = t.season and z.team member of t.teams)
@@ -87,9 +88,9 @@ public class EventService {
             jpql.append(" and t.start < :endDate");
             parameters.put("endDate", to.plusDays(1).atStartOfDay(BackendClock.ZONE).toInstant());
         }
-        if (teamId != null) {
-            jpql.append(" and exists (select x.id from Event t2 join t2.teams x where t2 = t and x.id = :team)");
-            parameters.put("team", teamId);
+        if (filtered) {
+            jpql.append(" and exists (select x.id from Event t2 join t2.teams x where t2 = t and x.id in :teams)");
+            parameters.put("teams", teamIds);
         }
         if (type != null) {
             jpql.append(" and t.type = :type");
@@ -108,7 +109,7 @@ public class EventService {
         EventReader reader = new EventReader(em, user, List.of(event), clock.now(), Standings.sourceOf(league));
         Set<TeamRole> mine = reader.myTeamRoles(event);
         EventRules.checkCanView(user.allTeams(), mine);
-        return reader.full(event, canEdit(user, event, mine), clock.now());
+        return reader.full(event, clock.now());
     }
 
     /** Create a single event, also for several teams (TER-01, TER-04, TER-11). */
@@ -238,11 +239,6 @@ public class EventService {
             }
         }
         season.checkWritable();
-    }
-
-    private boolean canEdit(CurrentUser user, Event event, Set<TeamRole> mine) {
-        return EventRules.canEdit(user.allTeams(), mine) && event.status == EventStatus.PLANNED
-                && !event.isOver(clock.now()) && !event.season.isArchived();
     }
 
     /** The chosen variant fits the type and belongs to one of the teams (VAR-03); {@code null} stays {@code null}. */

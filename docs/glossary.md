@@ -71,6 +71,7 @@ If a term is missing, add it here in the same style before using it.
 | Erinnerung | reminder | |
 | Kachel | tile | |
 | Dashboard / Start | dashboard / start page | |
+| angeheftet, anheften (Termin) | pinned, pin | an event shown on the start page of the members of its teams until it is over (TER-26); `pinned`, `POST /api/events/{id}/pin` |
 | Verwaltung | administration | |
 | Admin | admin | |
 | Rolle (Rechte) | role | permission role, not the team role |
