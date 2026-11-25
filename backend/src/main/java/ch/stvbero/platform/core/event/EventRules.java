@@ -30,8 +30,17 @@ public final class EventRules {
     public static final String MIN_RESPONSE_DEADLINE_TEXT = "Mindestens 0 Stunden.";
     public static final String MAX_RESPONSE_DEADLINE_TEXT = "Höchstens 336 Stunden (14 Tage).";
 
-    /** Longest validity period of a series in days, so that years of events are not created by accident. */
-    public static final int MAX_SERIES_DAYS = 366;
+    /**
+     * How far ahead the events of a series exist (TER-22): one year from today. A series without an end, or with a
+     * later end, gets its further events created regularly, so it never stops by itself.
+     */
+    public static final java.time.Period SERIES_HORIZON = java.time.Period.ofYears(1);
+
+    /** Last day up to which a series has its events: its end, at most one year from today (TER-22, TER-23). */
+    public static LocalDate seriesCap(LocalDate validUntil, LocalDate today) {
+        LocalDate horizon = today.plus(SERIES_HORIZON);
+        return validUntil == null || validUntil.isAfter(horizon) ? horizon : validUntil;
+    }
 
     /** Time of day, e.g. «18:30». */
     public static final String TIME_PATTERN = "^([01]\\d|2[0-3]):[0-5]\\d$";
@@ -154,11 +163,9 @@ public final class EventRules {
         if (!end.isAfter(start)) {
             throw DomainError.invalidField("endTime", "Das Ende muss nach dem Beginn liegen.");
         }
-        if (endDate.isBefore(startDate)) {
+        // Without an end the series runs on (TER-23)
+        if (endDate != null && endDate.isBefore(startDate)) {
             throw DomainError.invalidField("validUntil", "Das Ende der Serie muss nach ihrem Beginn liegen.");
-        }
-        if (ChronoUnit.DAYS.between(startDate, endDate) >= MAX_SERIES_DAYS) {
-            throw DomainError.invalidField("validUntil", "Eine Serie dauert höchstens ein Jahr.");
         }
     }
 

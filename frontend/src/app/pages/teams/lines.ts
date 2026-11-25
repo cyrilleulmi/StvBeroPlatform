@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
   viewChild,
@@ -61,6 +62,10 @@ export class Lines {
 
   /** Route `/teams/:teamId/linien` */
   readonly teamId = input.required<string>();
+  /** Inside another page (assistant «Neues Team», PTF-13): no page header, no link away, no special line-ups. */
+  readonly embedded = input(false);
+  /** A change was saved. */
+  readonly changed = output<void>();
 
   protected readonly team = signal<TeamDetail | null>(null);
   protected readonly loading = signal(true);
@@ -181,6 +186,7 @@ export class Lines {
       const message = await action();
       await this.reload();
       this.success.set(message);
+      this.changed.emit();
       ok = true;
     } catch (e) {
       if (onError) onError(errorText(e));

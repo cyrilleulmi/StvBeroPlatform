@@ -14,15 +14,15 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
-import type { Car, DriverList, DriverProposal, PersonSummary, ProposedCar, Route } from '../api/types';
+import type { DriverList, PersonSummary, Route } from '../api/types';
 import { dateTime } from '../core/format';
 import { Icon } from '../core/icon';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { name } from '../core/format';
 import { formatDecimal } from '../core/number';
 import { TEXTS } from '../core/texts';
-
-const SEAT_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+import { PlanStore } from './simple/plan-store';
+import { SeatBoard } from './simple/seat-board';
 
 /** «23.4» */
 export function km(value: number | null | undefined): string {
@@ -30,14 +30,16 @@ export function km(value: number | null | undefined): string {
 }
 
 /**
- * Section «Fahrerliste» of a match day (DRV-01 to DRV-11): route with credit, cars with passengers, who has no
- * seat. Members enter themselves as driver or passenger; coaches and admins also others and the kilometres by
- * hand. Every change answers with the whole list; the backend decides what is allowed (RR-07).
+ * Section «Fahrerliste» of a match day (DRV-01 to DRV-11, DRV-20 to DRV-23, DRV-32): the route with its credit,
+ * and how many places the cars have for the people who travel together. «Plätze zuweisen» opens the cars as
+ * bubbles: everyone of the team enters drivers and puts people into cars there. Travelling on one's own stays
+ * here. The backend decides what is allowed (RR-07).
  */
 @Component({
   selector: 'app-driver-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, SeatBoard],
+  providers: [PlanStore],
   template: `
     <section
       class="card driver-list"
@@ -46,10 +48,10 @@ export function km(value: number | null | undefined): string {
       [attr.aria-busy]="loading() ? 'true' : null"
     >
       <h2 id="driver-list-title" class="section-title">{{ s.title }}</h2>
-      @if (message(); as m) {
+      @if (message() ?? store.success(); as m) {
         <p class="message-success" role="status">{{ m }}</p>
       }
-      @if (error(); as m) {
+      @if (error() ?? store.error(); as m) {
         <p class="message-error" role="alert">{{ m }}</p>
       }
       @if (loading() && !data()) {
@@ -155,223 +157,42 @@ export function km(value: number | null | undefined): string {
             }
           </div>
 
-          <div class="subtitle-row">
+          <!-- By default only the places and the people who travel together (DRV-32) -->
+          <div class="seats-row">
             <h3 class="subtitle" id="driver-list-cars">{{ s.cars }}</h3>
-            @if (!manage()) {
-              <p class="secondary-text plan-hint" data-testid="driver-list-plan-hint">{{ s.planHint }}</p>
-            }
-            @if (d.canManage && manage()) {
-              <!-- A proposed driver list: who drives, who rides with whom (DRV-19) -->
-              <button
-                type="button"
-                class="button button-secondary button-small"
-                data-testid="driver-proposal"
-                [disabled]="running()"
-                [attr.aria-busy]="busy() === 'propose' ? 'true' : null"
-                (click)="propose()"
-              >
-                {{ texts.proposal.button }}
-              </button>
-            }
+            <p
+              class="seat-summary"
+              data-testid="driver-seat-summary"
+              [attr.data-state]="summary().state"
+              [attr.data-places]="summary().places"
+              [attr.data-people]="summary().people"
+            >
+              <app-icon [name]="summary().state === 'short' ? 'triangle-alert' : 'car'" [size]="20" />
+              <strong>{{ s.seatSummary(summary().places, summary().people) }}</strong>
+              <span class="secondary-text">
+                {{ s.seatCars(d.cars.length) }} ·
+                {{ summary().missing > 0 ? s.seatMissing(summary().missing) : s.seatEnough }}
+              </span>
+            </p>
+            <p class="secondary-text">{{ s.seatSummaryHint }}</p>
+            <button
+              type="button"
+              class="button button-small assign"
+              [class.button-primary]="!assigning() && d.canArrange"
+              [class.button-secondary]="assigning() || !d.canArrange"
+              data-testid="driver-assign"
+              aria-controls="driver-list-board"
+              [attr.aria-expanded]="assigning()"
+              (click)="assigning.set(!assigning())"
+            >
+              <app-icon [name]="assigning() ? 'chevron-up' : 'users'" [size]="16" />
+              {{ assigning() ? s.assignDone : d.canArrange ? s.assignSeats : s.showCars }}
+            </button>
           </div>
-          @if (d.cars.length === 0) {
-            <p class="empty">{{ s.noCars }}</p>
-          } @else {
-            <ul class="list cars" aria-labelledby="driver-list-cars" data-testid="cars">
-              @for (c of d.cars; track c.id) {
-                <li
-                  class="car"
-                  [attr.aria-label]="s.carOf(name(c.driver))"
-                  [attr.data-testid]="'car-' + c.id"
-                  [attr.data-free-seats]="c.freeSeats"
-                >
-                  <div class="car-head">
-                    <span class="row-title">
-                      {{ name(c.driver) }}
-                      @if (c.driver.id === meId()) {
-                        <span class="secondary-text">{{ s.you }}</span>
-                      }
-                    </span>
-                    <span
-                      class="chip"
-                      [attr.data-kind]="c.freeSeats === 0 ? 'full' : 'free'"
-                      data-testid="car-seats"
-                      >{{ c.freeSeats === 0 ? s.full : s.seatsFree(c.freeSeats, c.seats) }}</span
-                    >
-                    @if (has(c.creditKm)) {
-                      <span class="secondary-text">{{ s.carCredit(km(c.creditKm)) }}</span>
-                    }
-                  </div>
-                  @if (c.passengers.length === 0) {
-                    <p class="empty">{{ s.noPassengers }}</p>
-                  } @else {
-                    <ul class="passengers" [attr.aria-label]="s.passengersOf(name(c.driver))">
-                      @for (p of c.passengers; track p.id) {
-                        <li [attr.aria-label]="name(p)">
-                          <span>
-                            {{ name(p) }}
-                            @if (p.id === meId()) {
-                              <span class="secondary-text">{{ s.you }}</span>
-                            }
-                          </span>
-                          @if (manage() && p.id === meId() && canChange(d)) {
-                            <button
-                              type="button"
-                              class="button button-secondary button-small"
-                              [disabled]="running()"
-                              (click)="leave(c, p)"
-                            >
-                              {{ s.leave }}
-                            </button>
-                          } @else if (manage() && d.canManage) {
-                            <button
-                              type="button"
-                              class="button button-secondary button-small"
-                              [disabled]="running()"
-                              (click)="leave(c, p)"
-                            >
-                              {{ s.removePassenger(name(p)) }}
-                            </button>
-                          }
-                        </li>
-                      }
-                    </ul>
-                  }
-                  <div class="car-actions">
-                    @if (manage() && canRide(d, c)) {
-                      <button
-                        type="button"
-                        class="button button-primary button-small"
-                        [disabled]="running()"
-                        [attr.aria-busy]="busy() === 'ride-' + c.id ? 'true' : null"
-                        (click)="ride(c)"
-                      >
-                        {{ s.rideWith(name(c.driver)) }}
-                      </button>
-                    }
-                    @if (manage() && canEditCar(d, c)) {
-                      <div class="field inline">
-                        <label [for]="'seats-' + c.id">{{ s.seatsOf(name(c.driver)) }}</label>
-                        <select
-                          [id]="'seats-' + c.id"
-                          [value]="c.seats"
-                          [disabled]="running()"
-                          (change)="changeSeats(c, $any($event.target))"
-                        >
-                          @for (n of seatOptionsFor(c); track n) {
-                            <option [value]="n" [selected]="n === c.seats">{{ n }}</option>
-                          }
-                        </select>
-                      </div>
-                      <button
-                        type="button"
-                        class="button button-secondary button-small"
-                        [disabled]="running()"
-                        (click)="askRemove(c)"
-                      >
-                        {{ c.driver.id === meId() ? s.stopDriving : s.removeCar(name(c.driver)) }}
-                      </button>
-                    }
-                    @if (manage() && d.canManage && c.freeSeats > 0) {
-                      <form class="assign" (submit)="assign($event, c)">
-                        <div class="field inline">
-                          <label [for]="'assign-' + c.id">{{ s.assignTo(name(c.driver)) }}</label>
-                          <select [id]="'assign-' + c.id" [disabled]="running()">
-                            <option value="">{{ s.choose }}</option>
-                            @for (p of candidatesFor(d, c); track p.person.id) {
-                              <option [value]="p.person.id">{{ p.label }}</option>
-                            }
-                          </select>
-                        </div>
-                        <button
-                          type="submit"
-                          class="button button-secondary button-small"
-                          [disabled]="running()"
-                        >
-                          {{ s.assign }}
-                        </button>
-                      </form>
-                    }
-                  </div>
-                </li>
-              }
-            </ul>
-          }
-
-          @if (manage() && canChange(d) && !isDriver(d)) {
-            <form class="own-car" (submit)="drive($event)">
-              <div class="field inline">
-                <label for="driver-list-my-seats">{{ s.mySeats }}</label>
-                <select id="driver-list-my-seats" #mySeats [disabled]="running()">
-                  @for (n of seatOptions; track n) {
-                    <option [value]="n" [selected]="n === d.defaultSeats">{{ n }}</option>
-                  }
-                </select>
-              </div>
-              <button
-                type="submit"
-                class="button button-primary button-small"
-                [disabled]="running()"
-                [attr.aria-busy]="busy() === 'drive' ? 'true' : null"
-              >
-                {{ s.iDrive }}
-              </button>
-            </form>
-          }
-
-          @if (manage() && d.canManage) {
-            <form class="enter-driver" aria-labelledby="driver-list-enter" (submit)="enterDriver($event)">
-              <h3 class="subtitle" id="driver-list-enter">{{ s.enterDriver }}</h3>
-              <div class="field-row">
-                <div class="field">
-                  <label for="driver-list-driver">{{ s.driver }}</label>
-                  <select id="driver-list-driver" #driver [disabled]="running()">
-                    <option value="">{{ s.choose }}</option>
-                    @for (p of driverCandidates(d); track p.person.id) {
-                      <option [value]="p.person.id">{{ p.label }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="driver-list-seats">{{ s.seats }}</label>
-                  <select id="driver-list-seats" #driverSeats [disabled]="running()">
-                    @for (n of seatOptions; track n) {
-                      <option [value]="n" [selected]="n === 4">{{ n }}</option>
-                    }
-                  </select>
-                </div>
-              </div>
-              <button type="submit" class="button button-secondary button-small" [disabled]="running()">
-                {{ s.enter }}
-              </button>
-            </form>
-          }
-
-          <h3 class="subtitle" id="driver-list-without-seat">{{ s.withoutSeat }}</h3>
-          <p class="secondary-text">
-            {{ d.callUpPublished ? s.withoutSeatCalledUp : s.withoutSeatAttending }}
-          </p>
-          @if (d.withoutSeat.length === 0) {
-            <p class="empty" data-testid="without-seat-empty">{{ s.everyoneSeated }}</p>
-          } @else {
-            <ul class="list" aria-labelledby="driver-list-without-seat" data-testid="without-seat">
-              @for (p of d.withoutSeat; track p.id) {
-                <li class="row without-seat" [attr.aria-label]="name(p)">
-                  <span>{{ name(p) }}</span>
-                  @if (d.canManage && p.id !== meId()) {
-                    <button
-                      type="button"
-                      class="button button-secondary button-small"
-                      [attr.aria-label]="texts.individual.markFor(name(p))"
-                      [disabled]="running()"
-                      (click)="setIndividual(p, true)"
-                    >
-                      {{ texts.individual.mark }}
-                    </button>
-                  }
-                </li>
-              }
-            </ul>
+          @if (assigning()) {
+            <div id="driver-list-board" class="assign-board">
+              <app-seat-board [eventId]="eventId()" />
+            </div>
           }
 
           <!-- People who travel on their own need no seat (DRV-20) -->
@@ -420,19 +241,18 @@ export function km(value: number | null | undefined): string {
         }
         <div class="links">
           @if (teamId(); as team) {
-            <!-- Drivers are entered on the season page (DRV-23, DRV-24) -->
+            <!-- The season is planned on the page «Fahrerliste» (DRV-24) -->
             <a
               [routerLink]="['/teams', team, 'fahrerliste']"
-              [class]="manage() ? 'summary-link' : 'button button-secondary button-small'"
+              class="button button-secondary button-small"
               data-testid="driver-plan-link"
-              >{{ manage() ? texts.driverPlan.link : s.toPlan }}</a
+              >{{ s.toPlan }}</a
             >
           }
           <a routerLink="/fahrten" class="summary-link" data-testid="driver-summary-link">{{ s.summaryLink }}</a>
         </div>
       }
     </section>
-
     <dialog
       #kmDialog
       class="card dialog"
@@ -477,7 +297,6 @@ export function km(value: number | null | undefined): string {
         </div>
       </form>
     </dialog>
-
     <dialog
       #durationDialog
       class="card dialog"
@@ -523,160 +342,60 @@ export function km(value: number | null | undefined): string {
         </div>
       </form>
     </dialog>
-
-    <dialog
-      #proposalDialog
-      class="card dialog proposal"
-      aria-modal="true"
-      aria-labelledby="driver-proposal-title"
-      aria-describedby="driver-proposal-text"
-      (close)="proposal.set(null)"
-    >
-      @if (proposal(); as p) {
-        <h2 id="driver-proposal-title">{{ texts.proposal.title }}</h2>
-        <p class="secondary-text" id="driver-proposal-text">{{ texts.proposal.intro }}</p>
-        @if (!p.changes && p.withoutSeat.length === 0) {
-          <p data-testid="proposal-nothing">{{ texts.proposal.nothing }}</p>
-        }
-        @if (p.changes) {
-          <ul class="list proposal-cars" data-testid="proposal-cars" [attr.aria-label]="texts.proposal.title">
-            @for (c of p.cars; track c.driver.id) {
-              <li
-                class="proposal-car"
-                [attr.aria-label]="s.carOf(name(c.driver))"
-                [attr.data-existing]="c.existing"
-              >
-                <p class="row-title">
-                  {{ texts.proposal.drives(name(c.driver), c.seats) }}
-                  <span class="chip" [attr.data-kind]="c.existing ? 'existing' : 'new'">{{
-                    c.existing ? texts.proposal.existingCar : texts.proposal.newCar
-                  }}</span>
-                </p>
-                @if (c.passengers.length === 0) {
-                  <p class="secondary-text">{{ texts.proposal.alone }}</p>
-                } @else {
-                  <ul class="passengers" [attr.aria-label]="s.passengersOf(name(c.driver))">
-                    @for (x of c.passengers; track x.id) {
-                      <li [attr.aria-label]="name(x)">
-                        <span>
-                          {{ name(x) }}
-                          @if (isAdded(c, x)) {
-                            <span class="chip" data-kind="new">{{ texts.proposal.added }}</span>
-                          }
-                        </span>
-                      </li>
-                    }
-                  </ul>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (p.withoutSeat.length > 0) {
-          <div class="message-notice" data-testid="proposal-without-seat">
-            <p>{{ texts.proposal.withoutSeat(p.withoutSeat.length) }}</p>
-            <p>{{ names(p.withoutSeat) }}</p>
-          </div>
-        }
-        <div class="dialog-buttons">
-          @if (p.changes) {
-            <button
-              type="button"
-              class="button button-primary button-small"
-              [disabled]="running()"
-              [attr.aria-busy]="busy() === 'apply' ? 'true' : null"
-              (click)="applyProposal(p)"
-            >
-              {{ texts.proposal.apply }}
-            </button>
-          }
-          <button type="button" class="button button-secondary button-small" (click)="closeProposal()">
-            {{ texts.proposal.cancel }}
-          </button>
-        </div>
-      }
-    </dialog>
-
-    <dialog
-      #removeDialog
-      class="card dialog"
-      aria-modal="true"
-      aria-labelledby="driver-remove-title"
-      aria-describedby="driver-remove-text"
-      (close)="removing.set(null)"
-    >
-      @if (removing(); as c) {
-        <h2 id="driver-remove-title">
-          {{ c.driver.id === meId() ? s.removeOwnTitle : s.removeTitle(name(c.driver)) }}
-        </h2>
-        <p id="driver-remove-text">{{ s.removeText(c.passengers.length) }}</p>
-        <div class="dialog-buttons">
-          <button
-            type="button"
-            class="button button-primary button-small"
-            [disabled]="running()"
-            [attr.aria-busy]="running() ? 'true' : null"
-            (click)="removeCar(c)"
-          >
-            {{ s.remove }}
-          </button>
-          <button type="button" class="button button-secondary button-small" (click)="closeRemove()">
-            {{ s.cancel }}
-          </button>
-        </div>
-      }
-    </dialog>
   `,
   styleUrl: './driver-list.css',
 })
 export class DriverListSection {
   private readonly http = inject(HttpClient);
+  protected readonly store = inject(PlanStore);
   protected readonly texts = TEXTS;
   protected readonly s = TEXTS.driverList;
   protected readonly name = name;
   protected readonly km = km;
-  protected readonly seatOptions = SEAT_OPTIONS;
   protected readonly has = (v: number | null | undefined): v is number => v !== null && v !== undefined;
 
   readonly eventId = input.required<string>();
-  /** Team of the match day, for the link to its driver plan of the season (DRV-14). */
+  /** Team of the match day, for the link to its driver list of the season (DRV-24). */
   readonly teamId = input<string | null>(null);
   /** ID of the signed-in person. */
   readonly meId = input<string | null>(null);
   /** Coach or admin who may edit the event: hint where meeting point and venue are entered. */
   readonly canEditEvent = input(false);
-  /** Changes when the event page reloads (e.g. after a response), so «Ohne Platz» stays current. */
+  /** Changes when the event page reloads (e.g. after a response), so the list stays current. */
   readonly version = input(0);
-  /**
-   * `true` on the season page: drivers and passengers are entered here. On the match day only what is entered is
-   * shown; travelling on one's own and the route stay (DRV-23).
-   */
-  readonly manage = input(true);
   /** After a change that shows elsewhere on the event page, e.g. «reist individuell an» in the responses. */
   readonly changed = output<void>();
 
-  protected readonly data = signal<DriverList | null>(null);
-  protected readonly proposal = signal<DriverProposal | null>(null);
-  private readonly proposalDialog = viewChild<ElementRef<HTMLDialogElement>>('proposalDialog');
+  /** The driver list; the cars behind «Plätze zuweisen» change it too. */
+  protected readonly data = computed<DriverList | null>(() => this.store.lists()[this.eventId()] ?? null);
+  /** «Plätze zuweisen» is open. */
+  protected readonly assigning = signal(false);
   protected readonly loading = signal(true);
   protected readonly busy = signal<string | null>(null);
-  protected readonly running = computed(() => this.busy() !== null);
+  protected readonly running = computed(() => this.busy() !== null || this.store.busy());
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
-  protected readonly removing = signal<Car | null>(null);
   protected readonly kmValue = signal('');
   protected readonly kmError = signal<string | null>(null);
-
   private readonly kmDialog = viewChild<ElementRef<HTMLDialogElement>>('kmDialog');
   private readonly durationDialog = viewChild<ElementRef<HTMLDialogElement>>('durationDialog');
   private readonly durationField = viewChild<ElementRef<HTMLInputElement>>('durationField');
   protected readonly durationValue = signal('');
   protected readonly durationError = signal<string | null>(null);
   private readonly kmField = viewChild<ElementRef<HTMLInputElement>>('kmField');
-  private readonly removeDialog = viewChild<ElementRef<HTMLDialogElement>>('removeDialog');
-  private readonly mySeats = viewChild<ElementRef<HTMLSelectElement>>('mySeats');
-  private readonly driverSelect = viewChild<ElementRef<HTMLSelectElement>>('driver');
-  private readonly driverSeats = viewChild<ElementRef<HTMLSelectElement>>('driverSeats');
+
+  /**
+   * Places of all cars (drivers included) and the people who travel together: drivers, passengers and everyone
+   * who still needs a seat; whoever travels on her own does not count (DRV-20, DRV-32).
+   */
+  protected readonly summary = computed(() => {
+    const d = this.data();
+    if (!d) return { places: 0, people: 0, missing: 0, state: 'none' };
+    const places = d.cars.reduce((sum, car) => sum + car.seats + 1, 0);
+    const people = d.cars.reduce((sum, car) => sum + 1 + car.passengers.length, 0) + d.needSeat.length;
+    const missing = Math.max(0, people - places);
+    return { places, people, missing, state: people === 0 ? 'none' : missing > 0 ? 'short' : 'enough' };
+  });
 
   constructor() {
     effect(() => {
@@ -684,162 +403,24 @@ export class DriverListSection {
       this.version();
       untracked(() => void this.load(id));
     });
+    // A change in the cars replaces the last message of this section
+    effect(() => {
+      if (this.store.running()) {
+        untracked(() => {
+          this.message.set(null);
+          this.error.set(null);
+        });
+      }
+    });
+    // A new match day starts closed
+    effect(() => {
+      this.eventId();
+      untracked(() => this.assigning.set(false));
+    });
   }
 
   protected missingText(d: DriverList): string {
     return this.s.missing(d.missing.map((m) => this.s.missingPart[m] ?? m));
-  }
-
-  /** The caller can enter herself right now (member, list usable). */
-  protected canChange(d: DriverList): boolean {
-    return d.canJoin;
-  }
-
-  protected isDriver(d: DriverList): boolean {
-    return d.cars.some((c) => c.driver.id === this.meId());
-  }
-
-  private seatOf(d: DriverList, personId: string): Car | undefined {
-    return d.cars.find((c) => c.passengers.some((p) => p.id === personId));
-  }
-
-  /** «Bei <Name> mitfahren»: member, not a driver, not already in this car, a seat free. */
-  protected canRide(d: DriverList, c: Car): boolean {
-    const me = this.meId();
-    return (
-      d.canJoin &&
-      !!me &&
-      c.freeSeats > 0 &&
-      c.driver.id !== me &&
-      !this.isDriver(d) &&
-      !c.passengers.some((p) => p.id === me)
-    );
-  }
-
-  protected canEditCar(d: DriverList, c: Car): boolean {
-    return d.canManage || (d.canJoin && c.driver.id === this.meId());
-  }
-
-  /** Members who can be put into this car: not driving, not already in it; «(bei X)» if seated elsewhere. */
-  protected candidatesFor(d: DriverList, c: Car): { person: PersonSummary; label: string }[] {
-    const drivers = new Set(d.cars.map((x) => x.driver.id));
-    return (d.members ?? [])
-      .filter((p) => !drivers.has(p.id) && !c.passengers.some((x) => x.id === p.id))
-      .map((p) => {
-        const elsewhere = this.seatOf(d, p.id);
-        return {
-          person: p,
-          label: elsewhere ? `${name(p)} ${this.s.seatedWith(name(elsewhere.driver))}` : name(p),
-        };
-      });
-  }
-
-  /** Members who do not drive yet; «(bei X)» if they sit in a car. */
-  protected driverCandidates(d: DriverList): { person: PersonSummary; label: string }[] {
-    const drivers = new Set(d.cars.map((x) => x.driver.id));
-    return (d.members ?? [])
-      .filter((p) => !drivers.has(p.id))
-      .map((p) => {
-        const seat = this.seatOf(d, p.id);
-        return { person: p, label: seat ? `${name(p)} ${this.s.seatedWith(name(seat.driver))}` : name(p) };
-      });
-  }
-
-  private personName(d: DriverList, id: string): string {
-    const p = (d.members ?? []).find((m) => m.id === id);
-    return p ? name(p) : '';
-  }
-
-  // ------------------------------------------------------------------ Actions
-
-  protected drive(domEvent: Event): void {
-    domEvent.preventDefault();
-    const seats = Number(this.mySeats()?.nativeElement.value ?? 3);
-    void this.run('drive', this.http.post<DriverList>(this.url('/cars'), { seats }), () =>
-      this.s.driving(null, seats),
-    );
-  }
-
-  protected enterDriver(domEvent: Event): void {
-    domEvent.preventDefault();
-    const d = this.data();
-    const driverId = this.driverSelect()?.nativeElement.value ?? '';
-    if (!d || !driverId) {
-      this.error.set(this.s.choose);
-      return;
-    }
-    const seats = Number(this.driverSeats()?.nativeElement.value ?? 3);
-    const who = driverId === this.meId() ? null : this.personName(d, driverId);
-    void this.run('enter', this.http.post<DriverList>(this.url('/cars'), { driverId, seats }), () =>
-      this.s.driving(who, seats),
-    );
-  }
-
-  /** Seats 1–8, but never fewer than the passengers already in the car (DRV-03). */
-  protected seatOptionsFor(c: Car): number[] {
-    return SEAT_OPTIONS.filter((n) => n >= c.passengers.length);
-  }
-
-  protected async changeSeats(c: Car, select: HTMLSelectElement): Promise<void> {
-    const seats = Number(select.value);
-    await this.run('seats-' + c.id, this.http.put<DriverList>(this.url(`/cars/${c.id}`), { seats }), () =>
-      this.s.seatsSaved(seats),
-    );
-    // After a rejection the bindings do not change, so Angular leaves the DOM on the rejected value: show the saved one
-    const saved = this.data()?.cars.find((car) => car.id === c.id)?.seats;
-    if (saved != null) select.value = String(saved);
-  }
-
-  protected askRemove(c: Car): void {
-    this.removing.set(c);
-    const dialog = this.removeDialog()?.nativeElement;
-    if (dialog && !dialog.open) dialog.showModal();
-  }
-
-  protected closeRemove(): void {
-    this.removeDialog()?.nativeElement.close();
-  }
-
-  protected async removeCar(c: Car): Promise<void> {
-    const driver = name(c.driver);
-    await this.run('remove-' + c.id, this.http.delete<DriverList>(this.url(`/cars/${c.id}`)), () =>
-      this.s.carRemoved(driver),
-    );
-    this.closeRemove();
-  }
-
-  protected ride(c: Car): void {
-    const me = this.meId();
-    if (!me) return;
-    void this.run('ride-' + c.id, this.http.put<DriverList>(this.url(`/cars/${c.id}/passengers/${me}`), {}), () =>
-      this.s.riding(null, name(c.driver)),
-    );
-  }
-
-  protected assign(domEvent: Event, c: Car): void {
-    domEvent.preventDefault();
-    const select = (domEvent.target as HTMLFormElement).querySelector('select');
-    const personId = select?.value ?? '';
-    const d = this.data();
-    if (!d || !personId) {
-      this.error.set(this.s.choose);
-      return;
-    }
-    const who = personId === this.meId() ? null : this.personName(d, personId);
-    void this.run(
-      'assign-' + c.id,
-      this.http.put<DriverList>(this.url(`/cars/${c.id}/passengers/${personId}`), {}),
-      () => this.s.riding(who, name(c.driver)),
-    );
-  }
-
-  protected leave(c: Car, p: PersonSummary): void {
-    const who = p.id === this.meId() ? null : name(p);
-    void this.run(
-      'leave-' + c.id + p.id,
-      this.http.delete<DriverList>(this.url(`/cars/${c.id}/passengers/${p.id}`)),
-      () => this.s.left(who, name(c.driver)),
-    );
   }
 
   // ------------------------------------------------------------------ Travelling on one's own (DRV-20)
@@ -847,7 +428,9 @@ export class DriverListSection {
   /** Member who neither drives nor is marked yet. */
   protected canMarkSelf(d: DriverList): boolean {
     const me = this.meId();
-    return d.canJoin && !!me && !this.isDriver(d) && !d.individual.some((p) => p.id === me);
+    return (
+      d.canJoin && !!me && !d.cars.some((c) => c.driver.id === me) && !d.individual.some((p) => p.id === me)
+    );
   }
 
   protected markSelf(): void {
@@ -878,52 +461,7 @@ export class DriverListSection {
     this.changed.emit();
   }
 
-  // ------------------------------------------------------------------ Proposal (DRV-19)
-
-  protected async propose(): Promise<void> {
-    if (this.running()) return;
-    this.busy.set('propose');
-    this.message.set(null);
-    this.error.set(null);
-    try {
-      this.proposal.set(
-        await firstValueFrom(this.http.post<DriverProposal>(this.url('/proposal'), {})),
-      );
-      const dialog = this.proposalDialog()?.nativeElement;
-      if (dialog && !dialog.open) dialog.showModal();
-    } catch (e) {
-      this.error.set(errorText(e));
-    } finally {
-      this.busy.set(null);
-    }
-  }
-
-  protected isAdded(c: ProposedCar, p: PersonSummary): boolean {
-    return c.added.some((x) => x.id === p.id);
-  }
-
-  protected names(persons: PersonSummary[]): string {
-    return persons.map((p) => name(p)).join(', ');
-  }
-
-  protected closeProposal(): void {
-    this.proposalDialog()?.nativeElement.close();
-  }
-
-  /** Enters the proposal as it is shown: new cars, and the passengers it adds. */
-  protected async applyProposal(p: DriverProposal): Promise<void> {
-    const cars = p.cars
-      .filter((c) => !c.existing || c.added.length > 0)
-      .map((c) => ({
-        driverId: c.driver.id,
-        seats: c.seats,
-        passengerIds: c.added.map((x) => x.id),
-      }));
-    await this.run('apply', this.http.post<DriverList>(this.url('/proposal/apply'), { cars }), () =>
-      TEXTS.proposal.applied,
-    );
-    this.closeProposal();
-  }
+  // ------------------------------------------------------------------ Route (DRV-05 to DRV-08)
 
   protected recalculate(): void {
     void this.run('recalculate', this.http.post<DriverList>(this.url('/route/recalculate'), {}), () =>
@@ -955,10 +493,9 @@ export class DriverListSection {
     }
     this.kmError.set(null);
     this.busy.set('km');
-    this.message.set(null);
-    this.error.set(null);
+    this.clearMessages();
     try {
-      this.data.set(await firstValueFrom(this.http.put<DriverList>(this.url('/route'), { distanceKm: value })));
+      this.store.put(await firstValueFrom(this.http.put<DriverList>(this.url('/route'), { distanceKm: value })));
       this.closeKm();
       this.message.set(this.s.kmSaved);
     } catch (e) {
@@ -1018,10 +555,9 @@ export class DriverListSection {
     }
     this.durationError.set(null);
     this.busy.set('duration');
-    this.message.set(null);
-    this.error.set(null);
+    this.clearMessages();
     try {
-      this.data.set(await firstValueFrom(this.http.put<DriverList>(this.url('/route/duration'), { minutes: value })));
+      this.store.put(await firstValueFrom(this.http.put<DriverList>(this.url('/route/duration'), { minutes: value })));
       this.closeDuration();
       this.message.set(this.s.durationSaved);
       this.changed.emit();
@@ -1051,19 +587,23 @@ export class DriverListSection {
     return `/api/events/${this.eventId()}/driver-list${path}`;
   }
 
+  private clearMessages(): void {
+    this.message.set(null);
+    this.error.set(null);
+    this.store.success.set(null);
+    this.store.error.set(null);
+  }
+
   private async run(key: string, request: Observable<DriverList>, success: () => string): Promise<void> {
     if (this.running()) return;
     this.busy.set(key);
-    this.message.set(null);
-    this.error.set(null);
+    this.clearMessages();
     try {
-      this.data.set(await firstValueFrom(request));
+      this.store.put(await firstValueFrom(request));
       this.message.set(success());
-      // On the season page the overview of the match day follows every change (DRV-24)
-      if (this.manage() && this.teamId() === null) this.changed.emit();
     } catch (e) {
       this.error.set(errorText(e));
-      // The list may have changed meanwhile (e.g. car full): show the current state
+      // The list may have changed meanwhile: show the current state
       await this.load(this.eventId(), false);
     } finally {
       this.busy.set(null);
@@ -1073,7 +613,7 @@ export class DriverListSection {
   private async load(id: string, showLoading = true): Promise<void> {
     if (showLoading) this.loading.set(true);
     try {
-      this.data.set(await firstValueFrom(this.http.get<DriverList>(`/api/events/${id}/driver-list`)));
+      this.store.put(await firstValueFrom(this.http.get<DriverList>(`/api/events/${id}/driver-list`)));
     } catch (e) {
       if (showLoading) this.error.set(errorText(e));
     } finally {

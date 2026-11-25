@@ -54,6 +54,7 @@ public class MeResource {
         Person person = Person.findById(user.personId());
         Season season = Season.currentOrFail();
         return new MeDto(person.id, person.firstName, person.lastName, person.email, person.admin, user.coach(),
+                person.gender, person.birthYear,
                 SeasonDto.of(season, season), teams.mine(person.id, season), clock.nowWithOffset());
     }
 

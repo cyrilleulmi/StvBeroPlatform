@@ -123,7 +123,7 @@ public class DriverListService {
     public void addCar(CurrentUser user, UUID eventId, CarInput input) {
         Context c = writable(user, eventId);
         UUID driver = input.driverId() == null ? user.personId() : input.driverId();
-        DriverRules.checkCanActFor(user.personId(), driver, c.member(), c.canManage());
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         Person person = person(driver, "driverId");
         DriverRules.checkMember(c.isMember(driver), "driverId");
         DriverRules.checkNotDriving(carOf(eventId, driver).isPresent(), name(person));
@@ -151,7 +151,7 @@ public class DriverListService {
     public void changeSeats(CurrentUser user, UUID eventId, UUID carId, SeatsInput input) {
         Context c = writable(user, eventId);
         Car car = car(eventId, carId);
-        DriverRules.checkCanActFor(user.personId(), car.driver(), c.member(), c.canManage());
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         DriverRules.checkSeats(input.seats(), passengers(carId).size());
         if (input.seats() == car.seats()) {
             return;
@@ -168,7 +168,7 @@ public class DriverListService {
     public void removeCar(CurrentUser user, UUID eventId, UUID carId) {
         Context c = writable(user, eventId);
         Car car = car(eventId, carId);
-        DriverRules.checkCanActFor(user.personId(), car.driver(), c.member(), c.canManage());
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         List<UUID> passengers = passengers(carId);
         em.createNativeQuery("delete from car where id = ?").setParameter(1, carId).executeUpdate();
         String label = label(c.event());
@@ -206,14 +206,14 @@ public class DriverListService {
     // ------------------------------------------------------------------ Passengers
 
     /**
-     * Put a person into a car (DRV-03): for oneself every member, for others coaches and admins. Someone who sits
+     * Put a person into a car (DRV-03): every member of the team, for everyone of the team (DRV-32). Someone who sits
      * in another car moves. Already in this car: nothing changes.
      */
     @Transactional
     public void addPassenger(CurrentUser user, UUID eventId, UUID carId, UUID personId) {
         Context c = writable(user, eventId);
         Car car = car(eventId, carId);
-        DriverRules.checkCanActFor(user.personId(), personId, c.member(), c.canManage());
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         Person person = person(personId, "personId");
         DriverRules.checkMember(c.isMember(personId), "personId");
         DriverRules.checkNotDriver(carOf(eventId, personId).isPresent());
@@ -244,7 +244,7 @@ public class DriverListService {
     public void removePassenger(CurrentUser user, UUID eventId, UUID carId, UUID personId) {
         Context c = writable(user, eventId);
         Car car = car(eventId, carId);
-        DriverRules.checkCanActFor(user.personId(), personId, c.member(), c.canManage());
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         if (!passengers(carId).contains(personId)) {
             throw DomainError.notFound(DriverRules.NOT_IN_CAR);
         }
@@ -332,13 +332,11 @@ public class DriverListService {
 
     // ------------------------------------------------------------------ Proposal (DRV-19)
 
-    /** A proposed driver list for the match day; changes nothing. Coaches and admins. */
+    /** A proposed driver list for the match day; changes nothing. Every member of the team (DRV-32). */
     @Transactional
     public DriverProposalDto propose(CurrentUser user, UUID eventId) {
         Context c = writable(user, eventId);
-        if (!c.canManage()) {
-            throw DomainError.forbidden();
-        }
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         Event event = c.event();
         Map<UUID, Person> persons = new HashMap<>();
         c.members().forEach(m -> persons.put(m.person.id, m.person));
@@ -381,9 +379,7 @@ public class DriverListService {
     @Transactional
     public void applyProposal(CurrentUser user, UUID eventId, DriverProposalDto.Input input) {
         Context c = writable(user, eventId);
-        if (!c.canManage()) {
-            throw DomainError.forbidden();
-        }
+        DriverRules.checkCanArrange(c.member(), c.canManage());
         for (DriverProposalDto.CarEntry entry : input.cars()) {
             if (carOf(eventId, entry.driverId()).isEmpty()) {
                 addCar(user, eventId, new CarInput(entry.driverId(), entry.seats()));
@@ -643,11 +639,12 @@ public class DriverListService {
 
         boolean changeable = c.missing().isEmpty() && !cancelled && !event.season.isArchived()
                 && (event.end.isAfter(clock.now()) || c.canManage());
-        List<PersonSummary> members = c.canManage()
+        List<PersonSummary> members = changeable && (c.member() || c.canManage())
                 ? c.members().stream().map(m -> person.apply(m.person.id)).distinct().sorted(PersonSummary.ORDER).toList()
                 : null;
         return new DriverListDto(event.id, c.missing().isEmpty(), c.missing(), route, cancelled,
-                changeable && c.member(), changeable && c.canManage(), published, cars, withoutSeat, members,
+                changeable && c.member(), changeable && c.canManage(), changeable && (c.member() || c.canManage()),
+                published, cars, withoutSeat, members,
                 individual, DriverProposalRules.freeSeats(me == null ? DrivingDto.DEFAULT_CAR_SEATS : me.carSeats),
                 needSeat(c, seated).stream().map(person).sorted(PersonSummary.ORDER).toList());
     }

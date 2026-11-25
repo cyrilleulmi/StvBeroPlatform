@@ -27,7 +27,8 @@ public record SeriesInput(
         @NotNull @Pattern(regexp = EventRules.TIME_PATTERN, message = "Bitte eine Zeit im Format 18:30 angeben.") String startTime,
         @NotNull @Pattern(regexp = EventRules.TIME_PATTERN, message = "Bitte eine Zeit im Format 18:30 angeben.") String endTime,
         @NotNull LocalDate validFrom,
-        @NotNull LocalDate validUntil,
+        @Schema(nullable = true, description = "Last day of the series, optional: without it the series runs on and its events are created one year ahead (TER-22, TER-23)")
+        LocalDate validUntil,
         @Valid LocationDto location,
         @Min(value = 0, message = EventRules.MIN_RESPONSE_DEADLINE_TEXT)
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,

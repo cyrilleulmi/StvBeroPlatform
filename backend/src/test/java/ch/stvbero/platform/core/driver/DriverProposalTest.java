@@ -200,9 +200,10 @@ class DriverProposalTest {
     }
 
     @Test
-    void drv19OnlyCoachesAndAdminsProposeAndApply() {
-        propose(login("anna"), T04).statusCode(403);
-        apply(login("anna"), T04, "{\"cars\":[]}").statusCode(403);
+    void drv19MembersCoachesAndAdminsProposeAndApply() {
+        // «Alle verteilen» in «Plätze zuweisen»: every member of the team (DRV-32)
+        propose(login("anna"), T04).statusCode(200);
+        apply(login("anna"), T04, "{\"cars\":[]}").statusCode(200);
         propose(login("eva"), T04).statusCode(403);
         propose(login("petra"), T01).statusCode(409);
         // A car that would be too full is refused, and nothing of the request is entered

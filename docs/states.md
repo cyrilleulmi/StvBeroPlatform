@@ -83,10 +83,11 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Active: created, generates events within the validity period
+    [*] --> Active: created, generates events one year ahead (TER-22)
     Active --> Active: changed, affects future events (TER-08)
     Active --> Active: exception added (TER-07)
-    Active --> Ended: validity expired
+    Active --> Active: time goes on, the missing events are created (TER-22)
+    Active --> Ended: last day reached, or ended (TER-20, TER-23)
     Ended --> [*]
 ```
 
@@ -99,7 +100,8 @@ This is an assumption.
 
 | Rule | Reference |
 |---|---|
-| Creating generates an event for every weekday in the validity period that has not started yet. The period is at most one year (400). | TER-05 |
+| Creating generates an event for every weekday in the validity period that has not started yet, up to one year from today. The last day is optional: without it the series runs on; a last day before the first one is refused (400). | TER-05, TER-22, TER-23 |
+| As time goes on the events that are missing are created, so they always exist one year ahead: the days after the day up to which the series has its events (`eventsUntil`), up to its last day at most. A job runs every six hours (in test mode also right after the clock is set). Excluded days stay excluded; an event that was removed does not come back; a series is not ended by the end of its season. An upcoming event whose day lies outside its season (created before the season of its day existed) moves into the season of its day as soon as that season has all teams of the event. | TER-22 |
 | An exception affects future **planned** events of the series whose date lies within the period (including individually rescheduled ones). Cancelled ones stay. | TER-07 |
 | Changing affects only future events: planned events that were not changed individually take over the new details (responses stay, `rescheduled` is not set). New dates get an event. Events whose date no longer fits the series are removed or cancelled as with an exception (reason «Serie geändert»). Past, cancelled and individually changed events stay. | TER-08 |
 | Permissions as for events. Viewing: members of the series' teams, coaches and admins (403). | TER-11, RR-06 |

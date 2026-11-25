@@ -468,6 +468,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everyone of the club with their teams in a season and in the season before (PTF-16, admin, coach)
+         * @description The table behind the page «Teamzuteilung» and the step «Personen» of the assistant «Neues Team». The
+         *     columns are the teams of the season and, after them, the teams of the season before that are not part of
+         *     it yet (`inSeason: false`): such a team joins the season with its first member.
+         */
+        get: operations["listTeamMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-memberships/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put several people into teams and take several out at once (PTF-17, admin, coach)
+         * @description All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
+         *     to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
+         */
+        post: operations["changeTeamMemberships"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/members": {
         parameters: {
             query?: never;
@@ -510,7 +553,7 @@ export interface paths {
         put: operations["changeTeamRole"];
         post?: never;
         /**
-         * Remove a person from the team (admin only, RR-08). Existing responses are kept.
+         * Take a person out of the team (admin, coach, E-103). Existing responses are kept.
          * @description Archived seasons are read-only (409, SAI-02).
          */
         delete: operations["removeMember"];
@@ -825,7 +868,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * The series of a team in a season with their upcoming events (TER-18)
+         * @description Everyone who may see the team (otherwise 403). Series with upcoming events come first, then by weekday and
+         *     start. `canEdit` says whether the caller may change the series (coach of a team of the series, admin; not in
+         *     an archived season). Without `team`: 400.
+         */
+        get: operations["listTeamSeries"];
         put?: never;
         /**
          * Create a series; creates the events in the validity period (TER-05, coach)
@@ -858,6 +907,75 @@ export interface paths {
          */
         put: operations["updateSeries"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a change of the series would do to its upcoming events; changes nothing (TER-19, coach)
+         * @description Counts as `updateSeries` would act: upcoming events that take over new details (`adjusted`, only those that
+         *     really change), new events, events that no longer fit and are removed (nobody has responded) or cancelled
+         *     (someone has responded; everyone is notified), and upcoming events changed by hand or cancelled before, which
+         *     stay as they are. Past events never change. Same permissions and validation as `updateSeries`.
+         */
+        post: operations["previewSeriesChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/end/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Which upcoming events ending the series would remove or cancel; changes nothing (TER-20, coach) */
+        post: operations["previewSeriesEnd"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/series/{seriesId}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End a series from a day on (TER-20, coach)
+         * @description The planned upcoming events of the series from `from` on are removed, or cancelled («Serie beendet») if
+         *     someone has responded, also events changed by hand; everyone of a cancelled event is notified. Past events
+         *     stay. The series ends the day before `from` (never later than before); ended before it began, it keeps no
+         *     day at all. Archived season: 409.
+         */
+        post: operations["endSeries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1238,8 +1356,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Enter a car: oneself, or someone else as coach or admin (DRV-02)
-         * @description Without `driverId` the caller drives. Someone else: only coaches and admins (otherwise 403). The driver must be
+         * Enter a car: any member of the team for anyone of the team (DRV-02, DRV-32)
+         * @description Without `driverId` the caller drives. Someone else: every member of the team, coaches and admins (DRV-32; otherwise 403). The driver must be
          *     a member of a team of the match day (422, rule DRV-02) and drives at most one car (409, rule DRV-02). If she
          *     sat in another car, she leaves that seat. Not usable (meeting point or venue missing, DRV-01), cancelled
          *     (DRV-10), archived season: 409. After the end of the match day only coaches and admins (409, rule DRV-02).
@@ -1265,14 +1383,14 @@ export interface paths {
         get?: never;
         /**
          * Change the number of seats of a car (DRV-02, DRV-03)
-         * @description The driver herself, coaches and admins. Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
+         * @description Every member of the team, coaches and admins (DRV-32). Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
          *     `addCar`. Notifies the driver if someone else changed it (DRV-11).
          */
         put: operations["changeCarSeats"];
         post?: never;
         /**
          * Remove a car; its passengers lose their seat (DRV-02, DRV-11)
-         * @description The driver herself, coaches and admins. The passengers are notified, and the driver if someone else removed
+         * @description Every member of the team, coaches and admins (DRV-32). The passengers are notified, and the driver if someone else removed
          *     the car (DRV-11). Same 409 cases as `addCar`.
          */
         delete: operations["removeCar"];
@@ -1295,7 +1413,7 @@ export interface paths {
         get?: never;
         /**
          * Put a person into a car, or move her from another car (DRV-03)
-         * @description Oneself: every member of a team of the match day. Someone else: coaches and admins (otherwise 403). A person
+         * @description Every member of a team of the match day, for herself and for others (DRV-32); coaches and admins too (otherwise 403). A person
          *     sits in at most one car: from another car she moves. Already in this car: no change. Car full: 409 (rule
          *     DRV-03). A driver cannot ride along (422, rule DRV-03); not a member: 422 (rule DRV-02). Notifies the driver
          *     (and the previous driver when moving) and, if someone else made the change, the passenger (DRV-11).
@@ -1304,7 +1422,7 @@ export interface paths {
         post?: never;
         /**
          * Take a person out of a car (DRV-03)
-         * @description Oneself, or someone else as coach or admin. Not in this car: 404. Notifies the driver and, if someone else
+         * @description Every member of the team, for herself and for others (DRV-32); coaches and admins too. Not in this car: 404. Notifies the driver and, if someone else
          *     made the change, the passenger (DRV-11).
          */
         delete: operations["removePassenger"];
@@ -1424,8 +1542,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, coach)
-         * @description Only coaches and admins (otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
+         * Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, DRV-32)
+         * @description Every member of the team, coaches and admins (DRV-32; otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
          *     responded «dabei», without those who travel on their own (DRV-20). Existing cars stay and are filled
          *     first. Further drivers are chosen among these people if they can drive (DRV-18), the one with the fewest
          *     trips in the season first, then by name; each brings her usual places minus herself. Only as many cars as
@@ -1451,8 +1569,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Enter a proposed driver list (DRV-19, coach)
-         * @description Only coaches and admins (otherwise 403). Per entry: the car of the driver is created with `seats` if she
+         * Enter a proposed driver list (DRV-19, DRV-32)
+         * @description Every member of the team, coaches and admins (DRV-32; otherwise 403). Per entry: the car of the driver is created with `seats` if she
          *     has none, then the passengers are put into it. Every rule of the driver list applies (DRV-02, DRV-03); if
          *     one entry is refused, nothing is entered. The people affected are notified as usual (DRV-11).
          */
@@ -1537,7 +1655,13 @@ export interface paths {
          *     otherwise).
          */
         post: operations["planDriver"];
-        delete?: never;
+        /**
+         * Remove every driver of the upcoming match days (DRV-33, coach)
+         * @description Removes the cars of all match days of the team in the season that are neither over nor cancelled; their
+         *     passengers lose their seats. Every driver and passenger affected gets one notification. Match days that
+         *     are over keep their cars. Coaches (of any team) and admins; otherwise 403.
+         */
+        delete: operations["removeAllPlannedDrivers"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1618,6 +1742,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/driver-plan/distribute/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose a fair distribution of the trips that are still missing; changes nothing (DRV-30, coach)
+         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+         *     until its cars have a place for everyone who is expected (`expected`, drivers included). Drivers who are
+         *     entered stay and count; the proposal only adds. The next driver is the member who can drive (DRV-18) with
+         *     the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not
+         *     driven for longer, then by name; nobody who responded «nicht dabei» to the match day. Each proposed trip
+         *     has the usual seats of its driver. Nothing is entered: the page shows the proposal, and
+         *     `distributeDriverPlan` enters it. Coaches (of any team) and admins; otherwise 403.
+         */
+        post: operations["previewDriverPlanDistribution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/driver-plan/distribute": {
         parameters: {
             query?: never;
@@ -1630,15 +1782,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Share the trips of the upcoming match days fairly (DRV-30, coach)
-         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
-         *     until its cars have a place for everyone who is expected (`expected`, drivers included). The next driver
-         *     is the member who can drive (DRV-18) with the fewest trips in the season (done and planned), then with
-         *     fewer kilometres, then the one who has not driven for longer, then by name; nobody who responded «nicht
-         *     dabei» to the match day. Each new car has the usual seats of its driver. With `replace: true` the cars of
-         *     those match days are removed first, except cars with passengers; with `false` cars that are entered stay
-         *     and only missing drivers are added. Every driver whose trips changed gets one notification. Coaches (of
-         *     any team) and admins; otherwise 403.
+         * Enter the trips of a proposed distribution (DRV-30, coach)
+         * @description Enters the trips as they are, usually the ones `previewDriverPlanDistribution` proposed. They stay: a
+         *     later distribution only adds trips that are missing. If one trip cannot be entered (the match day is over,
+         *     cancelled, at home or not ready, the person is not in the team or cannot drive, or she already drives on
+         *     that match day), nothing is entered (409, rule DRV-30). Every new driver gets one notification. Coaches
+         *     (of any team) and admins; otherwise 403.
          */
         post: operations["distributeDriverPlan"];
         delete?: never;
@@ -2565,12 +2714,29 @@ export interface components {
             /** Format: email */
             email?: string | null;
             admin: boolean;
+            gender?: components["schemas"]["Gender"] | null;
+            /**
+             * Format: int32
+             * @description Year of birth («Jahrgang»), optional (PTF-15)
+             */
+            birthYear?: number | null;
         };
+        /**
+         * @description Optional, to sort and filter people when they are put into a team (PTF-15)
+         * @enum {string}
+         */
+        Gender: "FEMALE" | "MALE";
         PersonInput: {
             firstName: string;
             lastName: string;
             /** Format: email */
             email?: string | null;
+            gender?: components["schemas"]["Gender"] | null;
+            /**
+             * Format: int32
+             * @description Year of birth («Jahrgang»), optional (PTF-15); missing or null: not given
+             */
+            birthYear?: number | null;
             /** @description Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69). */
             admin?: boolean;
         };
@@ -2777,6 +2943,78 @@ export interface components {
             /** Format: uuid */
             personId: string;
             teamRole: components["schemas"]["TeamRole"];
+        };
+        /** @description Who is in which team, for the whole club in one season (PTF-16) */
+        MembershipOverview: {
+            season: components["schemas"]["Season"];
+            /** @description The season before, to see where someone was and move people on; missing for the first season */
+            previousSeason?: components["schemas"]["Season"] | null;
+            /** @description Teams of the season by name, then the teams of the season before that are not in this season yet */
+            teams: components["schemas"]["MembershipTeam"][];
+            /** @description Teams of the season before with their names of that time */
+            previousTeams: components["schemas"]["MembershipTeam"][];
+            /** @description Every person of the club, by last name */
+            people: components["schemas"]["MembershipRow"][];
+            /** @description The caller may take people out of a team (admins and coaches, E-103) */
+            canRemove: boolean;
+            /** @description The season can be changed (not archived, SAI-02) */
+            writable: boolean;
+        };
+        MembershipTeam: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description The team is part of the season; otherwise it joins with its first member */
+            inSeason: boolean;
+        };
+        MembershipRow: {
+            person: components["schemas"]["Person"];
+            /** @description Teams of the person in the season */
+            teams: components["schemas"]["MembershipEntry"][];
+            /** @description Teams of the person in the season before */
+            previousTeams: components["schemas"]["MembershipEntry"][];
+        };
+        MembershipEntry: {
+            /** Format: uuid */
+            teamId: string;
+            teamRole: components["schemas"]["TeamRole"];
+        };
+        /** @description Several changes of team memberships at once, e.g. a whole year of juniors moving on (PTF-17) */
+        MembershipBatchInput: {
+            /** @description People to put into a team; someone who is in it with another team role gets the new one */
+            add?: components["schemas"]["MembershipAdd"][] | null;
+            /** @description People to take out of a team; someone who is not in it is skipped */
+            remove?: components["schemas"]["MembershipRemove"][] | null;
+        };
+        MembershipAdd: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            personId: string;
+            teamRole: components["schemas"]["TeamRole"];
+        };
+        MembershipRemove: {
+            /** Format: uuid */
+            teamId: string;
+            /** Format: uuid */
+            personId: string;
+        };
+        MembershipBatchResult: {
+            /**
+             * Format: int32
+             * @description People newly in a team
+             */
+            added: number;
+            /**
+             * Format: int32
+             * @description Team roles changed
+             */
+            changed: number;
+            /**
+             * Format: int32
+             * @description People removed from a team
+             */
+            removed: number;
         };
         Group: {
             /** Format: uuid */
@@ -3059,6 +3297,11 @@ export interface components {
             /** @description All teams of the series by name, with the name in the season of the series (TER-11) */
             teams: components["schemas"]["Team"][];
             exceptions: components["schemas"]["SeriesException"][];
+            /**
+             * Format: date
+             * @description The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)
+             */
+            eventsUntil?: string | null;
         };
         SeriesInput: {
             /** @enum {string} */
@@ -3074,8 +3317,11 @@ export interface components {
             endTime: string;
             /** Format: date */
             validFrom: string;
-            /** Format: date */
-            validUntil: string;
+            /**
+             * Format: date
+             * @description Last day of the series, optional: without it the series runs on, and its events are created one year ahead as time goes on (TER-22, TER-23)
+             */
+            validUntil?: string | null;
             location?: components["schemas"]["Location"] | null;
             /**
              * @description Hours before the start (TER-09, TER-10)
@@ -3086,6 +3332,63 @@ export interface components {
             attendanceCheck?: boolean;
             /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
             optionalTeamIds?: string[] | null;
+        };
+        /** @description A series of a team with its upcoming events (TER-18) */
+        SeriesOverview: {
+            series: components["schemas"]["Series"];
+            /**
+             * Format: int32
+             * @description Upcoming events of the series that are not cancelled
+             */
+            upcoming: number;
+            /**
+             * Format: date-time
+             * @description Start of the next upcoming event; missing without one
+             */
+            next?: string;
+            /** @description The caller may change the series (coach of a team of the series, admin) */
+            canEdit: boolean;
+        };
+        /** @description What a change would do to the upcoming events, without changing anything (TER-19, TER-20) */
+        SeriesPreview: {
+            /**
+             * Format: int32
+             * @description Upcoming events that take over the new details; responses stay
+             */
+            adjusted: number;
+            /**
+             * Format: int32
+             * @description New events
+             */
+            created: number;
+            /**
+             * Format: int32
+             * @description Upcoming events that no longer fit and are removed (nobody has responded)
+             */
+            removed: number;
+            /**
+             * Format: int32
+             * @description Upcoming events that no longer fit and are cancelled, because someone has responded; everyone is notified
+             */
+            cancelled: number;
+            /**
+             * Format: int32
+             * @description Upcoming events changed by hand or cancelled before: they stay as they are
+             */
+            keptAsTheyAre: number;
+            /**
+             * Format: date
+             * @description First day that changes; missing if nothing changes
+             */
+            from?: string;
+        };
+        /** @description End a series from a day on (TER-20) */
+        SeriesEndInput: {
+            /**
+             * Format: date
+             * @description From this day on the series has no events any more
+             */
+            from: string;
         };
         SeriesException: {
             /** Format: date */
@@ -3675,15 +3978,17 @@ export interface components {
             cancelled: boolean;
             /** @description The caller can enter herself as driver or passenger right now */
             canJoin: boolean;
-            /** @description Coach or admin: enters and changes drivers and passengers for others, route by hand */
+            /** @description Coach or admin: route and kilometres by hand, travelling on one's own for others */
             canManage: boolean;
+            /** @description The caller arranges the cars right now: enters and removes drivers, seats, puts people into cars, for everyone of the team (DRV-32) */
+            canArrange: boolean;
             /** @description The call-up is published: «without seat» counts the called-up players (DRV-04) */
             callUpPublished: boolean;
             /** @description By name of the driver */
             cars: components["schemas"]["Car"][];
             /** @description Called-up players (or «dabei» without published call-up) without a seat, by name (DRV-04) */
             withoutSeat: components["schemas"]["PersonSummary"][];
-            /** @description Members of the teams of the match day, by name; only for coaches and admins */
+            /** @description Members of the teams of the match day, by name; only when the caller can arrange the cars (DRV-32) */
             members?: components["schemas"]["PersonSummary"][];
             /** @description People who travel on their own and need no seat, by name (DRV-20) */
             individual: components["schemas"]["PersonSummary"][];
@@ -3841,10 +4146,34 @@ export interface components {
              */
             replaces?: string | null;
         };
-        /** @description Share the trips of the upcoming match days fairly (DRV-30) */
+        /** @description A fair distribution of the trips that are still missing, as a proposal: nothing is entered yet (DRV-30) */
+        DriverPlanDistribution: {
+            /** @description Proposed trips, by match day and then by name */
+            trips: components["schemas"]["DriverPlanProposedTrip"][];
+        };
+        /** @description A trip the distribution proposes */
+        DriverPlanProposedTrip: {
+            /** Format: uuid */
+            eventId: string;
+            driver: components["schemas"]["PersonSummary"];
+            /**
+             * Format: int32
+             * @description Seats for passengers: the places of her car minus herself (DRV-18)
+             */
+            seats: number;
+        };
+        /** @description Enter the proposed trips (DRV-30); they are entered as they are and stay */
         DriverPlanDistributeInput: {
-            /** @description `true`: plan the upcoming match days anew (cars with passengers stay); `false`: only add the drivers that are missing */
-            replace: boolean;
+            trips: components["schemas"]["DriverPlanTripEntry"][];
+        };
+        /** @description One trip of a distribution that is entered */
+        DriverPlanTripEntry: {
+            /** Format: uuid */
+            eventId: string;
+            /** Format: uuid */
+            driverId: string;
+            /** Format: int32 */
+            seats: number;
         };
         /** @description Sum of all shares (DRV-27) */
         DriverPlanTotals: {
@@ -3977,6 +4306,11 @@ export interface components {
              * @description One-way distance, if a route is known
              */
             distanceKm?: number;
+            /**
+             * Format: double
+             * @description Credit of one trip, there and back, to the meter (DRV-05), so proposed trips add up like the totals; missing without distance or if cancelled
+             */
+            creditKm?: number;
             /** Format: int32 */
             durationMinutes?: number;
             /** @description Drivers can be entered right now by the caller */
@@ -5110,6 +5444,63 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    listTeamMemberships: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipOverview"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeTeamMemberships: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipBatchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     addMember: {
         parameters: {
             query?: {
@@ -5793,6 +6184,33 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    listTeamSeries: {
+        parameters: {
+            query: {
+                team: string;
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesOverview"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     createSeries: {
         parameters: {
             query?: never;
@@ -5860,6 +6278,94 @@ export interface operations {
         };
         responses: {
             /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Series"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    previewSeriesChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    previewSeriesEnd: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesEndInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesPreview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    endSeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: components["parameters"]["seriesId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesEndInput"];
+            };
+        };
+        responses: {
+            /** @description The series after the change */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6790,6 +7296,33 @@ export interface operations {
             422: components["responses"]["RuleViolation"];
         };
     };
+    removeAllPlannedDrivers: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     setDriverPlanExpected: {
         parameters: {
             query?: {
@@ -6889,6 +7422,33 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    previewDriverPlanDistribution: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposed trips */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlanDistribution"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     distributeDriverPlan: {
         parameters: {
             query?: {
@@ -6919,6 +7479,8 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["RuleViolation"];
         };
     };
     startDriverSwap: {

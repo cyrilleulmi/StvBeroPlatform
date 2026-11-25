@@ -650,6 +650,51 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/team-memberships:
+    get:
+      tags: [Teams]
+      operationId: listTeamMemberships
+      summary: Everyone of the club with their teams in a season and in the season before (PTF-16, admin, coach)
+      description: |
+        The table behind the page «Teamzuteilung» and the step «Personen» of the assistant «Neues Team». The
+        columns are the teams of the season and, after them, the teams of the season before that are not part of
+        it yet (`inSeason: false`): such a team joins the season with its first member.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembershipOverview' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/team-memberships/batch:
+    post:
+      tags: [Teams]
+      operationId: changeTeamMemberships
+      summary: Put several people into teams and take several out at once (PTF-17, admin, coach)
+      description: |
+        All or nothing. Someone who is already in the team with another team role gets the new one; someone who is
+        to be removed and is not in the team is skipped. Archived seasons are read-only (409, SAI-02).
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MembershipBatchInput' }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembershipBatchResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/teams/{teamId}/members:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -712,7 +757,7 @@ paths:
     delete:
       tags: [Teams]
       operationId: removeMember
-      summary: Remove a person from the team (admin only, RR-08). Existing responses are kept.
+      summary: Take a person out of the team (admin, coach, E-103). Existing responses are kept.
       description: Archived seasons are read-only (409, SAI-02).
       parameters:
         - $ref: '#/components/parameters/season'
@@ -1189,6 +1234,31 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
 
   /api/series:
+    get:
+      tags: [Events]
+      operationId: listTeamSeries
+      summary: The series of a team in a season with their upcoming events (TER-18)
+      description: |
+        Everyone who may see the team (otherwise 403). Series with upcoming events come first, then by weekday and
+        start. `canEdit` says whether the caller may change the series (coach of a team of the series, admin; not in
+        an archived season). Without `team`: 400.
+      parameters:
+        - name: team
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SeriesOverview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [Events]
       operationId: createSeries
@@ -1241,6 +1311,80 @@ paths:
       responses:
         '200':
           description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Series' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/series/{seriesId}/preview:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: previewSeriesChange
+      summary: What a change of the series would do to its upcoming events; changes nothing (TER-19, coach)
+      description: |
+        Counts as `updateSeries` would act: upcoming events that take over new details (`adjusted`, only those that
+        really change), new events, events that no longer fit and are removed (nobody has responded) or cancelled
+        (someone has responded; everyone is notified), and upcoming events changed by hand or cancelled before, which
+        stay as they are. Past events never change. Same permissions and validation as `updateSeries`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeriesPreview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/series/{seriesId}/end/preview:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: previewSeriesEnd
+      summary: Which upcoming events ending the series would remove or cancel; changes nothing (TER-20, coach)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesEndInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeriesPreview' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/series/{seriesId}/end:
+    parameters:
+      - $ref: '#/components/parameters/seriesId'
+    post:
+      tags: [Events]
+      operationId: endSeries
+      summary: End a series from a day on (TER-20, coach)
+      description: |
+        The planned upcoming events of the series from `from` on are removed, or cancelled («Serie beendet») if
+        someone has responded, also events changed by hand; everyone of a cancelled event is notified. Past events
+        stay. The series ends the day before `from` (never later than before); ended before it began, it keeps no
+        day at all. Archived season: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeriesEndInput' }
+      responses:
+        '200':
+          description: The series after the change
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Series' }
@@ -1649,9 +1793,9 @@ paths:
     post:
       tags: [DriverList]
       operationId: addCar
-      summary: 'Enter a car: oneself, or someone else as coach or admin (DRV-02)'
+      summary: 'Enter a car: any member of the team for anyone of the team (DRV-02, DRV-32)'
       description: |
-        Without `driverId` the caller drives. Someone else: only coaches and admins (otherwise 403). The driver must be
+        Without `driverId` the caller drives. Someone else: every member of the team, coaches and admins (DRV-32; otherwise 403). The driver must be
         a member of a team of the match day (422, rule DRV-02) and drives at most one car (409, rule DRV-02). If she
         sat in another car, she leaves that seat. Not usable (meeting point or venue missing, DRV-01), cancelled
         (DRV-10), archived season: 409. After the end of the match day only coaches and admins (409, rule DRV-02).
@@ -1681,7 +1825,7 @@ paths:
       operationId: changeCarSeats
       summary: Change the number of seats of a car (DRV-02, DRV-03)
       description: |
-        The driver herself, coaches and admins. Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
+        Every member of the team, coaches and admins (DRV-32). Fewer seats than passengers: 422 (rule DRV-03). Same 409 cases as
         `addCar`. Notifies the driver if someone else changed it (DRV-11).
       requestBody:
         required: true
@@ -1704,7 +1848,7 @@ paths:
       operationId: removeCar
       summary: Remove a car; its passengers lose their seat (DRV-02, DRV-11)
       description: |
-        The driver herself, coaches and admins. The passengers are notified, and the driver if someone else removed
+        Every member of the team, coaches and admins (DRV-32). The passengers are notified, and the driver if someone else removed
         the car (DRV-11). Same 409 cases as `addCar`.
       responses:
         '200':
@@ -1725,7 +1869,7 @@ paths:
       operationId: addPassenger
       summary: Put a person into a car, or move her from another car (DRV-03)
       description: |
-        Oneself: every member of a team of the match day. Someone else: coaches and admins (otherwise 403). A person
+        Every member of a team of the match day, for herself and for others (DRV-32); coaches and admins too (otherwise 403). A person
         sits in at most one car: from another car she moves. Already in this car: no change. Car full: 409 (rule
         DRV-03). A driver cannot ride along (422, rule DRV-03); not a member: 422 (rule DRV-02). Notifies the driver
         (and the previous driver when moving) and, if someone else made the change, the passenger (DRV-11).
@@ -1744,7 +1888,7 @@ paths:
       operationId: removePassenger
       summary: Take a person out of a car (DRV-03)
       description: |
-        Oneself, or someone else as coach or admin. Not in this car: 404. Notifies the driver and, if someone else
+        Every member of the team, for herself and for others (DRV-32); coaches and admins too. Not in this car: 404. Notifies the driver and, if someone else
         made the change, the passenger (DRV-11).
       responses:
         '200':
@@ -1882,9 +2026,9 @@ paths:
     post:
       tags: [DriverList]
       operationId: proposeDriverList
-      summary: 'Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, coach)'
+      summary: 'Propose a driver list: who drives and who rides with whom; changes nothing (DRV-19, DRV-32)'
       description: |
-        Only coaches and admins (otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
+        Every member of the team, coaches and admins (DRV-32; otherwise 403). Seated are the players without a seat (DRV-04) and the coaches who
         responded «dabei», without those who travel on their own (DRV-20). Existing cars stay and are filled
         first. Further drivers are chosen among these people if they can drive (DRV-18), the one with the fewest
         trips in the season first, then by name; each brings her usual places minus herself. Only as many cars as
@@ -1905,9 +2049,9 @@ paths:
     post:
       tags: [DriverList]
       operationId: applyDriverProposal
-      summary: Enter a proposed driver list (DRV-19, coach)
+      summary: Enter a proposed driver list (DRV-19, DRV-32)
       description: |
-        Only coaches and admins (otherwise 403). Per entry: the car of the driver is created with `seats` if she
+        Every member of the team, coaches and admins (DRV-32; otherwise 403). Per entry: the car of the driver is created with `seats` if she
         has none, then the passengers are put into it. Every rule of the driver list applies (DRV-02, DRV-03); if
         one entry is refused, nothing is entered. The people affected are notified as usual (DRV-11).
       requestBody:
@@ -2004,6 +2148,24 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/RuleViolation' }
+    delete:
+      tags: [DriverList]
+      operationId: removeAllPlannedDrivers
+      summary: Remove every driver of the upcoming match days (DRV-33, coach)
+      description: |
+        Removes the cars of all match days of the team in the season that are neither over nor cancelled; their
+        passengers lose their seats. Every driver and passenger affected gets one notification. Match days that
+        are over keep their cars. Coaches (of any team) and admins; otherwise 403.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/driver-plan/expected:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -2089,22 +2251,44 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/teams/{teamId}/driver-plan/distribute/preview:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+    post:
+      tags: [DriverList]
+      operationId: previewDriverPlanDistribution
+      summary: Propose a fair distribution of the trips that are still missing; changes nothing (DRV-30, coach)
+      description: |
+        Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+        until its cars have a place for everyone who is expected (`expected`, drivers included). Drivers who are
+        entered stay and count; the proposal only adds. The next driver is the member who can drive (DRV-18) with
+        the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not
+        driven for longer, then by name; nobody who responded «nicht dabei» to the match day. Each proposed trip
+        has the usual seats of its driver. Nothing is entered: the page shows the proposal, and
+        `distributeDriverPlan` enters it. Coaches (of any team) and admins; otherwise 403.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      responses:
+        '200':
+          description: The proposed trips
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlanDistribution' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/driver-plan/distribute:
     parameters:
       - $ref: '#/components/parameters/teamId'
     post:
       tags: [DriverList]
       operationId: distributeDriverPlan
-      summary: Share the trips of the upcoming match days fairly (DRV-30, coach)
+      summary: Enter the trips of a proposed distribution (DRV-30, coach)
       description: |
-        Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
-        until its cars have a place for everyone who is expected (`expected`, drivers included). The next driver
-        is the member who can drive (DRV-18) with the fewest trips in the season (done and planned), then with
-        fewer kilometres, then the one who has not driven for longer, then by name; nobody who responded «nicht
-        dabei» to the match day. Each new car has the usual seats of its driver. With `replace: true` the cars of
-        those match days are removed first, except cars with passengers; with `false` cars that are entered stay
-        and only missing drivers are added. Every driver whose trips changed gets one notification. Coaches (of
-        any team) and admins; otherwise 403.
+        Enters the trips as they are, usually the ones `previewDriverPlanDistribution` proposed. They stay: a
+        later distribution only adds trips that are missing. If one trip cannot be entered (the match day is over,
+        cancelled, at home or not ready, the person is not in the team or cannot drive, or she already drives on
+        that match day), nothing is entered (409, rule DRV-30). Every new driver gets one notification. Coaches
+        (of any team) and admins; otherwise 403.
       parameters:
         - $ref: '#/components/parameters/season'
       requestBody:
@@ -2121,7 +2305,8 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
-
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/RuleViolation' }
   # ---------------------------------------------------------------- Statistics
   /api/teams/{teamId}/driver-plan/swaps:
     parameters:
@@ -3200,6 +3385,15 @@ components:
           properties:
             email: { type: [string, 'null'], format: email }
             admin: { type: boolean }
+            gender:
+              oneOf:
+                - $ref: '#/components/schemas/Gender'
+                - type: 'null'
+            birthYear: { type: [integer, 'null'], format: int32, description: 'Year of birth («Jahrgang»), optional (PTF-15)' }
+    Gender:
+      type: string
+      enum: [FEMALE, MALE]
+      description: 'Optional, to sort and filter people when they are put into a team (PTF-15)'
     PersonInput:
       type: object
       required: [firstName, lastName]
@@ -3207,6 +3401,11 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 60 }
         lastName: { type: string, minLength: 1, maxLength: 60 }
         email: { type: [string, 'null'], format: email }
+        gender:
+          oneOf:
+            - $ref: '#/components/schemas/Gender'
+            - type: 'null'
+        birthYear: { type: [integer, 'null'], format: int32, minimum: 1900, maximum: 2100, description: 'Year of birth («Jahrgang»), optional (PTF-15); missing or null: not given' }
         admin:
           type: boolean
           description: Only admins change it. Missing means «no admin» for admins and «unchanged» for coaches (RR-04, E-69).
@@ -3443,6 +3642,91 @@ components:
       properties:
         personId: { type: string, format: uuid }
         teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipOverview:
+      type: object
+      description: Who is in which team, for the whole club in one season (PTF-16)
+      required: [season, teams, previousTeams, people, canRemove, writable]
+      properties:
+        season: { $ref: '#/components/schemas/Season' }
+        previousSeason:
+          description: The season before, to see where someone was and move people on; missing for the first season
+          oneOf:
+            - $ref: '#/components/schemas/Season'
+            - type: 'null'
+        teams:
+          type: array
+          description: Teams of the season by name, then the teams of the season before that are not in this season yet
+          items: { $ref: '#/components/schemas/MembershipTeam' }
+        previousTeams:
+          type: array
+          description: Teams of the season before with their names of that time
+          items: { $ref: '#/components/schemas/MembershipTeam' }
+        people:
+          type: array
+          description: Every person of the club, by last name
+          items: { $ref: '#/components/schemas/MembershipRow' }
+        canRemove: { type: boolean, description: 'The caller may take people out of a team (admins and coaches, E-103)' }
+        writable: { type: boolean, description: 'The season can be changed (not archived, SAI-02)' }
+    MembershipTeam:
+      type: object
+      required: [id, name, inSeason]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        inSeason: { type: boolean, description: The team is part of the season; otherwise it joins with its first member }
+    MembershipRow:
+      type: object
+      required: [person, teams, previousTeams]
+      properties:
+        person: { $ref: '#/components/schemas/Person' }
+        teams:
+          type: array
+          description: Teams of the person in the season
+          items: { $ref: '#/components/schemas/MembershipEntry' }
+        previousTeams:
+          type: array
+          description: Teams of the person in the season before
+          items: { $ref: '#/components/schemas/MembershipEntry' }
+    MembershipEntry:
+      type: object
+      required: [teamId, teamRole]
+      properties:
+        teamId: { type: string, format: uuid }
+        teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipBatchInput:
+      type: object
+      description: Several changes of team memberships at once, e.g. a whole year of juniors moving on (PTF-17)
+      properties:
+        add:
+          type: [array, 'null']
+          maxItems: 500
+          description: People to put into a team; someone who is in it with another team role gets the new one
+          items: { $ref: '#/components/schemas/MembershipAdd' }
+        remove:
+          type: [array, 'null']
+          maxItems: 500
+          description: People to take out of a team; someone who is not in it is skipped
+          items: { $ref: '#/components/schemas/MembershipRemove' }
+    MembershipAdd:
+      type: object
+      required: [teamId, personId, teamRole]
+      properties:
+        teamId: { type: string, format: uuid }
+        personId: { type: string, format: uuid }
+        teamRole: { $ref: '#/components/schemas/TeamRole' }
+    MembershipRemove:
+      type: object
+      required: [teamId, personId]
+      properties:
+        teamId: { type: string, format: uuid }
+        personId: { type: string, format: uuid }
+    MembershipBatchResult:
+      type: object
+      required: [added, changed, removed]
+      properties:
+        added: { type: integer, format: int32, description: People newly in a team }
+        changed: { type: integer, format: int32, description: Team roles changed }
+        removed: { type: integer, format: int32, description: People removed from a team }
 
     Group:
       type: object
@@ -3829,9 +4113,13 @@ components:
             exceptions:
               type: array
               items: { $ref: '#/components/schemas/SeriesException' }
+            eventsUntil:
+              type: [string, 'null']
+              format: date
+              description: 'The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)'
     SeriesInput:
       type: object
-      required: [type, title, teamIds, weekday, startTime, endTime, validFrom, validUntil]
+      required: [type, title, teamIds, weekday, startTime, endTime, validFrom]
       properties:
         type:
           type: string
@@ -3848,7 +4136,10 @@ components:
         startTime: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['18:30'] }
         endTime: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['20:00'] }
         validFrom: { type: string, format: date }
-        validUntil: { type: string, format: date }
+        validUntil:
+          type: [string, 'null']
+          format: date
+          description: 'Last day of the series, optional: without it the series runs on, and its events are created one year ahead as time goes on (TER-22, TER-23)'
         location:
           oneOf:
             - $ref: '#/components/schemas/Location'
@@ -3864,6 +4155,32 @@ components:
             Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
             they like, are not reminded and do not count as «offen». At least one team stays expected (400)
           items: { type: string, format: uuid }
+    SeriesOverview:
+      type: object
+      description: A series of a team with its upcoming events (TER-18)
+      required: [series, upcoming, canEdit]
+      properties:
+        series: { $ref: '#/components/schemas/Series' }
+        upcoming: { type: integer, format: int32, description: Upcoming events of the series that are not cancelled }
+        next: { type: string, format: date-time, description: Start of the next upcoming event; missing without one }
+        canEdit: { type: boolean, description: 'The caller may change the series (coach of a team of the series, admin)' }
+    SeriesPreview:
+      type: object
+      description: What a change would do to the upcoming events, without changing anything (TER-19, TER-20)
+      required: [adjusted, created, removed, cancelled, keptAsTheyAre]
+      properties:
+        adjusted: { type: integer, format: int32, description: Upcoming events that take over the new details; responses stay }
+        created: { type: integer, format: int32, description: New events }
+        removed: { type: integer, format: int32, description: Upcoming events that no longer fit and are removed (nobody has responded) }
+        cancelled: { type: integer, format: int32, description: 'Upcoming events that no longer fit and are cancelled, because someone has responded; everyone is notified' }
+        keptAsTheyAre: { type: integer, format: int32, description: 'Upcoming events changed by hand or cancelled before: they stay as they are' }
+        from: { type: string, format: date, description: First day that changes; missing if nothing changes }
+    SeriesEndInput:
+      type: object
+      description: End a series from a day on (TER-20)
+      required: [from]
+      properties:
+        from: { type: string, format: date, description: From this day on the series has no events any more }
     SeriesException:
       type: object
       required: [startDate, endDate, reason]
@@ -4519,7 +4836,7 @@ components:
     DriverList:
       type: object
       description: Driver list of a match day (DRV-01 to DRV-10)
-      required: [eventId, ready, missing, cancelled, canJoin, canManage, callUpPublished, cars, withoutSeat, individual, defaultSeats, needSeat]
+      required: [eventId, ready, missing, cancelled, canJoin, canManage, canArrange, callUpPublished, cars, withoutSeat, individual, defaultSeats, needSeat]
       properties:
         eventId: { type: string, format: uuid }
         ready:
@@ -4540,7 +4857,10 @@ components:
           description: The caller can enter herself as driver or passenger right now
         canManage:
           type: boolean
-          description: 'Coach or admin: enters and changes drivers and passengers for others, route by hand'
+          description: "Coach or admin: route and kilometres by hand, travelling on one's own for others"
+        canArrange:
+          type: boolean
+          description: 'The caller arranges the cars right now: enters and removes drivers, seats, puts people into cars, for everyone of the team (DRV-32)'
         callUpPublished:
           type: boolean
           description: 'The call-up is published: «without seat» counts the called-up players (DRV-04)'
@@ -4554,7 +4874,7 @@ components:
           items: { $ref: '#/components/schemas/PersonSummary' }
         members:
           type: array
-          description: Members of the teams of the match day, by name; only for coaches and admins
+          description: Members of the teams of the match day, by name; only when the caller can arrange the cars (DRV-32)
           items: { $ref: '#/components/schemas/PersonSummary' }
         individual:
           type: array
@@ -4712,14 +5032,47 @@ components:
           type: [string, 'null']
           format: uuid
           description: 'Driver who hands her trip over; missing: one more car is entered'
+    DriverPlanDistribution:
+      type: object
+      description: 'A fair distribution of the trips that are still missing, as a proposal: nothing is entered yet (DRV-30)'
+      required: [trips]
+      properties:
+        trips:
+          type: array
+          description: Proposed trips, by match day and then by name
+          items: { $ref: '#/components/schemas/DriverPlanProposedTrip' }
+    DriverPlanProposedTrip:
+      type: object
+      description: A trip the distribution proposes
+      required: [eventId, driver, seats]
+      properties:
+        eventId: { type: string, format: uuid }
+        driver: { $ref: '#/components/schemas/PersonSummary' }
+        seats:
+          type: integer
+          format: int32
+          description: 'Seats for passengers: the places of her car minus herself (DRV-18)'
     DriverPlanDistributeInput:
       type: object
-      description: Share the trips of the upcoming match days fairly (DRV-30)
-      required: [replace]
+      description: Enter the proposed trips (DRV-30); they are entered as they are and stay
+      required: [trips]
       properties:
-        replace:
-          type: boolean
-          description: '`true`: plan the upcoming match days anew (cars with passengers stay); `false`: only add the drivers that are missing'
+        trips:
+          type: array
+          maxItems: 600
+          items: { $ref: '#/components/schemas/DriverPlanTripEntry' }
+    DriverPlanTripEntry:
+      type: object
+      description: One trip of a distribution that is entered
+      required: [eventId, driverId, seats]
+      properties:
+        eventId: { type: string, format: uuid }
+        driverId: { type: string, format: uuid }
+        seats:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 8
     DriverPlanTotals:
       type: object
       description: Sum of all shares (DRV-27)
@@ -4816,6 +5169,7 @@ components:
             type: string
             enum: [MEETING_POINT, VENUE]
         distanceKm: { type: number, format: double, description: 'One-way distance, if a route is known' }
+        creditKm: { type: number, format: double, description: 'Credit of one trip, there and back, to the meter (DRV-05), so proposed trips add up like the totals; missing without distance or if cancelled' }
         durationMinutes: { type: integer, format: int32 }
         changeable: { type: boolean, description: Drivers can be entered right now by the caller }
         cars:

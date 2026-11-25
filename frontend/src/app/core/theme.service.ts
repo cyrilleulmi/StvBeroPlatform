@@ -12,9 +12,9 @@ const ATTRIBUTE: Record<ThemeMode, string | null> = {
 
 /**
  * Theme (NF-06, NF-08): Hell, Dunkel or System. The choice stays stored in the browser.
- * «System» shows Hell in a light environment and Dunkel in a dark one. A stored theme that no longer
- * exists («dune», «github-dark», E-90) falls back to «System».
- * The inline script in index.html applies the choice before the start.
+ * Without a choice the app is Hell, also on a device in dark mode (E-100): Dunkel, or «System» that follows the
+ * device, has to be chosen in the profile. A stored theme that no longer exists («dune», «github-dark», E-90)
+ * falls back to Hell. The inline script in index.html applies the choice before the start.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -40,11 +40,12 @@ export class ThemeService {
     } else {
       html.removeAttribute('data-theme');
     }
-    const ownColor = mode === 'dark';
+    // Hell and Dunkel colour the browser bar themselves; «System» keeps the two values of index.html
+    const ownColor = mode !== 'system';
     this.setHeadColor(ownColor ? getComputedStyle(html).getPropertyValue('--bg') : null);
   }
 
-  /** Color of the browser or status bar: for Dunkel its background. */
+  /** Color of the browser or status bar: the background of Hell or Dunkel. */
   private setHeadColor(color: string | null): void {
     this.headColors ??= new Map(
       Array.from(document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')).map(
@@ -60,13 +61,13 @@ export class ThemeService {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
       // A value that no longer exists (e.g. the former German «hell», «duene» or «dunkel») falls
-      // back to «System».
+      // back to Hell.
       if (value !== null && Object.prototype.hasOwnProperty.call(ATTRIBUTE, value)) {
         return value as ThemeMode;
       }
     } catch {
       // nothing stored
     }
-    return 'system';
+    return 'light';
   }
 }

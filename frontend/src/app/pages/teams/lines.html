@@ -1,3 +1,4 @@
+@if (!embedded()) {
 <div class="header">
   <a class="back" [routerLink]="['/teams', teamId()]">{{
     team() ? texts.lines.backTo(team()!.name) : texts.common.back
@@ -7,6 +8,7 @@
     <p class="secondary-text">{{ t.name }}</p>
   }
 </div>
+}
 
 @if (loadError(); as message) {
   <p class="message-error" role="alert">{{ message }}</p>
@@ -49,7 +51,9 @@
   </div>
 
   <!-- Line-ups for special situations such as power play and penalty kill (LIN-13) -->
-  <app-special-lineups [teamId]="teamId()" />
+  @if (!embedded()) {
+    <app-special-lineups [teamId]="teamId()" />
+  }
 }
 
 <ng-template #groupTemplate let-g>

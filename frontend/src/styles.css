@@ -430,6 +430,21 @@ a {
   margin: 0;
 }
 
+/* Success after an action («… fährt nicht mehr.», «Gespeichert.») does not pop up: the change itself shows on the
+   page, and a box that appears and goes pushes everything below it (E-99). It stays a live region for screen
+   readers and tests (docs/testability.md, rule 6). Errors stay visible. */
+.message-success[role='status'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .message-notice {
   background: var(--mustard-soft);
   color: var(--text);
@@ -810,6 +825,22 @@ button:disabled,
   flex: none;
 }
 
+/* An event card in the colour of its kind (VAR-05, E-105): the court line along the top always, the tint
+   only for the next practice and the next match day (`data-filled`), the way the start screen marks what
+   comes next. The chip with the name of the kind sits on white, so it still reads as a chip. */
+.event-tint {
+  border-top: 4px solid var(--tag, var(--primary));
+}
+
+.event-tint[data-filled='true'] {
+  background: color-mix(in srgb, var(--tag-soft, var(--primary-soft)) 55%, var(--surface));
+}
+
+.event-tint .tag-chip {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--tag, var(--border));
+}
+
 /* ---- Entering and leaving (emil-design-eng) ---- */
 
 /* Dialogs are modal, so they stay centred: enter in 200ms from scale(0.96) and transparent, leave faster
@@ -857,7 +888,6 @@ dialog.dialog[open]::backdrop {
 }
 
 /* Saved, error and notice messages arrive instead of popping in: 200ms, 4px from above. */
-.message-success[role='status'],
 .message-error[role='alert'],
 .message-notice[role='status'],
 .feedback[role='status'] {
@@ -867,8 +897,7 @@ dialog.dialog[open]::backdrop {
 }
 
 @starting-style {
-  .message-success[role='status'],
-  .message-error[role='alert'],
+    .message-error[role='alert'],
   .message-notice[role='status'],
   .feedback[role='status'] {
     opacity: 0;

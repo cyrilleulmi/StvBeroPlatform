@@ -121,6 +121,8 @@ Every team has the four standard event variants (VAR-01) with their defaults, wi
 
 The **key** is used for `/dev-login` and `POST /api/test/login`.
 
+Gender and year of birth (PTF-15): Alex has neither; Marc is a man; everyone else is a woman. The year of birth is 1985 plus the number (Petra 1987, Marc 1988, … Vera 2002). In the club data set the players have the gender of their team, adults are born 1988 to 2004 and juniors two years per team (Junioren A 2006/07 down to Junioren E 2014/15).
+
 | No. | Key | Name | Team 1 | Team 2 | Team 3 | Admin |
 |---|---|---|---|---|---|---|
 | 01 | `alex` | Alex Admin | – | – | – | ✓ |
@@ -150,6 +152,8 @@ Special cases:
 - **Kim** joined Team 1 on 01.10.2026 (F-15); all other memberships count from the start of their season.
 
 ## Series
+
+The three series end on a fixed day (TER-23), so the app creates no further events for them (TER-22).
 
 | No. | Series | Teams | Period | Exception |
 |---|---|---|---|---|

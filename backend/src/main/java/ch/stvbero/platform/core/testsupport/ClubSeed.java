@@ -214,6 +214,7 @@ public class ClubSeed {
         for (Player p : players) {
             person(p.nr(), p.firstName(), p.lastName(), false, keys);
         }
+        genderAndBirthYear(players);
 
         for (ClubTeam team : TEAMS) {
             sql("insert into team (id, meeting_point_location) values (?, ?)", Seed.teamId(team.nr()), HOME);
@@ -320,6 +321,25 @@ public class ClubSeed {
             }
         }
         return players;
+    }
+
+    /**
+     * Gender and year of birth (PTF-15): players by their team, adults born 1988 to 2004, juniors two years per team
+     * (Junioren A 2006/07 down to Junioren E 2014/15). Staff by first name, born in the 1970s and 80s.
+     */
+    private void genderAndBirthYear(List<Player> players) {
+        Map<Integer, Integer> juniorYear = Map.of(5, 2006, 6, 2008, 7, 2010, 8, 2012, 9, 2014, 10, 2008);
+        for (Player p : players) {
+            ClubTeam team = TEAMS.stream().filter(t -> t.nr() == p.team()).findFirst().orElseThrow();
+            int year = team.adults() ? 1988 + (p.nr() * 7) % 17 : juniorYear.get(team.nr()) + p.index() % 2;
+            sql("update person set gender = cast(? as varchar), birth_year = ? where id = ?", team.women() ? "FEMALE" : "MALE", year,
+                    Seed.personId(p.nr()));
+        }
+        for (Staff s : STAFF) {
+            String gender = WOMEN.contains(s.firstName()) ? "FEMALE" : MEN.contains(s.firstName()) ? "MALE" : null;
+            sql("update person set gender = cast(? as varchar), birth_year = ? where id = ?", gender, 1970 + (s.nr() * 3) % 20,
+                    Seed.personId(s.nr()));
+        }
     }
 
     private void person(int nr, String firstName, String lastName, boolean admin, Set<String> keys) {

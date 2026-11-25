@@ -40,7 +40,7 @@ public class PersonService {
                         .thenComparing(m -> m.team.nameIn(m.season), String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(m -> m.team.id))
                 .map(TeamMembershipDto::of).toList();
-        return new PersonDetailDto(p.id, p.firstName, p.lastName, p.email, p.admin, memberships);
+        return new PersonDetailDto(p.id, p.firstName, p.lastName, p.email, p.admin, p.gender, p.birthYear, memberships);
     }
 
     @Transactional
@@ -68,6 +68,8 @@ public class PersonService {
         p.lastName = PersonRules.clean(input.lastName());
         p.email = PersonRules.clean(input.email());
         p.admin = admin;
+        p.gender = input.gender();
+        p.birthYear = input.birthYear();
     }
 
     public static Person find(UUID id) {

@@ -82,6 +82,9 @@ public class TestResource {
     Reminders reminders;
 
     @Inject
+    ch.stvbero.platform.core.event.SeriesService series;
+
+    @Inject
     Notifications notifications;
 
     @Inject
@@ -240,7 +243,7 @@ public class TestResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "testSetClock",
             summary = "Set the backend clock to a fixed point in time. Runs due jobs (reminders, retries of e-mails "
-                    + "and pushes) immediately.")
+                    + "and pushes, series one year ahead) immediately.")
     @APIResponse(responseCode = "204", description = "Set")
     @APIResponse(responseCode = "400", description = "Invalid request",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
@@ -248,6 +251,7 @@ public class TestResource {
         clock.fixAt(input.now().toInstant());
         reminders.check();
         deliveries.processDue();
+        series.extend();
     }
 
     @GET

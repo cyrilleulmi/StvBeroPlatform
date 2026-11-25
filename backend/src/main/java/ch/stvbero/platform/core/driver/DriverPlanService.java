@@ -105,6 +105,8 @@ public class DriverPlanService {
         QuarkusTransaction.requiringNew().run(() -> {
             Context c = context(user, teamId, seasonId);
             UUID driver = input.driverId() == null ? user.personId() : input.driverId();
+            // Planning the season for others stays with coaches and admins (DRV-14)
+            DriverRules.checkCanActFor(user.personId(), driver, c.member(), c.canManage());
             Set<UUID> ofTeam = new HashSet<>();
             matchDays(c).forEach(event -> ofTeam.add(event.id));
             Set<UUID> wanted = new LinkedHashSet<>(input.eventIds());
@@ -284,7 +286,7 @@ public class DriverPlanService {
                     event.start.atZone(BackendClock.ZONE).toOffsetDateTime(),
                     event.location == null ? null : event.location.name,
                     event.location == null ? null : event.location.address, cancelled, over, missing.isEmpty(),
-                    missing, DriverRules.kilometres(distance),
+                    missing, DriverRules.kilometres(distance), exactKilometres(DriverRules.credit(distance, event.status)),
                     DriverRules.minutes(route.map(Routes.Stored::effectiveDurationSeconds).orElse(null)), changeable, cars,
                     freeSeats, DriverDistributionRules.expected(event.expectedTravellers, ofTeam, memberCount),
                     event.expectedTravellers != null,
@@ -388,44 +390,35 @@ public class DriverPlanService {
     }
 
     /**
-     * Shares the trips of the upcoming match days fairly (DRV-30): every match day gets drivers until its cars
-     * have a place for everyone who is expected. Coaches and admins. With {@code replace} the upcoming match days
-     * are planned anew; cars with passengers always stay. Each driver whose trips changed gets one message.
+     * Upcoming match days that need drivers (DRV-30): not cancelled, not over, meeting point and venue set, and
+     * not at home. By start.
      */
-    public DriverPlanDto distribute(CurrentUser user, UUID teamId, UUID seasonId, boolean replace) {
-        QuarkusTransaction.requiringNew().run(() -> {
+    private Map<UUID, Event> fillable(Context c) {
+        Instant now = clock.now();
+        Map<UUID, Event> byId = new LinkedHashMap<>();
+        matchDays(c).stream()
+                .filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now)
+                        && MatchDayRoutes.missing(e).isEmpty() && !noTrip(e))
+                .forEach(e -> byId.put(e.id, e));
+        return byId;
+    }
+
+    /**
+     * Proposes a fair distribution of the trips that are still missing (DRV-30): every upcoming match day gets
+     * drivers until its cars have a place for everyone who is expected. Drivers who are entered stay and count.
+     * Changes nothing. Coaches and admins.
+     */
+    public DriverPlanDto.Distribution previewDistribution(CurrentUser user, UUID teamId, UUID seasonId) {
+        QuarkusTransaction.requiringNew().run(() -> managing(user, teamId, seasonId));
+        get(user, teamId, seasonId); // calculates missing routes first, so that the kilometres count
+        return QuarkusTransaction.requiringNew().call(() -> {
             Context c = managing(user, teamId, seasonId);
-            Instant now = clock.now();
-            List<Event> days = matchDays(c).stream()
-                    .filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now)
-                            && MatchDayRoutes.missing(e).isEmpty() && !noTrip(e))
-                    .toList();
-            Map<UUID, Event> byId = new LinkedHashMap<>();
-            days.forEach(e -> byId.put(e.id, e));
+            Map<UUID, Event> byId = fillable(c);
             if (byId.isEmpty()) {
-                return;
+                return new DriverPlanDto.Distribution(List.of());
             }
-            em.createNativeQuery("select id from event where id in (:ids) for update")
-                    .setParameter("ids", byId.keySet()).getResultList();
             Map<UUID, Person> persons = new HashMap<>();
             c.members().forEach(m -> persons.put(m.person.id, m.person));
-
-            Map<UUID, Set<UUID>> before = new HashMap<>();
-            List<Car> existing = cars(byId.keySet());
-            existing.forEach(car -> before.computeIfAbsent(car.driver(), k -> new LinkedHashSet<>()).add(car.eventId()));
-            if (replace) {
-                @SuppressWarnings("unchecked")
-                List<UUID> occupied = em.createNativeQuery(
-                                "select distinct car_id from car_passenger where event_id in (:ids)")
-                        .setParameter("ids", byId.keySet()).getResultList();
-                for (Car car : existing) {
-                    if (!occupied.contains(car.id())) {
-                        Person driver = persons.computeIfAbsent(car.driver(), id -> Person.findById(id));
-                        drivers.dropCar(byId.get(car.eventId()), user.personId(), car.id(), driver);
-                    }
-                }
-            }
-
             DriverPlanDto plan = dto(c);
             Map<UUID, Set<UUID>> declined = declined(byId.keySet());
             List<DriverDistributionRules.Day> toFill = new ArrayList<>();
@@ -438,29 +431,123 @@ public class DriverPlanService {
                 toFill.add(new DriverDistributionRules.Day(day.eventId(), day.expected(), day.places(),
                         day.distanceKm() == null ? null : DriverRules.meters(day.distanceKm()), unavailable));
             }
+            List<DriverPlanDto.ProposedTrip> trips = new ArrayList<>();
             for (DriverDistributionRules.Assignment a : DriverDistributionRules.distribute(toFill, candidates(plan))) {
                 Person driver = persons.get(a.driver());
-                drivers.enterCar(byId.get(a.event()), user.personId(), driver,
-                        DriverProposalRules.freeSeats(driver.carSeats));
+                trips.add(new DriverPlanDto.ProposedTrip(a.event(), PersonSummary.of(driver),
+                        DriverProposalRules.freeSeats(driver.carSeats)));
             }
+            List<UUID> order = new ArrayList<>(byId.keySet());
+            trips.sort(Comparator.<DriverPlanDto.ProposedTrip>comparingInt(t -> order.indexOf(t.eventId()))
+                    .thenComparing(DriverPlanDto.ProposedTrip::driver, PersonSummary.ORDER));
+            return new DriverPlanDto.Distribution(trips);
+        });
+    }
 
-            Map<UUID, Set<UUID>> after = new HashMap<>();
-            cars(byId.keySet()).forEach(car -> after.computeIfAbsent(car.driver(), k -> new LinkedHashSet<>())
-                    .add(car.eventId()));
-            Set<UUID> affected = new LinkedHashSet<>(before.keySet());
-            affected.addAll(after.keySet());
-            List<Message> messages = new ArrayList<>();
-            for (UUID person : affected) {
-                Set<UUID> mine = after.getOrDefault(person, Set.of());
-                if (person.equals(user.personId()) || mine.equals(before.getOrDefault(person, Set.of()))) {
-                    continue;
-                }
-                List<Event> own = days.stream().filter(e -> mine.contains(e.id)).toList();
-                messages.add(new Message(NotificationType.DRIVER_LIST_CHANGED, person,
-                        own.isEmpty() ? days.get(0).id : own.get(0).id,
-                        DriverRules.distributedText(own.stream()
-                                .map(e -> NotificationRules.label("", e.start).strip()).toList())));
+    /**
+     * Enters the trips of a distribution as they were proposed (DRV-30). Drivers who are entered stay; the new
+     * ones stay too, a later distribution only adds. If one trip cannot be entered (the match day can no longer
+     * be planned, the person cannot drive or already drives), nothing is entered. Each new driver gets one
+     * message. Coaches and admins.
+     */
+    public DriverPlanDto distribute(CurrentUser user, UUID teamId, UUID seasonId,
+                                    List<DriverPlanDto.TripEntry> trips) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = managing(user, teamId, seasonId);
+            if (trips.isEmpty()) {
+                return;
             }
+            Map<UUID, Event> byId = fillable(c);
+            if (!byId.isEmpty()) {
+                em.createNativeQuery("select id from event where id in (:ids) for update")
+                        .setParameter("ids", byId.keySet()).getResultList();
+            }
+            Map<UUID, Person> persons = new HashMap<>();
+            c.members().forEach(m -> persons.put(m.person.id, m.person));
+            Map<UUID, Set<UUID>> driving = new HashMap<>();
+            if (!byId.isEmpty()) {
+                cars(byId.keySet()).forEach(car -> driving.computeIfAbsent(car.eventId(), k -> new HashSet<>())
+                        .add(car.driver()));
+            }
+            Map<UUID, List<Event>> added = new LinkedHashMap<>();
+            for (DriverPlanDto.TripEntry trip : trips) {
+                Event event = byId.get(trip.eventId());
+                if (event == null) {
+                    throw DomainError.conflict("Spieltag nicht offen", DriverRules.DISTRIBUTION_OUTDATED, "DRV-30");
+                }
+                Person driver = persons.get(trip.driverId());
+                if (driver == null || !driver.canDrive) {
+                    throw DomainError.conflict("Kann nicht fahren", DriverRules.DISTRIBUTION_OUTDATED, "DRV-30");
+                }
+                if (!driving.computeIfAbsent(event.id, k -> new HashSet<>()).add(driver.id)) {
+                    throw DomainError.conflict("Fährt schon", DriverRules.DISTRIBUTION_OUTDATED, "DRV-30");
+                }
+                DriverRules.checkSeats(trip.seats(), 0);
+                drivers.enterCar(event, user.personId(), driver, trip.seats());
+                added.computeIfAbsent(driver.id, k -> new ArrayList<>()).add(event);
+            }
+            List<Message> messages = new ArrayList<>();
+            added.forEach((person, days) -> {
+                if (!person.equals(user.personId())) {
+                    List<Event> sorted = days.stream().sorted(Comparator.comparing(e -> e.start)).toList();
+                    messages.add(new Message(NotificationType.DRIVER_LIST_CHANGED, person, sorted.get(0).id,
+                            DriverRules.distributedText(sorted.stream()
+                                    .map(e -> NotificationRules.label("", e.start).strip()).toList())));
+                }
+            });
+            notifications.send(messages);
+        });
+        return get(user, teamId, seasonId);
+    }
+
+    /**
+     * Removes every driver of the upcoming match days that are not cancelled (DRV-33); their passengers lose
+     * their seats. Every driver and passenger affected gets one message. Coaches and admins.
+     */
+    public DriverPlanDto removeAll(CurrentUser user, UUID teamId, UUID seasonId) {
+        QuarkusTransaction.requiringNew().run(() -> {
+            Context c = managing(user, teamId, seasonId);
+            Instant now = clock.now();
+            Map<UUID, Event> byId = new LinkedHashMap<>();
+            matchDays(c).stream().filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now))
+                    .forEach(e -> byId.put(e.id, e));
+            if (byId.isEmpty()) {
+                return;
+            }
+            em.createNativeQuery("select id from event where id in (:ids) for update")
+                    .setParameter("ids", byId.keySet()).getResultList();
+            Map<UUID, List<String>> lostTrips = new LinkedHashMap<>();
+            Map<UUID, List<String>> lostSeats = new LinkedHashMap<>();
+            Map<UUID, UUID> firstEvent = new HashMap<>();
+            List<Car> all = cars(byId.keySet()).stream()
+                    .sorted(Comparator.comparing(car -> byId.get(car.eventId()).start)).toList();
+            for (Car car : all) {
+                Event event = byId.get(car.eventId());
+                String day = NotificationRules.label("", event.start).strip();
+                @SuppressWarnings("unchecked")
+                List<UUID> passengers = em.createNativeQuery("select person_id from car_passenger where car_id = ?")
+                        .setParameter(1, car.id()).getResultList();
+                for (UUID passenger : passengers) {
+                    lostSeats.computeIfAbsent(passenger, k -> new ArrayList<>()).add(day);
+                    firstEvent.putIfAbsent(passenger, event.id);
+                }
+                lostTrips.computeIfAbsent(car.driver(), k -> new ArrayList<>()).add(day);
+                firstEvent.putIfAbsent(car.driver(), event.id);
+                drivers.dropCar(event, user.personId(), car.id(), Person.findById(car.driver()));
+            }
+            List<Message> messages = new ArrayList<>();
+            lostTrips.forEach((person, days) -> {
+                if (!person.equals(user.personId())) {
+                    messages.add(new Message(NotificationType.DRIVER_LIST_CHANGED, person, firstEvent.get(person),
+                            DriverRules.allTripsRemovedText(days)));
+                }
+            });
+            lostSeats.forEach((person, days) -> {
+                if (!person.equals(user.personId()) && !lostTrips.containsKey(person)) {
+                    messages.add(new Message(NotificationType.DRIVER_LIST_CHANGED, person, firstEvent.get(person),
+                            DriverRules.allSeatsRemovedText(days)));
+                }
+            });
             notifications.send(messages);
         });
         return get(user, teamId, seasonId);
@@ -527,5 +614,10 @@ public class DriverPlanService {
             throw DomainError.forbidden();
         }
         return c;
+    }
+
+    /** Kilometres to the meter, so the page can add proposed trips and round once, like the totals (DRV-30). */
+    private static Double exactKilometres(Integer meters) {
+        return meters == null ? null : meters / 1000.0;
     }
 }

@@ -2,6 +2,7 @@ package ch.stvbero.platform.core.driver;
 
 import ch.stvbero.platform.core.person.PersonSummary;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -53,11 +54,35 @@ public record DriverPlanDto(
             @Schema(description = "Driver who hands her trip over; missing: one more car is entered") UUID replaces) {
     }
 
-    /** Request: share the trips of the upcoming match days fairly (DRV-30). */
+    /**
+     * A fair distribution of the trips that are still missing, as a proposal (DRV-30): nothing is entered yet.
+     * Drivers who are entered stay as they are.
+     */
+    @Schema(name = "DriverPlanDistribution")
+    public record Distribution(
+            @Schema(description = "Proposed trips, by match day and then by name") List<ProposedTrip> trips) {
+    }
+
+    /** A trip the distribution proposes. */
+    @Schema(name = "DriverPlanProposedTrip")
+    public record ProposedTrip(UUID eventId, PersonSummary driver,
+                               @Schema(description = "Seats for passengers: the places of her car minus herself (DRV-18)") int seats) {
+    }
+
+    /** Request: enter the proposed trips (DRV-30). They are entered as they are and stay. */
     @Schema(name = "DriverPlanDistributeInput")
     public record DistributeInput(
-            @Schema(description = "`true`: plan the upcoming match days anew (cars with passengers stay); "
-                    + "`false`: only add the drivers that are missing") boolean replace) {
+            @NotNull(message = "Bitte den Vorschlag angeben.")
+            @Size(max = 600, message = "Zu viele Fahrten auf einmal.") List<@NotNull @Valid TripEntry> trips) {
+    }
+
+    /** One trip of a distribution that is entered. */
+    @Schema(name = "DriverPlanTripEntry")
+    public record TripEntry(
+            @NotNull(message = "Bitte den Spieltag angeben.") UUID eventId,
+            @NotNull(message = "Bitte angeben, wer fährt.") UUID driverId,
+            @NotNull(message = DriverRules.SEATS_TEXT) @Min(value = DriverRules.MIN_SEATS, message = DriverRules.SEATS_TEXT)
+            @Max(value = DriverRules.MAX_SEATS, message = DriverRules.SEATS_TEXT) Integer seats) {
     }
 
     /** Sum of all shares (DRV-27). */
@@ -139,6 +164,7 @@ public record DriverPlanDto(
             @Schema(description = "Meeting point and venue are set, so drivers can be entered (DRV-01)") boolean ready,
             List<DriverRules.Missing> missing,
             @Schema(description = "One-way distance, if a route is known") Double distanceKm,
+            @Schema(description = "Credit of one trip, there and back, to the meter (DRV-05); missing without distance or if cancelled") Double creditKm,
             Integer durationMinutes,
             @Schema(description = "Drivers can be entered right now by the caller") boolean changeable,
             List<DriverListDto.CarDto> cars,

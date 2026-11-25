@@ -13,7 +13,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Season, Team } from '../../api/types';
 import { AuthService } from '../../core/auth.service';
-import { fieldErrorsOf, errorText } from '../../core/error-text';
+import { errorText } from '../../core/error-text';
 import { seasonStatus } from '../../core/format';
 import { Icon } from '../../core/icon';
 import { TEXTS } from '../../core/texts';
@@ -87,45 +87,29 @@ import { TEXTS } from '../../core/texts';
         }
       </section>
       @if (seasonData() && !seasonData()!.archived) {
-        <form
-          class="card form"
-          (submit)="create($event)"
-          novalidate
-          aria-labelledby="team-new-title"
-        >
-          <h2 id="team-new-title">{{ texts.teamAdmin.newTeam }}</h2>
-          <div class="field">
-            <label for="team-new-name">{{ texts.teamAdmin.teamName }}</label>
-            <input
-              name="team-new-name"
-              id="team-new-name"
-              type="text"
-              maxlength="60"
-              autocomplete="off"
-              [value]="newName()"
-              (input)="newName.set($any($event.target).value)"
-              [attr.aria-invalid]="nameError() ? 'true' : null"
-              [attr.aria-describedby]="nameError() ? 'team-new-name-error' : null"
-            />
-            @if (nameError(); as m) {
-              <p class="field-error" id="team-new-name-error">{{ m }}</p>
-            }
-          </div>
-          <button
-            type="submit"
+        <!-- A new team: the assistant leads through people, swiss unihockey, practices and more (PTF-13, PTF-14) -->
+        <section class="card new-team" aria-labelledby="team-new-title">
+          <h2 id="team-new-title" class="section-title">{{ texts.teamAdmin.newTeam }}</h2>
+          <p class="secondary-text">{{ texts.teamWizard.intro }}</p>
+          <a
             class="button button-primary"
-            [disabled]="saving()"
-            [attr.aria-busy]="saving() ? 'true' : null"
+            routerLink="/verwaltung/teams/neu"
+            [queryParams]="{ saison: seasonData()!.current ? null : seasonData()!.id }"
+            data-testid="team-wizard-link"
           >
-            {{ texts.teamAdmin.create }}
-          </button>
-        </form>
+            {{ texts.teamWizard.create }}
+          </a>
+        </section>
       }
     }
   `,
   styleUrl: '../page.css',
   styles: `
-    form .button {
+    .new-team {
+      display: grid;
+      gap: 10px;
+    }
+    .new-team .button {
       justify-self: start;
     }
     .team-row {
@@ -157,11 +141,8 @@ export class TeamsAdmin {
   });
   protected readonly teams = signal<Team[]>([]);
   protected readonly loading = signal(true);
-  protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
-  protected readonly newName = signal('');
-  protected readonly nameError = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -196,32 +177,4 @@ export class TeamsAdmin {
     }
   }
 
-  protected async create(domEvent: Event): Promise<void> {
-    domEvent.preventDefault();
-    if (this.saving()) return;
-    this.success.set(null);
-    this.error.set(null);
-    const name = this.newName().trim();
-    if (!name) {
-      this.nameError.set(TEXTS.teamAdmin.nameRequired);
-      document.getElementById('team-new-name')?.focus();
-      return;
-    }
-    this.nameError.set(null);
-    this.saving.set(true);
-    try {
-      const params: Record<string, string> = this.seasonData()
-        ? { season: this.seasonData()!.id }
-        : {};
-      const team = await firstValueFrom(this.http.post<Team>('/api/teams', { name }, { params }));
-      this.newName.set('');
-      await this.load(this.season());
-      this.success.set(TEXTS.teamAdmin.created(team.name));
-    } catch (e) {
-      this.nameError.set(fieldErrorsOf(e)['name'] ?? null);
-      this.error.set(errorText(e));
-    } finally {
-      this.saving.set(false);
-    }
-  }
 }

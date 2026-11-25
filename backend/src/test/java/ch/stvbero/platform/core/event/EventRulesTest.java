@@ -122,8 +122,13 @@ class EventRulesTest {
                 () -> EventRules.checkSeries(eight, eight, d(2026, 11, 1), d(2026, 12, 1))).status());
         assertEquals(400, assertThrows(DomainError.class,
                 () -> EventRules.checkSeries(LocalTime.of(18, 0), eight, d(2026, 12, 1), d(2026, 11, 1))).status());
-        assertEquals(400, assertThrows(DomainError.class,
-                () -> EventRules.checkSeries(LocalTime.of(18, 0), eight, d(2026, 8, 1), d(2027, 8, 5))).status());
+        // A series may run longer than a year, or without an end (TER-22, TER-23)
+        assertDoesNotThrow(() -> EventRules.checkSeries(LocalTime.of(18, 0), eight, d(2026, 8, 1), d(2027, 8, 5)));
+        assertDoesNotThrow(() -> EventRules.checkSeries(LocalTime.of(18, 0), eight, d(2026, 8, 1), null));
+        // Its events exist one year ahead at most
+        assertEquals(d(2027, 11, 16), EventRules.seriesCap(null, d(2026, 11, 16)));
+        assertEquals(d(2027, 11, 16), EventRules.seriesCap(d(2030, 6, 30), d(2026, 11, 16)));
+        assertEquals(d(2027, 4, 27), EventRules.seriesCap(d(2027, 4, 27), d(2026, 11, 16)));
         assertDoesNotThrow(() -> EventRules.checkSeries(LocalTime.of(18, 0), eight, d(2026, 8, 18), d(2027, 4, 27)));
         assertEquals(400, assertThrows(DomainError.class,
                 () -> EventRules.checkException(d(2026, 12, 2), d(2026, 12, 1))).status());

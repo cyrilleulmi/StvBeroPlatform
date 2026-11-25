@@ -19,7 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Series: once created, they create the events in their validity period (TER-05). Changes apply to future
+ * Series: once created, they create the events in their validity period, one year ahead at most; the next ones are
+ * created as time goes on (TER-05, TER-22). A series may run without an end (TER-23). Changes apply to future
  * events (TER-08), series exceptions exclude periods (TER-07). Permissions as for events (TER-11, RR-06).
  */
 @ApplicationScoped
@@ -51,6 +52,7 @@ public class SeriesService {
         s.id = UUID.randomUUID();
         s.season = season;
         apply(s, input, teams);
+        s.generatedUntil = cap(s);
         s.persist();
         Instant now = clock.now();
         for (LocalDate day : dates(s)) {
@@ -82,6 +84,7 @@ public class SeriesService {
         EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, teams, s.season));
         checkInput(input, teams, s.season);
         apply(s, input, teams);
+        s.generatedUntil = cap(s);
 
         Instant now = clock.now();
         Map<LocalDate, Event> all = new HashMap<>();
@@ -141,6 +144,158 @@ public class SeriesService {
         return SeriesDto.of(s, user);
     }
 
+    // ------------------------------------------------------------------ Reworking (TER-18 to TER-20)
+
+    /** Reason used to cancel an event when its series is ended. */
+    static final String REASON_SERIES_ENDED = "Serie beendet";
+
+    /**
+     * The series of a team in a season, with their upcoming events (TER-18): series that still run first, then by
+     * weekday and start. Everyone who may see the team.
+     */
+    @Transactional
+    public List<SeriesPlanDto.Overview> ofTeam(CurrentUser user, UUID teamId, UUID seasonId) {
+        Team team = Team.<Team>findByIdOptional(teamId)
+                .orElseThrow(() -> DomainError.notFound("Dieses Team gibt es nicht."));
+        Season season = Season.orCurrent(seasonId);
+        EventRules.checkCanView(user.allTeams(), EventService.teamRoles(user, Set.of(team), season));
+        Instant now = clock.now();
+        List<Series> list = Series.list("select distinct s from Series s join s.teams t where t.id = ?1 and s.season.id = ?2",
+                team.id, season.id);
+        return list.stream()
+                .map(s -> {
+                    List<Event> upcoming = events(s).stream()
+                            .filter(e -> e.start.isAfter(now) && e.status != EventStatus.CANCELLED).toList();
+                    boolean canEdit = !s.season.isArchived()
+                            && EventRules.canEdit(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+                    return new SeriesPlanDto.Overview(SeriesDto.of(s, user), upcoming.size(),
+                            upcoming.isEmpty() ? null : upcoming.get(0).start.atZone(BackendClock.ZONE).toOffsetDateTime(),
+                            canEdit);
+                })
+                .sorted(java.util.Comparator.comparing((SeriesPlanDto.Overview o) -> o.upcoming() == 0)
+                        .thenComparing(o -> o.series().weekday())
+                        .thenComparing(o -> o.series().startTime()))
+                .toList();
+    }
+
+    /** What {@link #update} would do to the upcoming events; changes nothing (TER-19). */
+    @Transactional
+    public SeriesPlanDto.Preview preview(CurrentUser user, UUID seriesId, SeriesInput input) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        Set<Team> teams = EventService.teams(input.teamIds());
+        checkInput(input, teams, s.season);
+        Instant now = clock.now();
+        Map<LocalDate, Event> all = new HashMap<>();
+        Map<LocalDate, EventRules.Existing> future = new HashMap<>();
+        int kept = 0;
+        for (Event event : events(s)) {
+            all.put(event.seriesDate, event);
+            if (event.start.isAfter(now)) {
+                boolean planned = event.status == EventStatus.PLANNED;
+                future.put(event.seriesDate, new EventRules.Existing(planned, event.individuallyChanged));
+                if (!planned || event.individuallyChanged) {
+                    kept++;
+                }
+            }
+        }
+        java.time.LocalTime start = EventRules.time(input.startTime());
+        List<LocalDate> target = EventRules.dates(input.weekday().day, input.validFrom(),
+                        EventRules.seriesCap(input.validUntil(), today()), s.exceptionPeriods()).stream()
+                .filter(day -> EventRules.instant(day, start).isAfter(now))
+                .filter(day -> !all.containsKey(day) || future.containsKey(day))
+                .toList();
+        EventRules.SeriesSync sync = EventRules.syncSeries(future, target);
+        int adjusted = (int) sync.apply().stream().filter(day -> changes(all.get(day), s, input, teams, day)).count();
+        int cancelled = (int) sync.drop().stream().filter(day -> hasResponses(all.get(day))).count();
+        java.util.TreeSet<LocalDate> touched = new java.util.TreeSet<>(sync.create());
+        touched.addAll(sync.drop());
+        sync.apply().stream().filter(day -> changes(all.get(day), s, input, teams, day)).forEach(touched::add);
+        return new SeriesPlanDto.Preview(adjusted, sync.create().size(), sync.drop().size() - cancelled, cancelled,
+                kept, touched.isEmpty() ? null : touched.first());
+    }
+
+    /** What {@link #end} would do; changes nothing (TER-20). */
+    @Transactional
+    public SeriesPlanDto.Preview previewEnd(CurrentUser user, UUID seriesId, LocalDate from) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        List<Event> gone = ending(s, from);
+        int cancelled = (int) gone.stream().filter(this::hasResponses).count();
+        return new SeriesPlanDto.Preview(0, 0, gone.size() - cancelled, cancelled, 0,
+                gone.isEmpty() ? null : gone.get(0).seriesDate);
+    }
+
+    /**
+     * Ends a series from a day on (TER-20): its upcoming events from that day on are removed, or cancelled («Serie
+     * beendet») if someone has responded; also events changed by hand. Past events stay. The series keeps its
+     * history and ends the day before.
+     */
+    @Transactional
+    public SeriesDto end(CurrentUser user, UUID seriesId, LocalDate from) {
+        Series s = find(seriesId);
+        EventRules.checkCanCreate(user.allTeams(), EventService.teamRoles(user, s.teams, s.season));
+        s.season.checkWritable();
+        for (Event event : ending(s, from)) {
+            drop(user, event, REASON_SERIES_ENDED);
+        }
+        LocalDate until = from.minusDays(1);
+        if (!until.isBefore(s.validFrom)) {
+            // Never longer than before; a series without an end gets one (TER-20, TER-23)
+            if (s.validUntil == null || until.isBefore(s.validUntil)) {
+                s.validUntil = until;
+            }
+            if (s.generatedUntil == null || s.generatedUntil.isAfter(s.validUntil)) {
+                s.generatedUntil = s.validUntil;
+            }
+            return SeriesDto.of(s, user);
+        }
+        // Ended before it began: no day of the series is left. The shortest period plus an exception on its
+        // only day keep the series valid without any date
+        s.validUntil = s.validFrom;
+        s.generatedUntil = s.validFrom;
+        SeriesException none = new SeriesException();
+        none.id = UUID.randomUUID();
+        none.series = s;
+        none.startDate = s.validFrom;
+        none.endDate = s.validFrom;
+        none.reason = REASON_SERIES_ENDED;
+        s.exceptions.add(none);
+        return SeriesDto.of(s, user);
+    }
+
+    /** Upcoming events of the series on or after {@code from} that are still planned. */
+    private List<Event> ending(Series s, LocalDate from) {
+        Instant now = clock.now();
+        return events(s).stream()
+                .filter(e -> e.status == EventStatus.PLANNED && e.start.isAfter(now)
+                        && !EventRules.date(e.start).isBefore(from))
+                .toList();
+    }
+
+    private boolean hasResponses(Event event) {
+        Number count = (Number) em.createNativeQuery(
+                        "select count(*) from response where event_id = ?1 and absence_id is null")
+                .setParameter(1, event.id).getSingleResult();
+        return count.longValue() > 0;
+    }
+
+    /** The event would look different after the change. */
+    private static boolean changes(Event event, Series s, SeriesInput input, Set<Team> teams, LocalDate day) {
+        if (event == null) {
+            return true;
+        }
+        Location location = Location.of(input.location());
+        return !event.start.equals(EventRules.instant(day, EventRules.time(input.startTime())))
+                || !event.end.equals(EventRules.instant(day, EventRules.time(input.endTime())))
+                || !java.util.Objects.equals(event.title, input.title().strip())
+                || !java.util.Objects.equals(event.location == null ? null : event.location.dto(),
+                        location == null ? null : location.dto())
+                || !event.teams.equals(teams)
+                || event.responseDeadlineHours != EventRules.responseDeadline(input.responseDeadlineHours())
+                || (input.attendanceCheck() != null && event.attendanceCheck != input.attendanceCheck());
+    }
+
     private static Series find(UUID id) {
         return Series.<Series>findByIdOptional(id)
                 .orElseThrow(() -> DomainError.notFound("Diese Serie gibt es nicht."));
@@ -150,8 +305,73 @@ public class SeriesService {
         return Event.list("series.id = ?1 order by seriesDate", s.id);
     }
 
-    private static List<LocalDate> dates(Series s) {
-        return EventRules.dates(s.weekday.day, s.validFrom, s.validUntil, s.exceptionPeriods());
+    /** The days of the series up to its end, at most one year from today (TER-22). */
+    private List<LocalDate> dates(Series s) {
+        return EventRules.dates(s.weekday.day, s.validFrom, cap(s), s.exceptionPeriods());
+    }
+
+    private LocalDate cap(Series s) {
+        return EventRules.seriesCap(s.validUntil, today());
+    }
+
+    private LocalDate today() {
+        return clock.now().atZone(BackendClock.ZONE).toLocalDate();
+    }
+
+    // ------------------------------------------------------------------ Keeping series one year ahead (TER-22)
+
+    /**
+     * Creates the events that are missing so every series has them one year ahead (TER-22): the days after
+     * {@link Series#generatedUntil} up to its end, at most one year from today. Days that were already created and
+     * then removed (holidays, a change) do not come back. Upcoming events that were created before their season
+     * existed move into it. Returns the number of new events.
+     */
+    @Transactional
+    public int extend() {
+        LocalDate today = today();
+        Instant now = clock.now();
+        int created = 0;
+        List<UUID> newEvents = new java.util.ArrayList<>();
+        // Events created before their season existed belong to the season of the series. Once the season is there
+        // with the teams, the upcoming ones move into it: its team memberships count from then on (SAI-01)
+        for (Event event : Event.<Event>list("series is not null and status = ?1 and start > ?2", EventStatus.PLANNED, now)) {
+            LocalDate day = EventRules.date(event.start);
+            boolean inItsSeason = !event.season.startDate.isAfter(day) && !event.season.endDate.isBefore(day);
+            if (!inItsSeason) {
+                event.season = seasonFor(event.teams, day, event.season);
+            }
+        }
+        // Also series of an earlier season: a series does not end with its season (TER-22); its new events belong
+        // to the season of their day
+        List<Series> open = Series.list(
+                "validUntil is null or generatedUntil is null or generatedUntil < validUntil");
+        for (Series s : open) {
+            LocalDate cap = EventRules.seriesCap(s.validUntil, today);
+            LocalDate after = s.generatedUntil;
+            if (after != null && !after.isBefore(cap)) {
+                continue;
+            }
+            Set<LocalDate> existing = new java.util.HashSet<>();
+            for (Event event : events(s)) {
+                existing.add(event.seriesDate);
+            }
+            for (LocalDate day : EventRules.dates(s.weekday.day, s.validFrom, cap, s.exceptionPeriods())) {
+                if ((after == null || day.isAfter(after)) && !existing.contains(day)
+                        && EventRules.instant(day, s.startTime).isAfter(now)) {
+                    Event event = create(s, day);
+                    event.persist();
+                    newEvents.add(event.id);
+                    created++;
+                }
+            }
+            s.generatedUntil = cap;
+        }
+        if (!newEvents.isEmpty()) {
+            em.flush();
+            // Practices in the time of an absence are declined by themselves (ABS-04)
+            absences.applyForEvents(newEvents);
+        }
+        return created;
     }
 
     private static void checkInput(SeriesInput input, Set<Team> teams, Season season) {
@@ -185,9 +405,19 @@ public class SeriesService {
         Event event = Event.create();
         event.series = s;
         event.seriesDate = day;
-        event.season = EventService.seasonOn(day, s.season);
+        event.season = seasonFor(s.teams, day, s.season);
         apply(event, s, day);
         return event;
+    }
+
+    /**
+     * The season an event of this day belongs to: the season the day falls into, if every team is part of it;
+     * otherwise the given one. Who is in an event follows from the team memberships of its season (SAI-01), so an
+     * event never belongs to a season its teams are not in.
+     */
+    private static Season seasonFor(java.util.Collection<Team> teams, LocalDate day, Season otherwise) {
+        Season season = EventService.seasonOn(day, otherwise);
+        return teams.stream().allMatch(team -> team.belongsTo(season)) ? season : otherwise;
     }
 
     /** Copy the details of the series to the event. */

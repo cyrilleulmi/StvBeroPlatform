@@ -13,13 +13,20 @@
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <script>
       // Apply the chosen theme before the first paint (no flash). See ThemeService.
-      // Unknown values (e.g. the former German «hell» or «duene») fall back to «System».
+      // Without a choice, and for unknown values (e.g. the former German «hell» or «duene»), Hell (E-100);
+      // only «system» follows the device.
       try {
         var t = localStorage.getItem('stv-theme');
-        if (t === 'light' || t === 'dark') {
-          document.documentElement.setAttribute('data-theme', t);
-        }
-      } catch (e) {}
+        if (t !== 'dark' && t !== 'system') t = 'light';
+      } catch (e) {
+        t = 'light';
+      }
+      if (t !== 'system') {
+        document.documentElement.setAttribute('data-theme', t);
+        var bar = t === 'dark' ? '#14181D' : '#E9EDF0';
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < metas.length; i++) metas[i].setAttribute('content', bar);
+      }
     </script>
   </head>
   <body>

@@ -2,7 +2,8 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * E-92 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-28). Seed from
+ * E-92 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-24). Swaps, other
+ * trips and the history (DRV-25 to DRV-28) have no page since E-98; their API is tested in the backend. Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Team 1 is linked with swiss unihockey (900001), Team 2 is not. Default "now": Mon 16.11.2026 06:00.
  */
@@ -54,18 +55,30 @@ test('SUH-16: the swiss unihockey page links to the team page, players without a
   await expect(page.getByTestId('su-not-linked')).toHaveText('Nicht verbunden. Frag den Coach zum Einrichten.');
 });
 
-test('DRV-23: on the match day the driver list only shows; travelling on one own stays; link to the plan', async ({ page }) => {
+test('DRV-23 DRV-32: the match day shows the places; travelling on one own stays; link to the plan', async ({ page }) => {
   await login(page, 'jana');
   await page.goto(`/termine/${T04}`);
   const list = page.getByTestId('driver-list');
-  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toBeVisible();
-  await expect(list.getByRole('button', { name: /mitfahren/ })).toHaveCount(0);
-  await expect(list.getByRole('button', { name: 'Ich fahre' })).toHaveCount(0);
-  await expect(list.getByTestId('driver-list-plan-hint')).toBeVisible();
+  await expect(list.getByTestId('driver-seat-summary')).toContainText('Plätze für');
+  // The cars show only behind «Plätze zuweisen»
+  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toHaveCount(0);
   await list.getByTestId('individual-self').click();
   await expect(list.getByTestId('individual').getByRole('listitem', { name: 'Jana Wyss' })).toBeVisible();
+  await list.getByTestId('driver-assign').click();
+  await expect(list.getByRole('listitem', { name: 'Auto von Sara Brun', exact: true })).toBeVisible();
   await list.getByTestId('driver-plan-link').click();
   await expect(page).toHaveURL(`/teams/${TEAM_1}/fahrerliste`);
+});
+
+test('DRV-24: on the driver list a match day opens its cars for seating people', async ({ page }) => {
+  await login(page, 'kim');
+  await openPlan(page);
+  await page.getByTestId(`plan-day-${T04}`).click();
+  const editor = page.getByTestId(`plan-editor-${T04}`);
+  await editor.getByRole('button', { name: 'Jana Wyss' }).click();
+  await editor.getByTestId(`seat-enter-${SARA}`).click();
+  await expect(editor.getByTestId(`seat-car-${SARA}`)).toContainText('Jana Wyss');
+  await checkAccessibility(page);
 });
 
 test('DRV-21 DRV-22: coaches overwrite the driving time; the info tells how it was calculated', async ({ page }) => {

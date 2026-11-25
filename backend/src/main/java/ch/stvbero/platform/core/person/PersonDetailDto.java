@@ -8,5 +8,6 @@ import java.util.UUID;
 
 @Schema(name = "PersonDetail")
 public record PersonDetailDto(UUID id, String firstName, String lastName, String email, boolean admin,
+                              Gender gender, Integer birthYear,
                               List<TeamMembershipDto> memberships) {
 }

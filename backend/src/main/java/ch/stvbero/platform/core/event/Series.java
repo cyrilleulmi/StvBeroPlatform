@@ -54,8 +54,13 @@ public class Series extends PanacheEntityBase {
     @Column(name = "valid_from")
     public LocalDate validFrom;
 
+    /** Last day of the series; {@code null}: it runs on (TER-23). */
     @Column(name = "valid_until")
     public LocalDate validUntil;
+
+    /** The events of the series exist up to this day; later ones are created as time goes on (TER-22). */
+    @Column(name = "generated_until")
+    public LocalDate generatedUntil;
 
     @Embedded
     public Location location;

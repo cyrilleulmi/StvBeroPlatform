@@ -176,7 +176,7 @@ public class TeamResource {
 
     @DELETE
     @Path("/{teamId}/members/{personId}")
-    @Operation(operationId = "removeMember", summary = "Remove a person from the team (admin only, RR-08). Existing responses are kept.")
+    @Operation(operationId = "removeMember", summary = "Take a person out of the team (admin, coach, E-103). Existing responses are kept.")
     @APIResponse(responseCode = "204", description = "Removed")
     @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))

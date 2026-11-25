@@ -317,6 +317,59 @@ test('TML-02: match duration, arrival lead and the usual meeting point are setti
 
 // ------------------------------------------------------------------ Driver plan of the season (DRV-14, DRV-17)
 
+test('DRV-14: one person enters herself for several match days of the season at once', async ({ page }) => {
+  await login(page, 'petra');
+  const december = await createMatchDay(page, '2026-12-06');
+  const january = await createMatchDay(page, '2027-01-10');
+
+  await login(page, 'kim');
+  await page.goto(`/teams/${TEAM_1}`);
+  await page.getByTestId('team-driver-plan-link').click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
+  await expect(page.getByTestId('driver-plan-season')).toHaveText('Team 1 · Saison 2026/27');
+
+  // Match day 04: distance in the head, Petra's full car in her row
+  await expect(page.getByTestId(`plan-day-km-${T04}`)).toHaveText('23.4 km');
+  await expect(page.getByRole('img', { name: 'Petra Keller fährt am So 22.11.' })).toBeVisible();
+  // Members change only their own row
+  await expect(page.getByTestId(`cell-${PETRA}-${december}`)).toHaveCount(0);
+
+  await page.getByTestId(`cell-${KIM}-${december}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${december}`)).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId(`cell-${KIM}-${january}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${january}`)).toHaveAttribute('aria-pressed', 'true');
+  // The trips are shared visibly (DRV-17)
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '2');
+  await expect(page.getByTestId(`plan-row-${PETRA}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '1');
+  await checkAccessibility(page);
+
+  // And she can take herself off again
+  await page.getByTestId(`cell-${KIM}-${january}`).click();
+  await expect(page.getByRole('status')).toContainText('Kim Baumann fährt am So 10.01.2027 nicht mehr.');
+  await expect(page.getByTestId(`cell-${KIM}-${january}`)).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '1');
+});
+
+test('DRV-14: a coach plans the season for someone else', async ({ page }) => {
+  await login(page, 'petra');
+  const december = await createMatchDay(page, '2026-12-06');
+  await page.goto(`/teams/${TEAM_1}/fahrerliste`);
+
+  await page.getByTestId(`cell-${KIM}-${T04}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${T04}`)).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId(`cell-${KIM}-${december}`).click();
+  await expect(page.getByTestId(`cell-${KIM}-${december}`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(`plan-row-${KIM}`).getByTestId('plan-total')).toHaveAttribute('data-trips', '2');
+
+  // The match day itself shows the same car, and links back to the plan
+  await page.getByTestId(`plan-day-${december}`).click();
+  await page.getByTestId(`plan-editor-${december}`).getByRole('link', { name: 'Zum Spieltag' }).click();
+  await page.getByTestId('driver-assign').click();
+  await expect(page.getByTestId(`seat-board-${december}`)).toContainText('Kim Baumann');
+  await page.getByTestId('driver-plan-link').click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fahrerliste' })).toBeVisible();
+});
+
 test.describe('No permission', () => {
   test.use({ expectedConsoleErrors: [/403 \(Forbidden\)/] });
 

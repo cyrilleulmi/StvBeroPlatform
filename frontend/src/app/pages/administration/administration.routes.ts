@@ -30,9 +30,19 @@ export const ADMINISTRATION_ROUTES: Routes = [
     loadComponent: () => import('./teams-admin').then((m) => m.TeamsAdmin),
   },
   {
+    path: 'teams/neu',
+    title: title('Neues Team'),
+    loadComponent: () => import('./team-wizard').then((m) => m.TeamWizard),
+  },
+  {
     path: 'teams/:teamId',
     title: title('Team verwalten'),
     loadComponent: () => import('./team-admin').then((m) => m.TeamAdmin),
+  },
+  {
+    path: 'zuteilung',
+    title: title('Teamzuteilung'),
+    loadComponent: () => import('./team-assignment').then((m) => m.TeamAssignment),
   },
   {
     path: 'saisons',

@@ -256,7 +256,7 @@ class EventsTest {
                         .replace("\"name\":\"Turnhalle Dorf\"", "\"name\":\"Halle\",\"mapsUrl\":\"http://x.ch\""))
                 .post("/api/events").then().statusCode(400);
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
-                .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2027-12-21", TEAM_1))
+                .body(seriesBody("MONDAY", "18:00", "2026-11-23", "2026-11-01", TEAM_1))
                 .post("/api/series").then().statusCode(400).body("fields[0].field", equalTo("validUntil"));
         given().cookie("stv_session", petra).contentType(ContentType.JSON)
                 .body(seriesBody("MONDAY", "21:30", "2026-11-23", "2026-12-21", TEAM_1))

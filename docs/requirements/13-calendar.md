@@ -37,5 +37,5 @@ Status legend: see [README](../../README.md#requirement-status).
 ## Notes
 
 - The feed has no `METHOD`: a subscribed feed is not an iTIP message.
-- How often a calendar app fetches again is up to the app (Apple: minutes to hours, Google: up to a day). The feed suggests one hour (`REFRESH-INTERVAL`, `X-PUBLISHED-TTL`). A real two-way sync like Spond's would need a calendar API per provider; out of scope (O-67).
+- How often a calendar app fetches again is up to the app (Apple: minutes to hours, Google: up to a day). The feed suggests one hour (`REFRESH-INTERVAL`, `X-PUBLISHED-TTL`). A real two-way sync like Spond's would need a calendar API per provider; out of scope (O-68).
 - The links in the feed point to the address of the app (`stv.app-url`, environment variable `STV_APP_URL`, default `http://localhost:4200`). The address shown in the profile is the address of the app plus the path from the API, so app and API must share the origin (in development through the proxy).

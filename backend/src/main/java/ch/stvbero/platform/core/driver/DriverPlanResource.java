@@ -224,12 +224,30 @@ public class DriverPlanResource {
     }
 
     @POST
+    @Path("/distribute/preview")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "previewDriverPlanDistribution",
+            summary = "Propose a fair distribution of the trips that are still missing on the upcoming match days: "
+                    + "drivers until there is a place for everyone who is expected. Changes nothing; entered "
+                    + "drivers stay (DRV-30, coach)")
+    @APIResponse(responseCode = "200", description = "The proposed trips",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.Distribution.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto.Distribution previewDistribution(@PathParam("teamId") UUID teamId,
+                                                          @QueryParam("season") UUID season) {
+        return plan.previewDistribution(auth.person(), teamId, season);
+    }
+
+    @POST
     @Path("/distribute")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "distributeDriverPlan",
-            summary = "Share the trips of the upcoming match days fairly: every match day gets drivers until there "
-                    + "is a place for everyone who is expected (DRV-30, coach)")
+            summary = "Enter the trips of a proposed distribution as they are; they stay, a later distribution "
+                    + "only adds (DRV-30, coach)")
     @APIResponse(responseCode = "200", description = "The plan after the change",
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
     @APIResponse(responseCode = "400", description = "Invalid request",
@@ -238,9 +256,28 @@ public class DriverPlanResource {
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     @APIResponse(responseCode = "404", description = "Not found",
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "The proposal no longer fits the plan (DRV-30)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "422", description = "Domain rule violated",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public DriverPlanDto distribute(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
                                     @Valid @NotNull DriverPlanDto.DistributeInput input) {
-        return plan.distribute(auth.person(), teamId, season, input.replace());
+        return plan.distribute(auth.person(), teamId, season, input.trips());
+    }
+
+    @DELETE
+    @Path("/cars")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "removeAllPlannedDrivers",
+            summary = "Remove every driver of the upcoming match days; passengers lose their seats (DRV-33, coach)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto removeAll(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season) {
+        return plan.removeAll(auth.person(), teamId, season);
     }
 
     @POST

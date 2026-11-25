@@ -20,6 +20,8 @@ public final class DriverRules {
 
     static final String DRIVER_IS_INDIVIDUAL = "ist als Fahrerin oder Fahrer eingetragen. Zuerst das Auto entfernen.";
     public static final String NOTHING_TO_PROPOSE = "Der Vorschlag ändert nichts: Alle haben schon einen Platz.";
+    /** The proposal of a distribution no longer fits the plan (DRV-30). */
+    public static final String DISTRIBUTION_OUTDATED = "Der Vorschlag passt nicht mehr zur Fahrerliste. Bitte nochmals fair verteilen.";
 
     public static final int MIN_SEATS = 1;
     public static final int MAX_SEATS = 8;
@@ -85,6 +87,16 @@ public final class DriverRules {
         }
         if (!end.isAfter(now) && !canManage) {
             throw DomainError.conflict("Spieltag vorbei", OVER, "DRV-02");
+        }
+    }
+
+    /**
+     * Arranging the cars of a match day: entering and removing drivers, seats, putting people into cars. Every
+     * member of the team does it for everyone of the team, coaches and admins too (DRV-32, «Plätze zuweisen»).
+     */
+    public static void checkCanArrange(boolean callerIsMember, boolean canManage) {
+        if (!(callerIsMember || canManage)) {
+            throw DomainError.forbidden();
         }
     }
 
@@ -265,6 +277,16 @@ public final class DriverRules {
         }
         return "Die Fahrten der Saison wurden verteilt. Du fährst an " + (days.size() == 1
                 ? "einem Spieltag: " : days.size() + " Spieltagen: ") + String.join(", ", days) + ".";
+    }
+
+    /** All planned trips were removed (DRV-33). */
+    public static String allTripsRemovedText(List<String> days) {
+        return "Die geplanten Fahrten wurden entfernt. Du fährst nicht mehr am " + String.join(", ", days) + ".";
+    }
+
+    /** All planned trips were removed: the seats are gone too (DRV-33). */
+    public static String allSeatsRemovedText(List<String> days) {
+        return "Die geplanten Fahrten wurden entfernt. Du hast keinen Platz mehr am " + String.join(", ", days) + ".";
     }
 
     public static String ownCarRemovedText(String event) {
