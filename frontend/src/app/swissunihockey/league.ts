@@ -72,7 +72,9 @@ function outcome(m: LeagueMatch): Outcome | null {
             <h2 id="league-info-title" class="section-title">{{ t.title }}</h2>
             <p>{{ t.notLinked }}</p>
             @if (auth.isAdmin()) {
-              <a [routerLink]="['/verwaltung/teams', d.teamId]">{{ t.linkInAdministration }}</a>
+              <a [routerLink]="['/verwaltung/teams', d.teamId]" [queryParams]="{ bereich: 'einstellungen' }">{{
+                t.linkInAdministration
+              }}</a>
             }
           </section>
         } @else {

@@ -49,7 +49,7 @@ test('F-18 criterion 1 (CAL-01): «Kalender abonnieren» with address, copy butt
 }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const section = page.getByRole('region', { name: 'Kalender abonnieren' });
   await expect(section).toBeVisible();
   const address = await calendarAddress(page);
@@ -78,7 +78,7 @@ test('F-18 criterion 1 (CAL-01): «Kalender abonnieren» with address, copy butt
 
 test('F-18 criterion 1 (CAL-01): a person without an address gets one on the first visit', async ({ page }) => {
   await login(page, 'lea');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const address = await calendarAddress(page);
   expect(address).not.toContain(ANNA_TOKEN);
   await page.reload();
@@ -93,7 +93,7 @@ test('F-18 criteria 2, 3, 5, 8 (CAL-02, CAL-03, CAL-05, CAL-08): feed without lo
   page,
 }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const feed = await fetchFeed(await calendarAddress(page));
   expect(feed.status).toBe(200);
   expect(feed.type).toMatch(/^text\/calendar/);
@@ -124,7 +124,7 @@ test('F-18 criteria 2, 3, 5, 8 (CAL-02, CAL-03, CAL-05, CAL-08): feed without lo
 
 test('F-18 criterion 4 (CAL-04): cancelled events are delivered as cancelled', async ({ page }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const feed = await fetchFeed(await calendarAddress(page));
   const cancelled = entry(feed.body, T03);
   expect(cancelled.get('STATUS')).toBe('CANCELLED');
@@ -133,7 +133,7 @@ test('F-18 criterion 4 (CAL-04): cancelled events are delivered as cancelled', a
 
 test('F-18 criteria 6, 7 (CAL-06, CAL-07): «Adresse erneuern» replaces the address at once', async ({ page }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/kalender');
   const old = await calendarAddress(page);
   const section = page.getByRole('region', { name: 'Kalender abonnieren' });
 

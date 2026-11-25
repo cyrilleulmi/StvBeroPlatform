@@ -54,7 +54,7 @@ test('F-17 criterion 1: section «Liga» on the team page, hint for teams withou
   await login(page, 'marc');
   await page.goto(`/teams/${TEAM_2}`);
   await page.getByRole('region', { name: 'Liga' }).getByRole('link', { name: 'In der Verwaltung verknüpfen' }).click();
-  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_2}`);
+  await expect(page).toHaveURL(`/verwaltung/teams/${TEAM_2}?bereich=einstellungen`);
 
   await page.goto(`/teams/${TEAM_2}/liga`);
   await expect(page.getByTestId('league-not-linked')).toContainText('nicht mit swiss unihockey verknüpft');

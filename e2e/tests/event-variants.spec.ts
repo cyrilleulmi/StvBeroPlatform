@@ -102,7 +102,7 @@ test('VAR-05: the event list shows the variant of every event by name and colour
 
 test('VAR-04: a coach changes name and colour of a variant, and the events follow', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await expect(variants(page).getByRole('listitem')).toHaveCount(4);
   await expect(variants(page).getByTestId('variant-PRACTICE')).toContainText('Training · Grün · Standard');
   await expect(variants(page).getByTestId('variant-SU_MATCH_DAY')).toContainText('mit Aufgebot · Abfahrt automatisch');
@@ -137,7 +137,7 @@ test('VAR-04: every colour of the palette has enough contrast', async ({ page })
     expect(created.status()).toBe(201);
   }
 
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await expect(variants(page).getByRole('listitem')).toHaveCount(9);
   for (const color of ['TEAL', 'VIOLET', 'BLUE', 'PINK', 'GREEN', 'RED', 'ORANGE', 'YELLOW', 'GREY']) {
     const colors = await variants(page)
@@ -160,7 +160,7 @@ test('VAR-06: without a call-up in the variant the match day works with the resp
   await page.goto(`/termine/${T04}`);
   await expect(page.getByRole('heading', { level: 2, name: 'Aufgebot' })).toBeVisible();
 
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await variants(page).getByRole('button', { name: 'Variante «swiss unihockey Spieltag» bearbeiten' }).click();
   const dialog = page.getByRole('dialog', { name: 'Terminvariante «swiss unihockey Spieltag»' });
   await dialog.getByRole('checkbox', { name: 'Aufgebot machen' }).uncheck();
@@ -199,7 +199,7 @@ test('VAR-07: the responses come first, and a coach changes order and visibility
     'Angaben',
   ]);
 
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await variants(page).getByRole('button', { name: 'Variante «swiss unihockey Spieltag» bearbeiten' }).click();
   const dialog = page.getByRole('dialog', { name: 'Terminvariante «swiss unihockey Spieltag»' });
   // «Fahrerliste» to the top: four steps up
@@ -230,7 +230,7 @@ test('VAR-07: the responses come first, and a coach changes order and visibility
 
 test('VAR-02: a variant of the team`s own can be chosen for an event', async ({ page }) => {
   await login(page, 'petra');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await variants(page).getByRole('button', { name: 'Variante hinzufügen' }).click();
   const dialog = page.getByRole('dialog', { name: 'Neue Terminvariante' });
   await dialog.getByLabel('Name').fill('Cupspiel');
@@ -255,7 +255,7 @@ test('VAR-02: a variant of the team`s own can be chosen for an event', async ({ 
   await expect(page.getByTestId('event-variant')).toHaveAttribute('data-tag', 'RED');
 
   // Deleted, the event falls back to the standard variant
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await variants(page).getByRole('button', { name: 'Variante «Cupspiel» löschen' }).click();
   await expect(variants(page).getByRole('status')).toHaveText('Variante «Cupspiel» ist gelöscht.');
   await page.goto('/termine');
@@ -266,7 +266,7 @@ test('VAR-02: a variant of the team`s own can be chosen for an event', async ({ 
 
 test('RR-07: players see no variants to manage', async ({ page }) => {
   await login(page, 'anna');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=termine`);
   await expect(page.getByRole('alert')).toHaveText('Keine Berechtigung');
   await expect(variants(page)).toHaveCount(0);
 });
@@ -325,7 +325,7 @@ test('DRV-18: a person says whether she can drive, and coaches see and change it
   page,
 }) => {
   await login(page, 'anna');
-  await page.goto('/profil');
+  await page.goto('/profil/fahren');
   const driving = page.getByTestId('my-driving');
   await expect(driving.getByRole('checkbox', { name: 'Kann fahren' })).toBeChecked();
   await expect(driving.getByLabel('Plätze im Auto (mit dir)')).toHaveValue('5');

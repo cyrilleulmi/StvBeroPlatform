@@ -1,4 +1,4 @@
-import { date, dateTime, name, seasonStatus, teamRoleText } from './format';
+import { coachedTeams, date, dateTime, initials, name, roleLabels, seasonStatus, teamRoleText } from './format';
 import type { Season } from '../api/types';
 
 const season = (over: Partial<Season>): Season => ({
@@ -64,6 +64,60 @@ describe('format', () => {
 
     it('prefers «aktuell» over «Archiv» if both flags are set', () => {
       expect(seasonStatus(season({ current: true, archived: true }))).toBe('aktuell');
+    });
+  });
+
+  describe('initials (E-109)', () => {
+    it('takes the first letter of the first and the last name', () => {
+      expect(initials({ firstName: 'Petra', lastName: 'Keller' })).toBe('PK');
+      expect(initials({ firstName: 'émilie', lastName: ' von Arx' })).toBe('ÉV');
+    });
+
+    it('copes with an empty name', () => {
+      expect(initials({ firstName: 'Alex', lastName: '' })).toBe('A');
+    });
+  });
+
+  describe('roleLabels (E-109)', () => {
+    it('lists the teams by name with the role, coaches marked', () => {
+      expect(
+        roleLabels([
+          { team: { name: 'Team 10' }, teamRole: 'PLAYER' },
+          { team: { name: 'Team 2' }, teamRole: 'PLAYER' },
+          { team: { name: 'Team 1' }, teamRole: 'COACH' },
+        ]),
+      ).toEqual([
+        { text: 'Team 1 · Coach', coach: true },
+        { text: 'Team 2 · Spielerin', coach: false },
+        { text: 'Team 10 · Spielerin', coach: false },
+      ]);
+    });
+
+    it('shows an unknown role as «Mitglied» (PTF-06)', () => {
+      expect(roleLabels([{ team: { name: 'Team 1' }, teamRole: 'GOALIE_COACH' }])).toEqual([
+        { text: 'Team 1 · Mitglied', coach: false },
+      ]);
+    });
+  });
+
+  describe('coachedTeams (E-92, E-110)', () => {
+    it('keeps the teams with the role «Coach», once each, in their order', () => {
+      expect(
+        coachedTeams([
+          { team: { id: 't2', name: 'Team 2' }, teamRole: 'PLAYER' },
+          { team: { id: 't1', name: 'Team 1' }, teamRole: 'COACH' },
+          { team: { id: 't3', name: 'Team 3' }, teamRole: 'COACH' },
+          { team: { id: 't1', name: 'Team 1' }, teamRole: 'COACH' },
+        ]),
+      ).toEqual([
+        { id: 't1', name: 'Team 1' },
+        { id: 't3', name: 'Team 3' },
+      ]);
+    });
+
+    it('is empty for players and admins without a team', () => {
+      expect(coachedTeams([{ team: { id: 't1', name: 'Team 1' }, teamRole: 'PLAYER' }])).toEqual([]);
+      expect(coachedTeams([])).toEqual([]);
     });
   });
 });

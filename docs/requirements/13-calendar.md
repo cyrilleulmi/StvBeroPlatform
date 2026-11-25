@@ -8,7 +8,7 @@ Status legend: see [README](../../README.md#requirement-status).
 
 | ID | Requirement | Status |
 |---|---|---|
-| CAL-01 | The profile (`/profil`) has the section «Kalender abonnieren» with the personal address, a button «Adresse kopieren», a link «Im Kalender öffnen» (`webcal:`) and short instructions for iPhone, Android (Google Kalender) and Outlook. Every person has at most one address; it is created on the first visit. | Decided (criteria), Assumption (created on the first visit, `webcal:` link) |
+| CAL-01 | The profile has the page «Kalender abonnieren» (`/profil/kalender`, a row in `/profil`, E-109) with the personal address, a button «Adresse kopieren», a link «Im Kalender öffnen» (`webcal:`) and short instructions for iPhone, Android (Google Kalender) and Outlook. Every person has at most one address; it is created on the first visit. | Decided (criteria), Assumption (created on the first visit, `webcal:` link) |
 | CAL-06 | The address contains a long random token (256 bits, 43 characters) and works without login, because calendar apps cannot log in. The token grants read access to the feed only; it is not a session. | Decided |
 | CAL-07 | «Adresse erneuern» (after a confirmation) creates a new token. The old address answers 404 at once. | Decided |
 

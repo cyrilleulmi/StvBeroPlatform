@@ -138,15 +138,13 @@ test.describe('without current season', () => {
 
 test('Follow-up fix #14 K2: Double click on Umbenennen saves the name once', async ({ page }) => {
   await login(page, 'alex');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  // «Teamname» is in the area «Einstellungen» (E-110); the member actions are in another area
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   const throttled = await throttle(page, 'PUT', new RegExp(`^/api/teams/${TEAM_1}$`));
   await page.getByLabel('Teamname').fill('Damen 1');
 
-  await doubleClickDuringRequest(page.getByRole('button', { name: 'Umbenennen' }), throttled, [
-    page.getByRole('button', { name: 'Aufnehmen' }),
-    page.getByRole('button', { name: 'Anna Muster entfernen' }),
-  ]);
+  await doubleClickDuringRequest(page.getByRole('button', { name: 'Umbenennen' }), throttled);
 
   await expect(page.getByRole('status')).toHaveText('Name gespeichert.');
   expect(throttled.count).toBe(1);
@@ -162,9 +160,9 @@ test('Follow-up fix #14 K2: Double click on Entfernen removes the person once, w
     page.getByRole('button', { name: 'Anna Muster entfernen' }),
     throttled,
     [
-      page.getByRole('button', { name: 'Umbenennen' }),
       page.getByRole('button', { name: 'Aufnehmen' }),
-      page.getByRole('button', { name: /entfernen$/ }).filter({ hasNotText: 'Anna Muster' }).first(),
+      page.getByLabel('Funktion von Anna Muster'),
+      page.getByRole('button', { name: 'Mia Frei entfernen' }),
     ],
   );
 

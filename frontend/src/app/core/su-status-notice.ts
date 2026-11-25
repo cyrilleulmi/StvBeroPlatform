@@ -24,7 +24,9 @@ import { TEXTS } from './texts';
           <ul class="teams" [attr.aria-label]="s.statusOpenTeam">
             @for (f of teams(); track f.teamId) {
               <li>
-                <a [routerLink]="['/verwaltung/teams', f.teamId]">{{ s.statusOpenTeam }}: {{ f.teamName }}</a>
+                <a [routerLink]="['/verwaltung/teams', f.teamId]" [queryParams]="{ bereich: 'einstellungen' }"
+                  >{{ s.statusOpenTeam }}: {{ f.teamName }}</a
+                >
               </li>
             }
           </ul>

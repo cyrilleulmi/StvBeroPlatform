@@ -21,7 +21,7 @@ IDs: Team 1 `10000000-0000-4000-8000-000000000001`, Team 2 `…002`, Team 3 `…
 
 | Case | Steps | Expected |
 |---|---|---|
-| K2.1 Navigation | As `petra` | `main-navigation` contains «Verwaltung». `/verwaltung` shows «Personen» and «Teams verwalten», no «Saisons» |
+| K2.1 Navigation | As `petra` | `main-navigation` contains «Verwaltung». `/verwaltung` shows «Personen» and «Alle Teams» («Teams verwalten» before E-110), no «Saisons» |
 | K2.2 Create person | «Personen» → «Person erfassen» → «Olivia», «Neu», e-mail → «Speichern» | On to `/verwaltung/personen/:id`, «Olivia Neu ist erfasst.», no admin checkbox |
 | K2.3 Add to Team 2 | `/verwaltung/teams/<T2>` → «Person» «Olivia Neu», «Funktion» «Coach» → «Aufnehmen» → reload | «Olivia Neu» under «Coaches», no «… entfernen» |
 | K2.4 API | `POST /api/persons` 201, `POST /api/teams/<T2>/members` 201, `PUT …/members/<id>` `{teamRole: COACH}` 200, `POST /api/teams` 201 | as stated |

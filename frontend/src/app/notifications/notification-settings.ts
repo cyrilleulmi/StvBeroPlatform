@@ -14,10 +14,12 @@ import {
   subscribe,
 } from '../core/push';
 import { TEXTS } from '../core/texts';
+import { pushOnThisDevice } from './notification-summary';
 
 /**
- * Section «Benachrichtigungen» in the profile (F-19, criteria 2 and 3): one switch for e-mail and one for push on
- * this device, the other devices with push, and explanations when push is not possible or was not allowed.
+ * Section «Benachrichtigungen» of the page `/profil/benachrichtigungen` (F-19, criteria 2 and 3): one switch for
+ * e-mail and one for push on this device, the other devices with push, and explanations when push is not possible
+ * or was not allowed. The page title says what it is, so the section has no heading of its own (E-109).
  */
 @Component({
   selector: 'app-notification-settings',
@@ -25,11 +27,10 @@ import { TEXTS } from '../core/texts';
   template: `
     <section
       class="card channels"
-      aria-labelledby="profile-notifications"
+      [attr.aria-label]="texts.title"
       data-testid="notification-settings"
       [attr.aria-busy]="loading() ? 'true' : null"
     >
-      <h2 id="profile-notifications" class="section-title">{{ texts.title }}</h2>
       <p class="secondary-text">{{ texts.intro }}</p>
 
       @if (settings(); as s) {
@@ -100,7 +101,7 @@ import { TEXTS } from '../core/texts';
         }
 
         @if (otherDevices().length > 0) {
-          <h3 class="subtitle">{{ texts.otherDevices }}</h3>
+          <h2 class="subtitle">{{ texts.otherDevices }}</h2>
           <ul class="devices" data-testid="push-devices">
             @for (d of otherDevices(); track d.id) {
               <li>
@@ -139,8 +140,7 @@ import { TEXTS } from '../core/texts';
       gap: 12px;
     }
     .channels p,
-    .channels h2,
-    .channels h3 {
+    .channels h2 {
       margin: 0;
     }
     .channel {
@@ -164,6 +164,8 @@ import { TEXTS } from '../core/texts';
       gap: 4px;
     }
     .subtitle {
+      font-family: var(--font);
+      font-stretch: normal;
       font-size: 15px;
       font-weight: 700;
     }
@@ -212,10 +214,7 @@ export class NotificationSettingsSection {
   protected readonly error = signal<string | null>(null);
 
   /** Push is on for this device: its subscription is registered on the server. */
-  protected readonly pushOn = computed(() => {
-    const e = this.endpoint();
-    return e !== null && (this.settings()?.devices.some((d) => d.endpoint === e) ?? false);
-  });
+  protected readonly pushOn = computed(() => pushOnThisDevice(this.settings(), this.endpoint()));
   protected readonly pushPossible = computed(
     () =>
       (this.settings()?.pushAvailable ?? false) && this.support === 'supported' && !this.denied(),

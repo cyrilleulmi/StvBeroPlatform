@@ -14,7 +14,7 @@ test.beforeEach(async ({ request }) => {
 
 test('Follow-up fix #21 AK1 (SAI-02): Renaming in the current season does not change the name in the archive', async ({ page }) => {
   await login(page, 'alex');
-  await page.goto(`/verwaltung/teams/${TEAM_1}`);
+  await page.goto(`/verwaltung/teams/${TEAM_1}?bereich=einstellungen`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Team 1');
   await page.getByLabel('Teamname').fill('Damen 1');
   await page.getByRole('button', { name: 'Umbenennen' }).click();

@@ -119,7 +119,7 @@ import { TEXTS } from '../../core/texts';
             } @else {
               <p class="secondary-text">{{ texts.league.notLinked }}</p>
               @if (auth.canManage()) {
-                <a [routerLink]="['/verwaltung/teams', t.id]">{{
+                <a [routerLink]="['/verwaltung/teams', t.id]" [queryParams]="{ bereich: 'einstellungen' }">{{
                   texts.league.linkInAdministration
                 }}</a>
               }

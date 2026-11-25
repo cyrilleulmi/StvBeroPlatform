@@ -31,7 +31,7 @@ Status legend: see [README](../../README.md#requirement-status).
 | ID | Requirement | Status |
 |---|---|---|
 | BEN-14 | Every notification is in the list in the app. E-mail and push come on top, through the same `Channel` interface as the app. | Decided |
-| BEN-15 | The profile has a section «Benachrichtigungen» with one switch per channel. E-mail is on by default if the person has an e-mail address; without an address it is off and cannot be switched on. Push is off until the person allows it on this device. | Decided |
+| BEN-15 | The profile has a page «Benachrichtigungen» (`/profil/benachrichtigungen`, a row in `/profil` with the current state, E-109) with one switch per channel. E-mail is on by default if the person has an e-mail address; without an address it is off and cannot be switched on. Push is off until the person allows it on this device. | Decided |
 | BEN-16 | Switching on push asks for the browser permission and registers the device. A person can have several devices; the other devices are listed and can be removed. A denied permission is explained with a hint on how to allow it again. On an iPhone the hint says to add the app to the home screen first. | Decided (criteria), Assumption (list of devices) |
 | BEN-17 | Push uses the service worker of the PWA and Web Push (VAPID, RFC 8291/8292). A tap on the push opens the event in the app (BEN-12). | Decided |
 | BEN-18 | E-mails are German, plain and readable on a phone: subject with the essence («Abgesagt: Training Di 24.11.»), greeting, the sentence of the notification, a button to the event and a line on how to switch e-mails off. | Decided (criteria), Assumption (wording) |

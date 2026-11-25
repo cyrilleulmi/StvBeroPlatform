@@ -185,7 +185,7 @@ test('STA-08: players see only their own numbers, under the profile', { tag: '@d
   await expect(page.getByRole('link', { name: 'Statistik' })).toHaveCount(0);
 
   await page.goto('/profil');
-  await page.getByRole('link', { name: 'Statistik ansehen' }).click();
+  await page.getByRole('link', { name: 'Meine Statistik' }).click();
   await expect(page).toHaveURL('/profil/statistik');
   await expect(page.getByRole('heading', { level: 1, name: 'Meine Statistik' })).toBeVisible();
   const numbers = page.getByTestId('statistics-numbers');

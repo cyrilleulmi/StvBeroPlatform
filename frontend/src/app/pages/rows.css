@@ -1,0 +1,93 @@
+/* Shared by the hubs «Profil» and «Verwaltung» (E-109, E-110), so that both read as one app: groups with a small
+   heading, cards of rows that lead to a page (icon box, title with one muted state line, chevron) and small links
+   for direct actions. */
+
+.group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.group-title {
+  font-size: 19px;
+}
+
+.links {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.icon-field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: var(--radius-icon);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.row-link .icon-field app-icon {
+  color: inherit;
+}
+
+.row-text {
+  display: grid;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row-text .row-title {
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.row-text .secondary-text {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* The line keeps its height while the state loads, so nothing jumps. */
+.row-text .state:empty::before {
+  content: '\00a0';
+}
+
+/* Direct actions next to a row (e.g. a team in «Meine Teams»): small links with an icon that wrap, 44px targets. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--touch);
+  padding: 0 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.action-link app-icon {
+  color: var(--primary);
+}
+
+@media (hover: hover) {
+  .action-link:hover {
+    border-color: var(--control-border);
+    background: color-mix(in srgb, var(--primary-soft) 55%, var(--surface));
+  }
+}

@@ -23,8 +23,9 @@ import { TEXTS } from '../core/texts';
 import { showModal } from '../core/dialog';
 
 /**
- * Section «Kalender abonnieren» in the profile (F-18, CAL-01, CAL-07): personal address of the iCalendar feed,
- * copy button, link for calendar apps (webcal), short instructions and «Adresse erneuern».
+ * Section «Kalender abonnieren» of the page `/profil/kalender` (F-18, CAL-01, CAL-07): personal address of the
+ * iCalendar feed, copy button, link for calendar apps (webcal), short instructions and «Adresse erneuern». The
+ * page title says what it is, so the section has no heading of its own (E-109).
  */
 @Component({
   selector: 'app-calendar-subscription',
@@ -33,11 +34,10 @@ import { showModal } from '../core/dialog';
   template: `
     <section
       class="card calendar"
-      aria-labelledby="profile-calendar"
+      [attr.aria-label]="texts.title"
       data-testid="calendar-subscription"
       [attr.aria-busy]="loading() ? 'true' : null"
     >
-      <h2 id="profile-calendar" class="section-title">{{ texts.title }}</h2>
       <p class="secondary-text">{{ texts.intro }}</p>
 
       @if (url(); as address) {
@@ -78,7 +78,7 @@ import { showModal } from '../core/dialog';
 
       @if (filter(); as f) {
         <form class="filter" data-testid="calendar-filter" (submit)="$event.preventDefault()">
-          <h3 class="subtitle">{{ texts.filterTitle }}</h3>
+          <h2 class="subtitle">{{ texts.filterTitle }}</h2>
           <p class="secondary-text">{{ texts.filterIntro }}</p>
           <fieldset>
             <legend>{{ texts.filterTypes }}</legend>
@@ -152,7 +152,7 @@ import { showModal } from '../core/dialog';
         </form>
       }
 
-      <h3 class="subtitle">{{ texts.howTo }}</h3>
+      <h2 class="subtitle">{{ texts.howTo }}</h2>
       <div class="help">
         <details data-testid="calendar-help-iphone">
           <summary>{{ texts.iphone }}</summary>
@@ -230,8 +230,7 @@ import { showModal } from '../core/dialog';
       gap: 12px;
     }
     .calendar p,
-    .calendar h2,
-    .calendar h3 {
+    .calendar h2 {
       margin: 0;
     }
     .field input {
@@ -244,6 +243,8 @@ import { showModal } from '../core/dialog';
       gap: 8px;
     }
     .subtitle {
+      font-family: var(--font);
+      font-stretch: normal;
       font-size: 15px;
       font-weight: 700;
     }
@@ -281,7 +282,7 @@ import { showModal } from '../core/dialog';
       gap: 10px;
     }
     .filter p,
-    .filter h3 {
+    .filter h2 {
       margin: 0;
     }
     fieldset {

@@ -40,3 +40,41 @@ export function seasonStatus(s: Season): string {
   if (s.archived) return TEXTS.season.archive;
   return TEXTS.season.planned;
 }
+
+/** «PK» for Petra Keller: the first letter of the first and the last name, for the avatar in the profile. */
+export function initials(p: Pick<PersonSummary, 'firstName' | 'lastName'>): string {
+  const first = (s: string) => Array.from(s.trim())[0] ?? '';
+  return (first(p.firstName) + first(p.lastName)).toLocaleUpperCase('de-CH');
+}
+
+/** One role of the person in a team, e.g. «Team 1 · Coach». */
+export interface RoleLabel {
+  text: string;
+  coach: boolean;
+}
+
+/** The roles of the person in her teams of the current season, by team name («Team 1 · Coach», «Team 2 · Spielerin»). */
+export function roleLabels(
+  memberships: readonly { team: { name: string }; teamRole: TeamRole | string }[],
+): RoleLabel[] {
+  return [...memberships]
+    .sort((a, b) => a.team.name.localeCompare(b.team.name, 'de-CH', { numeric: true }))
+    .map((m) => ({
+      text: TEXTS.profile.membership(m.team.name, teamRoleText(m.teamRole)),
+      coach: m.teamRole === 'COACH',
+    }));
+}
+
+/**
+ * The teams the person coaches, once each, in the order of the memberships (current season, from `/api/me`):
+ * «<Team> verwalten» in the navigation on desktop (E-92) and «Meine Teams» in «Verwaltung» (E-110).
+ */
+export function coachedTeams(
+  memberships: readonly { team: { id: string; name: string }; teamRole: TeamRole | string }[],
+): { id: string; name: string }[] {
+  const seen = new Map<string, { id: string; name: string }>();
+  for (const m of memberships) {
+    if (m.teamRole === 'COACH') seen.set(m.team.id, { id: m.team.id, name: m.team.name });
+  }
+  return [...seen.values()];
+}

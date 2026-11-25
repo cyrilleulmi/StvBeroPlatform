@@ -14,15 +14,15 @@ import { errorText } from '../core/error-text';
 import { TEXTS } from '../core/texts';
 
 /**
- * Section «Fahren» in the profile (DRV-18): whether the person can drive to match days and how many places
- * her car has, herself included. The proposal of a driver list uses these values (DRV-19).
+ * Section «Fahren» of the page `/profil/fahren` (DRV-18): whether the person can drive to match days and how many
+ * places her car has, herself included. The proposal of a driver list uses these values (DRV-19). The page title
+ * says what it is, so the section has no heading of its own (E-109).
  */
 @Component({
   selector: 'app-my-driving',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="card driving" aria-labelledby="profile-driving" data-testid="my-driving">
-      <h2 id="profile-driving" class="section-title">{{ s.section }}</h2>
+    <section class="card driving" [attr.aria-label]="s.section" data-testid="my-driving">
       <p class="secondary-text">{{ s.intro }}</p>
       @if (message(); as m) {
         <p class="message-success" role="status">{{ m }}</p>
