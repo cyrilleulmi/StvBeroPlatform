@@ -78,7 +78,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.edit {
+.edit,
+.header app-pin-action {
   justify-self: start;
 }
 

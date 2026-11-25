@@ -32,10 +32,15 @@ export const TEXTS = {
     greeting: (firstName: string) => `Hallo ${firstName}`,
     tilesTitle: 'Was möchtest du tun?',
     noTiles: 'Für dich gibt es noch keine Kacheln.',
-    nextEvent: 'Nächster Termin',
     nextMatchDay: 'Nächster Spieltag',
     noEvent: 'Keine kommenden Termine',
-    morePractices: 'Weitere Trainings',
+    eventsTitle: 'Deine Termine',
+    /** Which week the practices are from (TER-25): «Diese Woche», «Nächste Woche», «Woche vom 30.11.» */
+    week: {
+      current: 'Diese Woche',
+      next: 'Nächste Woche',
+      later: (monday: string) => `Woche vom ${monday}`,
+    },
     allEvents: 'Alle Termine',
     toEvent: (title: string) => `${title} öffnen`,
   },
@@ -186,6 +191,13 @@ export const TEXTS = {
     edit: 'Termin bearbeiten',
     /** Pencil on a card of the list (E-111), e.g. «Training Di 17.11. 18:30 bearbeiten». */
     editFor: (card: string) => `${card} bearbeiten`,
+    /** Pinned to the start page (TER-26, E-114) */
+    pinned: 'Angeheftet',
+    pin: 'An Startseite anheften',
+    unpin: 'Nicht mehr anheften',
+    pinnedNote: 'Steht bis zum Termin auf der Startseite aller Mitglieder der Teams.',
+    pinDone: 'Angeheftet. Der Termin steht jetzt auf der Startseite der Teams.',
+    unpinDone: 'Nicht mehr angeheftet.',
     /** Chips of the list (E-111) */
     filters: 'Filter',
     lastTeam: 'Mindestens ein Team bleibt gewählt.',

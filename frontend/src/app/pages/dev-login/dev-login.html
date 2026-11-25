@@ -10,26 +10,26 @@
     <p class="message-error" role="alert">{{ message }}</p>
   }
 
-  <!-- Which data the app holds, and the switch to the other data set (docs/test-data.md); one compact line (E-112) -->
+  <!-- Which data the app holds and the button for the other one, as one compact line (E-112); the explanation is
+       the tooltip -->
   @if (dataSet(); as d) {
     <section class="data-set" aria-labelledby="data-set-title" data-testid="data-set" [attr.data-dataset]="d.dataset">
-      <h2 id="data-set-title">
+      <h2 id="data-set-title" [title]="t.datasetText[d.dataset]">
         {{ t.dataset }}: <span data-testid="data-set-name">{{ t.datasetName[d.dataset] }}</span>
       </h2>
-      <div class="data-set-buttons">
-        @for (other of dataSets; track other) {
-          <button
-            type="button"
-            class="button button-secondary button-small"
-            [disabled]="switching() !== null || loggingIn() !== null"
-            [attr.aria-busy]="switching() === other ? 'true' : null"
-            (click)="load(other)"
-          >
-            {{ t.load[other] }}
-          </button>
-        }
-      </div>
-      <p class="data-set-text">{{ t.datasetText[d.dataset] }}</p>
+      <span class="separator" aria-hidden="true">·</span>
+      @for (other of otherDataSets(d.dataset); track other) {
+        <button
+          type="button"
+          class="data-set-switch"
+          [title]="t.datasetText[other]"
+          [disabled]="switching() !== null || loggingIn() !== null"
+          [attr.aria-busy]="switching() === other ? 'true' : null"
+          (click)="load(other)"
+        >
+          {{ t.load[other] }}
+        </button>
+      }
       @if (d.loading) {
         <p class="data-set-text" role="status" aria-busy="true" data-testid="data-set-loading">{{ t.loading }}</p>
       }

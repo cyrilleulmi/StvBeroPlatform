@@ -15,7 +15,7 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Line** | Group of players within a team (Linie 1, Linie 2, …). |
 | **Goalies** | A group of its own per team, next to the lines. |
 | **No line** | Display group for players who are assigned neither to a line nor to the goalies («Ohne Linie»). |
-| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. |
+| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. Can be pinned («angeheftet», TER-26): then it shows on the start page of the members of its teams until it is over. |
 | **Series** | Rule that creates recurring events («jeden Dienstag 18:30», every Tuesday 18:30). |
 | **Match day** | Event of type match day. Because of the tournament format it includes several matches in the same hall. |
 | **Match** | A single game within a match day, with opponent and start time. |

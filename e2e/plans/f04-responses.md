@@ -24,7 +24,7 @@ T02 practice Thu 19.11., T03 cancelled, T04 match day Sun 22.11., T07 past). Peo
 | K6 | S4 comments | `anna` → T01; `petra` → T01; `marc` → T01; API `GET …/overview` for each | Anna: no comment visible, field `comment` missing in the API. Petra: «Krank» for Mia (Team 1). Marc: comments of Team 2 (Eva «Komme evtl. später»), not Mia's. Mia sees her own comment |
 | K7 | S5 late cancellation | `PUT /api/test/clock` 16.11.2026 19:00; `anna` → T01 → «Nicht dabei» | API `lateCancellation: true`; `petra` sees «kurzfristig abgemeldet» for Anna. Before the deadline (06:00) no `lateCancellation` |
 | K8 | S7/S8 respond on behalf | `petra` → T01 → «Antwort für Nina Roth eintragen» → «nicht dabei»; `marc` → T01; API `marc` `PUT …/responses/<Anna>`; `anna` `PUT …/responses/<Nina>` | Nina «nicht dabei», «eingetragen von Petra Keller», also after reload. Marc: no button for Anna, API 403. Anna 403 |
-| K9 | Start screen | `anna` → `/` | Card `next-event` «Training Di 17.11.» with `my-response`; a tap saves; `alex` (no team): «Keine kommenden Termine» |
+| K9 | Start screen | `anna` → `/` | First card `start-practice-<01>` «Training Di 17.11.» with `my-response` (E-113: `next-event` is gone); a tap saves; `alex` (no team): «Keine kommenden Termine» (`start-empty`) |
 | K10 | Reload, cancelled | Reload after K3; `anna` → T03; API `PUT …/T03/responses/me` | Response unchanged; T03 buttons `disabled` with explanation (aria-describedby); API 409 rule TER-06 |
 
 ## Edge cases (states.md) and robustness

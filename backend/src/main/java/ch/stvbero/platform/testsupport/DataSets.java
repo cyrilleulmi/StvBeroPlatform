@@ -55,6 +55,9 @@ public class DataSets {
     ClubLoader loader;
 
     @Inject
+    SeedPins pins;
+
+    @Inject
     Simulation simulation;
 
     @Inject
@@ -85,8 +88,10 @@ public class DataSets {
             current = dataSet;
             if (dataSet == DataSet.TEST) {
                 seed.reset();
+                pins.test();
             } else {
                 club.reset();
+                pins.club();
             }
             suSimulator.reset();
             deliverySimulator.reset();

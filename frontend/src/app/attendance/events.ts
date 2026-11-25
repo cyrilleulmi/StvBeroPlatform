@@ -18,6 +18,7 @@ import { Icon } from '../core/icon';
 import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
+import { PinnedChip } from './pin';
 import { yearOf, month, monthKey, eventDate, clockTime } from '../core/time';
 import {
   apiTeams as teamsForApi,
@@ -43,7 +44,7 @@ interface Month {
 @Component({
   selector: 'app-events',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse, Scoreboard],
+  imports: [RouterLink, Icon, MyResponse, Scoreboard, PinnedChip],
   template: `
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
@@ -195,6 +196,9 @@ interface Month {
                 <span class="status-row">
                   @if (t.variant; as v) {
                     <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{ v.name }}</span>
+                  }
+                  @if (t.pinned) {
+                    <app-pinned-chip />
                   }
                   @if (t.myParticipation === 'OPTIONAL') {
                     <span class="chip" data-kind="optional" data-testid="event-optional">{{

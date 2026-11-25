@@ -721,6 +721,12 @@ button:disabled,
   background: var(--mustard-soft);
 }
 
+/* Pinned to the start page (TER-26, E-114): a pin and the word, on every surface where the event shows */
+.chip[data-kind='pinned'] {
+  gap: 4px;
+  background: var(--mustard-soft);
+}
+
 .header {
   display: grid;
   gap: 6px;

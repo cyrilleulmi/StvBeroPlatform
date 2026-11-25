@@ -43,6 +43,9 @@ public class EventResource {
     @Inject
     EventCalendarService calendar;
 
+    @Inject
+    EventPins pins;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "listEvents", summary = "Events of the person's own teams with the person's own response (TER-13)")
@@ -145,5 +148,38 @@ public class EventResource {
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public EventDto cancel(@PathParam("eventId") UUID eventId, @Valid @NotNull CancellationDto input) {
         return events.cancel(auth.person(), eventId, input.reason());
+    }
+
+    @POST
+    @Path("/{eventId}/pin")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "pinEvent",
+            summary = "Pin an event to the start page of the members of its teams until it is over (TER-26, TER-27). Pinning twice changes nothing.")
+    @APIResponse(responseCode = "200", description = "Angeheftet",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state: cancelled, over, archived season",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public EventDto pin(@PathParam("eventId") UUID eventId) {
+        return departure.apply(auth.person(), pins.pin(auth.person(), eventId));
+    }
+
+    @POST
+    @Path("/{eventId}/unpin")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "unpinEvent", summary = "Take the pin of an event away (TER-26, TER-27)")
+    @APIResponse(responseCode = "200", description = "Nicht mehr angeheftet",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = EventDto.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "409", description = "Conflicts with the current state: cancelled, over, archived season",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public EventDto unpin(@PathParam("eventId") UUID eventId) {
+        return departure.apply(auth.person(), pins.unpin(auth.person(), eventId));
     }
 }

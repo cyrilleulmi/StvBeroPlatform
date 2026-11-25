@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import type { Tile, EventSummary } from '../../api/types';
 import { MyResponse } from '../../attendance/my-response';
+import { PinnedChip } from '../../attendance/pin';
 import { yearOf, eventDate, clockTime } from '../../core/time';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
@@ -15,14 +15,14 @@ import { TEXTS } from '../../core/texts';
 import { startEvents } from './start-events';
 
 /**
- * Start: greeting, next own event with response buttons (F-04, ANM-08), then the next practices so
- * that at least two upcoming practices are visible (F-13), and tiles from `GET /api/tiles`
- * (NF-11, NF-12, RR-05).
+ * Start: greeting, then one list of cards sorted by date (TER-25, E-113): the practices of the week of the next
+ * practice, the next match day (AUF-35) and pinned events (TER-26), each with response buttons (ANM-08) and counts;
+ * then the tiles from `GET /api/tiles` (NF-11, NF-12, RR-05).
  */
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, Icon, MyResponse, SuStatusNotice, Scoreboard],
+  imports: [RouterLink, Icon, MyResponse, SuStatusNotice, Scoreboard, PinnedChip],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
@@ -35,31 +35,32 @@ export class Start implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
-  /** Next planned event of the own teams; skip cancelled ones. */
-  protected readonly next = signal<EventSummary | null>(null);
-  /** Further practices after the next event (F-13), cancelled ones skipped. */
-  protected readonly practices = signal<EventSummary[]>([]);
-  /** Next match day when the next event is not one (AUF-35). */
-  protected readonly matchDay = signal<EventSummary | null>(null);
+  /** Upcoming events of the own teams (`GET /api/events`); what shows is chosen by {@link startEvents}. */
+  private readonly events = signal<EventSummary[]>([]);
   protected readonly eventLoading = signal(true);
-  /** The next practice and the next match day: filled with the colour of their kind (E-105). */
-  protected readonly filled = computed(() => {
-    const all = [this.next(), this.matchDay(), ...this.practices()].filter((t): t is EventSummary => !!t);
-    const ids = new Set<string>();
-    for (const type of ['PRACTICE', 'MATCH_DAY'] as const) {
-      const first = all
-        .filter((t) => t.type === type)
-        .sort((a, b) => a.start.localeCompare(b.start))[0];
-      if (first) ids.add(first.id);
-    }
-    return ids;
-  });
   protected readonly eventError = signal<string | null>(null);
 
+  private readonly now = computed(() => this.auth.me()?.now ?? new Date().toISOString());
   private readonly year = computed(() => yearOf(this.auth.me()?.now));
 
+  protected readonly shown = computed(() => startEvents(this.events(), this.now()));
+
+  /** The next practice and the next match day: filled with the colour of their kind (E-105). */
+  protected readonly filled = computed(() => {
+    const s = this.shown();
+    return new Set([s.firstPracticeId, s.matchDayId].filter((id): id is string => !!id));
+  });
+
+  /** «Diese Woche», «Nächste Woche» or «Woche vom 30.11.» above the first practice (TER-25). */
+  protected readonly weekLabel = computed(() => {
+    const week = this.shown().week;
+    if (!week) return '';
+    if (week.kind !== 'later') return TEXTS.start.week[week.kind];
+    return TEXTS.start.week.later(eventDate(`${week.monday}T12:00:00Z`, this.year()).slice(3));
+  });
+
   async ngOnInit(): Promise<void> {
-    void this.loadEvent();
+    void this.loadEvents();
     try {
       this.tiles.set(await firstValueFrom(this.http.get<Tile[]>('/api/tiles')));
     } catch (e) {
@@ -67,6 +68,12 @@ export class Start implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Practices keep `start-practice-<id>`, the next match day `next-match-day`; pinned events `start-pinned-<id>`. */
+  protected testId(t: EventSummary): string {
+    if (t.id === this.shown().matchDayId) return 'next-match-day';
+    return t.type === 'PRACTICE' ? `start-practice-${t.id}` : `start-pinned-${t.id}`;
   }
 
   /** «Di 17.11. · 18:30–20:00»: day and time lead, the teams follow on their own quiet line. */
@@ -87,21 +94,15 @@ export class Start implements OnInit {
   protected async reload(id: string): Promise<void> {
     try {
       const updated = await firstValueFrom(this.http.get<EventSummary>(`/api/events/${id}`));
-      if (this.next()?.id === id) this.next.set(updated);
-      if (this.matchDay()?.id === id) this.matchDay.set(updated);
-      this.practices.update((list) => list.map((t) => (t.id === id ? updated : t)));
+      this.events.update((list) => list.map((t) => (t.id === id ? updated : t)));
     } catch (e) {
       this.eventError.set(errorText(e));
     }
   }
 
-  private async loadEvent(): Promise<void> {
+  private async loadEvents(): Promise<void> {
     try {
-      const events = await firstValueFrom(this.http.get<EventSummary[]>('/api/events'));
-      const shown = startEvents(events);
-      this.next.set(shown.next);
-      this.practices.set(shown.practices);
-      this.matchDay.set(shown.matchDay);
+      this.events.set(await firstValueFrom(this.http.get<EventSummary[]>('/api/events')));
     } catch (e) {
       this.eventError.set(errorText(e));
     } finally {

@@ -22,12 +22,13 @@
   text-transform: uppercase;
 }
 
-/* Data set: one compact line with the switch, the explanation small below (E-112) */
+/* Data set: one compact line, the current one as text and a text button for the other one (E-112) */
 .data-set {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 12px;
+  gap: 0 8px;
+  font-size: 14px;
 }
 
 .data-set h2 {
@@ -36,15 +37,27 @@
   font-weight: 700;
 }
 
-.data-set-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.separator {
+  color: var(--muted);
 }
 
-.data-set-buttons .button-small {
-  padding: 0 12px;
-  font-size: 13px;
+/* A text button: underlined like a link, still 44px high to tap */
+.data-set-switch {
+  min-height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.data-set-switch:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 
 .data-set-text {

@@ -21,8 +21,8 @@ import { quickPersonas, rolesLine, searchPeople } from './quick-personas';
 /**
  * Test mode login (dev/test only, E-112): on top the people most often needed for trying things out, chosen by role
  * so that it works in both data sets; below them everybody once in one list by name, with a search (`?suche=`). One
- * tap logs in. Small at the bottom: which data set is loaded, and the switch between the club data and the test
- * data (docs/test-data.md).
+ * tap logs in. Right under the intro one compact line: which data set is loaded and the button for the other one
+ * (docs/test-data.md).
  */
 @Component({
   selector: 'app-dev-login',
@@ -60,7 +60,10 @@ export class DevLogin implements OnInit, OnDestroy {
   protected readonly search = computed(() => this.searchQuery() ?? '');
   protected readonly quick = computed(() => quickPersonas(this.people()));
   protected readonly shown = computed(() => searchPeople(this.people(), this.search()));
-  protected readonly dataSets: DataSet[] = ['CLUB', 'TEST'];
+  /** The data set that is not loaded: only its button shows (E-112). */
+  protected otherDataSets(current: DataSet): DataSet[] {
+    return (['CLUB', 'TEST'] as DataSet[]).filter((d) => d !== current);
+  }
 
   protected roles(person: TestPerson): string {
     return rolesLine(person);

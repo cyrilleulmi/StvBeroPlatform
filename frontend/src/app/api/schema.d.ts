@@ -775,7 +775,9 @@ export interface paths {
          * Events of the person's own teams with the person's own response (TER-13)
          * @description Without `team`, the events of the person's own teams. With `team` (repeatable, E-111), the events
          *     of any of these teams: admins and coaches get them even if they are not a member (RR-03, E-69);
-         *     everyone else only the events of their own teams among them.
+         *     everyone else only the events of their own teams among them. There is no limit: without `to` the list
+         *     holds every upcoming event, so the start page finds the practices of the next week with practices, the next
+         *     match day and pinned events far ahead in one request (TER-25).
          */
         get: operations["listEvents"];
         put?: never;
@@ -855,6 +857,52 @@ export interface paths {
         put?: never;
         /** Cancel an event (TER-06, TER-12, coach). After that, no more responses are possible. */
         post: operations["cancelEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pin an event to the start page of the members of its teams until it is over (TER-26, TER-27). Pinning twice changes nothing.
+         * @description Whoever may edit the event: coaches, admins, people with a special permission for the event or its series
+         *     (RR-09, RR-10); others 403. Cancelled or past events and events of an archived season: 409 (rule TER-27).
+         *     Per event, not per series. Nobody is notified. Who pinned it and when are stored, not returned.
+         */
+        post: operations["pinEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{eventId}/unpin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take the pin of an event away (TER-26, TER-27)
+         * @description Same permissions and states as `pinEvent`. Unpinning an event that is not pinned changes nothing.
+         */
+        post: operations["unpinEvent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3160,6 +3208,11 @@ export interface components {
             myParticipation?: components["schemas"]["Participation"];
             /** @description The caller may edit the event: coach, admin or a special permission for the event or its series (TER-11, RR-09, RR-10), while it is planned, not over and its season not archived. The list shows the edit icon with it (E-111) */
             canEdit?: boolean;
+            /**
+             * @description Pinned to the start page of the members of its teams until it is over (TER-26, E-114). Everyone sees it; `canEdit` says who may pin and unpin. A cancelled event keeps the flag, the start page leaves it out
+             * @default false
+             */
+            pinned: boolean;
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -6180,6 +6233,56 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    pinEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pinned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    unpinEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not pinned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];

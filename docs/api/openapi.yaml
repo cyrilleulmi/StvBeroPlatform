@@ -1073,7 +1073,9 @@ paths:
       description: |
         Without `team`, the events of the person's own teams. With `team` (repeatable, E-111), the events
         of any of these teams: admins and coaches get them even if they are not a member (RR-03, E-69);
-        everyone else only the events of their own teams among them.
+        everyone else only the events of their own teams among them. There is no limit: without `to` the list
+        holds every upcoming event, so the start page finds the practices of the next week with practices, the next
+        match day and pinned events far ahead in one request (TER-25).
       parameters:
         - name: from
           in: query
@@ -1232,6 +1234,45 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Event' }
         '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/events/{eventId}/pin:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [Events]
+      operationId: pinEvent
+      summary: Pin an event to the start page of the members of its teams until it is over (TER-26, TER-27). Pinning twice changes nothing.
+      description: |
+        Whoever may edit the event: coaches, admins, people with a special permission for the event or its series
+        (RR-09, RR-10); others 403. Cancelled or past events and events of an archived season: 409 (rule TER-27).
+        Per event, not per series. Nobody is notified. Who pinned it and when are stored, not returned.
+      responses:
+        '200':
+          description: Pinned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/events/{eventId}/unpin:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [Events]
+      operationId: unpinEvent
+      summary: Take the pin of an event away (TER-26, TER-27)
+      description: Same permissions and states as `pinEvent`. Unpinning an event that is not pinned changes nothing.
+      responses:
+        '200':
+          description: Not pinned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -3933,6 +3974,12 @@ components:
             The caller may edit the event: coach, admin or a special permission for the event or its series
             (TER-11, RR-09, RR-10), while it is planned, not over and its season not archived. The list shows
             the edit icon with it (E-111)
+        pinned:
+          type: boolean
+          default: false
+          description: >-
+            Pinned to the start page of the members of its teams until it is over (TER-26, E-114). Everyone sees it;
+            `canEdit` says who may pin and unpin. A cancelled event keeps the flag, the start page leaves it out
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
