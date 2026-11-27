@@ -49,6 +49,7 @@ export const matchDay = (
   places: 8,
   attending: 8,
   noTrip: false,
+  ignored: false,
   ...over,
 });
 

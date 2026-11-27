@@ -72,7 +72,7 @@ public class DriverPlanService {
     @Inject
     Notifications notifications;
 
-    private record Context(Team team, Season season, List<TeamMembership> members, boolean member,
+    record Context(Team team, Season season, List<TeamMembership> members, boolean member,
                            boolean canManage, UUID caller, CurrentUser user) {
     }
 
@@ -107,14 +107,15 @@ public class DriverPlanService {
             UUID driver = input.driverId() == null ? user.personId() : input.driverId();
             // Planning the season for others stays with coaches and admins (DRV-14)
             DriverRules.checkCanActFor(user.personId(), driver, c.member(), c.canManage());
-            Set<UUID> ofTeam = new HashSet<>();
-            matchDays(c).forEach(event -> ofTeam.add(event.id));
+            Map<UUID, Event> ofTeam = new HashMap<>();
+            matchDays(c).forEach(event -> ofTeam.put(event.id, event));
             Set<UUID> wanted = new LinkedHashSet<>(input.eventIds());
             for (UUID eventId : wanted) {
-                if (!ofTeam.contains(eventId)) {
+                if (!ofTeam.containsKey(eventId)) {
                     throw DomainError.invalidField("eventIds",
                             "Ein gewählter Spieltag gehört nicht zu diesem Team und dieser Saison.");
                 }
+                IgnoredMatchDays.checkIncluded(ofTeam.get(eventId));
             }
             Set<UUID> alreadyDriving = new HashSet<>();
             cars(wanted).stream().filter(car -> car.driver().equals(driver))
@@ -209,7 +210,7 @@ public class DriverPlanService {
         return new Context(team, season, members, member, user.allTeams(), user.personId(), user);
     }
 
-    private List<Event> matchDays(Context c) {
+    List<Event> matchDays(Context c) {
         return em.createQuery("""
                         select e from Event e join e.teams t
                         where t.id = :team and e.season.id = :season and e.type = :type
@@ -267,6 +268,7 @@ public class DriverPlanService {
             Integer distance = route.map(Routes.Stored::distanceMeters).orElse(null);
             boolean cancelled = event.status == EventStatus.CANCELLED;
             boolean over = !event.end.isAfter(now);
+            boolean ignored = event.ignoredInDriverPlan;
             Double creditKm = DriverRules.kilometres(DriverRules.credit(distance, event.status));
             List<DriverListDto.CarDto> cars = new ArrayList<>();
             int freeSeats = 0;
@@ -277,10 +279,11 @@ public class DriverPlanService {
                 freeSeats += free;
                 cars.add(new DriverListDto.CarDto(car.id(), person.apply(car.driver()), car.seats(), free,
                         passengers, creditKm));
-                trips.add(new DriverPlanRules.Trip(car.driver(), cancelled, over, distance));
+                boolean counts = IgnoredMatchDays.counts(cancelled, ignored);
+                trips.add(new DriverPlanRules.Trip(car.driver(), !counts, over, distance));
             }
             cars.sort(Comparator.comparing(DriverListDto.CarDto::driver, PersonSummary.ORDER));
-            boolean changeable = writable && missing.isEmpty() && !cancelled && (!over || c.canManage())
+            boolean changeable = writable && missing.isEmpty() && !cancelled && !ignored && (!over || c.canManage())
                     && (c.member() || c.canManage());
             matchDays.add(new DriverPlanDto.MatchDay(event.id, event.title,
                     event.start.atZone(BackendClock.ZONE).toOffsetDateTime(),
@@ -291,7 +294,7 @@ public class DriverPlanService {
                     freeSeats, DriverDistributionRules.expected(event.expectedTravellers, ofTeam, memberCount),
                     event.expectedTravellers != null,
                     DriverDistributionRules.places(cars.stream().map(DriverListDto.CarDto::seats).toList()),
-                    attending.getOrDefault(event.id, 0), noTrip(event)));
+                    attending.getOrDefault(event.id, 0), noTrip(event), ignored));
         }
 
         LocalDate today = extraTrips.today();
@@ -368,37 +371,16 @@ public class DriverPlanService {
 
     // ------------------------------------------------------------------ Simple planning (DRV-29, DRV-30)
 
-    /** Sets how many people are expected to travel to a match day of the team; {@code null}: everyone (DRV-29). */
-    public DriverPlanDto setExpected(CurrentUser user, UUID teamId, UUID seasonId, Integer expected) {
-        QuarkusTransaction.requiringNew().run(() -> {
-            Context c = managing(user, teamId, seasonId);
-            c.team().in(c.season()).orElseThrow().expectedTravellers = expected;
-        });
-        return get(user, teamId, seasonId);
-    }
-
-    /** Sets the number for one match day; {@code null}: the number of the team (DRV-29). */
-    public DriverPlanDto setMatchDayExpected(CurrentUser user, UUID teamId, UUID seasonId, UUID eventId,
-                                             Integer expected) {
-        QuarkusTransaction.requiringNew().run(() -> {
-            Context c = managing(user, teamId, seasonId);
-            Event event = matchDays(c).stream().filter(e -> e.id.equals(eventId)).findFirst()
-                    .orElseThrow(() -> DomainError.notFound("Diesen Spieltag gibt es in diesem Team nicht."));
-            event.expectedTravellers = expected;
-        });
-        return get(user, teamId, seasonId);
-    }
-
     /**
-     * Upcoming match days that need drivers (DRV-30): not cancelled, not over, meeting point and venue set, and
-     * not at home. By start.
+     * Upcoming match days that need drivers (DRV-30): not cancelled, not over, meeting point and venue set, not at
+     * home, not left out (DRV-35). By start.
      */
     private Map<UUID, Event> fillable(Context c) {
         Instant now = clock.now();
         Map<UUID, Event> byId = new LinkedHashMap<>();
         matchDays(c).stream()
                 .filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now)
-                        && MatchDayRoutes.missing(e).isEmpty() && !noTrip(e))
+                        && MatchDayRoutes.missing(e).isEmpty() && !noTrip(e) && !e.ignoredInDriverPlan)
                 .forEach(e -> byId.put(e.id, e));
         return byId;
     }
@@ -501,15 +483,16 @@ public class DriverPlanService {
     }
 
     /**
-     * Removes every driver of the upcoming match days that are not cancelled (DRV-33); their passengers lose
-     * their seats. Every driver and passenger affected gets one message. Coaches and admins.
+     * Removes every driver of the upcoming match days that are not cancelled nor left out (DRV-33, DRV-35); their
+     * passengers lose their seats. Every driver and passenger affected gets one message. Coaches and admins.
      */
     public DriverPlanDto removeAll(CurrentUser user, UUID teamId, UUID seasonId) {
         QuarkusTransaction.requiringNew().run(() -> {
             Context c = managing(user, teamId, seasonId);
             Instant now = clock.now();
             Map<UUID, Event> byId = new LinkedHashMap<>();
-            matchDays(c).stream().filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now))
+            matchDays(c).stream()
+                    .filter(e -> e.status != EventStatus.CANCELLED && e.end.isAfter(now) && !e.ignoredInDriverPlan)
                     .forEach(e -> byId.put(e.id, e));
             if (byId.isEmpty()) {
                 return;
@@ -584,6 +567,7 @@ public class DriverPlanService {
                 throw DomainError.notFound("Diesen Spieltag gibt es in diesem Team nicht.");
             }
             em.createNativeQuery("select id from event where id = ? for update").setParameter(1, eventId).getResultList();
+            IgnoredMatchDays.checkIncluded(Event.findById(eventId));
             DriverPlanDto plan = dto(c);
             DriverPlanDto.MatchDay day = plan.matchDays().stream().filter(m -> m.eventId().equals(eventId))
                     .findFirst().orElseThrow();
@@ -608,7 +592,7 @@ public class DriverPlanService {
     }
 
     /** Context for planning: coaches and admins, season not archived. */
-    private Context managing(CurrentUser user, UUID teamId, UUID seasonId) {
+    Context managing(CurrentUser user, UUID teamId, UUID seasonId) {
         Context c = writableContext(user, teamId, seasonId);
         if (!c.canManage()) {
             throw DomainError.forbidden();

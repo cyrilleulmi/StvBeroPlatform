@@ -64,7 +64,9 @@ export class PlanStore {
   readonly upcoming = computed(() => this.matchDays().filter((m) => !m.over));
   readonly past = computed(() => this.matchDays().filter((m) => m.over));
   /** The next match day people have to drive to. */
-  readonly nextMatchDay = computed(() => this.upcoming().find((m) => !m.cancelled && !m.noTrip) ?? null);
+  readonly nextMatchDay = computed(() => this.upcoming().find((m) => !m.cancelled && !this.skipped(m)) ?? null);
+  /** Upcoming match days with drivers that «Alle entfernen» takes off; not those left out (DRV-33, DRV-35). */
+  readonly removable = computed(() => this.upcoming().filter((m) => !m.cancelled && !m.ignored && m.cars.length > 0));
   /** Upcoming match days that still lack places. */
   readonly short = computed(() => this.upcoming().filter((m) => this.missingPlaces(m) > 0));
 
@@ -131,15 +133,20 @@ export class PlanStore {
     return [m.venue, m.town].filter(Boolean).join(', ');
   }
 
-  /** Places that are missing for everyone who is expected; 0 for home, cancelled and past match days. */
+  /** Nobody has to drive: a home match day, or one left out of the driver list (DRV-30, DRV-35). */
+  skipped(m: DriverPlanMatchDay): boolean {
+    return m.noTrip || m.ignored;
+  }
+
+  /** Places that are missing for everyone who is expected; 0 for home, ignored, cancelled and past match days. */
   missingPlaces(m: DriverPlanMatchDay): number {
-    if (m.noTrip || m.cancelled || m.over || !m.ready) return 0;
+    if (this.skipped(m) || m.cancelled || m.over || !m.ready) return 0;
     return Math.max(0, m.expected - m.places);
   }
 
-  /** `enough`, `short`, `none` (home, cancelled, not ready) for colours and test attributes. */
+  /** `enough`, `short`, `none` (home, ignored, cancelled, not ready) for colours and test attributes. */
   state(m: DriverPlanMatchDay): 'enough' | 'short' | 'none' {
-    if (m.noTrip || m.cancelled || !m.ready) return 'none';
+    if (this.skipped(m) || m.cancelled || !m.ready) return 'none';
     return m.places >= m.expected ? 'enough' : 'short';
   }
 
@@ -170,7 +177,7 @@ export class PlanStore {
 
   /** `enough` or `short` with the proposal, for the foot of the grid. */
   stateWithProposal(m: DriverPlanMatchDay): 'enough' | 'short' | 'none' {
-    if (m.noTrip || m.cancelled || !m.ready) return 'none';
+    if (this.skipped(m) || m.cancelled || !m.ready) return 'none';
     return this.placesWithProposal(m) >= m.expected ? 'enough' : 'short';
   }
 
@@ -338,6 +345,15 @@ export class PlanStore {
     return this.change(
       'expected:' + eventId,
       this.http.put<DriverPlan>(this.url(`/match-days/${eventId}/expected`), { expected }, { params: this.params() }),
+    );
+  }
+
+  /** Leaves a match day out of the driver list (`true`) or takes it in again (DRV-35). */
+  setIgnored(m: DriverPlanMatchDay, ignored: boolean): Promise<boolean> {
+    return this.change(
+      'ignored:' + m.eventId,
+      this.http.put<DriverPlan>(this.url(`/match-days/${m.eventId}/ignored`), { ignored }, { params: this.params() }),
+      ignored ? this.t.ignored(this.day(m)) : this.t.included(this.day(m)),
     );
   }
 
