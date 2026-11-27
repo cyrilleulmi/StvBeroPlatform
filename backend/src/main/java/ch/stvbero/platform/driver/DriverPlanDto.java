@@ -48,6 +48,12 @@ public record DriverPlanDto(
             @Min(value = 1, message = EXPECTED_TEXT) @Max(value = 60, message = EXPECTED_TEXT) Integer expected) {
     }
 
+    /** Request: leave a match day out of the driver list or take it in again (DRV-35). */
+    @Schema(name = "DriverPlanIgnoredInput")
+    public record IgnoredInput(
+            @NotNull(message = "Bitte angeben, ob der Spieltag ausgelassen wird.") Boolean ignored) {
+    }
+
     /** Request: the next driver in line takes a trip (DRV-31). */
     @Schema(name = "DriverPlanNextInput")
     public record NextInput(
@@ -173,7 +179,8 @@ public record DriverPlanDto(
             @Schema(description = "The number was set by hand for this match day (DRV-29)") boolean expectedManual,
             @Schema(description = "Places of all cars, drivers included") int places,
             @Schema(description = "People who responded «dabei»") int attending,
-            @Schema(description = "The meeting point is the venue: nobody has to drive (DRV-30)") boolean noTrip) {
+            @Schema(description = "The meeting point is the venue: nobody has to drive (DRV-30)") boolean noTrip,
+            @Schema(description = "Left out of the driver list: its trips do not count and «Fair verteilen» skips it (DRV-35)") boolean ignored) {
     }
 
     /** How often a member drives in the season (DRV-17): done and planned. */

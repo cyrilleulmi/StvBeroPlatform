@@ -428,12 +428,12 @@ public class DriverListService {
         return new LinkedHashSet<>(rows);
     }
 
-    /** Trips per driver in the season of the match day, without this match day and cancelled ones (DRV-17). */
+    /** Trips per driver in the season, without this match day, cancelled and left out ones (DRV-17, DRV-35). */
     private Map<UUID, Integer> tripsInSeason(Event event) {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
                         select c.driver_id, count(*) from car c join event e on e.id = c.event_id
-                        where e.season_id = ? and e.status <> 'CANCELLED' and e.id <> ?
+                        where e.season_id = ? and e.status <> 'CANCELLED' and e.id <> ? and not e.ignored_in_driver_plan
                         group by c.driver_id""")
                 .setParameter(1, event.season.id).setParameter(2, event.id).getResultList();
         Map<UUID, Integer> trips = new HashMap<>();

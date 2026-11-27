@@ -183,3 +183,33 @@ test('DRV-02: a player changes her own row only; a tap on a match day shows its 
   await page.getByTestId(`plan-day-${december}`).click();
   await expect(page.getByTestId(`plan-editor-${december}`)).toContainText('Sara Brun');
 });
+
+test('DRV-35: the coach leaves a match day out of the driver list and takes it in again', async ({ page }) => {
+  const december = await openPlan(page, 'petra');
+  const saraTotal = page.getByTestId(`plan-row-${SARA}`).getByTestId('plan-total');
+  await expect(saraTotal).toHaveAttribute('data-trips', '1');
+
+  // Leave out match day 04: Sara's trip no longer counts and the column shows no cars
+  await page.getByTestId(`plan-day-${T04}`).click();
+  await page.getByTestId(`plan-editor-${T04}`).getByTestId('plan-ignore').click();
+  await expect(page.getByRole('status')).toContainText('ist ausgelassen');
+  await expect(page.getByTestId(`plan-day-${T04}`)).toContainText('ausgelassen');
+  await expect(page.getByTestId(`plan-places-${T04}`)).toHaveAttribute('data-state', 'none');
+  await expect(page.getByTestId(`cell-${SARA}-${T04}`)).toHaveCount(0);
+  await expect(saraTotal).toHaveAttribute('data-trips', '0');
+  await expect(page.getByTestId('plan-ignored')).toBeVisible();
+  await checkAccessibility(page);
+
+  // «Fair verteilen» proposes drivers for December only
+  await page.getByTestId('distribute').click();
+  await expect(page.getByTestId('distribution-proposal')).toBeVisible();
+  await expect(page.getByTestId(`proposal-${SARA}-${T04}`)).toHaveCount(0);
+  await page.getByTestId('distribute-discard').click();
+  await expect(page.getByTestId(`plan-places-${december}`)).toHaveAttribute('data-state', 'short');
+
+  // Take it in again: Sara's car is back and counts
+  await page.getByTestId(`plan-editor-${T04}`).getByTestId('plan-include').click();
+  await expect(page.getByRole('status')).toContainText('zählt wieder');
+  await expect(page.getByTestId(`cell-${SARA}-${T04}`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(saraTotal).toHaveAttribute('data-trips', '1');
+});

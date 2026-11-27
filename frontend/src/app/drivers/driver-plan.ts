@@ -8,6 +8,7 @@ import { formatDecimal, formatWhole } from '../core/number';
 import { TEXTS } from '../core/texts';
 import { ConfirmDialog } from '../core/confirm-dialog';
 import { Fairness } from './simple/fairness';
+import { IgnoreMatchDay } from './simple/ignore-match-day';
 import { PlanStore, QueueEntry } from './simple/plan-store';
 import { SeatBoard } from './simple/seat-board';
 import { Stepper } from './simple/stepper';
@@ -23,7 +24,7 @@ import { Stepper } from './simple/stepper';
 @Component({
   selector: 'app-driver-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, Fairness, SeatBoard, Stepper, ConfirmDialog],
+  imports: [RouterLink, Icon, Fairness, IgnoreMatchDay, SeatBoard, Stepper, ConfirmDialog],
   providers: [PlanStore],
   template: `
     <div class="header">
@@ -167,9 +168,9 @@ import { Stepper } from './simple/stepper';
                           (click)="select(m)"
                         >
                           <span class="day-date">{{ shortDay(m) }}</span>
-                          <span class="day-place">{{ m.noTrip ? b.home : (m.town ?? m.venue ?? '') }}</span>
+                          <span class="day-place">{{ m.ignored ? b.ignored : m.noTrip ? b.home : (m.town ?? m.venue ?? '') }}</span>
                           <span class="day-km" [attr.data-testid]="'plan-day-km-' + m.eventId">{{
-                            m.noTrip || !has(m.distanceKm) ? '–' : b.dayKm(km(m.distanceKm))
+                            store.skipped(m) || !has(m.distanceKm) ? '–' : b.dayKm(km(m.distanceKm))
                           }}</span>
                           <span class="visually-hidden">{{ b.openDay }}</span>
                         </button>
@@ -209,7 +210,7 @@ import { Stepper } from './simple/stepper';
                           [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
                           [attr.data-state]="m.over ? 'over' : null"
                         >
-                          @if (m.noTrip || m.cancelled) {
+                          @if (store.skipped(m) || m.cancelled) {
                             <span class="none" aria-hidden="true">·</span>
                           } @else if (carOf(m, q.person.id); as car) {
                             @if (canToggle(m, q)) {
@@ -294,7 +295,7 @@ import { Stepper } from './simple/stepper';
                         [attr.data-selected]="selectedId() === m.eventId ? 'true' : null"
                         [attr.data-testid]="'plan-places-' + m.eventId"
                       >
-                        @if (m.noTrip || m.cancelled) {
+                        @if (store.skipped(m) || m.cancelled) {
                           <span aria-hidden="true">–</span>
                         } @else {
                           <span class="sum-places">{{ store.placesWithProposal(m) }}</span>
@@ -354,7 +355,7 @@ import { Stepper } from './simple/stepper';
                 <h2 id="day-title" class="section-title">{{ store.dayTime(m) }}</h2>
                 <p class="secondary-text">
                   {{ store.venue(m) }}
-                  @if (has(m.distanceKm) && !m.noTrip) {
+                  @if (has(m.distanceKm) && !store.skipped(m)) {
                     · {{ t.distance(km(m.distanceKm)) }}
                   }
                 </p>
@@ -363,6 +364,8 @@ import { Stepper } from './simple/stepper';
             </div>
             @if (m.cancelled) {
               <p class="empty">{{ t.cancelled }}</p>
+            } @else if (m.ignored) {
+              <app-ignore-match-day [matchDay]="m" />
             } @else if (m.noTrip) {
               <p class="empty">{{ t.home }}</p>
             } @else if (!m.ready) {
@@ -388,6 +391,7 @@ import { Stepper } from './simple/stepper';
                 </div>
               }
               <app-seat-board [eventId]="m.eventId" />
+              <app-ignore-match-day [matchDay]="m" />
             }
           </section>
         }
@@ -870,9 +874,7 @@ export class DriverPlanPage {
   );
 
   /** Upcoming match days with planned drivers: what «Alle entfernen» takes off. */
-  private readonly planned = computed(() =>
-    this.store.upcoming().filter((m) => !m.cancelled && m.cars.length > 0),
-  );
+  private readonly planned = this.store.removable;
   protected readonly hasPlanned = computed(() => this.planned().length > 0);
 
   protected readonly proposedDays = computed(() => new Set(this.store.proposed().map((t) => t.eventId)).size);

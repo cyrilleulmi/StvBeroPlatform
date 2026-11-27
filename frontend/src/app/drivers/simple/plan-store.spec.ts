@@ -149,6 +149,18 @@ describe('PlanStore', () => {
       expect(store.short().map((m) => m.eventId)).toEqual(['next']);
     });
 
+    it('skips a match day left out of the driver list (DRV-35)', () => {
+      const { store } = setup();
+      const ignored = matchDay('ignored', { places: 0, expected: 8, ignored: true });
+      store.plan.set(plan({ matchDays: [ignored, matchDay('later', { places: 4, expected: 8 })] }));
+      expect(store.nextMatchDay()?.eventId).toBe('later');
+      expect(store.short().map((m) => m.eventId)).toEqual(['later']);
+      expect(store.skipped(ignored)).toBe(true);
+      expect(store.missingPlaces(ignored)).toBe(0);
+      expect(store.state(ignored)).toBe('none');
+      expect(store.stateWithProposal(ignored)).toBe('none');
+    });
+
     it('has no next match day if there are none', () => {
       const { store } = setup();
       expect(store.nextMatchDay()).toBeNull();
