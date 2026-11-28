@@ -123,6 +123,22 @@
       }
     </div>
 
+    @if (values().type === 'PRACTICE') {
+      <app-pre-training-fields
+        idPrefix="event"
+        [enabled]="values().preTraining"
+        [title]="values().preTrainingTitle"
+        [time]="values().preTrainingTime"
+        [practiceStart]="values().start"
+        [titleError]="fieldErrors().preTrainingTitle"
+        [timeError]="fieldErrors().preTrainingTime"
+        [disabled]="saving()"
+        (enabledChange)="set('preTraining', $event)"
+        (titleChange)="set('preTrainingTitle', $event)"
+        (timeChange)="set('preTrainingTime', $event)"
+      />
+    }
+
     @if (asSeries()) {
       <div class="field-row">
         @for (f of periodFields; track f.field) {

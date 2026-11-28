@@ -1,0 +1,179 @@
+@if (view(); as v) {
+  @if (place() === 'card') {
+    <!-- On a card: inside the link to the event, so only text and drawings, nothing to tap -->
+    @switch (design()) {
+      @case ('a') {
+        <!-- A «Zeile»: the usual line stays, one quiet line more -->
+        <span>{{ day() }} · {{ period() }}</span>
+        <span class="a-line" data-testid="pre-training">
+          <app-icon name="timer" [size]="16" />
+          <span
+            ><span class="a-label">{{ t.label }}</span> {{ v.start }} · {{ v.title }}</span
+          >
+        </span>
+      }
+      @case ('b') {
+        <!-- B «Ablauf»: what happens in which order, top to bottom -->
+        <span>{{ day() }}</span>
+        <span class="b-steps" data-testid="pre-training">
+          <span class="b-step" data-kind="pre">
+            <span class="b-time">{{ v.start }}</span>
+            <span class="b-what"
+              >{{ v.title }} <span class="b-note">{{ t.label }}</span></span
+            >
+          </span>
+          <span class="b-step">
+            <span class="b-time">{{ v.practiceStart }}</span>
+            <span class="b-what"
+              >{{ name() }} <span class="b-note">{{ t.until(v.end) }}</span></span
+            >
+          </span>
+        </span>
+      }
+      @case ('c') {
+        <!-- C «Zeitbalken»: the evening to scale, the pre-training hatched -->
+        <span>{{ day() }}</span>
+        <span class="c" data-testid="pre-training" [style.--pt-share]="v.share + '%'">
+          <span class="visually-hidden">{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}</span>
+          <span class="c-grid" aria-hidden="true">
+            <span class="c-time">{{ v.start }}</span>
+            <span class="c-time c-times"
+              ><span>{{ v.practiceStart }}</span
+              ><span>{{ v.end }}</span></span
+            >
+            <span class="c-segment c-pre"></span>
+            <span class="c-segment c-main"></span>
+          </span>
+          <span class="c-legend" aria-hidden="true"
+            ><span class="c-swatch c-pre"></span>{{ v.title }} · {{ lead() }} {{ t.label }}</span
+          >
+        </span>
+      }
+      @case ('d') {
+        <!-- D «Anzeigetafel»: when to be there leads, as big as the response counts -->
+        <span>{{ day() }}</span>
+        <span class="d" data-testid="pre-training">
+          <span class="d-board">
+            <span class="d-digits">{{ v.start }}</span>
+            <span class="d-word">{{ t.beThere }}</span>
+          </span>
+          <span class="d-text">
+            <span class="d-title"
+              >{{ v.title }} <span class="visually-hidden">({{ t.label }})</span></span
+            >
+            <span class="d-then">{{ t.then }} {{ name() }} {{ period() }}</span>
+          </span>
+        </span>
+      }
+      @case ('e') {
+        <!-- E «Ticket»: the usual line stays, the pre-training is a coupon attached to it -->
+        <span>{{ day() }} · {{ period() }}</span>
+        <span class="e-ticket" data-testid="pre-training">
+          <span class="e-stub">
+            <span class="e-before">{{ t.before }}</span>
+            <span class="e-time">{{ v.start }}</span>
+          </span>
+          <span class="e-body">
+            <span class="e-title">{{ v.title }}</span>
+            <span class="e-note">{{ t.label }} · {{ lead() }}</span>
+          </span>
+        </span>
+      }
+    }
+  } @else {
+    <!-- On the event page: below the title, with room for more -->
+    <div class="page" role="group" data-testid="pre-training" [attr.aria-label]="t.label">
+      @switch (design()) {
+        @case ('a') {
+          <p class="pa">
+            <app-icon name="timer" [size]="18" />
+            <span
+              ><strong>{{ t.label }} {{ v.start }}</strong> · {{ v.title }}</span
+            >
+            <span class="quiet">{{ t.beforePractice(lead()) }}</span>
+          </p>
+        }
+        @case ('b') {
+          <div class="card pb">
+            <p class="pb-title">{{ t.schedule }}</p>
+            <ol class="pb-steps">
+              <li data-kind="pre">
+                <span class="pb-time">{{ v.start }}</span>
+                <span class="pb-what"
+                  ><strong>{{ v.title }}</strong
+                  ><span class="quiet">{{ t.label }} · {{ lead() }}</span></span
+                >
+              </li>
+              <li>
+                <span class="pb-time">{{ v.practiceStart }}</span>
+                <span class="pb-what"
+                  ><strong>{{ name() }}</strong
+                  ><span class="quiet">{{ practice() }}</span></span
+                >
+              </li>
+              <li data-kind="end">
+                <span class="pb-time">{{ v.end }}</span>
+                <span class="pb-what"
+                  ><span class="quiet">{{ t.end }}</span></span
+                >
+              </li>
+            </ol>
+          </div>
+        }
+        @case ('c') {
+          <div class="card c pc" [style.--pt-share]="v.share + '%'">
+            <span class="visually-hidden">{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}</span>
+            <div class="c-grid" aria-hidden="true">
+              <span class="c-time">{{ v.start }}</span>
+              <span class="c-time c-times"
+                ><span>{{ v.practiceStart }}</span
+                ><span>{{ v.end }}</span></span
+              >
+              <span class="c-segment c-pre"></span>
+              <span class="c-segment c-main"></span>
+            </div>
+            <div class="pc-legends" aria-hidden="true">
+              <span class="c-legend"
+                ><span class="c-swatch c-pre"></span>{{ v.title }} <span class="quiet">{{ t.label }} · {{ lead() }}</span></span
+              >
+              <span class="c-legend"
+                ><span class="c-swatch c-main"></span>{{ name() }} <span class="quiet">{{ practice() }}</span></span
+              >
+            </div>
+          </div>
+        }
+        @case ('d') {
+          <div class="pd">
+            <div class="pd-board" data-kind="pre">
+              <span class="pd-digits">{{ v.start }}</span>
+              <span class="pd-word">{{ t.beThere }}</span>
+              <span class="pd-line"
+                >{{ v.title }} <span class="visually-hidden">({{ t.label }})</span></span
+              >
+            </div>
+            <app-icon class="pd-arrow" name="chevron-right" [size]="22" />
+            <div class="pd-board">
+              <span class="pd-digits">{{ v.practiceStart }}</span>
+              <span class="pd-word">{{ name() }}</span>
+              <span class="pd-line">{{ t.until(v.end) }}</span>
+            </div>
+          </div>
+        }
+        @case ('e') {
+          <div class="e-ticket pe">
+            <span class="e-stub">
+              <span class="e-before">{{ t.before }}</span>
+              <span class="e-time">{{ v.start }}</span>
+            </span>
+            <span class="e-body">
+              <span class="e-title">{{ v.title }}</span>
+              <span class="e-note">{{ t.label }} · {{ t.beforePractice(lead()) }}</span>
+            </span>
+          </div>
+        }
+      }
+    </div>
+  }
+} @else if (place() === 'card') {
+  {{ day() }} · {{ period() }}
+}

@@ -154,6 +154,7 @@ public class EventService {
         // After the change, the person must still be coach of a participating team.
         EventRules.checkCanCreate(user.allTeams(), teamRoles(user, teams, season));
         checkInput(input.type(), start, end, teams, season);
+        PreTrainingRules.Moment oldPreTraining = PreTrainingRules.of(event);
         List<Match> matches = event.type == EventType.MATCH_DAY ? Match.of(event.id) : List.of();
         EventRules.checkTypeChange(event.type, input.type(), !matches.isEmpty() || CallUp.findById(event.id) != null);
         MatchRules.checkReschedulable(matches.stream().anyMatch(match -> match.source == MatchSource.SWISS_UNIHOCKEY),
@@ -175,6 +176,8 @@ public class EventService {
         }
         if (NotificationRules.rescheduled(oldStart, event.start)) {
             notifications.rescheduled(user, event, oldLabel, previousMembers);
+        } else if (PreTrainingRules.changed(oldPreTraining, PreTrainingRules.of(event))) {
+            notifications.preTrainingChanged(user, event, oldPreTraining, previousMembers);
         }
         absences.applyForEvents(java.util.List.of(event.id));
         return get(user, event.id);
@@ -264,6 +267,7 @@ public class EventService {
         event.title = input.title().strip();
         event.start = input.start().toInstant();
         event.end = input.end().toInstant();
+        PreTrainingRules.set(event, PreTrainingRules.checkEvent(input.type(), input.preTraining(), event.start));
         event.location = Location.of(input.location());
         event.notes = EventRules.blankToNull(input.notes());
         event.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());

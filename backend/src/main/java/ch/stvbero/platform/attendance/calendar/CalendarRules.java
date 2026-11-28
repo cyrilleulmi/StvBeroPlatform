@@ -106,6 +106,9 @@ public final class CalendarRules {
      */
     static String description(CalendarEntry entry, String appUrl) {
         List<String> lines = new ArrayList<>();
+        if (entry.preTraining() != null) {
+            lines.add(preTrainingLine(entry));
+        }
         if (entry.cancelled()) {
             lines.add(entry.cancellationReason() == null ? "Abgesagt." : "Abgesagt: " + entry.cancellationReason());
         }
@@ -133,5 +136,12 @@ public final class CalendarRules {
                 + (entry.myComment() == null ? "" : " («" + entry.myComment() + "»)"));
         lines.add("In der App: " + eventLink(appUrl, entry.id()));
         return String.join("\n", lines);
+    }
+
+    /** «Vortraining 20:00: Joggen · Training 20:20–21:50» (TER-31): both times in one line. */
+    static String preTrainingLine(CalendarEntry entry) {
+        return "Vortraining " + TIME.format(entry.preTraining().start().atZone(BackendClock.ZONE)) + ": "
+                + entry.preTraining().title() + " · Training " + TIME.format(entry.start().atZone(BackendClock.ZONE))
+                + "–" + TIME.format(entry.end().atZone(BackendClock.ZONE));
     }
 }

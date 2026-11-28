@@ -42,7 +42,7 @@
           <div class="head">
             <a class="event-link" [routerLink]="['/termine', t.id]">
               <span class="event-title">{{ t.title }}</span>
-              <span class="when-where">{{ when(t) }}</span>
+              <app-pre-training class="when-where" [event]="t" [day]="day(t)" [period]="period(t)" />
               @if (t.location) {
                 <span class="place">{{ t.location.name }}</span>
               }

@@ -5,10 +5,14 @@ import type { Season, Series, SeriesInput } from '../api/types';
 import { AuthService } from '../core/auth.service';
 import { errorText, fieldErrorsOf } from '../core/error-text';
 import { TEXTS } from '../core/texts';
+import { PreTrainingFields } from './pre-training-fields';
+import { NO_PRE_TRAINING, preTrainingErrors, seriesPreTraining, type PreTrainingValues } from './pre-training-form';
 
 type Weekday = SeriesInput['weekday'];
 const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-type Field = 'title' | 'startTime' | 'endTime' | 'validFrom' | 'validUntil';
+type Field = 'title' | 'startTime' | 'endTime' | 'validFrom' | 'validUntil' | 'preTrainingTitle' | 'preTrainingTime';
+/** Field names of the API for the pre-training mapped to the fields of this form. */
+const API_FIELDS: Record<string, Field> = { 'preTraining.title': 'preTrainingTitle', 'preTraining.startTime': 'preTrainingTime' };
 
 /**
  * A new weekly series of a team (TER-05): practice by default, from today (or the start of the season), without an
@@ -17,6 +21,7 @@ type Field = 'title' | 'startTime' | 'endTime' | 'validFrom' | 'validUntil';
 @Component({
   selector: 'app-series-new',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PreTrainingFields],
   template: `
     <form class="form" (submit)="save($event)" novalidate [attr.aria-label]="label()" data-testid="series-new">
       @if (message(); as m) {
@@ -83,6 +88,19 @@ type Field = 'title' | 'startTime' | 'endTime' | 'validFrom' | 'validUntil';
           (input)="location.set($any($event.target).value)"
         />
       </div>
+      <app-pre-training-fields
+        idPrefix="series-new"
+        [enabled]="pre().preTraining"
+        [title]="pre().preTrainingTitle"
+        [time]="pre().preTrainingTime"
+        [practiceStart]="values().startTime"
+        [titleError]="errors().preTrainingTitle"
+        [timeError]="errors().preTrainingTime"
+        [disabled]="saving()"
+        (enabledChange)="setPre({ preTraining: $event })"
+        (titleChange)="setPre({ preTrainingTitle: $event })"
+        (timeChange)="setPre({ preTrainingTime: $event })"
+      />
       <div class="field-row">
         @for (f of dates; track f.field) {
           <div class="field">
@@ -146,7 +164,8 @@ export class SeriesNew {
   protected readonly title = signal(TEXTS.seriesNew.defaultTitle);
   protected readonly weekday = signal<Weekday>('TUESDAY');
   protected readonly location = signal('');
-  private readonly values = signal<Record<Field, string>>({
+  protected readonly pre = signal<PreTrainingValues>({ ...NO_PRE_TRAINING });
+  protected readonly values = signal<Record<Exclude<Field, 'preTrainingTitle' | 'preTrainingTime'>, string>>({
     title: '',
     startTime: '18:30',
     endTime: '20:00',
@@ -177,11 +196,16 @@ export class SeriesNew {
     return TEXTS.eventForm.weekdays[d];
   }
 
-  protected value(field: Field): string {
+  protected setPre(patch: Partial<PreTrainingValues>): void {
+    this.pre.update((p) => ({ ...p, ...patch }));
+    this.errors.update((e) => ({ ...e, preTrainingTitle: undefined, preTrainingTime: undefined }));
+  }
+
+  protected value(field: 'startTime' | 'endTime' | 'validFrom' | 'validUntil'): string {
     return this.values()[field];
   }
 
-  protected setValue(field: Field, value: string): void {
+  protected setValue(field: 'startTime' | 'endTime' | 'validFrom' | 'validUntil', value: string): void {
     this.values.update((v) => ({ ...v, [field]: value }));
   }
 
@@ -196,6 +220,8 @@ export class SeriesNew {
     }
     if (!errors.endTime && !errors.startTime && v.endTime <= v.startTime) errors.endTime = TEXTS.series.untilBeforeFrom;
     if (v.validUntil && !errors.validFrom && v.validUntil < v.validFrom) errors.validUntil = TEXTS.series.untilBeforeFrom;
+    const preForm = { ...this.pre(), type: 'PRACTICE', date: '', start: v.startTime };
+    Object.assign(errors, preTrainingErrors(preForm));
     this.errors.set(errors);
     const first = Object.keys(errors)[0];
     if (first) {
@@ -214,6 +240,7 @@ export class SeriesNew {
       location: this.location().trim() ? { name: this.location().trim() } : null,
       // Like a new series in the event form: answers until 24 hours before (TER-09)
       responseDeadlineHours: 24,
+      preTraining: seriesPreTraining(preForm),
     };
     this.saving.set(true);
     this.message.set(null);
@@ -225,7 +252,8 @@ export class SeriesNew {
     } catch (e) {
       const fields = fieldErrorsOf(e);
       if (Object.keys(fields).length > 0) {
-        this.errors.set(fields as Partial<Record<Field, string>>);
+        const mapped = Object.entries(fields).map(([k, m]) => [API_FIELDS[k] ?? k, m]);
+        this.errors.set(Object.fromEntries(mapped) as Partial<Record<Field, string>>);
       } else {
         this.error.set(errorText(e));
       }

@@ -166,4 +166,25 @@ class ICalendarWriterTest {
         assertFalse(CalendarRules.wellFormed(null));
         assertFalse(CalendarRules.wellFormed(a.substring(1) + "%"));
     }
+
+    // ------------------------------------------------------------------ TER-31: pre-training
+
+    @Test
+    void ter31EntryBeginsWithThePreTrainingAndNamesBothTimes() {
+        CalendarEntry plain = new CalendarEntry(ID, EventType.PRACTICE, "Training", zurich(2026, 11, 19, 20, 20),
+                zurich(2026, 11, 19, 21, 50), false, null, List.of("Team 1"), null, null, null, null, null, null,
+                null, null, List.of(), ResponseStatus.PENDING, null);
+        CalendarEntry with = new CalendarEntry(plain.id(), plain.type(), plain.title(), plain.start(), plain.end(),
+                false, null, plain.teams(), null, null, null, null, null, null, null, null, List.of(),
+                ResponseStatus.PENDING, null,
+                new CalendarEntry.PreTrainingLine("Joggen", zurich(2026, 11, 19, 20, 0)));
+        assertEquals(plain.start(), plain.begin());
+        assertEquals(zurich(2026, 11, 19, 20, 0), with.begin());
+        assertEquals("Vortraining 20:00: Joggen · Training 20:20–21:50", CalendarRules.preTrainingLine(with));
+        assertTrue(CalendarRules.description(with, APP).startsWith("Vortraining 20:00: Joggen · Training 20:20–21:50\n"));
+        assertFalse(CalendarRules.description(plain, APP).contains("Vortraining"));
+        String feed = ICalendarWriter.write("STV Bero", zurich(2026, 11, 15, 12, 0), APP, List.of(with));
+        assertTrue(feed.contains("DTSTART;TZID=Europe/Zurich:20261119T200000"));
+        assertTrue(feed.contains("DTEND;TZID=Europe/Zurich:20261119T215000"));
+    }
 }

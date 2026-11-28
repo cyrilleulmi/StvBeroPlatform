@@ -3948,6 +3948,29 @@ components:
       properties:
         time: { type: [string, 'null'], format: date-time }
         location: { type: string, examples: [Parkplatz Sporthalle Nord] }
+    PreTraining:
+      type: object
+      description: >-
+        Pre-training («Vortraining», TER-29): what the people of a practice do together before it starts, e.g.
+        «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. One response covers both.
+      required: [title, start]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 60, examples: [Joggen] }
+        start:
+          type: string
+          format: date-time
+          description: Before the start of the practice, on the same day (Europe/Zurich), otherwise 400
+    SeriesPreTraining:
+      type: object
+      description: Pre-training of every practice of a series (TER-30), with the time of day instead of a moment
+      required: [title, startTime]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 60, examples: [Kraft & Stabilität] }
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          examples: ['19:00']
+          description: Before `startTime` of the series, otherwise 400
     Counts:
       type: object
       required: [attending, declined, maybe, pending]
@@ -4011,6 +4034,9 @@ components:
           description: >-
             Pinned to the start page of the members of its teams until it is over (TER-26, E-114). Everyone sees it;
             `canEdit` says who may pin and unpin. A cancelled event keeps the flag, the start page leaves it out
+        preTraining:
+          $ref: '#/components/schemas/PreTraining'
+          description: Pre-training before the practice (TER-29); missing if there is none
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
@@ -4058,6 +4084,9 @@ components:
               description: >-
                 Only if true: the caller manages this event like a coach because of a special permission (RR-09).
                 The coach actions are then shown for this event only.
+            preTraining:
+              $ref: '#/components/schemas/PreTraining'
+              description: Pre-training before the practice (TER-29); missing if there is none
     EventInput:
       type: object
       required: [type, title, start, end, teamIds]
@@ -4097,6 +4126,13 @@ components:
             Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
             they like, are not reminded and do not count as «offen». At least one team stays expected (400)
           items: { type: string, format: uuid }
+        preTraining:
+          oneOf:
+            - $ref: '#/components/schemas/PreTraining'
+            - type: 'null'
+          description: >-
+            Pre-training before the practice (TER-29). Only for type PRACTICE (400 otherwise). Missing or `null`:
+            none, an existing one is removed
 
     Participation:
       type: string
@@ -4183,7 +4219,6 @@ components:
         teams: { type: integer, format: int32, description: Number of teams in the table }
         league: { type: string, examples: [Herren KF 3. Liga] }
         group: { type: string, examples: [Gruppe 2] }
-
     Series:
       allOf:
         - $ref: '#/components/schemas/SeriesInput'
@@ -4241,6 +4276,13 @@ components:
             Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if
             they like, are not reminded and do not count as «offen». At least one team stays expected (400)
           items: { type: string, format: uuid }
+        preTraining:
+          oneOf:
+            - $ref: '#/components/schemas/SeriesPreTraining'
+            - type: 'null'
+          description: >-
+            Pre-training of every practice of the series (TER-30). Only for type PRACTICE (400 otherwise). Missing or
+            `null`: none; on a change the upcoming events of the series lose theirs (not the individually changed ones)
     SeriesOverview:
       type: object
       description: A series of a team with its upcoming events (TER-18)

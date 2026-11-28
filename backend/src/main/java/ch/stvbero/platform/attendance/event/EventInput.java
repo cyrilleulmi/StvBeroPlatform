@@ -34,5 +34,7 @@ public record EventInput(
         @Schema(nullable = true, description = "Event variant of one of the teams (VAR-03); without it the standard variant of the type")
         UUID variantId,
         @Schema(nullable = true, description = "Teams of the event that are invited without obligation (TER-15); at least one team stays expected")
-        List<@NotNull UUID> optionalTeamIds) {
+        List<@NotNull UUID> optionalTeamIds,
+        @Schema(nullable = true, description = "Pre-training before the practice (TER-29); only for practices, missing or null removes it")
+        PreTrainingDto preTraining) {
 }

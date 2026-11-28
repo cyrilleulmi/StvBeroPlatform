@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import type { Tile, EventSummary } from '../../api/types';
 import { MyResponse } from '../../attendance/my-response';
 import { PinnedChip } from '../../attendance/pin';
+import { PreTrainingDisplay } from '../../attendance/pre-training';
 import { yearOf, eventDate, clockTime } from '../../core/time';
 import { AuthService } from '../../core/auth.service';
 import { errorText } from '../../core/error-text';
@@ -22,7 +23,7 @@ import { startEvents } from './start-events';
 @Component({
   selector: 'app-start',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse, SuStatusNotice, Scoreboard, PinnedChip],
+  imports: [RouterLink, Icon, MyResponse, SuStatusNotice, Scoreboard, PinnedChip, PreTrainingDisplay],
   templateUrl: './start.html',
   styleUrl: './start.css',
 })
@@ -77,8 +78,12 @@ export class Start implements OnInit {
   }
 
   /** «Di 17.11. · 18:30–20:00»: day and time lead, the teams follow on their own quiet line. */
-  protected when(t: EventSummary): string {
-    return `${eventDate(t.start, this.year())} · ${TEXTS.events.period(clockTime(t.start), clockTime(t.end))}`;
+  protected day(t: EventSummary): string {
+    return eventDate(t.start, this.year());
+  }
+
+  protected period(t: EventSummary): string {
+    return TEXTS.events.period(clockTime(t.start), clockTime(t.end));
   }
 
   /** «Team 1 + Team 2» */

@@ -21,7 +21,8 @@ public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamI
                        LocalDate validUntil, LocationDto location, int responseDeadlineHours, boolean attendanceCheck,
                        List<SeriesExceptionDto> exceptions,
                        @Schema(description = "Teams invited without obligation (TER-15)") List<UUID> optionalTeamIds,
-                       @Schema(description = "The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)") LocalDate eventsUntil) {
+                       @Schema(description = "The events of the series exist up to this day; the app creates the next ones as time goes on, one year ahead (TER-22)") LocalDate eventsUntil,
+                       @Schema(nullable = true, description = "Pre-training of every practice of the series (TER-30); null if there is none") SeriesPreTrainingDto preTraining) {
 
     public static SeriesDto of(Series s, CurrentUser user) {
         return new SeriesDto(s.id, s.type, s.title, s.teams.stream().map(t -> t.id).sorted().toList(), teams(s, user),
@@ -29,7 +30,8 @@ public record SeriesDto(UUID id, SeriesType type, String title, List<UUID> teamI
                 s.validUntil, s.location == null ? null : s.location.dto(), s.responseDeadlineHours, s.attendanceCheck,
                 s.exceptions.stream().sorted(Comparator.comparing((SeriesException e) -> e.startDate).thenComparing(e -> e.endDate))
                         .map(e -> new SeriesExceptionDto(e.startDate, e.endDate, e.reason)).toList(),
-                s.optionalTeamIds.stream().sorted().toList(), s.generatedUntil);
+                s.optionalTeamIds.stream().sorted().toList(), s.generatedUntil,
+                PreTrainingRules.dto(s));
     }
 
     /**

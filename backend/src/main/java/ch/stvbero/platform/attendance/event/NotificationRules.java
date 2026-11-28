@@ -152,4 +152,16 @@ public final class NotificationRules {
     public static String rescheduledText(String event, Instant newStart) {
         return event + " ist verschoben auf " + instant(newStart) + ".";
     }
+
+    /** Pre-training added, changed or removed, the event stays where it is (TER-31). */
+    public static String preTrainingChangedText(String event, PreTrainingRules.Moment before,
+                                                PreTrainingRules.Moment after) {
+        if (after == null) {
+            return "Bei " + event + " entfällt das Vortraining «" + before.title() + "».";
+        }
+        String what = "«" + after.title() + "» ab " + TIME.format(after.start().atZone(BackendClock.ZONE));
+        return before == null
+                ? event + " hat neu ein Vortraining: " + what + "."
+                : "Das Vortraining bei " + event + " ist geändert: " + what + ".";
+    }
 }

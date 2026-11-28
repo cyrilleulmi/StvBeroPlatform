@@ -58,6 +58,9 @@ public class DataSets {
     SeedPins pins;
 
     @Inject
+    SeedPreTrainings preTrainings;
+
+    @Inject
     Simulation simulation;
 
     @Inject
@@ -92,6 +95,7 @@ public class DataSets {
             } else {
                 club.reset();
                 pins.club();
+                preTrainings.club();
             }
             suSimulator.reset();
             deliverySimulator.reset();

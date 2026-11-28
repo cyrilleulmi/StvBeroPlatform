@@ -101,6 +101,14 @@ public class Event extends PanacheEntityBase {
     @Column(name = "attendance_check")
     public boolean attendanceCheck;
 
+    /** Title of the pre-training before this practice (TER-29); {@code null}: none. Set together with its start. */
+    @Column(name = "pre_training_title")
+    public String preTrainingTitle;
+
+    /** Start of the pre-training: before {@link #start}, same day; it ends when the practice starts (TER-29). */
+    @Column(name = "pre_training_starts_at")
+    public Instant preTrainingStart;
+
     /** Pinned to the start page of the members of its teams since then (TER-26); {@code null}: not pinned. */
     @Column(name = "pinned_at")
     public Instant pinnedAt;

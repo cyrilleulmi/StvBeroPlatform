@@ -56,6 +56,10 @@ type ExceptionField = 'from' | 'until' | 'reason';
             <dd>{{ texts.eventForm.weekdays[s.weekday] }}</dd>
             <dt>{{ texts.events.time }}</dt>
             <dd>{{ texts.events.period(s.startTime, s.endTime) }}</dd>
+            @if (s.preTraining; as p) {
+              <dt>{{ texts.preTrainingForm.seriesLabel }}</dt>
+              <dd data-testid="series-pre-training">{{ texts.preTrainingForm.seriesValue(p.startTime, p.title) }}</dd>
+            }
             <dt>{{ texts.series.period }}</dt>
             <dd>{{ texts.series.periodText(date(s.validFrom), s.validUntil ? date(s.validUntil) : null) }}</dd>
             <dt>{{ texts.events.teams }}</dt>

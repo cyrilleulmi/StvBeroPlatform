@@ -9,14 +9,35 @@ import java.util.UUID;
 
 /**
  * One event as it goes into the feed of one person (CAL-03). Holds only what this person may see: her own
- * response, no responses or comments of others (CAL-08).
+ * response, no responses or comments of others (CAL-08). {@code start} is the start of the event itself; with a
+ * pre-training the entry begins earlier (TER-31).
  */
 record CalendarEntry(UUID id, EventType type, String title, Instant start, Instant end, boolean cancelled,
                      String cancellationReason, List<String> teams, String locationName, String locationAddress,
                      String mapsUrl, Double latitude, Double longitude, Instant meetingPointTime,
                      String meetingPointLocation, String notes, List<MatchLine> matches, ResponseStatus myResponse,
-                     String myComment) {
+                     String myComment, PreTrainingLine preTraining) {
+
+    /** Entry without a pre-training. */
+    CalendarEntry(UUID id, EventType type, String title, Instant start, Instant end, boolean cancelled,
+                  String cancellationReason, List<String> teams, String locationName, String locationAddress,
+                  String mapsUrl, Double latitude, Double longitude, Instant meetingPointTime,
+                  String meetingPointLocation, String notes, List<MatchLine> matches, ResponseStatus myResponse,
+                  String myComment) {
+        this(id, type, title, start, end, cancelled, cancellationReason, teams, locationName, locationAddress,
+                mapsUrl, latitude, longitude, meetingPointTime, meetingPointLocation, notes, matches, myResponse,
+                myComment, null);
+    }
 
     record MatchLine(Instant start, String opponent, boolean home, String result) {
+    }
+
+    /** Pre-training before a practice (TER-29): title and start; it ends when the practice starts. */
+    record PreTrainingLine(String title, Instant start) {
+    }
+
+    /** When the entry begins in the calendar: with the pre-training, if there is one. */
+    Instant begin() {
+        return preTraining == null ? start : preTraining.start();
     }
 }

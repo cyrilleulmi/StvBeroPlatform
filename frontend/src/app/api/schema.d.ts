@@ -3197,6 +3197,26 @@ export interface components {
             /** @example Parkplatz Sporthalle Nord */
             location: string;
         };
+        /** @description Pre-training («Vortraining», TER-29): what the people of a practice do together before it starts, e.g. «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. One response covers both. */
+        PreTraining: {
+            /** @example Joggen */
+            title: string;
+            /**
+             * Format: date-time
+             * @description Before the start of the practice, on the same day (Europe/Zurich), otherwise 400
+             */
+            start: string;
+        };
+        /** @description Pre-training of every practice of a series (TER-30), with the time of day instead of a moment */
+        SeriesPreTraining: {
+            /** @example Kraft & Stabilität */
+            title: string;
+            /**
+             * @description Before `startTime` of the series, otherwise 400
+             * @example 19:00
+             */
+            startTime: string;
+        };
         Counts: {
             attending: number;
             declined: number;
@@ -3241,6 +3261,8 @@ export interface components {
              * @default false
              */
             pinned: boolean;
+            /** @description Pre-training before the practice (TER-29); missing if there is none */
+            preTraining?: components["schemas"]["PreTraining"];
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -3265,6 +3287,8 @@ export interface components {
             standing?: components["schemas"]["Standing"] | null;
             /** @description Only if true: the caller manages this event like a coach because of a special permission (RR-09). The coach actions are then shown for this event only. */
             myGrant?: boolean;
+            /** @description Pre-training before the practice (TER-29); missing if there is none */
+            preTraining?: components["schemas"]["PreTraining"];
         };
         EventInput: {
             type: components["schemas"]["EventType"];
@@ -3291,6 +3315,8 @@ export interface components {
             variantId?: string | null;
             /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
             optionalTeamIds?: string[] | null;
+            /** @description Pre-training before the practice (TER-29). Only for type PRACTICE (400 otherwise). Missing or `null`: none, an existing one is removed */
+            preTraining?: components["schemas"]["PreTraining"] | null;
         };
         /**
          * @description How a person takes part in an event (TER-15): EXPECTED if she belongs to a team that is expected, OPTIONAL if all her teams of the event are invited without obligation
@@ -3413,6 +3439,8 @@ export interface components {
             attendanceCheck?: boolean;
             /** @description Teams of `teamIds` that are invited without obligation («freiwillig», TER-15): their members respond if they like, are not reminded and do not count as «offen». At least one team stays expected (400) */
             optionalTeamIds?: string[] | null;
+            /** @description Pre-training of every practice of the series (TER-30). Only for type PRACTICE (400 otherwise). Missing or `null`: none; on a change the upcoming events of the series lose theirs (not the individually changed ones) */
+            preTraining?: components["schemas"]["SeriesPreTraining"] | null;
         };
         /** @description A series of a team with its upcoming events (TER-18) */
         SeriesOverview: {

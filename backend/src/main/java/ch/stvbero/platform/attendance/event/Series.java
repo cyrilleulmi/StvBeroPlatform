@@ -72,6 +72,14 @@ public class Series extends PanacheEntityBase {
     @Column(name = "attendance_check")
     public boolean attendanceCheck;
 
+    /** Title of the pre-training of every practice of the series (TER-30); {@code null}: none. */
+    @Column(name = "pre_training_title")
+    public String preTrainingTitle;
+
+    /** Time of day the pre-training begins, before {@link #startTime} (TER-30). Set together with its title. */
+    @Column(name = "pre_training_time")
+    public LocalTime preTrainingTime;
+
     @ManyToMany
     @JoinTable(name = "series_team",
             joinColumns = @JoinColumn(name = "series_id"),

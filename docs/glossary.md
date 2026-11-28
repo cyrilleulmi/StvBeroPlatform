@@ -41,6 +41,7 @@ If a term is missing, add it here in the same style before using it.
 | Mindestzahl (für Warnungen) | warning minimum | per team (F-16) |
 | Termin | event | types `PRACTICE`, `MATCH_DAY`, `OTHER` |
 | Training | practice | |
+| Vortraining | pre-training | what the people of a practice do together before it starts, with a title and a start time (TER-29); `PreTraining`, `pre_training_*` |
 | Spieltag | match day | |
 | Anlass | other event | |
 | Spiel | match | |

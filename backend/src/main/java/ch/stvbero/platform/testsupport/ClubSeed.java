@@ -120,7 +120,7 @@ public class ClubSeed {
     }
 
     /**
-     * Practice series: teams train once or twice a week; series 1 and 4 are shared by two teams. {@code optional}:
+     * Practice series: teams train once or twice a week; series 1, 3, 4 and 11 are shared by two teams. {@code optional}:
      * teams that are invited without obligation («freiwillig», TER-15).
      */
     private record ClubSeries(int nr, DayOfWeek day, LocalTime start, LocalTime end, List<Integer> teams,
@@ -137,15 +137,15 @@ public class ClubSeed {
     private static final List<ClubSeries> SERIES = List.of(
             new ClubSeries(1, DayOfWeek.TUESDAY, LocalTime.of(20, 0), LocalTime.of(21, 30), List.of(1, 2)),
             new ClubSeries(2, DayOfWeek.THURSDAY, LocalTime.of(20, 0), LocalTime.of(21, 30), List.of(1)),
-            new ClubSeries(3, DayOfWeek.MONDAY, LocalTime.of(19, 30), LocalTime.of(21, 0), List.of(3)),
-            // Thursday: the first women's team is expected, the second one is welcome to join
-            new ClubSeries(4, DayOfWeek.THURSDAY, LocalTime.of(19, 0), LocalTime.of(20, 30), List.of(3, 4), List.of(4)),
+            new ClubSeries(3, DayOfWeek.MONDAY, LocalTime.of(19, 0), LocalTime.of(20, 30), List.of(4, 3), List.of(3)),
+            new ClubSeries(4, DayOfWeek.THURSDAY, LocalTime.of(20, 20), LocalTime.of(21, 50), List.of(3, 4), List.of(4)),
             new ClubSeries(5, DayOfWeek.MONDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), List.of(5)),
             new ClubSeries(6, DayOfWeek.TUESDAY, LocalTime.of(18, 0), LocalTime.of(19, 30), List.of(6)),
             new ClubSeries(7, DayOfWeek.WEDNESDAY, LocalTime.of(17, 30), LocalTime.of(19, 0), List.of(7)),
             new ClubSeries(8, DayOfWeek.THURSDAY, LocalTime.of(17, 30), LocalTime.of(19, 0), List.of(8)),
             new ClubSeries(9, DayOfWeek.FRIDAY, LocalTime.of(17, 30), LocalTime.of(18, 45), List.of(9)),
-            new ClubSeries(10, DayOfWeek.FRIDAY, LocalTime.of(18, 45), LocalTime.of(20, 15), List.of(10)));
+            new ClubSeries(10, DayOfWeek.FRIDAY, LocalTime.of(18, 45), LocalTime.of(20, 15), List.of(10)),
+            new ClubSeries(11, DayOfWeek.FRIDAY, LocalTime.of(19, 15), LocalTime.of(20, 45), List.of(3, 4)));
 
     /** Series whose practices record attendance (PRS-01), so that the statistics have data (F-15). */
     private static final Set<Integer> ATTENDANCE_CHECK = Set.of(2, 3);

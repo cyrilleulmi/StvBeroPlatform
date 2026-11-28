@@ -160,7 +160,7 @@ final class EventReader {
                 time(EventRules.responseDeadline(event.start, event.responseDeadlineHours)), myResponse(event),
                 counts(event), event.series == null ? null : event.series.id, warningCount(event),
                 variants.resolve(event).dto(), optional(event).stream().sorted().toList(), myParticipation(event),
-                canEdit(event), event.isPinned());
+                canEdit(event), event.isPinned(), PreTrainingRules.dto(event));
     }
 
     private Set<UUID> optional(Event event) {
@@ -262,7 +262,7 @@ final class EventReader {
                 event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, base.canEdit(),
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance, base.variant(),
                 standing, base.optionalTeamIds(), base.myParticipation(), user.eventGrant() ? Boolean.TRUE : null,
-                base.pinned());
+                base.pinned(), base.preTraining());
     }
 
     /**

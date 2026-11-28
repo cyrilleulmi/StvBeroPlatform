@@ -136,4 +136,17 @@ public class EventNotifications {
         recipients.forEach(p -> messages.add(message.apply(p)));
         notifications.send(messages);
     }
+
+    /**
+     * Pre-training added, changed or removed (TER-31): all members of the participating teams, like a rescheduling
+     * (type {@code EVENT_RESCHEDULED}, BEN-07), before and after the change.
+     */
+    void preTrainingChanged(CurrentUser user, Event event, PreTrainingRules.Moment before,
+                            Collection<UUID> previousMembers) {
+        Set<UUID> all = new LinkedHashSet<>(previousMembers);
+        all.addAll(members(event));
+        String text = NotificationRules.preTrainingChangedText(label(event), before, PreTrainingRules.of(event));
+        send(NotificationRules.withoutTrigger(all, user.personId()),
+                p -> new Message(NotificationType.EVENT_RESCHEDULED, p, event.id, text));
+    }
 }

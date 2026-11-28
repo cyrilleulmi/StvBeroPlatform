@@ -40,6 +40,9 @@ class DataSetsTest {
     SeedPins pins;
 
     @Inject
+    SeedPreTrainings preTrainings;
+
+    @Inject
     EntityManager em;
 
     @AfterEach
@@ -70,10 +73,40 @@ class DataSetsTest {
         assertThat(json.getList("find { it.loginKey == 'lea' }.teams.teamName"), contains("Team 1", "Team 2"));
     }
 
+    /** The practices of the two women's teams and their pre-trainings (TER-29, TER-30, E-117). */
+    private void practicesOfTheWomen() {
+        String petra = login("petra");
+        JsonPath practices = given().cookie("stv_session", petra).queryParam("type", "PRACTICE").get("/api/events")
+                .then().statusCode(200).extract().jsonPath();
+        // Thursday 20:20, «Joggen» at 20:00; Friday 19:15, «Kraft & Stabilität» at 19:00; Monday has none
+        List<Map<String, Object>> list = practices.getList("findAll { it.teams.name.contains('Damen KF 1. Liga') }");
+        for (Map<String, Object> practice : list) {
+            java.time.OffsetDateTime start = java.time.OffsetDateTime.parse((String) practice.get("start"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pre = (Map<String, Object>) practice.get("preTraining");
+            switch (start.getDayOfWeek()) {
+                case MONDAY -> assertEquals(null, pre);
+                case THURSDAY -> {
+                    assertEquals("Joggen", pre.get("title"));
+                    assertEquals(start.minusMinutes(20).toInstant(), java.time.OffsetDateTime.parse((String) pre.get("start")).toInstant());
+                }
+                case FRIDAY -> {
+                    assertEquals("Kraft & Stabilität", pre.get("title"));
+                    assertEquals(start.minusMinutes(15).toInstant(), java.time.OffsetDateTime.parse((String) pre.get("start")).toInstant());
+                }
+                default -> { }
+            }
+        }
+        assertTrue(list.stream().anyMatch(p -> p.get("preTraining") != null), "pre-trainings are in the data set");
+        assertEquals(2L, ((Number) em.createNativeQuery("select count(*) from series where pre_training_title is not null")
+                .getSingleResult()).longValue());
+    }
+
     @Test
     void clubDataSetHoldsTheTenTeamsWithInventedPeopleAndThreeLinks() {
         club.reset();
         pins.club();
+        preTrainings.club();
 
         given().get("/api/test/clock").then().body("fixed", equalTo(false));
         String alex = login("alex");
@@ -120,6 +153,7 @@ class DataSetsTest {
         assertThat(events.getList("findAll { it.pinned }.teams[0].name"), contains("Damen KF 1. Liga"));
         given().cookie("stv_session", reto).get("/api/events/" + SeedPins.CLUB_TEAM_DINNER).then().statusCode(200)
                 .body("pinned", equalTo(true)).body("canEdit", equalTo(true));
+        practicesOfTheWomen();
     }
 
     @Test

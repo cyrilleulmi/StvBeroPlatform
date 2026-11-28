@@ -1,0 +1,457 @@
+/* PROTOTYPE (E-118): five design proposals for the pre-training of a practice. After the choice (O-77) only the
+   rules of the chosen one stay. The colour of the kind of event (`--tag`, VAR-04) comes from the card. */
+
+:host {
+  --pt: var(--tag, var(--primary));
+  --pt-soft: var(--tag-soft, var(--primary-soft));
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quiet {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ---- A «Zeile» ---- */
+
+.a-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.a-line app-icon,
+.pa app-icon {
+  flex: none;
+  color: var(--pt);
+}
+
+.a-label {
+  color: var(--muted);
+}
+
+.pa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 16px;
+}
+
+/* ---- B «Ablauf» ---- */
+
+.b-steps {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+}
+
+/* The court line that joins the two stops */
+.b-steps::before,
+.pb-steps::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0.8em;
+  bottom: 0.8em;
+  width: 2px;
+  background: var(--pt);
+}
+
+.b-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.b-step::before,
+.pb-steps li::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 0.32em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pt);
+}
+
+/* The pre-training: a ring, so that the two stops differ by more than their place */
+.b-step[data-kind='pre']::before,
+.pb-steps li[data-kind='pre']::before {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2.5px var(--pt);
+}
+
+.b-time {
+  font-weight: 700;
+}
+
+.b-what {
+  overflow-wrap: anywhere;
+}
+
+.b-note {
+  margin-left: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pb {
+  display: grid;
+  gap: 12px;
+}
+
+.pb-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pb-steps {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0 0 0 26px;
+  list-style: none;
+}
+
+.pb-steps::before {
+  left: 6px;
+  top: 14px;
+  bottom: 12px;
+}
+
+.pb-steps li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.pb-steps li::before {
+  left: -26px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+}
+
+.pb-steps li[data-kind='end']::before {
+  left: -23px;
+  top: 9px;
+  width: 8px;
+  height: 8px;
+}
+
+.pb-time {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pb-steps li[data-kind='end'] .pb-time {
+  color: var(--muted);
+}
+
+.pb-what {
+  display: grid;
+  gap: 1px;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+/* ---- C «Zeitbalken» ---- */
+
+.c {
+  display: grid;
+  gap: 6px;
+}
+
+/* One grid for the times and the bar, so that each time stands where its part begins */
+.c-grid {
+  display: grid;
+  grid-template-columns: minmax(max-content, var(--pt-share)) minmax(0, 1fr);
+  gap: 3px;
+}
+
+.c-time {
+  padding-right: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.c-times {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 0;
+}
+
+.c-segment {
+  height: 12px;
+}
+
+.c-pre {
+  background:
+    repeating-linear-gradient(135deg, var(--pt) 0 2px, transparent 2px 6px),
+    var(--pt-soft);
+  box-shadow: inset 0 0 0 1.5px var(--pt);
+}
+
+.c-main {
+  background: var(--pt);
+}
+
+.c-segment.c-pre {
+  border-radius: 6px 2px 2px 6px;
+}
+
+.c-segment.c-main {
+  border-radius: 2px 6px 6px 2px;
+}
+
+.c-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.c-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.pc {
+  gap: 10px;
+}
+
+.pc .c-time {
+  font-size: 17px;
+}
+
+.pc .c-segment {
+  height: 18px;
+}
+
+.pc-legends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+.pc .c-legend {
+  font-size: 15px;
+}
+
+/* ---- D «Anzeigetafel» ---- */
+
+.d {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.d-board,
+.pd-board {
+  display: grid;
+  background: var(--board);
+  border: 1.5px solid var(--board-border);
+}
+
+.d-board {
+  justify-items: center;
+  padding: 3px 10px 5px;
+  border-top: 4px solid var(--primary);
+  border-radius: var(--radius-icon);
+}
+
+.d-digits,
+.pd-digits {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+
+.d-digits {
+  font-size: 30px;
+}
+
+.d-word,
+.pd-word {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.d-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.d-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.d-then {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.pd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: stretch;
+}
+
+.pd-board {
+  align-content: start;
+  gap: 2px;
+  padding: 10px 14px 12px;
+  border-top-width: 4px;
+  border-radius: var(--radius-card);
+}
+
+.pd-board[data-kind='pre'] {
+  border-top-color: var(--primary);
+}
+
+.pd-digits {
+  font-size: 40px;
+}
+
+.pd-board:not([data-kind='pre']) .pd-digits {
+  color: var(--text);
+}
+
+.pd-line {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pd-arrow {
+  align-self: center;
+  color: var(--muted);
+}
+
+/* ---- E «Ticket» ---- */
+
+.e-ticket {
+  --split: 78px;
+  --notch: 7px;
+  display: grid;
+  grid-template-columns: var(--split) minmax(0, 1fr);
+  align-items: center;
+  min-height: 54px;
+  border-radius: var(--radius-control);
+  background: var(--pt-soft);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--pt) 55%, transparent);
+  /* Two notches where the coupon tears off */
+  mask:
+    radial-gradient(circle var(--notch) at var(--split) 0, #0000 96%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at var(--split) 100%, #0000 96%, #000) bottom / 100% 51% no-repeat;
+}
+
+.e-stub {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  align-self: stretch;
+  padding: 6px 4px;
+  border-right: 2px dashed color-mix(in srgb, var(--pt) 60%, transparent);
+}
+
+.e-before {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.e-time {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--pt);
+}
+
+.e-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 6px 12px;
+}
+
+.e-title {
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.e-note {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.pe {
+  --split: 104px;
+  --notch: 9px;
+  min-height: 76px;
+}
+
+.pe .e-before {
+  font-size: 13px;
+}
+
+.pe .e-time {
+  font-size: 36px;
+}
+
+.pe .e-body {
+  padding: 10px 16px;
+}
+
+.pe .e-title {
+  font-size: 20px;
+}
+
+.pe .e-note {
+  font-size: 14px;
+}

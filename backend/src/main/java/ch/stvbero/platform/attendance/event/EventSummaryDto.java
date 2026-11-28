@@ -25,5 +25,7 @@ public record EventSummaryDto(UUID id, EventType type, String title, OffsetDateT
                             @Schema(description = "The caller may edit the event: coach, admin or a special permission for it, while it is planned and not over (TER-11, RR-09, E-111)")
                             boolean canEdit,
                             @Schema(description = "Pinned to the start page of the members of its teams until it is over (TER-26, E-114)")
-                            boolean pinned) {
+                            boolean pinned,
+                            @Schema(description = "Pre-training before the practice (TER-29); missing if there is none")
+                            PreTrainingDto preTraining) {
 }

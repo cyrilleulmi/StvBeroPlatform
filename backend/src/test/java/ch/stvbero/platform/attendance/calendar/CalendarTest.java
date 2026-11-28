@@ -199,6 +199,29 @@ class CalendarTest {
         assertEquals(1, after.split("UID:" + event(2), -1).length - 1);
     }
 
+    @Test
+    void ter31EntryOfAPracticeWithPreTrainingBeginsWithIt() {
+        Map<String, String> before = events(feed(ANNA_FEED)).get(event(2));
+        assertEquals("20261119T190000", before.get("DTSTART;TZID=Europe/Zurich"));
+        assertFalse(before.get("DESCRIPTION").contains("Vortraining"));
+
+        String body = """
+                {"type":"PRACTICE","title":"Training","start":"2026-11-19T19:00:00+01:00","end":"2026-11-19T20:30:00+01:00",
+                 "teamIds":["%s"],"location":{"name":"Sporthalle Nord"},
+                 "preTraining":{"title":"Joggen","start":"2026-11-18T18:40:00+01:00"}}""".formatted(TEAM_1);
+        // Another day is refused, the same day is taken
+        given().cookie("stv_session", login("petra")).contentType(ContentType.JSON).body(body)
+                .put("/api/events/" + event(2)).then().statusCode(400);
+        given().cookie("stv_session", login("petra")).contentType(ContentType.JSON)
+                .body(body.replace("2026-11-18T18:40", "2026-11-19T18:40"))
+                .put("/api/events/" + event(2)).then().statusCode(200);
+        Map<String, String> after = events(feed(ANNA_FEED)).get(event(2));
+        assertEquals("20261119T184000", after.get("DTSTART;TZID=Europe/Zurich"));
+        assertEquals("20261119T203000", after.get("DTEND;TZID=Europe/Zurich"));
+        assertTrue(after.get("DESCRIPTION").startsWith("Vortraining 18:40: Joggen · Training 19:00–20:30\\n"),
+                after.get("DESCRIPTION"));
+    }
+
     // ------------------------------------------------------------------ Criterion 5: daylight saving time
 
     @Test

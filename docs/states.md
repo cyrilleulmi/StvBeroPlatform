@@ -66,6 +66,7 @@ stateDiagram-v2
 - Only `PLANNED` or `CANCELLED` is stored. "Past deadline", "running" and "over" follow from the backend clock.
 - A reminder (BEN-01) goes out 12 hours before the response deadline to all members of the participating teams (any team role) with response PENDING, at most once per person and event (BEN-13, table `reminder`). After the deadline there are no more reminders. The 12 hours are an assumption (O-18). The check runs every minute; in tests immediately when the clock is set (`PUT /api/test/clock`).
 - Cancelling and rescheduling (individually, or through an exception or change of the series that cancels an event with responses) notify all members of the participating teams (BEN-07). When rescheduling, also the members of teams that were removed in the process. A changed series time is not a rescheduling (O-41). A series event without responses that is removed by an exception or change of the series notifies nobody (assumption F-06, O-52).
+- Adding, changing (title or start) or removing the pre-training of a practice notifies the same people with the notification of a rescheduling, unless the event itself was rescheduled in the same change (TER-31). A series carries it as a time of day and gives it to its events; an event of the series whose pre-training is changed by hand counts as individually changed (TER-30).
 - Rescheduling keeps all responses. Whether «dabei» still applies after a rescheduling is up to the person.
 
 | Rule | Reference |

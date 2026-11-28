@@ -29,5 +29,7 @@ public record EventDto(UUID id, EventType type, String title, OffsetDateTime sta
                         StandingDto standing, List<UUID> optionalTeamIds, Participation myParticipation,
                         Boolean myGrant,
                         @Schema(description = "Pinned to the start page of the members of its teams until it is over (TER-26, E-114)")
-                        boolean pinned) {
+                        boolean pinned,
+                        @Schema(description = "Pre-training before the practice (TER-29); missing if there is none")
+                        PreTrainingDto preTraining) {
 }

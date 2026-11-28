@@ -11,6 +11,8 @@ import { date } from '../core/format';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { eventDate, yearOf } from '../core/time';
+import { PreTrainingFields } from './pre-training-fields';
+import { NO_PRE_TRAINING, preTrainingErrors, seriesPreTraining, valuesOfSeries, type PreTrainingValues } from './pre-training-form';
 
 type Overview = components['schemas']['SeriesOverview'];
 type Preview = components['schemas']['SeriesPreview'];
@@ -26,7 +28,7 @@ const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRID
 @Component({
   selector: 'app-series-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, ConfirmDialog],
+  imports: [RouterLink, Icon, ConfirmDialog, PreTrainingFields],
   template: `
     @let s = overview().series;
     <article class="series" [attr.aria-labelledby]="'series-' + s.id + '-title'" [attr.data-testid]="'series-card-' + s.id">
@@ -127,6 +129,20 @@ const WEEKDAYS: Weekday[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRID
                        (input)="edit('validUntil', $any($event.target).value)" />
               </div>
             </div>
+            @if (s.type === 'PRACTICE') {
+              <app-pre-training-fields
+                [idPrefix]="'series-' + s.id"
+                [enabled]="draft().preTraining"
+                [title]="draft().preTrainingTitle"
+                [time]="draft().preTrainingTime"
+                [practiceStart]="draft().startTime"
+                [titleError]="preErrors().preTrainingTitle"
+                [timeError]="preErrors().preTrainingTime"
+                (enabledChange)="editPre({ preTraining: $event })"
+                (titleChange)="editPre({ preTrainingTitle: $event })"
+                (timeChange)="editPre({ preTrainingTime: $event })"
+              />
+            }
             @if (fieldError(); as m) {
               <p class="field-error">{{ m }}</p>
             }
@@ -290,7 +306,8 @@ export class SeriesCard {
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly fieldError = signal<string | null>(null);
-  protected readonly draft = signal({ weekday: 'MONDAY' as Weekday, startTime: '', endTime: '', location: '', validUntil: '' });
+  protected readonly draft = signal({ weekday: 'MONDAY' as Weekday, startTime: '', endTime: '', location: '', validUntil: '', ...NO_PRE_TRAINING });
+  protected readonly preErrors = signal<{ preTrainingTitle?: string; preTrainingTime?: string }>({});
   protected readonly preview = signal<Preview | null>(null);
   /** The draft changed after the last preview. */
   protected readonly stale = signal(false);
@@ -335,7 +352,9 @@ export class SeriesCard {
       endTime: s.endTime,
       location: s.location?.name ?? '',
       validUntil: s.validUntil ?? '',
+      ...valuesOfSeries(s),
     });
+    this.preErrors.set({});
     this.hFrom.set(this.today());
     this.hUntil.set(this.today());
     this.hReason.set('');
@@ -344,6 +363,13 @@ export class SeriesCard {
 
   protected edit(field: 'weekday' | 'startTime' | 'endTime' | 'location' | 'validUntil', value: string): void {
     this.draft.update((d) => ({ ...d, [field]: value }));
+    if (this.preview()) this.stale.set(true);
+    this.preview.set(null);
+  }
+
+  protected editPre(patch: Partial<PreTrainingValues>): void {
+    this.draft.update((d) => ({ ...d, ...patch }));
+    this.preErrors.set({});
     if (this.preview()) this.stale.set(true);
     this.preview.set(null);
   }
@@ -366,6 +392,7 @@ export class SeriesCard {
       responseDeadlineHours: s.responseDeadlineHours,
       attendanceCheck: s.attendanceCheck,
       optionalTeamIds: s.optionalTeamIds,
+      preTraining: seriesPreTraining({ ...d, type: s.type, date: '', start: d.startTime }),
     };
   }
 
@@ -385,6 +412,10 @@ export class SeriesCard {
   /** «Auswirkung prüfen» (TER-19). */
   protected async check(domEvent: Event): Promise<void> {
     domEvent.preventDefault();
+    const d = this.draft();
+    const errors = preTrainingErrors({ ...d, type: this.overview().series.type, date: '', start: d.startTime });
+    this.preErrors.set(errors);
+    if (Object.keys(errors).length > 0) return;
     await this.run('check', async () => {
       this.preview.set(
         await firstValueFrom(

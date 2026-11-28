@@ -34,5 +34,7 @@ public record SeriesInput(
         @Max(value = EventRules.MAX_RESPONSE_DEADLINE, message = EventRules.MAX_RESPONSE_DEADLINE_TEXT) Integer responseDeadlineHours,
         Boolean attendanceCheck,
         @Schema(nullable = true, description = "Teams of the series that are invited without obligation (TER-15); at least one team stays expected")
-        List<@NotNull UUID> optionalTeamIds) {
+        List<@NotNull UUID> optionalTeamIds,
+        @Schema(nullable = true, description = "Pre-training of every practice (TER-30); only for practices, missing or null removes it")
+        SeriesPreTrainingDto preTraining) {
 }

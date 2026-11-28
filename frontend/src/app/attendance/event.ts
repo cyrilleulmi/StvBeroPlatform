@@ -28,6 +28,7 @@ import { TimelineSection } from '../drivers/timeline';
 import { EventLineupsSection } from './event-lineups';
 import { OverviewSection } from './overview';
 import { PinAction, PinnedChip } from './pin';
+import { PreTrainingDisplay } from './pre-training';
 import { yearOf, eventDate, clockTime } from '../core/time';
 
 /** Sections of a match day if the variant names none; «Anmeldungen» first (VAR-07). */
@@ -63,6 +64,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
     OverviewSection,
     PinAction,
     PinnedChip,
+    PreTrainingDisplay,
   ],
   template: `
     <div class="header">
@@ -81,6 +83,9 @@ const DEFAULT_SECTIONS: EventSection[] = [
               <app-pinned-chip [title]="texts.events.pinnedNote" />
             }
           </p>
+        }
+        @if (t.preTraining) {
+          <app-pre-training place="page" [event]="t" [period]="period()" [tag]="t.variant?.color ?? null" />
         }
         <!-- Whoever may edit the event pins it to the start page of its teams (TER-26, TER-27) -->
         @if (t.canEdit) {
@@ -253,6 +258,10 @@ const DEFAULT_SECTIONS: EventSection[] = [
                   <dd>{{ date(t.start) }}</dd>
                   <dt>{{ texts.events.time }}</dt>
                   <dd>{{ period() }}</dd>
+                  @if (t.preTraining; as pre) {
+                    <dt>{{ texts.preTraining.label }}</dt>
+                    <dd data-testid="pre-training-fact">{{ texts.preTraining.fact(clockTime(pre.start), pre.title) }}</dd>
+                  }
                   <dt>{{ texts.events.teams }}</dt>
                   <dd>{{ teams() }}</dd>
                   @if (t.location) {

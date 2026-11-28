@@ -19,6 +19,7 @@ import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
 import { PinnedChip } from './pin';
+import { PreTrainingDisplay } from './pre-training';
 import { yearOf, month, monthKey, eventDate, clockTime } from '../core/time';
 import {
   apiTeams as teamsForApi,
@@ -44,7 +45,7 @@ interface Month {
 @Component({
   selector: 'app-events',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse, Scoreboard, PinnedChip],
+  imports: [RouterLink, Icon, MyResponse, Scoreboard, PinnedChip, PreTrainingDisplay],
   template: `
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
@@ -185,7 +186,7 @@ interface Month {
                 <a class="event-link" [routerLink]="['/termine', t.id]">
                   <span class="event-title" [class.struck-through]="t.status === 'CANCELLED'">{{ t.title }}</span>
                   <!-- When and where lead (they decide whether one can come), the teams follow quietly -->
-                  <span class="when-where">{{ date(t.start) }} · {{ period(t) }}</span>
+                  <app-pre-training class="when-where" [event]="t" [day]="date(t.start)" [period]="period(t)" />
                   @if (t.location) {
                     <span class="place">{{ t.location.name }}</span>
                   }

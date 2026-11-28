@@ -41,6 +41,8 @@ import {
   type FormValues,
   type MatchRow,
 } from './event-form-model';
+import { PreTrainingFields } from './pre-training-fields';
+import { eventPreTraining, preTrainingErrors, seriesPreTraining, valuesOfEvent, valuesOfSeries } from './pre-training-form';
 
 type FormMode = 'new' | 'event' | 'series';
 
@@ -53,7 +55,7 @@ type FormMode = 'new' | 'event' | 'series';
 @Component({
   selector: 'app-event-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, PreTrainingFields],
   templateUrl: './event-form.html',
   styleUrl: './event-form.css',
 })
@@ -129,7 +131,8 @@ export class EventForm {
       case 'event':
         return this.event()?.canEdit === true;
       case 'series':
-        return this.canEditSeries();
+        // Series: admins and coaches (of any team, E-69) may edit (TER-11, RR-03)
+        return !!this.series() && this.auth.canManage();
     }
   });
 
@@ -474,6 +477,7 @@ export class EventForm {
         ? w.variantId
         : null,
       optionalTeamIds: this.optionalTeams(),
+      preTraining: eventPreTraining(w),
     };
   }
 
@@ -546,6 +550,7 @@ export class EventForm {
       responseDeadlineHours: Number(w.responseDeadline),
       attendanceCheck: w.attendanceCheck,
       optionalTeamIds: this.optionalTeams(),
+      preTraining: seriesPreTraining(w),
     };
   }
 
@@ -578,6 +583,7 @@ export class EventForm {
     if (!w.start) f.start = required('eine Zeit');
     if (!w.end) f.end = required('eine Zeit');
     else if (w.start && w.end <= w.start) f.end = TEXTS.eventForm.endAfterStart;
+    Object.assign(f, preTrainingErrors(w));
     if (w.teamIds.length === 0) f.teamIds = TEXTS.eventForm.teamRequired;
     const optional = this.optionalTeams();
     if (optional.length > 0 && optional.length >= w.teamIds.length) {
@@ -672,6 +678,7 @@ export class EventForm {
           meetingPointTime: t.meetingPoint?.time ? inputParts(t.meetingPoint.time).time : '',
           meetingPointLocation: t.meetingPoint?.location ?? '',
           attendanceCheck: t.attendanceCheck ?? false,
+          ...valuesOfEvent(t),
         });
         this.matches.set(
           (t.matches ?? []).map((m) => ({
@@ -702,6 +709,7 @@ export class EventForm {
           location: s.location?.name ?? '',
           responseDeadline: String(s.responseDeadlineHours ?? 24),
           attendanceCheck: s.attendanceCheck ?? false,
+          ...valuesOfSeries(s),
         });
       } else {
         // New: the team in which the person is coach is preselected if there is exactly one.
@@ -740,10 +748,5 @@ export class EventForm {
         [...this.teams(), ...added].sort((a, b) => a.name.localeCompare(b.name, 'de-CH')),
       );
     }
-  }
-
-  /** Series: admins and coaches (of any team, E-69) may edit (TER-11, RR-03). */
-  private canEditSeries(): boolean {
-    return !!this.series() && this.auth.canManage();
   }
 }

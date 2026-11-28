@@ -274,10 +274,8 @@ public class SeriesService {
     }
 
     private boolean hasResponses(Event event) {
-        Number count = (Number) em.createNativeQuery(
-                        "select count(*) from response where event_id = ?1 and absence_id is null")
-                .setParameter(1, event.id).getSingleResult();
-        return count.longValue() > 0;
+        return ((Number) em.createNativeQuery("select count(*) from response where event_id = ?1 and absence_id is null")
+                .setParameter(1, event.id).getSingleResult()).longValue() > 0;
     }
 
     /** The event would look different after the change. */
@@ -293,7 +291,8 @@ public class SeriesService {
                         location == null ? null : location.dto())
                 || !event.teams.equals(teams)
                 || event.responseDeadlineHours != EventRules.responseDeadline(input.responseDeadlineHours())
-                || (input.attendanceCheck() != null && event.attendanceCheck != input.attendanceCheck());
+                || (input.attendanceCheck() != null && event.attendanceCheck != input.attendanceCheck())
+                || PreTrainingRules.differs(event, input, day);
     }
 
     private static Series find(UUID id) {
@@ -377,6 +376,7 @@ public class SeriesService {
     private static void checkInput(SeriesInput input, Set<Team> teams, Season season) {
         EventRules.checkSeries(EventRules.time(input.startTime()), EventRules.time(input.endTime()),
                 input.validFrom(), input.validUntil());
+        PreTrainingRules.checkSeries(input.type(), input.preTraining(), EventRules.time(input.startTime()));
         EventService.checkTeamsInSeason(teams, season);
     }
 
@@ -390,6 +390,7 @@ public class SeriesService {
         s.validUntil = input.validUntil();
         s.location = Location.of(input.location());
         s.responseDeadlineHours = EventRules.responseDeadline(input.responseDeadlineHours());
+        PreTrainingRules.set(s, PreTrainingRules.checkSeries(input.type(), input.preTraining(), s.startTime));
         if (input.attendanceCheck() != null) {
             s.attendanceCheck = input.attendanceCheck();
         }
@@ -429,6 +430,7 @@ public class SeriesService {
         event.location = s.location == null ? null : Location.of(s.location.dto());
         event.responseDeadlineHours = s.responseDeadlineHours;
         event.attendanceCheck = s.attendanceCheck;
+        PreTrainingRules.copy(event, s, day);
         event.teams.clear();
         event.teams.addAll(s.teams);
         event.optionalTeamIds.retainAll(s.optionalTeamIds);
@@ -441,10 +443,7 @@ public class SeriesService {
      */
     private void drop(CurrentUser user, Event event, String reason) {
         // Declines set by an absence do not count: nobody answered by hand (ABS-04)
-        Number responseCount = (Number) em.createNativeQuery(
-                        "select count(*) from response where event_id = ?1 and absence_id is null")
-                .setParameter(1, event.id).getSingleResult();
-        switch (EventRules.onException(responseCount.longValue() > 0)) {
+        switch (EventRules.onException(hasResponses(event))) {
             case REMOVE -> event.delete();
             case CANCEL -> {
                 event.status = EventStatus.CANCELLED;

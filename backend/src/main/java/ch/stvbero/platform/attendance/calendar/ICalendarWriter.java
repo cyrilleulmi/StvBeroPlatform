@@ -78,7 +78,7 @@ final class ICalendarWriter {
         // The ID of the event: a rescheduled or changed event replaces the entry instead of adding one (CAL-04).
         line(out, "UID:" + entry.id() + UID_DOMAIN);
         line(out, "DTSTAMP:" + UTC.format(now));
-        line(out, "DTSTART;TZID=" + TZID + ":" + local(entry.start()));
+        line(out, "DTSTART;TZID=" + TZID + ":" + local(entry.begin()));
         line(out, "DTEND;TZID=" + TZID + ":" + local(entry.end()));
         line(out, "SUMMARY:" + text(CalendarRules.summary(entry.type(), entry.title(), entry.teams(), entry.cancelled())));
         String location = CalendarRules.location(entry.locationName(), entry.locationAddress());

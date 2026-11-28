@@ -284,9 +284,11 @@ public class CalendarService {
                     event.location == null ? null : event.location.latitude,
                     event.location == null ? null : event.location.longitude,
                     event.meetingPointTime, event.meetingPointLocation, event.notes,
-                    matches.getOrDefault(event.id, List.of()), status, comment));
+                    matches.getOrDefault(event.id, List.of()), status, comment,
+                    event.preTrainingTitle == null ? null
+                            : new CalendarEntry.PreTrainingLine(event.preTrainingTitle, event.preTrainingStart)));
         }
-        entries.sort(Comparator.comparing(CalendarEntry::start).thenComparing(CalendarEntry::id));
+        entries.sort(Comparator.comparing(CalendarEntry::begin).thenComparing(CalendarEntry::id));
         return entries;
     }
 }

@@ -112,3 +112,5 @@ export type CalendarTeam = components['schemas']['CalendarTeam'];
 export type Absence = components['schemas']['Absence'];
 export type AbsenceInput = components['schemas']['AbsenceInput'];
 export type AbsenceReason = components['schemas']['AbsenceReason'];
+export type PreTraining = components['schemas']['PreTraining'];
+export type SeriesPreTraining = components['schemas']['SeriesPreTraining'];
