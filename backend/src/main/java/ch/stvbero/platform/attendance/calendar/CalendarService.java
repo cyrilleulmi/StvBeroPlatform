@@ -8,6 +8,7 @@ import ch.stvbero.platform.attendance.event.EventStatus;
 import ch.stvbero.platform.attendance.event.EventType;
 import ch.stvbero.platform.attendance.event.Match;
 import ch.stvbero.platform.attendance.event.Participation;
+import ch.stvbero.platform.attendance.event.PreTrainingResponseRules;
 import ch.stvbero.platform.attendance.event.ResponseStatus;
 import ch.stvbero.platform.core.season.Season;
 import ch.stvbero.platform.core.team.Team;
@@ -226,7 +227,8 @@ public class CalendarService {
         Map<UUID, Object[]> responses = new HashMap<>();
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery(
-                        "select event_id, status, comment from response where person_id = :person and event_id in (:ids)")
+                        "select event_id, status, comment, pre_training_status from response "
+                                + "where person_id = :person and event_id in (:ids)")
                 .setParameter("person", personId).setParameter("ids", ids).getResultList();
         rows.forEach(row -> responses.put((UUID) row[0], row));
 
@@ -286,7 +288,9 @@ public class CalendarService {
                     event.meetingPointTime, event.meetingPointLocation, event.notes,
                     matches.getOrDefault(event.id, List.of()), status, comment,
                     event.preTrainingTitle == null ? null
-                            : new CalendarEntry.PreTrainingLine(event.preTrainingTitle, event.preTrainingStart)));
+                            : new CalendarEntry.PreTrainingLine(event.preTrainingTitle, event.preTrainingStart,
+                            PreTrainingResponseRules.status(true, status, response == null || response[3] == null
+                                    ? null : ResponseStatus.valueOf((String) response[3])))));
         }
         entries.sort(Comparator.comparing(CalendarEntry::begin).thenComparing(CalendarEntry::id));
         return entries;

@@ -1492,7 +1492,8 @@ paths:
         Only members of a team involved (any team role), otherwise 403. `MAYBE` requires a
         comment (otherwise 422, field `comment`). A change away from `ATTENDING` after the response deadline is a
         late cancellation (`lateCancellation`) and notifies the coaches (ANM-10, BEN-02). The flag
-        stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06).
+        stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06). A practice with a
+        pre-training takes the response to it in `preTraining` (ANM-14, ANM-15).
       requestBody:
         required: true
         content:
@@ -3952,7 +3953,8 @@ components:
       type: object
       description: >-
         Pre-training («Vortraining», TER-29): what the people of a practice do together before it starts, e.g.
-        «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. One response covers both.
+        «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. It has responses of its own
+        (`preTraining` of `Response`, ANM-14).
       required: [title, start]
       properties:
         title: { type: string, minLength: 1, maxLength: 60, examples: [Joggen] }
@@ -3960,6 +3962,10 @@ components:
           type: string
           format: date-time
           description: Before the start of the practice, on the same day (Europe/Zurich), otherwise 400
+    PreTrainingChoice:
+      type: string
+      description: What a person can say to the pre-training of a practice (ANM-14); there is no MAYBE
+      enum: [ATTENDING, DECLINED]
     SeriesPreTraining:
       type: object
       description: Pre-training of every practice of a series (TER-30), with the time of day instead of a moment
@@ -4037,6 +4043,11 @@ components:
         preTraining:
           $ref: '#/components/schemas/PreTraining'
           description: Pre-training before the practice (TER-29); missing if there is none
+        preTrainingCounts:
+          $ref: '#/components/schemas/Counts'
+          description: >-
+            Responses to the pre-training of the players counted in `counts` (ANM-17); missing if there is no
+            pre-training
     Event:
       allOf:
         - $ref: '#/components/schemas/EventSummary'
@@ -4338,6 +4349,12 @@ components:
         travelsIndividually:
           type: boolean
           description: The person travels to the match day on her own and needs no seat (ANM-13); missing if not
+        preTraining:
+          $ref: '#/components/schemas/ResponseStatus'
+          description: >-
+            Practices with a pre-training (ANM-14, ANM-15): the response to the pre-training. With `ATTENDING` at
+            the practice what the person said (`ATTENDING` or `DECLINED`), `PENDING` until she says so; otherwise
+            the status of the practice. Missing if the event has no pre-training
     ResponseInput:
       type: object
       required: [status]
@@ -4354,6 +4371,14 @@ components:
           description: >-
             Match days: with ATTENDING, `true` marks the person as travelling on her own, `false` removes the mark
             (ANM-13, DRV-20). Missing: unchanged. Any other status removes the mark
+        preTraining:
+          oneOf:
+            - $ref: '#/components/schemas/PreTrainingChoice'
+            - type: 'null'
+          description: >-
+            Practices with a pre-training: with ATTENDING, whether the person is at the pre-training too (ANM-14).
+            Missing: unchanged. `ATTENDING` without `ATTENDING` at the practice: 422 with rule ANM-15, field
+            `preTraining`; an event without a pre-training: 400. Any other status of the practice removes it
 
     Overview:
       type: object
@@ -4369,6 +4394,9 @@ components:
         total:
           $ref: '#/components/schemas/Counts'
           description: Each player once, even if she is in several teams (ANM-32)
+        preTrainingTotal:
+          $ref: '#/components/schemas/Counts'
+          description: Responses to the pre-training of the players in `total` (ANM-17); missing without a pre-training
         teams:
           type: array
           description: Sorted by team name
@@ -4404,6 +4432,9 @@ components:
             id: { type: string, format: uuid }
             name: { type: string }
         counts: { $ref: '#/components/schemas/Counts' }
+        preTrainingCounts:
+          $ref: '#/components/schemas/Counts'
+          description: Responses to the pre-training of the players in `counts` (ANM-17); missing without a pre-training
         groups:
           type: array
           description: Lines by sort order, then goalies, then «Ohne Linie» (no line). Empty groups are left out.

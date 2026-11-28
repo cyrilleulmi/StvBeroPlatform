@@ -27,5 +27,7 @@ public record EventSummaryDto(UUID id, EventType type, String title, OffsetDateT
                             @Schema(description = "Pinned to the start page of the members of its teams until it is over (TER-26, E-114)")
                             boolean pinned,
                             @Schema(description = "Pre-training before the practice (TER-29); missing if there is none")
-                            PreTrainingDto preTraining) {
+                            PreTrainingDto preTraining,
+                            @Schema(description = "Responses to the pre-training of the players in counts (ANM-17); missing without one")
+                            CountsDto preTrainingCounts) {
 }

@@ -55,7 +55,7 @@ public class ResponseService {
 
     /** Stored response, as it is in the table. */
     record Stored(ResponseStatus status, String comment, Instant changedAt, UUID enteredBy,
-                       boolean lateCancellation) {
+                       boolean lateCancellation, ResponseStatus preTraining) {
     }
 
     // ------------------------------------------------------------------ Write
@@ -98,17 +98,24 @@ public class ResponseService {
                 previous == null ? ResponseStatus.PENDING : previous.status(), previous != null && previous.lateCancellation(), newStatus,
                 EventRules.responseDeadline(event.start, event.responseDeadlineHours), now);
         String comment = EventRules.blankToNull(input.comment());
+        // Whether she is at the pre-training too goes with «dabei» only (ANM-15)
+        boolean hasPreTraining = event.preTrainingTitle != null;
+        ResponseStatus preTraining = PreTrainingResponseRules.stored(hasPreTraining,
+                previous == null ? ResponseStatus.PENDING : previous.status(),
+                previous == null ? null : previous.preTraining(), newStatus, input.preTraining());
         // A response given by hand no longer belongs to an absence (ABS-04)
         em.createNativeQuery("""
-                        insert into response (event_id, person_id, status, comment, changed_at, entered_by, late_cancellation)
-                        values (?, ?, ?, ?, ?, ?, ?)
+                        insert into response (event_id, person_id, status, comment, changed_at, entered_by, late_cancellation,
+                                              pre_training_status)
+                        values (?, ?, ?, ?, ?, ?, ?, ?)
                         on conflict (event_id, person_id) do update
                         set status = excluded.status, comment = excluded.comment, changed_at = excluded.changed_at,
                             entered_by = excluded.entered_by, late_cancellation = excluded.late_cancellation,
-                            absence_id = null
+                            absence_id = null, pre_training_status = excluded.pre_training_status
                         """)
                 .setParameter(1, event.id).setParameter(2, respondent).setParameter(3, newStatus.name()).setParameter(4, comment)
                 .setParameter(5, now).setParameter(6, enteredBy).setParameter(7, lateCancellation)
+                .setParameter(8, preTraining == null ? null : preTraining.name())
                 .executeUpdate();
         notifications.responseChanged(user, event, members, respondent,
                 previous == null ? ResponseStatus.PENDING : previous.status(), newStatus, lateCancellation, comment);
@@ -117,7 +124,8 @@ public class ResponseService {
                 input.travelsIndividually());
         return new ResponseDto(newStatus, comment, EventReader.time(now),
                 enteredBy == null ? null : PersonSummary.of(Person.findById(enteredBy)), lateCancellation,
-                travel().individual(event.id).contains(respondent) ? Boolean.TRUE : null);
+                travel().individual(event.id).contains(respondent) ? Boolean.TRUE : null,
+                PreTrainingResponseRules.status(hasPreTraining, newStatus, preTraining));
     }
 
     private MatchDayTravel travel() {
@@ -134,6 +142,7 @@ public class ResponseService {
         EventRules.checkCanView(user.allTeams(), mine.values());
 
         Map<UUID, Stored> responses = responses(event.id);
+        boolean pre = event.preTrainingTitle != null;
         Map<UUID, PersonSummary> persons = new HashMap<>();
         members.forEach(m -> persons.put(m.person.id, PersonSummary.of(m.person)));
         // Who travels on her own (ANM-13), visible to everyone who sees the responses
@@ -160,7 +169,7 @@ public class ResponseService {
             for (TeamMembership m : players) {
                 OverviewDto.Entry entry = new OverviewDto.Entry(persons.get(m.person.id),
                         response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons,
-                                individual.contains(m.person.id)));
+                                individual.contains(m.person.id), pre));
                 if (m.groups.isEmpty()) {
                     noLine.add(entry);
                 } else {
@@ -181,8 +190,9 @@ public class ResponseService {
             boolean optional = event.optionalTeamIds.contains(team.id());
             List<UUID> playerIds = players.stream().map(m -> m.person.id).toList();
             // In a team invited without obligation only those who responded count (TER-15)
-            blocks.add(new OverviewDto.TeamBlock(team, counts(optional ? responded(playerIds, responses) : playerIds,
-                    responses), groups, optional));
+            List<UUID> inCount = optional ? responded(playerIds, responses) : playerIds;
+            blocks.add(new OverviewDto.TeamBlock(team, counts(inCount, responses), groups, optional,
+                    pre ? preTrainingCounts(inCount, responses) : null));
             if (optional) {
                 players.forEach(m -> invitedPlayers.add(m.person.id));
             } else {
@@ -197,7 +207,7 @@ public class ResponseService {
             inTeam.stream().filter(m -> m.teamRole == TeamRole.COACH)
                     .map(m -> new OverviewDto.CoachEntry(persons.get(m.person.id), team,
                             response(responses.get(m.person.id), commentsVisible || m.person.id.equals(user.personId()), persons,
-                                    individual.contains(m.person.id))))
+                                    individual.contains(m.person.id), pre)))
                     .sorted(Comparator.comparing(OverviewDto.CoachEntry::person, PersonSummary.ORDER))
                     .forEach(coaches::add);
         }
@@ -208,7 +218,8 @@ public class ResponseService {
         }
         Set<UUID> counted = new LinkedHashSet<>(expectedPlayers);
         counted.addAll(responded(invitedPlayers, responses));
-        return new OverviewDto(event.id, counts(counted, responses), blocks, coaches, warnings);
+        return new OverviewDto(event.id, counts(counted, responses), blocks, coaches, warnings,
+                pre ? preTrainingCounts(counted, responses) : null);
     }
 
     /** Of these people, the ones who gave a response. */
@@ -266,7 +277,7 @@ public class ResponseService {
     Map<UUID, Stored> responses(UUID eventId) {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
-                        select person_id, status, comment, changed_at, entered_by, late_cancellation
+                        select person_id, status, comment, changed_at, entered_by, late_cancellation, pre_training_status
                         from response where event_id = ?""")
                 .setParameter(1, eventId).getResultList();
         Map<UUID, Stored> responses = new HashMap<>();
@@ -280,7 +291,7 @@ public class ResponseService {
     private Stored locked(UUID eventId, UUID personId) {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = em.createNativeQuery("""
-                        select person_id, status, comment, changed_at, entered_by, late_cancellation
+                        select person_id, status, comment, changed_at, entered_by, late_cancellation, pre_training_status
                         from response where event_id = ? and person_id = ? for update""")
                 .setParameter(1, eventId).setParameter(2, personId).getResultList();
         return rows.isEmpty() ? null : stored(rows.get(0), 1);
@@ -288,19 +299,23 @@ public class ResponseService {
 
     private static Stored stored(Object[] row, int offset) {
         return new Stored(ResponseStatus.valueOf((String) row[offset]), (String) row[offset + 1], instant(row[offset + 2]),
-                (UUID) row[offset + 3], Boolean.TRUE.equals(row[offset + 4]));
+                (UUID) row[offset + 3], Boolean.TRUE.equals(row[offset + 4]),
+                row[offset + 5] == null ? null : ResponseStatus.valueOf((String) row[offset + 5]));
     }
 
     /** Response for display. Without permission the comment is left out (ANM-07). */
     static ResponseDto response(Stored stored, boolean withComment, Map<UUID, PersonSummary> persons) {
-        return response(stored, withComment, persons, false);
+        return response(stored, withComment, persons, false, false);
     }
 
-    /** As above; {@code individual}: the person travels to the match day on her own (ANM-13). */
+    /**
+     * As above; {@code individual}: the person travels to the match day on her own (ANM-13); {@code hasPreTraining}:
+     * the event has a pre-training, the response to it is included (ANM-14).
+     */
     static ResponseDto response(Stored stored, boolean withComment, Map<UUID, PersonSummary> persons,
-                                boolean individual) {
+                                boolean individual, boolean hasPreTraining) {
         if (stored == null) {
-            return ResponseDto.PENDING;
+            return ResponseDto.pending(hasPreTraining);
         }
         PersonSummary enteredBy = null;
         if (stored.enteredBy() != null) {
@@ -308,7 +323,8 @@ public class ResponseService {
                     id -> Person.<Person>findByIdOptional(id).map(PersonSummary::of).orElse(null));
         }
         return new ResponseDto(stored.status(), withComment ? stored.comment() : null, EventReader.time(stored.changedAt()),
-                enteredBy, stored.lateCancellation(), individual ? Boolean.TRUE : null);
+                enteredBy, stored.lateCancellation(), individual ? Boolean.TRUE : null,
+                PreTrainingResponseRules.status(hasPreTraining, stored.status(), stored.preTraining()));
     }
 
     private static List<OverviewDto.Entry> sorted(List<OverviewDto.Entry> entries) {
@@ -318,6 +334,15 @@ public class ResponseService {
     private static CountsDto counts(java.util.Collection<UUID> players, Map<UUID, Stored> responses) {
         return EventRules.count(players.stream()
                 .map(p -> responses.containsKey(p) ? responses.get(p).status() : ResponseStatus.PENDING).toList());
+    }
+
+    /** Responses to the pre-training of these players (ANM-17). */
+    private static CountsDto preTrainingCounts(java.util.Collection<UUID> players, Map<UUID, Stored> responses) {
+        return EventRules.count(players.stream().map(p -> {
+            Stored stored = responses.get(p);
+            return stored == null ? ResponseStatus.PENDING
+                    : PreTrainingResponseRules.status(true, stored.status(), stored.preTraining());
+        }).toList());
     }
 
     private static Instant instant(Object value) {

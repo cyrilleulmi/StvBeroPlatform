@@ -208,3 +208,18 @@
 .chip[data-kind='individual'] {
   background: var(--blue-soft);
 }
+
+/* ANM-17: who is at the pre-training, under the counts of the practice */
+.pre-counter {
+  align-items: baseline;
+}
+
+.pre-counter-name {
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.overview > .pre-counter {
+  margin-top: -6px;
+  padding: 0 4px;
+}

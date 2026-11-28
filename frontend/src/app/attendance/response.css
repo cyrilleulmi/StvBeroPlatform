@@ -120,3 +120,70 @@
   flex: none;
   accent-color: var(--primary);
 }
+
+/* ANM-14: the second question of a practice with a pre-training, hanging on the response buttons. A dashed frame in
+   mustard asks; once answered the frame is quiet and the chosen button carries the colour. */
+.pre {
+  display: grid;
+  gap: 8px;
+  max-width: 420px;
+  padding: 8px 10px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.pre[data-response='PENDING'] {
+  border-style: dashed;
+  border-color: var(--mustard);
+  background: var(--mustard-soft);
+}
+
+.pre-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  font-size: 14px;
+}
+
+.pre-head app-icon {
+  flex: none;
+  color: var(--muted);
+}
+
+.pre-ask {
+  font-weight: 700;
+}
+
+.pre-what {
+  color: var(--muted);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.pre-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pre-buttons .response-button {
+  min-height: var(--touch);
+}
+
+/* Who is «dabei» is at the pre-training, skips it or has not said yet (ANM-17) */
+.chip[data-kind='pre-attending'],
+.chip[data-kind='pre-declined'],
+.chip[data-kind='pre-pending'] {
+  gap: 4px;
+}
+
+.chip[data-kind='pre-declined'] {
+  background: var(--coral-soft);
+}
+
+.chip[data-kind='pre-pending'] {
+  background: var(--mustard-soft);
+}

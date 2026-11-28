@@ -11,12 +11,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { EventResponse, ResponseInput, ResponseStatus } from '../api/types';
+import type { EventResponse, PreTraining, ResponseInput, ResponseStatus } from '../api/types';
 import { fieldErrorsOf, errorText } from '../core/error-text';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 import { showModal } from '../core/dialog';
+import { PreTrainingChoice, PreTrainingResponse } from './pre-training-response';
 
 type Choice = ResponseInput['status'];
 
@@ -25,11 +26,12 @@ type Choice = ResponseInput['status'];
  * (ANM-08), «nicht dabei» then offers an optional reason (ANM-05), «vielleicht» requires a
  * comment (ANM-04). If the event variant requires a reason (VAR-12), «nicht dabei» asks for it first
  * and is only saved with one. Disabled for cancelled or past events, with an explanation (TER-06).
+ * A practice with a pre-training asks a second question once the person is «dabei» (ANM-14).
  */
 @Component({
   selector: 'app-my-response',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, PreTrainingResponse],
   template: `
     <div
       class="response"
@@ -58,6 +60,15 @@ type Choice = ResponseInput['status'];
       </div>
       @if (locked(); as text) {
         <p class="secondary-text" [id]="id('lock')">{{ text }}</p>
+      }
+      <!-- Practice with a pre-training: who is «dabei» says whether she is at the pre-training too (ANM-14) -->
+      @if (current().status === 'ATTENDING' && current().preTraining; as pre) {
+        <app-pre-training-response
+          [status]="pre"
+          [preTraining]="preTraining()"
+          [disabled]="!!locked() || running() !== null"
+          (chosen)="setPreTraining($event)"
+        />
       }
       <!-- Match days: «dabei» and travelling on one's own, so that no seat is planned (ANM-13) -->
       @if (travel() && current().status === 'ATTENDING' && !locked()) {
@@ -218,6 +229,8 @@ export class MyResponse {
   readonly travel = input(false);
   /** The event variant requires a reason with «nicht dabei» (VAR-12, ANM-05). */
   readonly reasonRequired = input(false);
+  /** The pre-training of the practice, for the line next to the second question (ANM-14). */
+  readonly preTraining = input<PreTraining | null>(null);
   protected readonly travelTexts = TEXTS.individual;
 
   /** After every save, so that the page reloads counters and overview. */
@@ -305,6 +318,15 @@ export class MyResponse {
     const saved = await this.save({ status: 'ATTENDING', travelsIndividually: on }, false, true);
     if (saved) {
       this.message.set(on ? TEXTS.individual.savedSelf : TEXTS.individual.removedSelf);
+    }
+  }
+
+  /** «Auch beim Vortraining?»: saved with the response «dabei», which stays as it is (ANM-14). */
+  protected async setPreTraining(choice: PreTrainingChoice): Promise<void> {
+    if (this.locked() || this.running()) return;
+    const comment = this.current().comment ?? null;
+    if (await this.save({ status: 'ATTENDING', comment, preTraining: choice }, false, true)) {
+      this.message.set(TEXTS.preTrainingResponse.saved[choice]);
     }
   }
 

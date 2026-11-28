@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
 /**
  * Rules of the pre-training («Vortraining») of a practice (TER-29, TER-30, E-117), without database: the checks of
  * the input, the copy from a series to its events and the comparison «did it change». A pre-training is a title and
- * a start; on an event the start is a moment, on a series a time of day.
+ * a start; on an event the start is a moment, on a series a time of day. Removing it from an event removes its
+ * responses ({@link Event#removePreTraining()}).
  */
 public final class PreTrainingRules {
 
@@ -108,8 +109,12 @@ public final class PreTrainingRules {
     }
 
     static void set(Event event, Moment preTraining) {
-        event.preTrainingTitle = preTraining == null ? null : preTraining.title();
-        event.preTrainingStart = preTraining == null ? null : preTraining.start();
+        if (preTraining == null) {
+            event.removePreTraining();
+        } else {
+            event.preTrainingTitle = preTraining.title();
+            event.preTrainingStart = preTraining.start();
+        }
     }
 
     static void set(Series s, TimeOfDay preTraining) {

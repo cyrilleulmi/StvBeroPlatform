@@ -1091,7 +1091,8 @@ export interface paths {
          * @description Only members of a team involved (any team role), otherwise 403. `MAYBE` requires a
          *     comment (otherwise 422, field `comment`). A change away from `ATTENDING` after the response deadline is a
          *     late cancellation (`lateCancellation`) and notifies the coaches (ANM-10, BEN-02). The flag
-         *     stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06).
+         *     stays until the next `ATTENDING`. For cancelled and past events 409 (TER-06). A practice with a
+         *     pre-training takes the response to it in `preTraining` (ANM-14, ANM-15).
          */
         put: operations["setOwnResponse"];
         post?: never;
@@ -3197,7 +3198,7 @@ export interface components {
             /** @example Parkplatz Sporthalle Nord */
             location: string;
         };
-        /** @description Pre-training («Vortraining», TER-29): what the people of a practice do together before it starts, e.g. «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. One response covers both. */
+        /** @description Pre-training («Vortraining», TER-29): what the people of a practice do together before it starts, e.g. «Joggen» at 20:00 before the practice at 20:20. It ends when the practice starts. It has responses of its own (`preTraining` of `Response`, ANM-14). */
         PreTraining: {
             /** @example Joggen */
             title: string;
@@ -3207,6 +3208,11 @@ export interface components {
              */
             start: string;
         };
+        /**
+         * @description What a person can say to the pre-training of a practice (ANM-14); there is no MAYBE
+         * @enum {string}
+         */
+        PreTrainingChoice: "ATTENDING" | "DECLINED";
         /** @description Pre-training of every practice of a series (TER-30), with the time of day instead of a moment */
         SeriesPreTraining: {
             /** @example Kraft & Stabilität */
@@ -3263,6 +3269,8 @@ export interface components {
             pinned: boolean;
             /** @description Pre-training before the practice (TER-29); missing if there is none */
             preTraining?: components["schemas"]["PreTraining"];
+            /** @description Responses to the pre-training of the players counted in `counts` (ANM-17); missing if there is no pre-training */
+            preTrainingCounts?: components["schemas"]["Counts"];
         };
         Event: components["schemas"]["EventSummary"] & {
             /** @example Weisse Trikots mitnehmen */
@@ -3522,6 +3530,8 @@ export interface components {
             lateCancellation: boolean;
             /** @description The person travels to the match day on her own and needs no seat (ANM-13); missing if not */
             travelsIndividually?: boolean;
+            /** @description Practices with a pre-training (ANM-14, ANM-15): the response to the pre-training. With `ATTENDING` at the practice what the person said (`ATTENDING` or `DECLINED`), `PENDING` until she says so; otherwise the status of the practice. Missing if the event has no pre-training */
+            preTraining?: components["schemas"]["ResponseStatus"];
         };
         ResponseInput: {
             /** @enum {string} */
@@ -3530,6 +3540,8 @@ export interface components {
             comment?: string | null;
             /** @description Match days: with ATTENDING, `true` marks the person as travelling on her own, `false` removes the mark (ANM-13, DRV-20). Missing: unchanged. Any other status removes the mark */
             travelsIndividually?: boolean | null;
+            /** @description Practices with a pre-training: with ATTENDING, whether the person is at the pre-training too (ANM-14). Missing: unchanged. `ATTENDING` without `ATTENDING` at the practice: 422 with rule ANM-15, field `preTraining`; an event without a pre-training: 400. Any other status of the practice removes it */
+            preTraining?: components["schemas"]["PreTrainingChoice"] | null;
         };
         Overview: {
             /** @description Only for coaches and admins (F-16), missing for everyone else. Empty for past, cancelled and other events. By team, then goalies, field players, lines. */
@@ -3538,6 +3550,8 @@ export interface components {
             eventId: string;
             /** @description Each player once, even if she is in several teams (ANM-32) */
             total: components["schemas"]["Counts"];
+            /** @description Responses to the pre-training of the players in `total` (ANM-17); missing without a pre-training */
+            preTrainingTotal?: components["schemas"]["Counts"];
             /** @description Sorted by team name */
             teams: components["schemas"]["OverviewTeam"][];
             /** @description Coach block (ANM-22) */
@@ -3560,6 +3574,8 @@ export interface components {
                 name: string;
             };
             counts: components["schemas"]["Counts"];
+            /** @description Responses to the pre-training of the players in `counts` (ANM-17); missing without a pre-training */
+            preTrainingCounts?: components["schemas"]["Counts"];
             /** @description Lines by sort order, then goalies, then «Ohne Linie» (no line). Empty groups are left out. */
             groups: {
                 /**

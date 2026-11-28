@@ -15,11 +15,11 @@ The terms of the app and how they relate. This is a domain model, not a database
 | **Line** | Group of players within a team (Linie 1, Linie 2, …). |
 | **Goalies** | A group of its own per team, next to the lines. |
 | **No line** | Display group for players who are assigned neither to a line nor to the goalies («Ohne Linie»). |
-| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. Can be pinned («angeheftet», TER-26): then it shows on the start page of the members of its teams until it is over. A practice can have one **pre-training** («Vortraining», TER-29): a title and a start before the practice on the same day; one response covers both, the deadline, reminders and attendance check refer to the practice. |
+| **Event** | Something people respond to. Has a type: practice, match day or other event. Belongs to one or more teams. Can be pinned («angeheftet», TER-26): then it shows on the start page of the members of its teams until it is over. A practice can have one **pre-training** («Vortraining», TER-29): a title and a start before the practice on the same day. It has responses of its own (ANM-14); the deadline, reminders and attendance check refer to the practice. |
 | **Series** | Rule that creates recurring events («jeden Dienstag 18:30», every Tuesday 18:30). |
 | **Match day** | Event of type match day. Because of the tournament format it includes several matches in the same hall. |
 | **Match** | A single game within a match day, with opponent and start time. |
-| **Response** | A person's answer for an event: attending, declined or maybe. Without a response the status is pending («offen»). |
+| **Response** | A person's answer for an event: attending, declined or maybe. Without a response the status is pending («offen»). For a practice with a pre-training it carries a second answer: whether a person who is attending is at the pre-training too, attending or declined (ANM-14). Only the pre-training without the practice is not possible; without «dabei» at the practice the pre-training follows the practice (ANM-15). |
 | **Call-up** | Selection of the players who play on a match day. Created and published by the coach. |
 | **Attendance check** | Optional for each event or series, off by default: after the start the coach records who was really there (PRS, E-70). |
 | **Attendance** | The fact recorded by the coach per player: present («anwesend»), absent («abwesend») or excused («entschuldigt»). Separate from the response, which is the intention. |

@@ -132,6 +132,7 @@ const DEFAULT_SECTIONS: EventSection[] = [
               [locked]="lock()"
               [details]="true"
               [travel]="t.type === 'MATCH_DAY'"
+              [preTraining]="t.preTraining ?? null"
               (changed)="reload()"
             />
           </section>

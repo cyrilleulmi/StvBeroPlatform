@@ -68,6 +68,7 @@ stateDiagram-v2
 - Cancelling and rescheduling (individually, or through an exception or change of the series that cancels an event with responses) notify all members of the participating teams (BEN-07). When rescheduling, also the members of teams that were removed in the process. A changed series time is not a rescheduling (O-41). A series event without responses that is removed by an exception or change of the series notifies nobody (assumption F-06, O-52).
 - Adding, changing (title or start) or removing the pre-training of a practice notifies the same people with the notification of a rescheduling, unless the event itself was rescheduled in the same change (TER-31). A series carries it as a time of day and gives it to its events; an event of the series whose pre-training is changed by hand counts as individually changed (TER-30).
 - Rescheduling keeps all responses. Whether «dabei» still applies after a rescheduling is up to the person.
+- A practice with a pre-training has a second answer per person (ANM-14, ANM-15): open after «dabei» until the person says «dabei» or «nicht dabei» to the pre-training; every other response to the practice empties it, and it then follows the practice. Changing the pre-training keeps the answers, removing it removes them. Nobody is reminded of an open answer to the pre-training and nobody is notified when one changes (ANM-17).
 
 | Rule | Reference |
 |---|---|

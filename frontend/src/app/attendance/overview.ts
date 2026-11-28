@@ -25,6 +25,12 @@ import { TEXTS } from '../core/texts';
 import { RESPONSE_ICON, ResponseService, responseKey } from './response';
 import { Warnings } from './warnings';
 import { showModal } from '../core/dialog';
+import {
+  PRE_TRAINING_CHOICES,
+  PreTrainingChoice,
+  preTrainingChoice,
+  preTrainingInput,
+} from './pre-training-response';
 
 type Choice = ResponseInput['status'];
 
@@ -36,7 +42,8 @@ interface Target {
 /**
  * Overview of an event (ANM-20 to ANM-32): total counter, per team counters and groups (lines, goalies,
  * «Ohne Linie»), coach block. Coaches (of any team) and admins respond on behalf of everyone (ANM-11,
- * RR-03, E-69). The API only delivers comments to those permitted (ANM-07).
+ * RR-03, E-69). The API only delivers comments to those permitted (ANM-07). A practice with a pre-training shows who
+ * is at the pre-training: a count and a mark per person who is «dabei» (ANM-17).
  */
 @Component({
   selector: 'app-overview',
@@ -51,6 +58,12 @@ interface Target {
           <app-scoreboard [counts]="data().total" />
         </p>
       </div>
+      @if (data().preTrainingTotal; as c) {
+        <ng-container
+          [ngTemplateOutlet]="preCounter"
+          [ngTemplateOutletContext]="{ $implicit: c, testId: 'overview-pre-training-total' }"
+        />
+      }
 
       @if (data().warnings; as w) {
         <!-- Only coaches and admins get warnings from the API (F-16) -->
@@ -92,6 +105,15 @@ interface Target {
               <span class="separator"> · </span>
               <span data-counter="pending">{{ t.pending(block.counts.pending) }}</span>
             </p>
+            @if (data().teams.length > 1 && block.preTrainingCounts; as c) {
+              <ng-container
+                [ngTemplateOutlet]="preCounter"
+                [ngTemplateOutletContext]="{
+                  $implicit: c,
+                  testId: 'overview-team-' + block.team.id + '-pre-training',
+                }"
+              />
+            }
           </div>
           @for (g of block.groups; track g.groupId ?? 'no-line') {
             @let groupKey = g.groupId ? 'overview-group-' + g.groupId : 'overview-no-line-' + block.team.id;
@@ -158,6 +180,20 @@ interface Target {
         </section>
       }
 
+      <!-- Who is at the pre-training (ANM-17): the same four numbers, one line -->
+      <ng-template #preCounter let-c let-testId="testId">
+        <p class="counter pre-counter" [attr.data-testid]="testId">
+          <span class="pre-counter-name">{{ p.counter }}</span>
+          <span data-counter="attending">{{ t.attending(c.attending) }}</span>
+          <span class="separator"> · </span>
+          <span data-counter="declined">{{ t.declined(c.declined) }}</span>
+          <span class="separator"> · </span>
+          <span data-counter="maybe">{{ t.maybe(c.maybe) }}</span>
+          <span class="separator"> · </span>
+          <span data-counter="pending">{{ t.pending(c.pending) }}</span>
+        </p>
+      </ng-template>
+
       <ng-template #personTpl let-e let-extra="extra">
         <span class="symbol" [attr.data-kind]="key(e.response.status)" aria-hidden="true">
           <app-icon [name]="icon[status(e.response)]" [size]="16" />
@@ -174,6 +210,14 @@ interface Target {
           }}</span>
           @if (e.response.lateCancellation) {
             <span class="chip" data-kind="late-cancellation">{{ a.lateCancellation }}</span>
+          }
+          @if (preChip(e.response); as kind) {
+            <span
+              class="chip"
+              data-testid="overview-pre-training"
+              [attr.data-kind]="'pre-' + kind.toLowerCase()"
+              >{{ p.chip[kind] }}</span
+            >
           }
           @if (e.response.travelsIndividually) {
             <span class="chip" data-kind="individual" data-testid="overview-individual">{{
@@ -217,6 +261,29 @@ interface Target {
               </label>
             }
           </fieldset>
+          @if (data().preTrainingTotal) {
+            <!-- The pre-training goes with «dabei» only (ANM-15, ANM-16) -->
+            <fieldset class="choice" data-testid="on-behalf-pre-training" [disabled]="choice() !== 'ATTENDING'">
+              <legend class="label">{{ p.onBehalf }}</legend>
+              @for (w of preChoices; track w) {
+                <label class="checkbox">
+                  <input
+                    type="radio"
+                    name="on-behalf-pre-training"
+                    [value]="w"
+                    [checked]="choice() === 'ATTENDING' && preChoice() === w"
+                    (change)="preChoice.set(w)"
+                  />
+                  {{ a.status[w] }}
+                </label>
+              }
+              @if (choice() !== 'ATTENDING') {
+                <p class="secondary-text">{{ p.onBehalfHint }}</p>
+              } @else if (!preChoice()) {
+                <p class="secondary-text">{{ p.onBehalfOpen }}</p>
+              }
+            </fieldset>
+          }
           <div class="field">
             <label for="on-behalf-comment">{{ a.commentOptional }}</label>
             <input
@@ -264,6 +331,8 @@ export class OverviewSection {
   protected readonly t = TEXTS.overview;
   protected readonly texts = TEXTS;
   protected readonly a = TEXTS.response;
+  protected readonly p = TEXTS.preTrainingResponse;
+  protected readonly preChoices = PRE_TRAINING_CHOICES;
   protected readonly icon = RESPONSE_ICON;
   protected readonly key = responseKey;
   protected readonly choices: Choice[] = ['ATTENDING', 'DECLINED', 'MAYBE'];
@@ -282,6 +351,7 @@ export class OverviewSection {
 
   protected readonly target = signal<Target | null>(null);
   protected readonly choice = signal<Choice>('ATTENDING');
+  protected readonly preChoice = signal<PreTrainingChoice | null>(null);
   protected readonly comment = signal('');
   protected readonly commentError = signal<string | null>(null);
   protected readonly running = signal(false);
@@ -297,6 +367,12 @@ export class OverviewSection {
 
   protected status(a: EventResponse): ResponseStatus {
     return a.status;
+  }
+
+  /** The mark of a person who is «dabei» at a practice with a pre-training (ANM-17); nothing for everyone else. */
+  protected preChip(r: EventResponse): 'ATTENDING' | 'DECLINED' | 'PENDING' | null {
+    if (r.status !== 'ATTENDING' || !r.preTraining) return null;
+    return preTrainingChoice(r.preTraining) ?? 'PENDING';
   }
 
   /** Coaches and admins for everyone; not for themselves (ANM-11, RR-03, E-69). */
@@ -316,6 +392,7 @@ export class OverviewSection {
   protected open(z: Target): void {
     this.target.set(z);
     this.choice.set(z.response.status === 'PENDING' ? 'ATTENDING' : (z.response.status as Choice));
+    this.preChoice.set(z.response.status === 'ATTENDING' ? preTrainingChoice(z.response.preTraining) : null);
     this.comment.set(z.response.comment ?? '');
     this.commentError.set(null);
     this.message.set(null);
@@ -346,7 +423,11 @@ export class OverviewSection {
     try {
       const updated = await this.responses.set(
         this.eventId(),
-        { status: this.choice(), comment: comment || null },
+        {
+          status: this.choice(),
+          comment: comment || null,
+          ...preTrainingInput(this.choice(), this.preChoice()),
+        },
         z.person.id,
       );
       this.close();

@@ -265,6 +265,7 @@ interface Month {
                     [reasonRequired]="!!t.variant?.declineReasonRequired"
                     [name]="texts.response.myResponseFor(cardName(t))"
                     [locked]="t.status === 'CANCELLED' ? texts.response.cancelled : null"
+                    [preTraining]="t.preTraining ?? null"
                     (changed)="reload(t.id)"
                   />
                 }

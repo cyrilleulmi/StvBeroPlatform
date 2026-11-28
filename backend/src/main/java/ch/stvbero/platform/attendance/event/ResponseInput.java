@@ -11,5 +11,8 @@ public record ResponseInput(
         @Size(max = 200, message = "Höchstens 200 Zeichen.") String comment,
         @Schema(nullable = true, description = "Match days: with «dabei», the person travels on her own and needs no "
                 + "seat (ANM-13). Missing: unchanged")
-        Boolean travelsIndividually) {
+        Boolean travelsIndividually,
+        @Schema(nullable = true, description = "Practices with a pre-training: with «dabei», whether the person is at "
+                + "the pre-training too (ANM-14, ANM-15). Missing: unchanged")
+        PreTrainingChoice preTraining) {
 }

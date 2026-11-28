@@ -71,6 +71,7 @@
             [response]="t.myResponse"
             [name]="texts.response.myResponseFor(cardName(t))"
             [reasonRequired]="!!t.variant?.declineReasonRequired"
+            [preTraining]="t.preTraining ?? null"
             (changed)="reload(t.id)"
           />
         </li>

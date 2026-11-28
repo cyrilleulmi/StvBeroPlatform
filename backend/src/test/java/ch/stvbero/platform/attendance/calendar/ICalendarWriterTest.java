@@ -187,4 +187,36 @@ class ICalendarWriterTest {
         assertTrue(feed.contains("DTSTART;TZID=Europe/Zurich:20261119T200000"));
         assertTrue(feed.contains("DTEND;TZID=Europe/Zurich:20261119T215000"));
     }
+
+    @Test
+    void anm14SomeoneWhoSkipsThePreTrainingGetsAnEntryThatBeginsWithThePractice() {
+        CalendarEntry.PreTrainingLine declined = new CalendarEntry.PreTrainingLine("Joggen", zurich(2026, 11, 19, 20, 0),
+                ResponseStatus.DECLINED);
+        CalendarEntry skips = entry(ResponseStatus.ATTENDING, declined);
+        assertTrue(skips.withoutPreTraining());
+        assertEquals(skips.start(), skips.begin());
+        String description = CalendarRules.description(skips, APP);
+        assertTrue(description.contains("Deine Antwort: " + CalendarRules.responseLabel(ResponseStatus.ATTENDING)
+                + "\nVortraining: " + CalendarRules.responseLabel(ResponseStatus.DECLINED)), description);
+        String feed = ICalendarWriter.write("STV Bero", zurich(2026, 11, 15, 12, 0), APP, List.of(skips));
+        assertTrue(feed.contains("DTSTART;TZID=Europe/Zurich:20261119T202000"));
+
+        // «dabei» at both, or no answer yet: the entry begins with the pre-training
+        for (ResponseStatus answer : List.of(ResponseStatus.ATTENDING, ResponseStatus.PENDING)) {
+            CalendarEntry with = entry(ResponseStatus.ATTENDING,
+                    new CalendarEntry.PreTrainingLine("Joggen", zurich(2026, 11, 19, 20, 0), answer));
+            assertEquals(zurich(2026, 11, 19, 20, 0), with.begin());
+            assertTrue(CalendarRules.description(with, APP).contains("\nVortraining: " + CalendarRules.responseLabel(answer)));
+        }
+        // Not at the practice: the pre-training has no line of its own, the entry stays as it is
+        CalendarEntry away = entry(ResponseStatus.DECLINED, declined);
+        assertEquals(zurich(2026, 11, 19, 20, 0), away.begin());
+        assertFalse(CalendarRules.description(away, APP).contains("\nVortraining: "));
+    }
+
+    private static CalendarEntry entry(ResponseStatus practice, CalendarEntry.PreTrainingLine preTraining) {
+        return new CalendarEntry(ID, EventType.PRACTICE, "Training", zurich(2026, 11, 19, 20, 20),
+                zurich(2026, 11, 19, 21, 50), false, null, List.of("Team 1"), null, null, null, null, null, null,
+                null, null, List.of(), practice, null, preTraining);
+    }
 }

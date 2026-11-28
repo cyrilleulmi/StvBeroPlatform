@@ -173,6 +173,21 @@ export const TEXTS = {
     previous: 'Vorheriger Vorschlag',
     next: 'Nächster Vorschlag',
   },
+  /** Response to the pre-training (ANM-14 to ANM-17) */
+  preTrainingResponse: {
+    group: 'Meine Antwort für das Vortraining',
+    question: 'Auch beim Vortraining?',
+    label: 'Vortraining',
+    button: { ATTENDING: 'Dabei', DECLINED: 'Nicht dabei' },
+    saved: { ATTENDING: 'Gespeichert: beim Vortraining dabei.', DECLINED: 'Gespeichert: ohne Vortraining.' },
+    /** Overview: mark of a person who is «dabei» */
+    chip: { ATTENDING: 'mit Vortraining', DECLINED: 'ohne Vortraining', PENDING: 'Vortraining offen' },
+    counter: 'Vortraining',
+    /** Dialog «Antwort für … eintragen» */
+    onBehalf: 'Vortraining',
+    onBehalfOpen: 'Noch offen',
+    onBehalfHint: 'Nur mit «dabei» beim Training.',
+  },
   events: {
     title: 'Termine',
     empty: 'Keine kommenden Termine',

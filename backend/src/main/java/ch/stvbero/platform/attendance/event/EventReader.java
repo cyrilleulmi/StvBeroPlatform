@@ -42,7 +42,7 @@ final class EventReader {
     }
 
     private record StoredResponse(ResponseStatus status, String comment, Instant changedAt,
-                                       UUID enteredBy, boolean lateCancellation) {
+                                       UUID enteredBy, boolean lateCancellation, ResponseStatus preTraining) {
     }
 
     private final CurrentUser user;
@@ -88,14 +88,16 @@ final class EventReader {
         if (!ids.isEmpty()) {
             @SuppressWarnings("unchecked")
             List<Object[]> rows = em.createNativeQuery("""
-                            select event_id, person_id, status, comment, changed_at, entered_by, late_cancellation
+                            select event_id, person_id, status, comment, changed_at, entered_by, late_cancellation,
+                                   pre_training_status
                             from response where event_id in (:ids)
                             """)
                     .setParameter("ids", ids).getResultList();
             for (Object[] row : rows) {
                 responses.computeIfAbsent((UUID) row[0], key -> new HashMap<>()).put((UUID) row[1],
                         new StoredResponse(ResponseStatus.valueOf((String) row[2]), (String) row[3], instant(row[4]),
-                                (UUID) row[5], Boolean.TRUE.equals(row[6])));
+                                (UUID) row[5], Boolean.TRUE.equals(row[6]),
+                                row[7] == null ? null : ResponseStatus.valueOf((String) row[7])));
             }
             if (WarningRules.visible(user.allTeams())) {
                 suWarnings.putAll(suWarnings(em, ids));
@@ -158,9 +160,10 @@ final class EventReader {
                 event.status, event.cancellationReason, event.rescheduled, teams(event),
                 event.location == null ? null : event.location.dto(),
                 time(EventRules.responseDeadline(event.start, event.responseDeadlineHours)), myResponse(event),
-                counts(event), event.series == null ? null : event.series.id, warningCount(event),
+                counts(event, false), event.series == null ? null : event.series.id, warningCount(event),
                 variants.resolve(event).dto(), optional(event).stream().sorted().toList(), myParticipation(event),
-                canEdit(event), event.isPinned(), PreTrainingRules.dto(event));
+                canEdit(event), event.isPinned(), PreTrainingRules.dto(event),
+                event.preTrainingTitle == null ? null : counts(event, true));
     }
 
     private Set<UUID> optional(Event event) {
@@ -262,7 +265,7 @@ final class EventReader {
                 event.notes, event.responseDeadlineHours, meetingPoint, matches, callUpStatus, myCallUp, base.canEdit(),
                 event.attendanceCheck, attendanceRecorded, canRecordAttendance, myAttendance, base.variant(),
                 standing, base.optionalTeamIds(), base.myParticipation(), user.eventGrant() ? Boolean.TRUE : null,
-                base.pinned(), base.preTraining());
+                base.pinned(), base.preTraining(), base.preTrainingCounts());
     }
 
     /**
@@ -303,18 +306,23 @@ final class EventReader {
 
     private ResponseDto myResponse(Event event) {
         StoredResponse stored = responses.getOrDefault(event.id, Map.of()).get(user.personId());
+        boolean hasPreTraining = event.preTrainingTitle != null;
         if (stored == null) {
-            return ResponseDto.PENDING;
+            return ResponseDto.pending(hasPreTraining);
         }
         PersonSummary enteredBy = stored.enteredBy() == null ? null
                 : Person.<Person>findByIdOptional(stored.enteredBy()).map(PersonSummary::of).orElse(null);
         return new ResponseDto(stored.status(), stored.comment(), time(stored.changedAt()), enteredBy,
                 stored.lateCancellation(),
-                individual.getOrDefault(event.id, Set.of()).contains(user.personId()) ? Boolean.TRUE : null);
+                individual.getOrDefault(event.id, Set.of()).contains(user.personId()) ? Boolean.TRUE : null,
+                PreTrainingResponseRules.status(hasPreTraining, stored.status(), stored.preTraining()));
     }
 
-    /** Total counts: each player of a participating team once, coaches do not count (PTF-07). */
-    private CountsDto counts(Event event) {
+    /**
+     * Total counts: each player of a participating team once, coaches do not count (PTF-07). {@code preTraining}:
+     * the same players with their response to the pre-training (ANM-17).
+     */
+    private CountsDto counts(Event event, boolean preTraining) {
         Set<UUID> expected = new LinkedHashSet<>();
         Set<UUID> invited = new LinkedHashSet<>();
         for (Team team : event.teams) {
@@ -323,13 +331,15 @@ final class EventReader {
                     .filter(m -> m.teamRole() == TeamRole.PLAYER).forEach(m -> target.add(m.person()));
         }
         Map<UUID, StoredResponse> eventResponses = responses.getOrDefault(event.id, Map.of());
+        java.util.function.Function<StoredResponse, ResponseStatus> status = r -> preTraining
+                ? PreTrainingResponseRules.status(true, r.status(), r.preTraining()) : r.status();
         List<ResponseStatus> statuses = new ArrayList<>();
-        expected.forEach(p -> statuses.add(eventResponses.containsKey(p) ? eventResponses.get(p).status()
+        expected.forEach(p -> statuses.add(eventResponses.containsKey(p) ? status.apply(eventResponses.get(p))
                 : ResponseStatus.PENDING));
         // Players of teams invited without obligation count once they respond, never as «offen» (TER-15)
         invited.stream().filter(p -> !expected.contains(p) && eventResponses.containsKey(p))
-                .map(p -> eventResponses.get(p).status()).filter(status -> status != ResponseStatus.PENDING)
-                .forEach(statuses::add);
+                .map(eventResponses::get).filter(r -> r.status() != ResponseStatus.PENDING)
+                .map(status).forEach(statuses::add);
         return EventRules.count(statuses);
     }
 

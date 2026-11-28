@@ -134,6 +134,10 @@ public final class CalendarRules {
         }
         lines.add("Deine Antwort: " + responseLabel(entry.myResponse())
                 + (entry.myComment() == null ? "" : " («" + entry.myComment() + "»)"));
+        if (entry.preTraining() != null && entry.myResponse() == ResponseStatus.ATTENDING) {
+            // Whether she is at the pre-training too is an answer of its own (ANM-14)
+            lines.add("Vortraining: " + responseLabel(entry.preTraining().myResponse()));
+        }
         lines.add("In der App: " + eventLink(appUrl, entry.id()));
         return String.join("\n", lines);
     }

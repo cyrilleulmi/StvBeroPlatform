@@ -11,8 +11,9 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 /**
- * Pre-trainings of the club data set (TER-29, TER-30, E-117), set after the seed. A class of its own because
- * {@link ClubSeed} is frozen in size (CodeSizeTest). Each one is on the series and on every event of the series.
+ * Pre-trainings of the club data set (TER-29, TER-30, E-117) with their responses (ANM-14), set after the seed. A
+ * class of its own because {@link ClubSeed} is frozen in size (CodeSizeTest). Each one is on the series and on every
+ * event of the series.
  */
 @ApplicationScoped
 @IfBuildProperty(name = "stv.test-support", stringValue = "true")
@@ -43,5 +44,15 @@ public class SeedPreTrainings {
                         where series_id = ?""")
                 .setParameter(1, title).setParameter(2, BackendClock.ZONE.getId()).setParameter(3, time)
                 .setParameter(4, BackendClock.ZONE.getId()).setParameter(5, series).executeUpdate();
+        // Of those who are «dabei» most said whether they are at the pre-training too, some not yet (ANM-14).
+        // Always the same for the same event and person.
+        em.createNativeQuery("""
+                        update response r set pre_training_status = case
+                            when abs(hashtext(r.event_id::text || r.person_id::text)) % 10 < 6 then 'ATTENDING'
+                            when abs(hashtext(r.event_id::text || r.person_id::text)) % 10 < 8 then 'DECLINED'
+                            end
+                        from event e
+                        where e.id = r.event_id and e.series_id = ? and r.status = 'ATTENDING'""")
+                .setParameter(1, series).executeUpdate();
     }
 }

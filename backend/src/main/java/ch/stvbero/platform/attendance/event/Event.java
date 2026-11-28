@@ -135,6 +135,16 @@ public class Event extends PanacheEntityBase {
         return event;
     }
 
+    /** Takes the pre-training off the event; the responses to it go with it (TER-29, ANM-14). */
+    void removePreTraining() {
+        if (preTrainingTitle != null) {
+            getEntityManager().createNativeQuery("update response set pre_training_status = null where event_id = ?1")
+                    .setParameter(1, id).executeUpdate();
+        }
+        preTrainingTitle = null;
+        preTrainingStart = null;
+    }
+
     public boolean isPinned() {
         return pinnedAt != null;
     }

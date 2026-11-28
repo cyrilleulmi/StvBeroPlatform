@@ -15,16 +15,21 @@ import java.util.UUID;
 @Schema(name = "Overview")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record OverviewDto(UUID eventId, CountsDto total, List<TeamBlock> teams, List<CoachEntry> coaches,
-                          List<WarningDto> warnings) {
+                          List<WarningDto> warnings,
+                          @Schema(description = "Responses to the pre-training of the players in total (ANM-17); missing without one")
+                          CountsDto preTrainingTotal) {
 
     @Schema(name = "OverviewTeamName")
     public record TeamName(UUID id, String name) {
     }
 
     @Schema(name = "OverviewTeam")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record TeamBlock(TeamName team, CountsDto counts, List<Group> groups,
                             @Schema(description = "The team is invited without obligation: players without a response are not counted as pending (TER-15)")
-                            boolean optional) {
+                            boolean optional,
+                            @Schema(description = "Responses to the pre-training of the players in counts (ANM-17); missing without one")
+                            CountsDto preTrainingCounts) {
     }
 
     @Schema(name = "OverviewGroupType")
