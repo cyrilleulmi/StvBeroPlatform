@@ -73,6 +73,10 @@ public class Event extends PanacheEntityBase {
     @Column(name = "expected_travellers")
     public Integer expectedTravellers;
 
+    /** Left out of the driver list of the season: its trips do not count, nobody is distributed to it (DRV-35). */
+    @Column(name = "ignored_in_driver_plan")
+    public boolean ignoredInDriverPlan;
+
     /** The meeting time was set by the automatic departure, not by hand (TML-09). */
     @Column(name = "meeting_point_time_auto")
     public boolean meetingPointTimeAuto;

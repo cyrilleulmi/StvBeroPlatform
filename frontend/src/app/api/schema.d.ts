@@ -1762,6 +1762,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{teamId}/driver-plan/match-days/{eventId}/ignored": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Leave a match day out of the driver list of the season or take it in again (DRV-35, coach)
+         * @description An ignored match day keeps its cars, but its trips count nowhere in the season plan (`shares`, `totals`,
+         *     the order of «Fair verteilen», «Wer ist dran» and of the proposal of a match day). «Fair verteilen» gives it
+         *     no drivers, `nextDriver` and `planDriver` refuse it with 409, «Alle entfernen» keeps its cars. Also
+         *     for match days that are over or cancelled. The match day must belong to the team in the season (404
+         *     otherwise). Coaches (of any team) and admins; otherwise 403.
+         */
+        put: operations["setMatchDayIgnored"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{teamId}/driver-plan/match-days/{eventId}/next": {
         parameters: {
             query?: never;
@@ -1803,7 +1830,8 @@ export interface paths {
         put?: never;
         /**
          * Propose a fair distribution of the trips that are still missing; changes nothing (DRV-30, coach)
-         * @description Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+         * @description Every upcoming match day that is ready, not cancelled, not a home match day (`noTrip`) and not left out
+         *     of the driver list (`ignored`, DRV-35) gets drivers
          *     until its cars have a place for everyone who is expected (`expected`, drivers included). Drivers who are
          *     entered stay and count; the proposal only adds. The next driver is the member who can drive (DRV-18) with
          *     the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not
@@ -4191,6 +4219,10 @@ export interface components {
             /** Format: int32 */
             expected?: number | null;
         };
+        /** @description Leave a match day out of the driver list or take it in again (DRV-35) */
+        DriverPlanIgnoredInput: {
+            ignored: boolean;
+        };
         /** @description The next driver in line takes a trip (DRV-31) */
         DriverPlanNextInput: {
             /**
@@ -4393,6 +4425,8 @@ export interface components {
             attending: number;
             /** @description The meeting point is the venue: nobody has to drive (DRV-30) */
             noTrip: boolean;
+            /** @description Left out of the driver list: its trips do not count and «Fair verteilen» skips it (DRV-35) */
+            ignored: boolean;
         };
         /** @description How often a member drives in the season (DRV-17), done and planned */
         DriverShare: {
@@ -7475,6 +7509,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DriverPlanExpectedInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverPlan"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setMatchDayIgnored: {
+        parameters: {
+            query?: {
+                /** @description Season ID. Default is the current season. */
+                season?: components["parameters"]["season"];
+            };
+            header?: never;
+            path: {
+                teamId: components["parameters"]["teamId"];
+                eventId: components["parameters"]["eventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverPlanIgnoredInput"];
             };
         };
         responses: {

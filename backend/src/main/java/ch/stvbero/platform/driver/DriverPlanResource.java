@@ -34,6 +34,9 @@ public class DriverPlanResource {
     @Inject
     DriverPlanService plan;
 
+    @Inject
+    DriverPlanSettings settings;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getDriverPlan",
@@ -199,7 +202,7 @@ public class DriverPlanResource {
             content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
     public DriverPlanDto setExpected(@PathParam("teamId") UUID teamId, @QueryParam("season") UUID season,
                                      @Valid @NotNull DriverPlanDto.ExpectedInput input) {
-        return plan.setExpected(auth.person(), teamId, season, input.expected());
+        return settings.setExpected(auth.person(), teamId, season, input.expected());
     }
 
     @PUT
@@ -220,7 +223,28 @@ public class DriverPlanResource {
     public DriverPlanDto setMatchDayExpected(@PathParam("teamId") UUID teamId, @PathParam("eventId") UUID eventId,
                                              @QueryParam("season") UUID season,
                                              @Valid @NotNull DriverPlanDto.ExpectedInput input) {
-        return plan.setMatchDayExpected(auth.person(), teamId, season, eventId, input.expected());
+        return settings.setMatchDayExpected(auth.person(), teamId, season, eventId, input.expected());
+    }
+
+    @PUT
+    @Path("/match-days/{eventId}/ignored")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "setMatchDayIgnored",
+            summary = "Leave a match day out of the driver list of the season or take it in again: its trips do not "
+                    + "count and «Fair verteilen» skips it (DRV-35, coach)")
+    @APIResponse(responseCode = "200", description = "The plan after the change",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DriverPlanDto.class)))
+    @APIResponse(responseCode = "400", description = "Invalid request",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "403", description = "Forbidden (RR-07)",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    @APIResponse(responseCode = "404", description = "Not found",
+            content = @Content(mediaType = Problem.MEDIA_TYPE, schema = @Schema(implementation = Problem.class)))
+    public DriverPlanDto setMatchDayIgnored(@PathParam("teamId") UUID teamId, @PathParam("eventId") UUID eventId,
+                                            @QueryParam("season") UUID season,
+                                            @Valid @NotNull DriverPlanDto.IgnoredInput input) {
+        return settings.setIgnored(auth.person(), teamId, season, eventId, input.ignored());
     }
 
     @POST

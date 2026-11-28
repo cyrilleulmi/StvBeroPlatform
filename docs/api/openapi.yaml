@@ -2263,6 +2263,36 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/teams/{teamId}/driver-plan/match-days/{eventId}/ignored:
+    parameters:
+      - $ref: '#/components/parameters/teamId'
+      - $ref: '#/components/parameters/eventId'
+    put:
+      tags: [DriverList]
+      operationId: setMatchDayIgnored
+      summary: Leave a match day out of the driver list of the season or take it in again (DRV-35, coach)
+      description: |
+        An ignored match day keeps its cars, but its trips count nowhere in the season plan (`shares`, `totals`,
+        the order of «Fair verteilen», «Wer ist dran» and of the proposal of a match day). «Fair verteilen» gives it
+        no drivers, `nextDriver` and `planDriver` refuse it with 409, «Alle entfernen» keeps its cars. Also
+        for match days that are over or cancelled. The match day must belong to the team in the season (404
+        otherwise). Coaches (of any team) and admins; otherwise 403.
+      parameters:
+        - $ref: '#/components/parameters/season'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DriverPlanIgnoredInput' }
+      responses:
+        '200':
+          description: The plan after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverPlan' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/teams/{teamId}/driver-plan/match-days/{eventId}/next:
     parameters:
       - $ref: '#/components/parameters/teamId'
@@ -2303,7 +2333,8 @@ paths:
       operationId: previewDriverPlanDistribution
       summary: Propose a fair distribution of the trips that are still missing; changes nothing (DRV-30, coach)
       description: |
-        Every upcoming match day that is ready, not cancelled and not a home match day (`noTrip`) gets drivers
+        Every upcoming match day that is ready, not cancelled, not a home match day (`noTrip`) and not left out
+        of the driver list (`ignored`, DRV-35) gets drivers
         until its cars have a place for everyone who is expected (`expected`, drivers included). Drivers who are
         entered stay and count; the proposal only adds. The next driver is the member who can drive (DRV-18) with
         the fewest trips in the season (done and planned), then with fewer kilometres, then the one who has not
@@ -5079,6 +5110,12 @@ components:
           format: int32
           minimum: 1
           maximum: 60
+    DriverPlanIgnoredInput:
+      type: object
+      description: Leave a match day out of the driver list or take it in again (DRV-35)
+      required: [ignored]
+      properties:
+        ignored: { type: boolean }
     DriverPlanNextInput:
       type: object
       description: The next driver in line takes a trip (DRV-31)
@@ -5208,7 +5245,7 @@ components:
         distanceKm: { type: number, format: double, minimum: 0.1, maximum: 2000 }
     DriverPlanMatchDay:
       type: object
-      required: [eventId, title, start, cancelled, over, ready, missing, changeable, cars, freeSeats, expected, expectedManual, places, attending, noTrip]
+      required: [eventId, title, start, cancelled, over, ready, missing, changeable, cars, freeSeats, expected, expectedManual, places, attending, noTrip, ignored]
       properties:
         eventId: { type: string, format: uuid }
         title: { type: string }
@@ -5236,6 +5273,7 @@ components:
         places: { type: integer, format: int32, description: 'Places of all cars, drivers included' }
         attending: { type: integer, format: int32, description: People who responded «dabei» }
         noTrip: { type: boolean, description: 'The meeting point is the venue: nobody has to drive (DRV-30)' }
+        ignored: { type: boolean, description: 'Left out of the driver list: its trips do not count and «Fair verteilen» skips it (DRV-35)' }
     DriverShare:
       type: object
       description: How often a member drives in the season (DRV-17), done and planned
