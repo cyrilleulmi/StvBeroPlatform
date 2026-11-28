@@ -29,6 +29,7 @@ import { showModal } from '../core/dialog';
   selector: 'app-su-connection',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (!dialogOnly()) {
     <section class="card form" aria-labelledby="su-title" data-testid="swiss-unihockey">
       <h2 id="su-title">{{ s.title }}</h2>
       <p class="secondary-text">{{ s.explanation }}</p>
@@ -96,6 +97,7 @@ import { showModal } from '../core/dialog';
         }
       </div>
     </section>
+    }
 
     <dialog
       #dialog
@@ -265,6 +267,8 @@ export class SuConnectionSection {
 
   readonly teamId = input.required<string>();
   readonly teamName = input.required<string>();
+  /** Renders only the dialog «Team verknüpfen», opened by `open()` (page «swiss unihockey», SUH-16). */
+  readonly dialogOnly = input(false);
   /** The matches or the links changed: the page shows the team again. */
   readonly changed = output<void>();
 
@@ -323,7 +327,7 @@ export class SuConnectionSection {
   }
 
   /** Opens the dialog and loads the teams of the club; if that fails, the ID can be typed (SUH-09). */
-  protected async open(): Promise<void> {
+  async open(): Promise<void> {
     this.success.set(null);
     this.error.set(null);
     this.fieldError.set(null);

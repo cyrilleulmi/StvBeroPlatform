@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { checkAccessibility, expect, login, reset, test } from './helpers';
 
 /**
- * E-92 · Start page, swiss unihockey page and driver plan (AUF-35, SUH-16, DRV-21 to DRV-24). Swaps, other
+ * E-92 · Start page and driver plan (AUF-35, DRV-21 to DRV-24; the swiss unihockey page is tested in su-overview.spec.ts). Swaps, other
  * trips and the history (DRV-25 to DRV-28) have no page since E-98; their API is tested in the backend. Seed from
  * docs/test-data.md: match day 04 (Sun 22.11.) of Team 1 with Petra Keller's full car and Sara Brun's empty car;
  * Team 1 is linked with swiss unihockey (900001), Team 2 is not. Default "now": Mon 16.11.2026 06:00.
@@ -34,25 +34,6 @@ test('AUF-35: the start page always shows the next match day', async ({ page }) 
   await expect(page.getByTestId('tile-fahrerliste')).toBeVisible();
   await expect(page.getByTestId('tile-swissunihockey')).toBeVisible();
   await checkAccessibility(page);
-});
-
-test('SUH-16: the swiss unihockey page links to the team page, players without a link ask the coach', { tag: '@desktop' }, async ({ page }) => {
-  await login(page, 'anna');
-  await page.goto('/swissunihockey');
-  await expect(page.getByRole('heading', { level: 1, name: 'swiss unihockey' })).toBeVisible();
-  const team = page.getByTestId(`su-team-${TEAM_1}`);
-  await expect(team.getByRole('link', { name: /auf swissunihockey\.ch ansehen/ })).toHaveAttribute(
-    'href',
-    'https://www.swissunihockey.ch/de/team-detail/?team_id=900001',
-  );
-  await expect(team.getByTestId('su-league-link')).toHaveAttribute('href', `/teams/${TEAM_1}/liga`);
-  await expect(team.getByRole('button', { name: 'Team verknüpfen' })).toHaveCount(0);
-  await checkAccessibility(page);
-
-  // Eva plays in Team 2, which is not linked
-  await login(page, 'eva');
-  await page.goto('/swissunihockey');
-  await expect(page.getByTestId('su-not-linked')).toHaveText('Nicht verbunden. Frag den Coach zum Einrichten.');
 });
 
 test('DRV-23 DRV-32: the match day shows the places; travelling on one own stays; link to the plan', async ({ page }) => {

@@ -152,6 +152,27 @@ export const TEXTS = {
     saved: 'Sonderberechtigungen gespeichert.',
     teamsLocked: 'Die Teams eines Termins ändern nur Coaches.',
   },
+  /** Showing the pre-training of a practice (TER-31) in the design proposals of E-118. */
+  preTraining: {
+    label: 'Vortraining',
+    practice: 'Training',
+    before: 'Vorher',
+    beThere: 'da sein',
+    then: 'dann',
+    end: 'Ende',
+    schedule: 'Ablauf',
+    until: (time: string) => `bis ${time}`,
+    beforePractice: (duration: string) => `${duration} vor dem Training`,
+    fact: (time: string, title: string) => `${time} · ${title}`,
+    /** For screen readers, where a design draws the times: «Vortraining Joggen ab 20:00, Training 20:20 bis 21:50» */
+    spoken: (title: string, start: string, practiceStart: string, end: string) =>
+      `Vortraining ${title} ab ${start}, Training ${practiceStart} bis ${end}`,
+    designs: { a: 'Zeile', b: 'Ablauf', c: 'Zeitbalken', d: 'Anzeigetafel', e: 'Ticket' },
+    switch: 'Design-Vorschlag für das Vortraining',
+    switchLabel: (key: string, name: string) => `Design ${key} · ${name}`,
+    previous: 'Vorheriger Vorschlag',
+    next: 'Nächster Vorschlag',
+  },
   events: {
     title: 'Termine',
     empty: 'Keine kommenden Termine',
@@ -384,17 +405,22 @@ export const TEXTS = {
   /** DRV-14, DRV-17 */
   suPage: {
     title: 'swiss unihockey',
-    intro: 'Hier kommst du direkt zu den Infos deiner Teams auf swissunihockey.ch: Spiele, Tabelle und Resultate.',
+    intro: 'Liga, Tabelle, kommende Spiele und Resultate deines Teams bei swiss unihockey.',
     noTeam: 'Du bist in dieser Saison in keinem Team.',
-    notLinked: 'Nicht verbunden. Frag den Coach zum Einrichten.',
-    notLinkedCoach: 'Dieses Team ist noch nicht mit swiss unihockey verbunden. Verknüpfe es gleich hier.',
-    linksOf: (team: string) => `Verknüpfungen von ${team}`,
+    team: 'Team',
     teamNumber: (id: number) => `Team ${id}`,
     openAtSu: 'Auf swissunihockey.ch ansehen',
     openAtSuFor: (name: string) => `${name} auf swissunihockey.ch ansehen (öffnet ein neues Fenster)`,
-    league: 'Liga in der App ansehen',
-    link: 'Verbindung einrichten',
-    edit: 'Verbindung bearbeiten',
+    notLinkedTitle: 'Noch nicht mit swiss unihockey verbunden',
+    notLinkedText: (team: string) => `${team} hat noch keine Verbindung. So wird sie eingerichtet:`,
+    steps: [
+      'Ein Coach des Teams oder ein Admin wählt das Team des Vereins bei swiss unihockey aus.',
+      'Spiele, Tabelle und Resultate werden gleich geladen.',
+      'Danach bleiben sie jeden Tag automatisch auf dem neuesten Stand.',
+    ],
+    linkNow: 'Team verknüpfen',
+    askCoach: 'Frag deinen Coach oder einen Admin.',
+    manage: 'Verbindung verwalten',
   },
   simplePlan: {
     title: 'Fahrerliste',
@@ -873,6 +899,19 @@ export const TEXTS = {
       SATURDAY: 'Samstag',
       SUNDAY: 'Sonntag',
     },
+  },
+  /** Pre-training («Vortraining») in the forms of events and series (TER-32). */
+  preTrainingForm: {
+    toggle: 'Mit Vortraining',
+    hint: 'Zum Beispiel Joggen oder Kraft vor dem Training.',
+    what: 'Was',
+    whatPlaceholder: 'z. B. Joggen',
+    start: 'Beginn',
+    titleRequired: 'Bitte angeben, was im Vortraining gemacht wird.',
+    timeRequired: 'Bitte eine Zeit angeben.',
+    beforePractice: 'Das Vortraining muss vor dem Training beginnen.',
+    seriesLabel: 'Vortraining',
+    seriesValue: (time: string, title: string) => `${time} ${title}`,
   },
   series: {
     rule: (weekday: string, from: string, until: string) => `Jeden ${weekday}, ${from}–${until}`,
