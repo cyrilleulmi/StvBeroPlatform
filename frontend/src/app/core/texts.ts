@@ -160,6 +160,9 @@ export const TEXTS = {
     beThere: 'da sein',
     then: 'dann',
     end: 'Ende',
+    /** The word under or after the number of players at the pre-training: «6 dabei» (ANM-18) */
+    attending: 'dabei',
+    spokenCount: (n: number) => `, ${n} dabei`,
     schedule: 'Ablauf',
     until: (time: string) => `bis ${time}`,
     beforePractice: (duration: string) => `${duration} vor dem Training`,

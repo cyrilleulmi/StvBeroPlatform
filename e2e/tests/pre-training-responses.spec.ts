@@ -158,3 +158,46 @@ test('ANM-16 ANM-17: A coach answers for herself and on behalf, the overview cou
     dialog.getByRole('group', { name: 'Vortraining' }).getByRole('radio', { name: 'dabei', exact: true }),
   ).toBeChecked();
 });
+
+test('ANM-18: Cards and event page show how many are at the pre-training, in every design proposal', async ({
+  page,
+}) => {
+  const id = await practiceWithPreTraining(page);
+  await login(page, 'anna');
+  await page.goto('/termine');
+  const card = page.getByTestId(`event-card-${id}`);
+  const onCard = card.getByTestId('pre-training').getByTestId('pre-training-count');
+  await expect(onCard).toHaveText('0 dabei');
+
+  // The number follows the answer without reloading
+  await card.getByTestId('response-attending').click();
+  await expect(onCard).toHaveText('0 dabei');
+  await card.getByTestId('pre-training-response-attending').click();
+  await expect(onCard).toHaveText('1 dabei');
+  await expect(onCard).toHaveAttribute('data-count', '1');
+  // Events without a pre-training have no such number
+  await expect(page.getByTestId('pre-training-count')).toHaveCount(1);
+
+  // The coach enters Lea; coaches themselves do not count (ANM-17)
+  await login(page, 'petra');
+  for (const person of ['me', LEA]) {
+    const response = await page.request.put(`/api/events/${id}/responses/${person}`, {
+      data: { status: 'ATTENDING', preTraining: 'ATTENDING' },
+    });
+    expect(response.status()).toBe(200);
+  }
+
+  // Every design proposal (E-118) carries the number, on the card and on the event page
+  await login(page, 'anna');
+  for (const design of ['a', 'b', 'c', 'd', 'e']) {
+    await page.goto(`/termine?vortraining=${design}`);
+    await expect(onCard).toHaveAttribute('data-count', '2');
+    await expect(onCard).toHaveText('2 dabei');
+    await page.goto(`/termine/${id}?vortraining=${design}`);
+    const onPage = page.getByTestId('pre-training').getByTestId('pre-training-count');
+    await expect(onPage).toHaveText('2 dabei');
+    await expect(onPage).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  }
+  await checkAccessibility(page);
+});

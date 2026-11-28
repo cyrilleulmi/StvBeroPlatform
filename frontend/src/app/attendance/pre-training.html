@@ -1,3 +1,12 @@
+<!-- How many players are at the pre-training (ANM-18): a pill in A, B and C, digits in D and E -->
+<ng-template #pill let-n>
+  @if (n !== null) {
+    <span class="count" data-testid="pre-training-count" [attr.data-count]="n"
+      ><app-icon name="check" [size]="14" /><b>{{ n }}</b> {{ t.attending }}</span
+    >
+  }
+</ng-template>
+@let n = count();
 @if (view(); as v) {
   @if (place() === 'card') {
     <!-- On a card: inside the link to the event, so only text and drawings, nothing to tap -->
@@ -10,6 +19,7 @@
           <span
             ><span class="a-label">{{ t.label }}</span> {{ v.start }} · {{ v.title }}</span
           >
+          <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" />
         </span>
       }
       @case ('b') {
@@ -21,6 +31,7 @@
             <span class="b-what"
               >{{ v.title }} <span class="b-note">{{ t.label }}</span></span
             >
+            <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" />
           </span>
           <span class="b-step">
             <span class="b-time">{{ v.practiceStart }}</span>
@@ -34,7 +45,9 @@
         <!-- C «Zeitbalken»: the evening to scale, the pre-training hatched -->
         <span>{{ day() }}</span>
         <span class="c" data-testid="pre-training" [style.--pt-share]="v.share + '%'">
-          <span class="visually-hidden">{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}</span>
+          <span class="visually-hidden"
+            >{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}{{ n === null ? '' : t.spokenCount(n) }}</span
+          >
           <span class="c-grid" aria-hidden="true">
             <span class="c-time">{{ v.start }}</span>
             <span class="c-time c-times"
@@ -45,7 +58,8 @@
             <span class="c-segment c-main"></span>
           </span>
           <span class="c-legend" aria-hidden="true"
-            ><span class="c-swatch c-pre"></span>{{ v.title }} · {{ lead() }} {{ t.label }}</span
+            ><span class="c-swatch c-pre"></span>{{ v.title }} · {{ lead() }} {{ t.label }}
+            <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" /></span
           >
         </span>
       }
@@ -54,14 +68,22 @@
         <span>{{ day() }}</span>
         <span class="d" data-testid="pre-training">
           <span class="d-board">
-            <span class="d-digits">{{ v.start }}</span>
-            <span class="d-word">{{ t.beThere }}</span>
+            <span class="d-cell">
+              <span class="d-digits">{{ v.start }}</span>
+              <span class="d-word">{{ ' ' + t.beThere }}</span>
+            </span>
+            @if (n !== null) {
+              <span class="d-cell d-score" data-testid="pre-training-count" [attr.data-count]="n">
+                <span class="d-digits">{{ n }}</span>
+                <span class="d-word">{{ ' ' + t.attending }}</span>
+              </span>
+            }
           </span>
           <span class="d-text">
             <span class="d-title"
               >{{ v.title }} <span class="visually-hidden">({{ t.label }})</span></span
             >
-            <span class="d-then">{{ t.then }} {{ name() }} {{ period() }}</span>
+            <span class="d-then">{{ t.then }} {{ name() }} <span class="d-period">{{ period() }}</span></span>
           </span>
         </span>
       }
@@ -77,6 +99,12 @@
             <span class="e-title">{{ v.title }}</span>
             <span class="e-note">{{ t.label }} · {{ lead() }}</span>
           </span>
+          @if (n !== null) {
+            <span class="e-count" data-testid="pre-training-count" [attr.data-count]="n">
+              <span class="e-time">{{ n }}</span>
+              <span class="e-before">{{ ' ' + t.attending }}</span>
+            </span>
+          }
         </span>
       }
     }
@@ -91,6 +119,7 @@
               ><strong>{{ t.label }} {{ v.start }}</strong> · {{ v.title }}</span
             >
             <span class="quiet">{{ t.beforePractice(lead()) }}</span>
+            <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" />
           </p>
         }
         @case ('b') {
@@ -100,7 +129,9 @@
               <li data-kind="pre">
                 <span class="pb-time">{{ v.start }}</span>
                 <span class="pb-what"
-                  ><strong>{{ v.title }}</strong
+                  ><span class="pb-name"
+                    ><strong>{{ v.title }}</strong>
+                    <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" /></span
                   ><span class="quiet">{{ t.label }} · {{ lead() }}</span></span
                 >
               </li>
@@ -122,7 +153,9 @@
         }
         @case ('c') {
           <div class="card c pc" [style.--pt-share]="v.share + '%'">
-            <span class="visually-hidden">{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}</span>
+            <span class="visually-hidden"
+            >{{ t.spoken(v.title, v.start, v.practiceStart, v.end) }}{{ n === null ? '' : t.spokenCount(n) }}</span
+          >
             <div class="c-grid" aria-hidden="true">
               <span class="c-time">{{ v.start }}</span>
               <span class="c-time c-times"
@@ -134,7 +167,8 @@
             </div>
             <div class="pc-legends" aria-hidden="true">
               <span class="c-legend"
-                ><span class="c-swatch c-pre"></span>{{ v.title }} <span class="quiet">{{ t.label }} · {{ lead() }}</span></span
+                ><span class="c-swatch c-pre"></span>{{ v.title }} <span class="quiet">{{ t.label }} · {{ lead() }}</span>
+                <ng-container [ngTemplateOutlet]="pill" [ngTemplateOutletContext]="{ $implicit: n }" /></span
               >
               <span class="c-legend"
                 ><span class="c-swatch c-main"></span>{{ name() }} <span class="quiet">{{ practice() }}</span></span
@@ -150,6 +184,12 @@
               <span class="pd-line"
                 >{{ v.title }} <span class="visually-hidden">({{ t.label }})</span></span
               >
+              @if (n !== null) {
+                <span class="pd-score" data-testid="pre-training-count" [attr.data-count]="n">
+                  <span class="pd-digits">{{ n }}</span>
+                  <span class="pd-word">{{ ' ' + t.attending }}</span>
+                </span>
+              }
             </div>
             <app-icon class="pd-arrow" name="chevron-right" [size]="22" />
             <div class="pd-board">
@@ -169,6 +209,12 @@
               <span class="e-title">{{ v.title }}</span>
               <span class="e-note">{{ t.label }} · {{ t.beforePractice(lead()) }}</span>
             </span>
+            @if (n !== null) {
+              <span class="e-count" data-testid="pre-training-count" [attr.data-count]="n">
+                <span class="e-time">{{ n }}</span>
+                <span class="e-before">{{ ' ' + t.attending }}</span>
+              </span>
+            }
           </div>
         }
       }

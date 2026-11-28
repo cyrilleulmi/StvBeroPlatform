@@ -1,8 +1,9 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { Icon } from '../core/icon';
 import { TEXTS } from '../core/texts';
 import { PreTrainingDesigns } from './pre-training-designs';
-import { durationText, preTrainingView, WithPreTraining } from './pre-training-model';
+import { durationText, preTrainingAttending, preTrainingView, WithPreTraining } from './pre-training-model';
 
 /**
  * When an event takes place, with its pre-training if it has one (TER-31): «Do 03.12. · 20:20–21:50», and for a
@@ -11,12 +12,13 @@ import { durationText, preTrainingView, WithPreTraining } from './pre-training-m
  * `place="card"` stands in for the time line of a card of `/termine` and the start page; an event without a
  * pre-training reads exactly as before. `place="page"` is the block below the title of the event page; the host
  * mounts it only for an event with a pre-training. Every design has one element `data-testid="pre-training"` that
- * contains the title and the start («Joggen», «20:00»).
+ * contains the title and the start («Joggen», «20:00») and, in `pre-training-count`, how many players are at it
+ * («6 dabei», ANM-18).
  */
 @Component({
   selector: 'app-pre-training',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, NgTemplateOutlet],
   host: {
     '[attr.data-design]': 'view() ? design() : null',
     '[attr.data-tag]': 'tag() ?? null',
@@ -42,6 +44,8 @@ export class PreTrainingDisplay {
   protected readonly name = computed(() => this.event().title || this.t.practice);
   protected readonly lead = computed(() => durationText(this.view()?.leadMinutes ?? 0));
   protected readonly practice = computed(() => durationText(this.view()?.practiceMinutes ?? 0));
+  /** Players who are «dabei» at the pre-training; `null` where no count shows. */
+  protected readonly count = computed(() => preTrainingAttending(this.event()));
 
   constructor() {
     // The switch bar of the proposals exists while a pre-training is on the page

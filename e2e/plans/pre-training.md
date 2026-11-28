@@ -1,6 +1,6 @@
 # Test plan · Pre-training («Vortraining»)
 
-Requirements TER-29 to TER-32 and ANM-14 to ANM-17, decisions E-117 and E-119 · Tests: `../tests/pre-training.spec.ts` (V1–V4), `../tests/pre-training-responses.spec.ts` (V5–V7)
+Requirements TER-29 to TER-32 and ANM-14 to ANM-18, decisions E-117, E-119 and E-120 · Tests: `../tests/pre-training.spec.ts` (V1–V4), `../tests/pre-training-responses.spec.ts` (V5–V8)
 
 General for every case:
 
@@ -26,3 +26,4 @@ Elements: the block `pre-training-response` below the response buttons with `pre
 | V5 | Second question on the event page | As Anna open the practice; «Dabei»; in the block «Dabei», then «Nicht dabei»; reload; «Nicht dabei» at the practice (skip the reason); «Dabei» again | No block before «Dabei». Then «Auch beim Vortraining?» with «17:30 · Joggen», no button pressed. After the answer the block reads «Vortraining» and says «Gespeichert: beim Vortraining dabei.», then «Gespeichert: ohne Vortraining.»; the practice stays «dabei»; the overview marks Anna «ohne Vortraining»; the answer survives the reload. With «nicht dabei» at the practice the block and the mark are gone; with the next «Dabei» the question is open again |
 | V6 | Second question on the card | As Anna `/termine`; on the card of the practice «Dabei», then «Dabei» in the block; reload | The block appears in the card right below the buttons and keeps the answer; no other card has a block |
 | V7 | Coach, on behalf, counts | As Petra open the practice; «Dabei» at both; «Antwort für Anna Muster eintragen»: «nicht dabei», then «dabei» and «Vortraining» «dabei» → «Speichern»; «Antwort für Lea Graf eintragen»: «dabei» → «Speichern» | Petra shows «mit Vortraining» in the coach block and is not counted. In the dialog the group «Vortraining» is disabled with «nicht dabei» («Nur mit «dabei» beim Training.») and reads «Noch offen» until chosen. Anna shows «mit Vortraining», Lea «Vortraining offen»; the count «Vortraining» goes from «0 dabei» to «1 dabei»; the dialog of Anna opens with «dabei» chosen for the pre-training |
+| V8 | Count at the pre-training, in every design | As Anna `/termine`: the card of the practice; «Dabei» at the practice and at the pre-training. As Petra on behalf of Lea «dabei» at both. Then as Anna the card and the event page with `?vortraining=a` to `e` | `pre-training-count` on the card reads «0 dabei», after the answer of Anna «1 dabei» without reloading. After Lea every design shows «2 dabei» on the card and on the event page (`data-count="2"`), without a horizontal scroll bar on a phone |

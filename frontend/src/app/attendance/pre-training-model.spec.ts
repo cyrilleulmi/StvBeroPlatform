@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { durationText, isDesign, neighbour, preTrainingView } from './pre-training-model';
+import { durationText, isDesign, neighbour, preTrainingAttending, preTrainingView } from './pre-training-model';
 
 const practice = (pre: string | null, start = '2026-12-03T20:20:00+01:00', end = '2026-12-03T21:50:00+01:00') => ({
   start,
@@ -58,5 +58,27 @@ describe('design proposals (E-118)', () => {
     expect(neighbour('a', 1)).toBe('b');
     expect(neighbour('e', 1)).toBe('a');
     expect(neighbour('a', -1)).toBe('e');
+  });
+});
+
+describe('preTrainingAttending (ANM-18)', () => {
+  const counts = { attending: 6, declined: 3, maybe: 2, pending: 5 };
+
+  it('is the number of players who are at the pre-training', () => {
+    expect(preTrainingAttending({ ...practice('2026-12-03T20:00:00+01:00'), preTrainingCounts: counts })).toBe(6);
+    expect(
+      preTrainingAttending({ ...practice('2026-12-03T20:00:00+01:00'), preTrainingCounts: { ...counts, attending: 0 } }),
+    ).toBe(0);
+  });
+
+  it('shows nothing without counts and for a cancelled event', () => {
+    expect(preTrainingAttending(practice('2026-12-03T20:00:00+01:00'))).toBeNull();
+    expect(
+      preTrainingAttending({
+        ...practice('2026-12-03T20:00:00+01:00'),
+        preTrainingCounts: counts,
+        status: 'CANCELLED',
+      }),
+    ).toBeNull();
   });
 });

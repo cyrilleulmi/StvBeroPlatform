@@ -5,6 +5,9 @@ export interface WithPreTraining {
   start: string;
   end: string;
   preTraining?: { title: string; start: string } | null;
+  /** Responses of the players to the pre-training (ANM-17). */
+  preTrainingCounts?: { attending: number } | null;
+  status?: string;
 }
 
 /** The pre-training and its practice as the designs show them (E-118). */
@@ -47,6 +50,15 @@ export function preTrainingView(event: WithPreTraining): PreTrainingView | null 
     practiceMinutes,
     share: Math.round(Math.min(MAX_SHARE, Math.max(MIN_SHARE, share))),
   };
+}
+
+/**
+ * How many players are «dabei» at the pre-training, for the count right at it (ANM-18). `null` where no count
+ * shows: the API sent none, or the event is cancelled (its card shows no counts either).
+ */
+export function preTrainingAttending(event: WithPreTraining): number | null {
+  if (event.status === 'CANCELLED') return null;
+  return event.preTrainingCounts?.attending ?? null;
 }
 
 /** «20 Min.», «1 Std.», «1 Std. 30 Min.» */
