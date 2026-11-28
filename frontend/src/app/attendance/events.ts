@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,7 +18,16 @@ import { Icon } from '../core/icon';
 import { Scoreboard } from '../core/scoreboard';
 import { TEXTS } from '../core/texts';
 import { MyResponse } from './my-response';
+import { PinnedChip } from './pin';
 import { yearOf, month, monthKey, eventDate, clockTime } from '../core/time';
+import {
+  apiTeams as teamsForApi,
+  isDefault,
+  lockedTeam,
+  selectedTeams,
+  teamOptions,
+  toggleTeam as toggled,
+} from './team-chips';
 
 interface Month {
   key: string;
@@ -28,45 +37,48 @@ interface Month {
 
 /**
  * Tile Anwesenheit: events of all own teams, chronological (TER-13), with the own response directly
- * in the card (ANM-08) and the total counter, which updates after a response without reloading. Filter
- * `?team=<id>` and view `?ansicht=vergangen` are in the URL (docs/testability.md, rule 5).
+ * in the card (ANM-08) and the total counter, which updates after a response without reloading. Team chips
+ * `?teams=<id>,<id>` (E-111), voluntary events `?freiwillig=aus` and view `?ansicht=vergangen` are in the URL
+ * (docs/testability.md, rule 5).
  */
 @Component({
   selector: 'app-events',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, MyResponse, Scoreboard],
+  imports: [RouterLink, Icon, MyResponse, Scoreboard, PinnedChip],
   template: `
     <div class="title-row">
       <h1>{{ texts.events.title }}</h1>
+      <!-- Actions as icons, so that title and actions fit into one row on a phone (E-111) -->
       <div class="title-actions">
         <a
-          class="button button-secondary button-small"
+          class="icon-action"
           routerLink="/termine/kalender"
           data-testid="calendar-link"
+          [attr.aria-label]="texts.calendarView.link"
+          [title]="texts.calendarView.link"
         >
-          <app-icon name="calendar" [size]="18" />
-          {{ texts.calendarView.link }}
+          <app-icon name="calendar" [size]="22" />
         </a>
         @if (canCreate()) {
-          <a
-            class="button button-secondary button-small"
-            routerLink="/statistik"
-            data-testid="statistics-link"
-            >{{ texts.statistics.link }}</a
-          >
           <!-- Series, single events, match days, swiss unihockey of a team in one place (TER-21) -->
           <a
-            class="button button-secondary button-small"
+            class="icon-action"
             routerLink="/termine/ueberarbeiten"
-            [queryParams]="{ team: team() || null }"
+            [queryParams]="{ team: singleTeam() }"
             data-testid="rework-link"
+            [attr.aria-label]="texts.rework.button"
+            [title]="texts.rework.button"
           >
-            <app-icon name="pencil" [size]="16" />
-            {{ texts.rework.button }}
+            <app-icon name="wrench" [size]="22" />
           </a>
-          <a class="button button-primary button-small" routerLink="/termine/neu">{{
-            texts.events.create
-          }}</a>
+          <a
+            class="icon-action primary"
+            routerLink="/termine/neu"
+            [attr.aria-label]="texts.events.create"
+            [title]="texts.events.create"
+          >
+            <app-icon name="plus" [size]="24" />
+          </a>
         }
       </div>
     </div>
@@ -88,27 +100,44 @@ interface Month {
           >{{ texts.events.past }}</a
         >
       </nav>
-      @if (optionalCount() > 0 || !showOptional()) {
-        <label class="check optional-filter">
-          <input
-            name="optional-filter"
-            type="checkbox"
-            data-testid="optional-filter"
-            [checked]="showOptional()"
-            (change)="toggleOptional($any($event.target).checked)"
-          />
-          {{ texts.participation.filter }}
-        </label>
-      }
-      @if (myTeams().length > 1 || team()) {
-        <div class="field">
-          <label for="events-team">{{ texts.events.team }}</label>
-          <select id="events-team" (change)="selectTeam($any($event.target).value)">
-            <option value="" [selected]="!team()">{{ texts.events.allTeams }}</option>
-            @for (t of teamSelection(); track t.id) {
-              <option [value]="t.id" [selected]="team() === t.id">{{ t.name }}</option>
-            }
-          </select>
+      @if (optionalChip() || teamChips()) {
+        <!-- One row of chips that scrolls sideways on a phone: voluntary events, then the teams (TER-17, E-111) -->
+        <div class="chips" role="group" [attr.aria-label]="texts.events.filters">
+          @if (optionalChip()) {
+            <label class="toggle-chip">
+              <input
+                name="optional-filter"
+                type="checkbox"
+                data-testid="optional-filter"
+                [attr.aria-label]="texts.participation.filter"
+                [checked]="showOptional()"
+                (change)="toggleOptional($any($event.target).checked)"
+              />
+              <span class="bubble"
+                ><app-icon class="tick" name="check" [size]="14" />{{ texts.events.optionalChip }}</span
+              >
+            </label>
+          }
+          @if (teamChips()) {
+            <span class="team-chips" role="group" [attr.aria-label]="texts.events.teams">
+              @for (t of options(); track t.id) {
+                <label class="toggle-chip">
+                  <input
+                    type="checkbox"
+                    name="events-team"
+                    [value]="t.id"
+                    [attr.data-testid]="'team-chip-' + t.id"
+                    [checked]="selected().includes(t.id)"
+                    [disabled]="locked() === t.id"
+                    [attr.aria-describedby]="locked() === t.id ? 'events-last-team' : null"
+                    (change)="toggleTeam(t.id, $any($event.target).checked)"
+                  />
+                  <span class="bubble"><app-icon class="tick" name="check" [size]="14" />{{ t.name }}</span>
+                </label>
+              }
+            </span>
+            <span id="events-last-team" class="visually-hidden">{{ texts.events.lastTeam }}</span>
+          }
         </div>
       }
     </div>
@@ -168,6 +197,9 @@ interface Month {
                   @if (t.variant; as v) {
                     <span class="tag-chip" data-testid="event-variant" [attr.data-tag]="v.color">{{ v.name }}</span>
                   }
+                  @if (t.pinned) {
+                    <app-pinned-chip />
+                  }
                   @if (t.myParticipation === 'OPTIONAL') {
                     <span class="chip" data-kind="optional" data-testid="event-optional">{{
                       texts.participation.optional
@@ -195,6 +227,18 @@ interface Month {
                         {{ texts.warnings.count(n) }}
                       </span>
                     }
+                  }
+                  <!-- Coaches, admins and people with a special permission edit right from the list (E-111, RR-09) -->
+                  @if (t.canEdit) {
+                    <a
+                      class="edit-link"
+                      [routerLink]="['/termine', t.id, 'bearbeiten']"
+                      [attr.data-testid]="'event-edit-' + t.id"
+                      [attr.aria-label]="texts.events.editFor(cardName(t))"
+                      [title]="texts.events.edit"
+                    >
+                      <app-icon name="pencil" [size]="18" />
+                    </a>
                   }
                 </span>
                 @if (t.status === 'CANCELLED') {
@@ -238,7 +282,10 @@ export class Events {
   private readonly auth = inject(AuthService);
   protected readonly texts = TEXTS;
 
-  /** Query `?team=` */
+  /** Query `?teams=<id>,<id>`: the teams that are on (E-111). */
+  // eslint-disable-next-line @angular-eslint/no-input-rename -- `teams()` is the teams line of a card
+  readonly chosenTeams = input<string | undefined>(undefined, { alias: 'teams' });
+  /** Query `?team=<id>` of earlier links: still read as a choice of one team (E-111). */
   readonly team = input<string | undefined>();
   /** Query `?ansicht=vergangen` */
   // eslint-disable-next-line @angular-eslint/no-input-rename -- query parameter `?ansicht=` is part of the browser URL and stays German (NF-40)
@@ -270,30 +317,32 @@ export class Events {
   /** All teams of the current season, only loaded for coaches and admins (RR-03, E-69). */
   private readonly allTeams = signal<{ id: string; name: string }[]>([]);
 
-  /**
-   * Teams to filter by, by name: the own teams of the current season. Coaches and admins choose from
-   * all teams, and then see that team's events even without being a member (E-69).
-   */
-  protected readonly myTeams = computed(() => {
-    const own = (this.auth.me()?.memberships ?? []).map((z) => z.team);
-    const all = this.allTeams();
-    return (all.length > 0 ? [...all] : own).sort((a, b) => a.name.localeCompare(b.name, 'de-CH'));
-  });
+  /** The own teams of the current season: on by default (TER-13). */
+  private readonly defaults = computed(() => (this.auth.me()?.memberships ?? []).map((z) => z.team.id));
+
+  /** Teams that are on (E-111): from the URL, otherwise the own teams. */
+  protected readonly selected = computed(() => selectedTeams(this.chosenTeams(), this.team(), this.defaults()));
+  protected readonly locked = computed(() => lockedTeam(this.selected(), this.defaults()));
+  /** «Überarbeiten» hands over the team if exactly one is on (TER-21). */
+  protected readonly singleTeam = computed(() => (this.selected().length === 1 ? this.selected()[0] : null));
+  private readonly apiTeams = computed(() => teamsForApi(this.selected(), this.defaults()).join(','));
 
   /**
-   * Select «Team»: the own teams. If `?team=` points to another team (e.g. a shared link), it appears
-   * in addition, so that the select and the list match (test finding F-03).
+   * The chips: the own teams; coaches and admins choose from all teams and then see that team's events even
+   * without being a member (E-69). A chosen team that is not among them (a shared link) is added.
    */
-  protected readonly teamSelection = computed(() => {
-    const own = this.myTeams();
-    const id = this.team();
-    if (!id || own.some((t) => t.id === id)) return own;
-    const name =
-      this.events()
-        .flatMap((t) => t.teams)
-        .find((t) => t.id === id)?.name ?? TEXTS.events.otherTeam;
-    return [...own, { id, name }];
+  protected readonly options = computed(() => {
+    const own = (this.auth.me()?.memberships ?? []).map((z) => z.team);
+    const all = this.allTeams();
+    const known = this.events().flatMap((t) => t.teams);
+    return teamOptions(all.length > 0 ? all : own, this.selected(), known, TEXTS.events.otherTeam);
   });
+
+  /** No chips for a person with one team only, unless the URL chose another one (as before E-111). */
+  protected readonly teamChips = computed(
+    () => this.options().length > 1 || !isDefault(this.selected(), this.defaults()),
+  );
+  protected readonly optionalChip = computed(() => this.optionalCount() > 0 || !this.showOptional());
 
   /** Create events: coaches (in any team) and admins (TER-11, RR-05). */
   protected readonly canCreate = computed(() => this.auth.canManage());
@@ -315,9 +364,9 @@ export class Events {
 
   constructor() {
     effect(() => {
-      const team = this.team();
+      const teams = this.apiTeams();
       const view = this.view();
-      untracked(() => void this.load(team, view));
+      untracked(() => void this.load(teams, view));
     });
     if (this.auth.canManage()) {
       void this.loadAllTeams();
@@ -387,11 +436,10 @@ export class Events {
     return TEXTS.events.card(t.title, this.date(t.start), clockTime(t.start));
   }
 
-  protected selectTeam(teamId: string): void {
-    void this.router.navigate(['/termine'], {
-      queryParams: { team: teamId || null },
-      queryParamsHandling: 'merge',
-    });
+  protected toggleTeam(id: string, on: boolean): void {
+    const params = toggled(this.selected(), id, on, this.defaults(), this.options().map((t) => t.id));
+    if (!params) return;
+    void this.router.navigate(['/termine'], { queryParams: params, queryParamsHandling: 'merge' });
   }
 
   /** After a response: fetch the own response and counters of this event again (without reloading the page). */
@@ -407,14 +455,14 @@ export class Events {
   /** Counts the loads: a slow answer to an earlier filter must not replace the answer to the latest one. */
   private request = 0;
 
-  private async load(team: string | undefined, view: string | undefined): Promise<void> {
+  private async load(teams: string, view: string | undefined): Promise<void> {
     const nr = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     try {
-      const params: Record<string, string> = {};
-      if (team) params['team'] = team;
-      if (view === 'vergangen') params['view'] = 'past';
+      let params = new HttpParams();
+      for (const id of teams.split(',').filter((x) => x)) params = params.append('team', id);
+      if (view === 'vergangen') params = params.set('view', 'past');
       const events = await firstValueFrom(
         this.http.get<EventSummary[]>('/api/events', { params }),
       );

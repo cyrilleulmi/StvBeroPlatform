@@ -401,8 +401,9 @@ test('F-04 K8 RR-02: Players respond on behalf of nobody', async ({ page }) => {
 test('F-04 K9: Start screen shows the next own event with response buttons', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/');
-  const nextEvent = page.getByTestId('next-event');
-  await expect(nextEvent.getByRole('heading', { name: 'Nächster Termin' })).toBeVisible();
+  // The first card of the start page is the next practice (TER-25)
+  const nextEvent = page.getByTestId(`start-practice-${T01}`);
+  await expect(nextEvent.getByTestId('start-week')).toHaveText('Diese Woche');
   await expect(nextEvent.getByRole('link')).toContainText('Training');
   await expect(nextEvent).toContainText('Di 17.11.');
   await expect(nextEvent).toContainText('18:30–20:00');
@@ -423,7 +424,7 @@ test('F-04 K9: Start screen shows the next own event with response buttons', asy
 test('F-04 K9: Without a team the start screen shows no event', async ({ page }) => {
   await login(page, 'alex');
   await page.goto('/');
-  await expect(page.getByTestId('next-event')).toContainText('Keine kommenden Termine');
+  await expect(page.getByTestId('start-empty')).toHaveText('Keine kommenden Termine');
   await expect(page.getByTestId('my-response')).toHaveCount(0);
 });
 

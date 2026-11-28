@@ -483,4 +483,20 @@ class EventsTest {
                 .body("[2].start", equalTo("2026-11-05T19:00:00+01:00"));
         given().cookie("stv_session", petra).get("/api/events?view=morgen").then().statusCode(400);
     }
+
+    @Test
+    void e111FilterBySeveralTeams() {
+        String series3 = java.util.UUID.nameUUIDFromBytes("termin-3-2026-11-18".getBytes(
+                java.nio.charset.StandardCharsets.UTF_8)).toString();
+        // Coach: the events of any of the chosen teams, also of teams she is not in (E-69)
+        List<String> both = eventIds(petra, "?team=" + TEAM_2 + "&team=" + TEAM_3);
+        assertThat(both, hasItems(T01, T05, T06, series3));
+        assertThat(both, not(hasItem(T02)));
+        assertThat(eventIds(petra, "?team=" + TEAM_2 + "&team=" + TEAM_3 + "&view=past"), hasItem(T07));
+        // A player only gets the events of her own teams among them: Anna is in Team 1 only
+        List<String> anna = eventIds(login("anna"), "?team=" + TEAM_2 + "&team=" + TEAM_3);
+        assertThat(anna, hasItems(T01, T06));
+        assertThat(anna, not(hasItem(T02)));
+        assertThat(anna, not(hasItem(series3)));
+    }
 }

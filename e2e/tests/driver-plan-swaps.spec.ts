@@ -25,10 +25,10 @@ async function openPlan(page: Page): Promise<void> {
 test('AUF-35: the start page always shows the next match day', async ({ page }) => {
   await login(page, 'anna');
   await page.goto('/');
-  // The next event is the practice of Tue 17.11.; the match day of Sun 22.11. shows on its own card
-  await expect(page.getByTestId('next-event')).toContainText('Training');
+  // The practices of the week come first; the match day of Sun 22.11. shows on its own card (TER-25)
+  await expect(page.getByTestId('start-events').getByTestId(/^start-practice-/).first()).toContainText('Training');
   const card = page.getByTestId('next-match-day');
-  await expect(card.getByRole('heading', { name: 'Nächster Spieltag' })).toBeVisible();
+  await expect(card).toContainText('Nächster Spieltag');
   await expect(card.getByRole('link', { name: /Spieltag/ })).toHaveAttribute('href', `/termine/${T04}`);
   await expect(card.getByTestId('event-counter')).toBeVisible();
   await expect(page.getByTestId('tile-fahrerliste')).toBeVisible();

@@ -19,8 +19,8 @@ interface ClubRow {
 
 /**
  * Administration (admins and coaches, RR-03/RR-05, E-69) as a hub (E-110): «Meine Teams» with direct actions for each
- * team the person coaches in the current season, and «Verein» with people, all teams, the team assignment and, for
- * admins only, the seasons (RR-04). Same rows as the profile (E-109).
+ * team the person coaches in the current season, and «Verein» with people, all teams, the team assignment, the
+ * statistics (STA-01, E-111) and, for admins only, the seasons (RR-04). Same rows as the profile (E-109).
  */
 @Component({
   selector: 'app-administration',
@@ -73,6 +73,14 @@ export class Administration {
         state: t.assignmentText,
       },
     ];
+    // Statistics of all teams (STA-01): reached from here since E-111, no longer from the event list
+    rows.push({
+      key: 'statistics',
+      route: '/statistik',
+      title: t.statistics,
+      icon: 'chart-column',
+      state: t.statisticsText,
+    });
     // Seasons only for admins (RR-04)
     if (this.auth.isAdmin()) {
       rows.push({

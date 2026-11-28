@@ -119,33 +119,74 @@
   font-size: 14px;
 }
 
-.practices .event-title {
-  font-size: 24px;
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
 }
 
-/* F-13: next practices and link to all events */
+.head .event-link {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The pencil (E-111): 44px to tap, quiet until hovered; it sits next to the title, outside the link */
+.edit-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  margin: -8px -10px 0 0;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+}
+
+@media (hover: hover) {
+  .edit-link:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+}
+
+/* Above a card: which week the practices are from, «Nächster Spieltag», the pin (TER-25, TER-26) */
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin: 0 0 -6px;
+}
+
+/* TER-25: one list of cards by date and the link to all events */
 .upcoming {
   display: grid;
   gap: 12px;
   min-width: 0;
 }
 
-/* Further practices: a heading, then one card per practice */
-.more-practices {
-  display: grid;
-  gap: 8px;
-}
-
-.more-practices > .eyebrow {
-  margin: 6px 0 0;
-}
-
-.practices {
+.cards {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: 12px;
+}
+
+/* On a wide screen two cards side by side, still read by date from left to right */
+@media (min-width: 1024px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+/* Only the next practice and the next match day get the big title; the others are a little smaller */
+.cards > li:not([data-filled]) .event-title {
+  font-size: 24px;
 }
 
 .counter {

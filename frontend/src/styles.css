@@ -721,6 +721,12 @@ button:disabled,
   background: var(--mustard-soft);
 }
 
+/* Pinned to the start page (TER-26, E-114): a pin and the word, on every surface where the event shows */
+.chip[data-kind='pinned'] {
+  gap: 4px;
+  background: var(--mustard-soft);
+}
+
 .header {
   display: grid;
   gap: 6px;
@@ -988,6 +994,79 @@ app-scoreboard.live .score-number {
 
 @media (prefers-reduced-motion: reduce) {
   .pill-option {
+    transition: none;
+  }
+}
+
+/* A small filter chip (teams and «Freiwillige» in /termine, E-111). It is a real checkbox: the box is invisible but takes the tap, the bubble shows the state with a tick. */
+.toggle-chip {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--touch);
+  cursor: pointer;
+}
+
+.toggle-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.toggle-chip .bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--control-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-color) ease,
+    border-color var(--duration-color) ease;
+}
+
+.toggle-chip .tick {
+  display: none;
+}
+
+.toggle-chip:has(input:checked) .bubble {
+  padding-left: 9px;
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.toggle-chip:has(input:checked) .tick {
+  display: inline-flex;
+  color: var(--primary);
+}
+
+.toggle-chip:has(input:disabled) {
+  cursor: default;
+}
+
+.toggle-chip:has(input:focus-visible) .bubble {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .toggle-chip:hover .bubble {
+    border-color: var(--primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-chip .bubble {
     transition: none;
   }
 }

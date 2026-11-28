@@ -97,6 +97,14 @@ public class Event extends PanacheEntityBase {
     @Column(name = "attendance_check")
     public boolean attendanceCheck;
 
+    /** Pinned to the start page of the members of its teams since then (TER-26); {@code null}: not pinned. */
+    @Column(name = "pinned_at")
+    public Instant pinnedAt;
+
+    /** Who pinned it (TER-26); {@code null} when not pinned or the person was deleted. */
+    @Column(name = "pinned_by")
+    public UUID pinnedBy;
+
     @ManyToMany
     @JoinTable(name = "event_team",
             joinColumns = @JoinColumn(name = "event_id"),
@@ -113,6 +121,10 @@ public class Event extends PanacheEntityBase {
         Event event = new Event();
         event.id = UUID.randomUUID();
         return event;
+    }
+
+    public boolean isPinned() {
+        return pinnedAt != null;
     }
 
     public boolean isOver(Instant now) {

@@ -4,7 +4,7 @@ import { checkAccessibility, expect, login, reset, test } from './helpers';
 /**
  * Batch «club data» (E-85): links to swiss unihockey through a dialog (SUH-02, SUH-11), warnings for changed
  * matches (SUH-12), hint when swiss unihockey cannot be reached (SUH-13), timeline of a match day (TML), driver
- * plan of the season (DRV-14, DRV-17), match day settings of a team and the test mode login grouped by team.
+ * plan of the season (DRV-14, DRV-17) and match day settings of a team. The test mode login: dev-login.spec.ts.
  * All against the test data set of docs/test-data.md with the simulators. Default "now": Mon 16.11.2026 06:00.
  */
 
@@ -71,42 +71,6 @@ function timeline(page: Page): Locator {
 
 test.beforeEach(async ({ request }) => {
   await reset(request);
-});
-
-// ------------------------------------------------------------------ Test mode login
-
-test('Dev login: people are grouped by team, coaches come first and are marked', async ({ page }) => {
-  await page.goto('/dev-login');
-
-  await expect(page.getByTestId('data-set-name')).toHaveText('Testdaten');
-  await expect(page.getByRole('button', { name: 'Vereinsdaten laden' })).toBeVisible();
-
-  const team1 = page.getByTestId(`dev-login-group-${TEAM_1}`);
-  await expect(team1.getByRole('heading', { name: /Team 1/ })).toBeVisible();
-  // Petra coaches Team 1: first entry, marked «Coach», with her other team
-  const first = team1.getByRole('listitem').first();
-  await expect(first).toHaveAttribute('data-role', 'coach');
-  await expect(first).toContainText('Petra Keller');
-  await expect(first).toContainText('Coach');
-  await expect(first).toContainText('auch in Team 2');
-  // In Team 2 she appears again, as a player; Marc is the coach there
-  const team2 = page.getByTestId(`dev-login-group-${TEAM_2}`);
-  await expect(team2.getByTestId(`dev-login-person-petra-${TEAM_2}`)).toHaveAttribute('data-role', 'player');
-  await expect(team2.getByRole('listitem').first()).toContainText('Marc Huber');
-  await expect(page.getByTestId('dev-login-group-admins')).toContainText('Alex Admin');
-  // Vera is only in the archive: no team this season
-  await expect(page.getByTestId('dev-login-group-none')).toContainText('Vera Studer');
-
-  await page.getByLabel('Person oder Team suchen').fill('team 3');
-  await expect(page.getByTestId('dev-login-person-tina')).toBeVisible();
-  await expect(team1).toBeHidden();
-  await page.getByLabel('Person oder Team suchen').fill('zzz');
-  await expect(page.getByTestId('dev-login-no-match')).toBeVisible();
-  await page.getByLabel('Person oder Team suchen').fill('');
-  await checkAccessibility(page);
-
-  await page.getByTestId('dev-login-person-petra').getByRole('button').click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Petra');
 });
 
 // ------------------------------------------------------------------ Linking (SUH-02, SUH-11)

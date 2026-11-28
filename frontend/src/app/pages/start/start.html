@@ -5,90 +5,41 @@
   <app-su-status-notice />
 }
 
-<ng-template #counter let-t>
-  @if (t.counts; as z) {
-    <p class="scoreboard counter" data-testid="event-counter">
-      <app-scoreboard [counts]="z" />
-    </p>
-  }
-</ng-template>
-
-<div class="upcoming">
-  <section
-    class="card next event-tint"
-    data-testid="next-event"
-    [attr.data-tag]="next()?.variant?.color ?? null"
-    [attr.data-filled]="next() && filled().has(next()!.id) ? 'true' : null"
-    aria-labelledby="next-event-title"
-    [attr.aria-busy]="eventLoading() ? 'true' : null"
-  >
-    <h2 id="next-event-title" class="eyebrow">{{ texts.start.nextEvent }}</h2>
-    @if (eventError(); as message) {
-      <p class="message-error" role="alert">{{ message }}</p>
-    } @else if (eventLoading()) {
-      <p class="empty">{{ texts.common.loading }}</p>
-    } @else if (next(); as t) {
-      <a class="event-link" [routerLink]="['/termine', t.id]">
-        <span class="event-title">{{ t.title }}</span>
-        <span class="when-where">{{ when(t) }}</span>
-        @if (t.location) {
-          <span class="place">{{ t.location.name }}</span>
-        }
-        <span class="secondary-text">{{ teamNames(t) }}</span>
-      </a>
-      <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
-      <app-my-response
-        [eventId]="t.id"
-        [response]="t.myResponse"
-        [name]="texts.response.myResponseFor(cardName(t))"
-        [reasonRequired]="!!t.variant?.declineReasonRequired"
-        (changed)="reload(t.id)"
-      />
-    } @else {
-      <p class="empty">{{ texts.start.noEvent }}</p>
-    }
-  </section>
-
-  @if (matchDay(); as t) {
-    <!-- The next match day always shows, also when a practice comes first (AUF-35) -->
-    <section
-      class="card next event-tint"
-      data-testid="next-match-day"
-      aria-labelledby="next-match-day-title"
-      [attr.data-tag]="t.variant?.color ?? null"
-      [attr.data-filled]="filled().has(t.id) ? 'true' : null"
-    >
-      <h2 id="next-match-day-title" class="eyebrow">{{ texts.start.nextMatchDay }}</h2>
-      <a class="event-link" [routerLink]="['/termine', t.id]">
-        <span class="event-title">{{ t.title }}</span>
-        <span class="when-where">{{ when(t) }}</span>
-        @if (t.location) {
-          <span class="place">{{ t.location.name }}</span>
-        }
-        <span class="secondary-text">{{ teamNames(t) }}</span>
-      </a>
-      <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
-      <app-my-response
-        [eventId]="t.id"
-        [response]="t.myResponse"
-        [name]="texts.response.myResponseFor(cardName(t))"
-        (changed)="reload(t.id)"
-      />
-    </section>
-  }
-
-  @if (practices().length > 0) {
-    <section class="more-practices" data-testid="next-practices" aria-labelledby="next-practices-title">
-      <h2 id="next-practices-title" class="eyebrow">{{ texts.start.morePractices }}</h2>
-      <ul class="practices">
-        @for (t of practices(); track t.id) {
-          <li
-            class="card next event-tint"
-            [attr.data-tag]="t.variant?.color ?? null"
-            [attr.data-filled]="filled().has(t.id) ? 'true' : null"
-            [attr.data-testid]="'start-practice-' + t.id"
-            [attr.aria-label]="cardName(t)"
-          >
+<!-- One list by date (TER-25, E-113): the practices of the week, the next match day (AUF-35), pinned events (TER-26) -->
+<section class="upcoming" aria-labelledby="start-events-title" [attr.aria-busy]="eventLoading() ? 'true' : null">
+  <h2 id="start-events-title" class="visually-hidden">{{ texts.start.eventsTitle }}</h2>
+  @if (eventError(); as message) {
+    <p class="message-error" role="alert">{{ message }}</p>
+  } @else if (eventLoading()) {
+    <p class="empty card">{{ texts.common.loading }}</p>
+  } @else if (shown().events.length === 0) {
+    <p class="empty card" data-testid="start-empty">{{ texts.start.noEvent }}</p>
+  } @else {
+    <ul class="cards" data-testid="start-events">
+      @for (t of shown().events; track t.id) {
+        <li
+          class="card next event-tint"
+          [attr.data-testid]="testId(t)"
+          [attr.data-tag]="t.variant?.color ?? null"
+          [attr.data-filled]="filled().has(t.id) ? 'true' : null"
+          [attr.data-pinned]="t.pinned ? 'true' : null"
+          [attr.aria-label]="cardName(t)"
+        >
+          @if (t.id === shown().firstPracticeId || t.id === shown().matchDayId || t.pinned) {
+            <p class="card-top">
+              @if (t.id === shown().firstPracticeId) {
+                <span class="eyebrow" data-testid="start-week" [attr.data-week]="shown().week?.kind">{{
+                  weekLabel()
+                }}</span>
+              } @else if (t.id === shown().matchDayId) {
+                <span class="eyebrow">{{ texts.start.nextMatchDay }}</span>
+              }
+              @if (t.pinned) {
+                <app-pinned-chip [title]="texts.events.pinnedNote" />
+              }
+            </p>
+          }
+          <div class="head">
             <a class="event-link" [routerLink]="['/termine', t.id]">
               <span class="event-title">{{ t.title }}</span>
               <span class="when-where">{{ when(t) }}</span>
@@ -97,25 +48,41 @@
               }
               <span class="secondary-text">{{ teamNames(t) }}</span>
             </a>
-            <ng-container *ngTemplateOutlet="counter; context: { $implicit: t }" />
-            <app-my-response
-              [eventId]="t.id"
-              [response]="t.myResponse"
-              [name]="texts.response.myResponseFor(cardName(t))"
-              [reasonRequired]="!!t.variant?.declineReasonRequired"
-              (changed)="reload(t.id)"
-            />
-          </li>
-        }
-      </ul>
-    </section>
+            <!-- Coaches, admins and people with a special permission edit right from here (E-111, RR-09) -->
+            @if (t.canEdit) {
+              <a
+                class="edit-link"
+                [routerLink]="['/termine', t.id, 'bearbeiten']"
+                [attr.data-testid]="'event-edit-' + t.id"
+                [attr.aria-label]="texts.events.editFor(cardName(t))"
+                [title]="texts.events.edit"
+              >
+                <app-icon name="pencil" [size]="18" />
+              </a>
+            }
+          </div>
+          @if (t.counts; as z) {
+            <p class="scoreboard counter" data-testid="event-counter">
+              <app-scoreboard [counts]="z" />
+            </p>
+          }
+          <app-my-response
+            [eventId]="t.id"
+            [response]="t.myResponse"
+            [name]="texts.response.myResponseFor(cardName(t))"
+            [reasonRequired]="!!t.variant?.declineReasonRequired"
+            (changed)="reload(t.id)"
+          />
+        </li>
+      }
+    </ul>
   }
 
   <a class="button button-secondary button-small all-events" routerLink="/termine" data-testid="all-events">
     {{ texts.start.allEvents }}
     <app-icon name="chevron-right" [size]="18" />
   </a>
-</div>
+</section>
 
 <section class="tiles" aria-labelledby="tiles-title" [attr.aria-busy]="loading() ? 'true' : null">
   <h2 id="tiles-title">{{ texts.start.tilesTitle }}</h2>

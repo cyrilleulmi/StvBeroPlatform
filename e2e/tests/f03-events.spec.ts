@@ -88,7 +88,7 @@ test('F-03 K3 TER-01 TER-11: Petra creates an event for Team 1 + Team 2', async 
   await page.getByLabel('Datum', { exact: true }).fill('2026-11-20');
   await page.getByLabel('Beginn', { exact: true }).fill('18:00');
   await page.getByLabel('Ende', { exact: true }).fill('19:30');
-  const teams = page.getByRole('group', { name: 'Teams' });
+  const teams = page.getByRole('group', { name: 'Teams', exact: true });
   await expect(teams.getByRole('checkbox', { name: 'Team 1' })).toBeChecked();
   await teams.getByRole('checkbox', { name: 'Team 2' }).check();
   await page.getByLabel('Ort (freiwillig)').fill('Turnhalle Dorf');
@@ -125,7 +125,7 @@ test('F-03 K3 F-12: Marc (coach of Team 2) may create for Team 1, Lea (player) m
   await login(page, 'marc');
   // In the UI the form offers coaches all teams (F-12)
   await page.goto('/termine/neu');
-  const teams = page.getByRole('group', { name: 'Teams' });
+  const teams = page.getByRole('group', { name: 'Teams', exact: true });
   await expect(teams.getByRole('checkbox', { name: 'Team 2' })).toBeVisible();
   await expect(teams.getByRole('checkbox', { name: 'Team 1' })).toBeVisible();
   await expect(teams.getByRole('checkbox', { name: 'Team 3' })).toBeVisible();
@@ -304,49 +304,50 @@ test('F-03 K8 TER-09 TER-10: Response deadline per event, default 24 hours', { t
   await expect(page.getByTestId('response-deadline')).toHaveText('Di 17.11. 06:30 (12 Stunden vor Beginn)');
 });
 
-test('F-03 K9 F-12: Filter ?team= and view ?ansicht=vergangen are in the URL', async ({ page }) => {
+test('F-03 K9 F-12 E-111: Team chips and view ?ansicht=vergangen are in the URL', async ({ page }) => {
   await login(page, 'petra');
   await page.goto('/termine');
-  await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Team 2' });
-  await expect(page).toHaveURL(`/termine?team=${TEAM_2}`);
+  // Her own teams are on, the URL carries nothing (E-111)
+  const teams = page.getByRole('group', { name: 'Teams', exact: true });
+  await expect(teams.getByRole('checkbox')).toHaveCount(3);
+  await expect(page.getByTestId(`team-chip-${TEAM_1}`)).toBeChecked();
+  await page.getByTestId(`team-chip-${TEAM_1}`).uncheck();
+  await expect(page).toHaveURL(`/termine?teams=${TEAM_2}`);
   await expect(card(page, T05)).toBeVisible();
   await expect(card(page, T02)).toHaveCount(0);
 
   const view = page.getByRole('navigation', { name: 'Ansicht' });
   await expect(view.getByRole('link', { name: 'Kommend' })).toHaveAttribute('aria-current', 'page');
   await view.getByRole('link', { name: 'Vergangen' }).click();
-  await expect(page).toHaveURL(`/termine?team=${TEAM_2}&ansicht=vergangen`);
+  await expect(page).toHaveURL(`/termine?teams=${TEAM_2}&ansicht=vergangen`);
   await expect(view.getByRole('link', { name: 'Vergangen' })).toHaveAttribute('aria-current', 'page');
   await expect(card(page, T07)).toBeVisible();
   await expect(card(page, T01)).toHaveCount(0);
 
   // Deep link after reload
   await page.reload();
-  await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_2);
+  await expect(page.getByTestId(`team-chip-${TEAM_2}`)).toBeChecked();
+  await expect(page.getByTestId(`team-chip-${TEAM_1}`)).not.toBeChecked();
   await expect(card(page, T07)).toBeVisible();
   await checkAccessibility(page);
 
-  // F-12: as a coach Petra sees all events of Team 3, although she is not a member there
+  // F-12: as a coach Petra sees all events of Team 3, although she is not a member there; the old ?team= still works
   await page.goto(`/termine?team=${TEAM_3}`);
   await expect.poll(async () => (await entries(page)).slice(0, 2)).toEqual([
     'Training Mi 18.11. 18:00',
     'Training Mi 25.11. 18:00',
   ]);
-  // Test finding F-03: selection and list match, also for a team Petra is not in
-  await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
-  await expect
-    .poll(() =>
-      page
-        .getByLabel('Team', { exact: true })
-        .evaluate((e) => (e as HTMLSelectElement).selectedOptions[0]?.text.trim()),
-    )
-    .toBe('Team 3');
+  // Test finding F-03: chips and list match, also for a team Petra is not in
+  await expect(page.getByTestId(`team-chip-${TEAM_3}`)).toBeChecked();
+  await expect(page.getByTestId(`team-chip-${TEAM_3}`)).toBeDisabled();
+  await expect(page.getByTestId(`team-chip-${TEAM_1}`)).not.toBeChecked();
 
   // A player (Lea, Team 1 + 2) only sees the shared events of Team 3 (TER-13)
   await login(page, 'lea');
   await page.goto(`/termine?team=${TEAM_3}`);
   await expect.poll(() => entries(page)).toEqual(['Teamessen Fr 11.12. 19:00']);
-  await expect(page.getByLabel('Team', { exact: true })).toHaveValue(TEAM_3);
+  await expect(page.getByTestId(`team-chip-${TEAM_3}`)).toBeChecked();
+  await expect(page.getByRole('group', { name: 'Teams', exact: true }).getByRole('checkbox')).toHaveCount(3);
 });
 
 // ------------------------------------------------------------------ Findings from testing (round 1)

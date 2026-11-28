@@ -71,7 +71,7 @@ Test IDs are part of the interface: whoever renames one updates the tests and [n
 ### 5. Every state has a URL
 
 - Every screen can be reached directly by URL (deep link), also after a reload.
-- Filters and tabs are in the URL (`/termine?team=…&ansicht=vergangen`).
+- Filters and tabs are in the URL (`/termine?teams=…&ansicht=vergangen`).
 - Dialogs that belong to a screen may have no URL. Standalone forms (create event, call-up) have their own route.
 
 This way the test agent jumps straight to the right place instead of clicking its way there.
@@ -114,7 +114,7 @@ Details in the API contract: [api/openapi.yaml](api/openapi.yaml) (tag «Test»)
 
 Push in the browser: E2E tests cannot reach a real push service. They replace the browser permission and `PushManager` with an init script (`fakePush` in `e2e/tests/f19-notification-channels.spec.ts`); the service worker stays real, and a push can be dispatched in it with `PushEvent`.
 
-The page `/dev-login` lists all seed persons grouped by team, coaches first and marked «Coach»; a person in several teams appears in each of them. One click logs in. At the top it clearly shows «Testmodus», which data set is loaded, and buttons to load the other one.
+The page `/dev-login` (E-112) clearly shows «Testmodus» at the top and, in one compact line, which data set is loaded with the buttons to load a data set. Then «Oft gebraucht»: tiles for the people most needed by hand, chosen by role so that they exist in both data sets (`dev-login-quick-admin`, `-coach`, `-player`, `-coach-player`, `-no-team`). Below, «Alle Personen»: everybody once, by name, with teams and roles, and a search by name (`?suche=`). One click logs in. Tests use the stable `dev-login-person-<key>`.
 
 ## Tools
 
